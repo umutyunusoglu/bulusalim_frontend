@@ -1,0 +1,226 @@
+import 'package:bulusalim/core/errors/exceptions/database_exceptions.dart';
+import 'package:bulusalim/core/utils/logging/logging_service.dart';
+import 'package:bulusalim/core/utils/types/types.dart';
+import 'package:bulusalim/data/models/user/user_event_model.dart';
+import 'package:bulusalim/data/models/user/user_hobby_model.dart';
+import 'package:bulusalim/data/models/user/user_model.dart';
+import 'package:bulusalim/domain/entities/user/index.dart';
+import 'package:bulusalim/domain/entities/user/user_event_entity.dart';
+import 'package:bulusalim/domain/entities/user/user_hobby_entity.dart';
+import 'package:bulusalim/domain/repositories/user_repository.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class UserRepositoryImpl implements UserRepository {
+  UserRepositoryImpl({
+    required FirebaseFirestore firestore,
+    required LoggingService logger,
+  }) : _firestore = firestore,
+       _logger = logger;
+
+  final FirebaseFirestore _firestore;
+  final LoggingService _logger;
+
+  // === User CRUD ===
+  @override
+  Future<UserEntity?> getUser(Identifier userID) async {
+    try {
+      final doc = await _firestore.collection('users').doc(userID).get();
+      if (doc.exists) {
+        _logger
+          ..debug(doc.data()!['birthDate'].toString())
+          ..debug(doc.data()!['birthDate'].runtimeType.toString());
+        final userModel = UserModel.fromFirestore(doc.data()!);
+
+        _logger
+          ..debug(userModel.birthDate.toString())
+          ..debug(userModel.birthDate.runtimeType.toString());
+        return userModel.toEntity();
+      }
+    } catch (e) {
+      throw DatabaseException('Failed to get user: $e');
+    }
+    return null;
+  }
+
+  @override
+  Future<void> createUser(
+    Identifier userID,
+    UserEntity user,
+  ) async {
+    _logger.info('Creating user: $userID');
+
+    final userWithID = user.copyWith(id: userID);
+    final userModel = UserModel.fromEntity(userWithID);
+
+    await _firestore
+        .collection('users')
+        .doc(userID)
+        .set(userModel.toFirestore());
+  }
+
+  @override
+  Future<void> deleteUser(Identifier userID) async {
+    _logger.info('Deleting user: $userID');
+    await _firestore.collection('users').doc(userID).delete();
+  }
+
+  @override
+  Future<void> updateUser(
+    Identifier userID,
+    Map<String, dynamic> updates,
+  ) async {
+    _logger.info('Updating user: $userID');
+    await _firestore.collection('users').doc(userID).update(updates);
+  }
+
+  // === Hobbies Subcollection ===
+  @override
+  Future<void> addHobby(
+    Identifier userID,
+    UserHobbyEntity hobby,
+  ) async {
+    _logger.info('Adding hobby for user: $userID');
+
+    final hobbyModel = UserHobbyModel.fromEntity(hobby);
+    await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('hobbies')
+        .doc(hobby.hobby.name)
+        .set(hobbyModel.toFirestore());
+  }
+
+  @override
+  Future<void> updateHobby(
+    Identifier userID,
+    String hobbyName,
+    Map<String, dynamic> updates,
+  ) async {
+    _logger.info(
+      'Updating hobby for user: $userID, hobby: $hobbyName',
+    );
+    await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('hobbies')
+        .doc(hobbyName)
+        .update(updates);
+  }
+
+  @override
+  Future<void> deleteHobby(
+    Identifier userID,
+    String hobbyName,
+  ) async {
+    _logger.info(
+      'Deleting hobby for user: $userID, hobby: $hobbyName',
+    );
+    await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('hobbies')
+        .doc(hobbyName)
+        .delete();
+  }
+
+  @override
+  Future<List<UserHobbyEntity>> getUserHobbies(
+    Identifier userID,
+  ) async {
+    _logger.info('Getting hobbies for user: $userID');
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('hobbies')
+        .get();
+
+    return snapshot.docs
+        .map((doc) => UserHobbyModel.fromFirestore(doc.data()).toEntity())
+        .toList();
+  }
+
+  // === Events Subcollection ===
+  @override
+  Future<void> addEvent(
+    Identifier userID,
+    UserEventEntity event,
+  ) async {
+    _logger.info('Adding event for user: $userID');
+
+    final eventModel = UserEventModel.fromEntity(event);
+    await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('events')
+        .doc(event.eventId)
+        .set(eventModel.toFirestore());
+  }
+
+  @override
+  Future<List<UserEventEntity>> getUserEvents(
+    Identifier userID,
+  ) async {
+    _logger.info('Getting events for user: $userID');
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('events')
+        .get();
+
+    final events = snapshot.docs
+        .map((doc) => UserEventModel.fromFirestore(doc.data()).toEntity())
+        .toList();
+    _logger.info(
+      'Found events for user: $userID, events: $events',
+    );
+    return events;
+  }
+
+  @override
+  Future<void> deleteEvent(
+    Identifier userID,
+    Identifier eventID,
+  ) async {
+    _logger.info(
+      'Deleting event for user: $userID, event: $eventID',
+    );
+    await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('events')
+        .doc(eventID)
+        .delete();
+  }
+
+  // === Query & Search ===
+  @override
+  Future<List<UserEntity>> searchUsersByName(String name) async {
+    _logger.info('Searching users by name: $name');
+    final snapshot = await _firestore
+        .collection('users')
+        .where('name', isGreaterThanOrEqualTo: name)
+        .where('name', isLessThan: '$name\uf8ff')
+        .get();
+
+    return snapshot.docs
+        .map((doc) => UserModel.fromFirestore(doc.data()).toEntity())
+        .toList();
+  }
+
+  @override
+  Future<List<UserEntity>> getUsersByOrg(String org) async {
+    _logger.info('Getting users by organization: $org');
+    final snapshot = await _firestore
+        .collection('users')
+        .where('organization', isEqualTo: org)
+        .get();
+
+    if (snapshot.docs.isEmpty) {
+      return [];
+    }
+    final users = snapshot.docs
+        .map((doc) => UserModel.fromFirestore(doc.data()).toEntity())
+        .toList();
+    return users;
+  }
+}
