@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:bulusalim/core/constants/theme/app_theme.dart';
-import 'package:bulusalim/firebase_options.dart';
 import 'package:bulusalim/screens/login/login_screen.dart';
 import 'package:bulusalim/screens/register_screen.dart';
 import 'package:bulusalim/screens/sign_in_screen.dart';
@@ -22,7 +21,7 @@ import 'package:bulusalim/screens/sign_in_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp();
 
   final host = kIsWeb
       ? 'localhost'
