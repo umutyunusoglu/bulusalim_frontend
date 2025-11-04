@@ -62,14 +62,13 @@ class SignInScreen extends StatelessWidget {
                   ),
                 ),
               ),
-
               SizedBox(height: 400.h),
 
               /// "Hesap Oluştur" Butonu
               LoginButton(
                 label: 'Hesap Oluştur',
                 onPress: () {
-                  Navigator.pushNamed(context, 'login');
+                  Navigator.pushNamed(context, '/login');
                 },
                 height: 50.h,
                 borderWidth: 2,
