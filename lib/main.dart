@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:bulusalim/core/constants/theme/app_theme.dart';
+import 'package:bulusalim/screens/home/home_page.dart';
 import 'package:bulusalim/screens/login/login_screen.dart';
 import 'package:bulusalim/screens/register_screen.dart';
 import 'package:bulusalim/screens/sign_in_screen.dart';
@@ -20,17 +21,6 @@ import 'package:bulusalim/screens/sign_in_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await Firebase.initializeApp();
-
-  final host = kIsWeb
-      ? 'localhost'
-      : Platform.isAndroid
-      ? '10.0.2.2'
-      : 'localhost';
-
-  await FirebaseAuth.instance.useAuthEmulator(host, 9099);
-  await FirebaseStorage.instance.useStorageEmulator(host, 9199);
 
   runApp(const ProviderScope(child: MainApp()));
 }
