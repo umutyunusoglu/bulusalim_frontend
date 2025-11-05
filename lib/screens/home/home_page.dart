@@ -2,6 +2,7 @@ import 'package:bulusalim/application/providers/getIt_init.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/data/repositories/post_repository_impl.dart';
 import 'package:bulusalim/domain/repositories/post_repository.dart';
+import 'package:bulusalim/domain/services/file_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:bulusalim/core/constants/constant.dart';
@@ -104,17 +105,40 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-/// Şimdilik placeholder sayfalar
 class SenlikPage extends StatelessWidget {
   const SenlikPage({super.key});
+
+  Future<String?> _getFirstPostImageUrl(
+    PostRepository postRepository,
+    FileService fileService,
+    LoggingService logger,
+  ) async {
+    final posts = await postRepository.getAllPosts();
+    logger.debug("Fetched ${posts.length} posts.");
+
+    final post = posts[0];
+    logger.debug("First post ID: ${post.imagePaths}");
+    if (posts.isEmpty ||
+        posts.first.imagePaths == null ||
+        posts.first.imagePaths!.isEmpty) {
+      logger.debug("No posts or no images found.");
+      return null;
+    }
+
+    final path = posts.first.imagePaths!.first;
+    final url = await fileService.getDownloadUrl(path);
+    logger.debug("Loaded image path: $path");
+    return url;
+  }
 
   @override
   Widget build(BuildContext context) {
     final postRepository = GetIt.instance<PostRepository>();
+    final fileService = GetIt.instance<FileService>();
     final logger = GetIt.instance<LoggingService>();
 
-    return FutureBuilder(
-      future: postRepository.getAllPosts(),
+    return FutureBuilder<String?>(
+      future: _getFirstPostImageUrl(postRepository, fileService, logger),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -124,17 +148,18 @@ class SenlikPage extends StatelessWidget {
           return Center(child: Text("Error: ${snapshot.error}"));
         }
 
-        final posts = snapshot.data ?? [];
+        final imageUrl = snapshot.data;
+        logger.debug("Image URL: $imageUrl");
 
-        if (posts.isEmpty || posts[0].photoUrls!.isEmpty) {
+        if (imageUrl == null || imageUrl.isEmpty) {
           return const Center(child: Text("No posts available"));
         }
 
-        final postPhotoUrl = posts[0].photoUrls!.first;
-        logger.debug(posts.length.toString());
-
         return Center(
-          child: Text(posts[0].hobbies[0].name),
+          child: Image.network(
+            imageUrl,
+            fit: BoxFit.cover,
+          ),
         );
       },
     );

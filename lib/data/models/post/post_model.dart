@@ -17,7 +17,7 @@ class PostModel extends Model<PostEntity> {
     required this.participants,
     required this.emoteCounts,
     this.location,
-    this.photoUrls,
+    this.imagePaths,
   });
 
   factory PostModel.fromEntity(PostEntity entity) {
@@ -29,7 +29,7 @@ class PostModel extends Model<PostEntity> {
       metadata: entity.metadata,
       location: entity.location,
       hobbies: entity.hobbies,
-      photoUrls: entity.photoUrls,
+      imagePaths: entity.imagePaths,
       participants: entity.participants,
       emoteCounts: entity.emoteCounts,
     );
@@ -54,7 +54,7 @@ class PostModel extends Model<PostEntity> {
       hobbies: (doc['hobbies'] as List<dynamic>)
           .map((hobby) => HobbyEntity.fromString(hobby as String))
           .toList(),
-      photoUrls: (doc['photoUrls'] as List<dynamic>?)
+      imagePaths: (doc['imagePaths'] as List<dynamic>?)
           ?.map((url) => url as String)
           .toList(),
       participants: List<Identifier>.from(doc['participants'] as List<dynamic>),
@@ -77,7 +77,7 @@ class PostModel extends Model<PostEntity> {
       metadata: metadata,
       location: location, //TODO
       hobbies: hobbies,
-      photoUrls: photoUrls,
+      imagePaths: imagePaths,
       participants: participants,
       emoteCounts: emoteCounts,
     );
@@ -93,7 +93,7 @@ class PostModel extends Model<PostEntity> {
       'metadata': metadata.toMap(),
       'location': location?.toMap(),
       'hobbies': hobbies.map((hobby) => hobby.name).toList(),
-      'photoUrls': photoUrls,
+      'imagePaths': imagePaths,
       'participants': participants,
       'emoteCounts': emoteCounts.map(
         (key, value) => MapEntry(key.index.toString(), value),
@@ -108,7 +108,7 @@ class PostModel extends Model<PostEntity> {
   final PostMetadata metadata;
   final Geolocation? location;
   final List<HobbyEntity> hobbies;
-  final List<String>? photoUrls;
+  final List<String>? imagePaths;
   final List<Identifier> participants;
   final Map<EmoteEnum, int> emoteCounts;
 }

@@ -16,17 +16,6 @@ class FileServiceImpl implements FileService {
   final LoggingService _logger;
 
   @override
-  Future<void> deleteFile(String filePath) async {
-    try {
-      final storageRef = _storage.ref().child(filePath);
-
-      await storageRef.delete();
-    } on FirebaseException catch (e) {
-      throw _handleFirebaseStorageException(e, filePath);
-    }
-  }
-
-  @override
   Future<String> uploadFile(
     String absoluteSourcePath,
     String absoluteTargetPath,
@@ -53,18 +42,28 @@ class FileServiceImpl implements FileService {
   }
 
   @override
-  Future<File> getFile(String filePath) async {
-    final tempDir = Directory.systemTemp;
-
-    // ! Might overwrite existing files with same name in temp directory
-    // ! Consider using UUIDs or hashing for unique filenames
-    final tempFile = File('${tempDir.path}/${filePath.split('/').last}');
-
+  Future<void> deleteFile(String filePath) async {
     try {
-      await _storage.ref(filePath).writeToFile(tempFile);
-      return tempFile;
+      final storageRef = _storage.ref().child(filePath);
+
+      await storageRef.delete();
     } on FirebaseException catch (e) {
       throw _handleFirebaseStorageException(e, filePath);
+    }
+  }
+
+  @override
+  Future<String> getDownloadUrl(String filePath) async {
+    try {
+      final storageRef = _storage.ref().child(filePath);
+
+      final downloadUrl = await storageRef.getDownloadURL();
+      return downloadUrl;
+    } on FirebaseException catch (e) {
+      throw _handleFirebaseStorageException(e, filePath);
+    } on Exception catch (e) {
+      _logger.error('Get Download URL Exception: $e');
+      throw FileSystemException('Get Download URL Exception: $e');
     }
   }
 

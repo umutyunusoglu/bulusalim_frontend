@@ -5,6 +5,7 @@ abstract class FileService {
     String absoluteSourcePath,
     String absoluteTargetPath,
   );
+  Future<String> getDownloadUrl(String filePath);
+
   Future<void> deleteFile(String filePath);
-  Future<File> getFile(String filePath);
 }

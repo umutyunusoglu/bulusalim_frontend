@@ -15,7 +15,7 @@ class PostEntity extends Equatable {
     required this.participants,
     required this.emoteCounts,
     this.location,
-    this.photoUrls,
+    this.imagePaths,
   });
 
   PostEntity copyWith({
@@ -38,7 +38,7 @@ class PostEntity extends Equatable {
       metadata: metadata ?? this.metadata,
       location: location ?? this.location,
       hobbies: hobbies ?? this.hobbies,
-      photoUrls: photoUrls ?? this.photoUrls,
+      imagePaths: photoUrls ?? this.imagePaths,
       participants: participants ?? this.participants,
       emoteCounts: emoteCounts ?? this.emoteCounts,
     );
@@ -57,7 +57,7 @@ class PostEntity extends Equatable {
   final PostMetadata metadata;
   final Geolocation? location;
   final List<HobbyEntity> hobbies;
-  final List<String>? photoUrls;
+  final List<String>? imagePaths;
   final List<Identifier> participants;
   final Map<EmoteEnum, int> emoteCounts;
 }
