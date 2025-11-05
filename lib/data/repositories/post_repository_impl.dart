@@ -95,6 +95,7 @@ class PostRepositoryImpl implements PostRepository {
   @override
   Future<List<PostEntity>> getAllPosts() {
     final querySnapshot = _firestore.collection('posts').get();
+
     return querySnapshot.then(
       (snapshot) => snapshot.docs
           .map((doc) => PostModel.fromFirestore(doc.data()).toEntity())

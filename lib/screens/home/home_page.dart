@@ -1,8 +1,13 @@
+import 'package:bulusalim/application/providers/getIt_init.dart';
+import 'package:bulusalim/core/utils/logging/logging_service.dart';
+import 'package:bulusalim/data/repositories/post_repository_impl.dart';
+import 'package:bulusalim/domain/repositories/post_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:bulusalim/core/constants/constant.dart';
 import 'package:bulusalim/components/header.dart';
 import 'package:bulusalim/components/custom_tab_bar.dart';
+import 'package:get_it/get_it.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -105,11 +110,33 @@ class SenlikPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        "🎉 Senlik Sayfası ",
-        style: TextStyle(fontSize: 16),
-      ),
+    final postRepository = GetIt.instance<PostRepository>();
+    final logger = GetIt.instance<LoggingService>();
+
+    return FutureBuilder(
+      future: postRepository.getAllPosts(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(child: Text("Error: ${snapshot.error}"));
+        }
+
+        final posts = snapshot.data ?? [];
+
+        if (posts.isEmpty || posts[0].photoUrls!.isEmpty) {
+          return const Center(child: Text("No posts available"));
+        }
+
+        final postPhotoUrl = posts[0].photoUrls!.first;
+        logger.debug(posts.length.toString());
+
+        return Center(
+          child: Text(posts[0].hobbies[0].name),
+        );
+      },
     );
   }
 }

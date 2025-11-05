@@ -4,6 +4,7 @@ import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/model.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
 import 'package:bulusalim/domain/entities/post/post_entity.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PostModel extends Model<PostEntity> {
   PostModel({
@@ -35,17 +36,21 @@ class PostModel extends Model<PostEntity> {
   }
 
   factory PostModel.fromFirestore(Map<String, dynamic> doc) {
-    final locationMap = doc['location'] as Map<String, dynamic>?;
+    final location = doc['location'] as GeoPoint;
+    final locationMap = {
+      "latitude": location.latitude,
+      "longitude": location.longitude,
+    };
     return PostModel(
-      postID: doc['postID'] as String,
-      userID: doc['userID'] as String,
-      eventID: doc['eventID'] as String,
+      postID: doc['postId'] as String,
+      userID: doc['userId'] as String,
+      eventID: doc['eventId'] as String,
       title: doc['title'] as String,
-      metadata: PostMetadata.fromMap(
-        doc['metadata'] as Map<String, dynamic>,
-      ),
-
-      location: locationMap != null ? Geolocation.fromMap(locationMap) : null,
+      metadata: PostMetadata(
+        createdAt: DateTime(2003),
+        updatedAt: DateTime(2000),
+      ), //TODO
+      location: Geolocation.fromMap(locationMap),
       hobbies: (doc['hobbies'] as List<dynamic>)
           .map((hobby) => HobbyEntity.fromString(hobby as String))
           .toList(),
@@ -70,7 +75,7 @@ class PostModel extends Model<PostEntity> {
       eventID: eventID,
       title: title,
       metadata: metadata,
-      location: location,
+      location: location, //TODO
       hobbies: hobbies,
       photoUrls: photoUrls,
       participants: participants,

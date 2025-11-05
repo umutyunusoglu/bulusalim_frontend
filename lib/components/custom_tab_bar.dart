@@ -5,16 +5,15 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'tab_item.dart';
 
 class CustomTabBar extends StatelessWidget {
-  final int currentIndex;
-  final List<String> tabs;
-  final Function(int) onTabSelected;
-
   const CustomTabBar({
     super.key,
     required this.currentIndex,
     required this.tabs,
     required this.onTabSelected,
   });
+  final int currentIndex;
+  final List<String> tabs;
+  final Function(int) onTabSelected;
 
   @override
   Widget build(BuildContext context) {

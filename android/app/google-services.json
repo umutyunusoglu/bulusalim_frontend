@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "802871659996",
+    "project_id": "bulusalim-e8e7c",
+    "storage_bucket": "bulusalim-e8e7c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:802871659996:android:efc9c632ef59e1f9c11319",
+        "android_client_info": {
+          "package_name": "com.example.bulusalim"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "802871659996-5jkkn3rr61mu7cfaek2lume0chhvoc1t.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCofbPCfjFJwkMlGHav1c-szsUkqEL3wAw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "802871659996-5jkkn3rr61mu7cfaek2lume0chhvoc1t.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:802871659996:android:43ff51c34d8eec5ac11319",
+        "android_client_info": {
+          "package_name": "com.example.bulusalim_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "802871659996-5jkkn3rr61mu7cfaek2lume0chhvoc1t.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCofbPCfjFJwkMlGHav1c-szsUkqEL3wAw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "802871659996-5jkkn3rr61mu7cfaek2lume0chhvoc1t.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

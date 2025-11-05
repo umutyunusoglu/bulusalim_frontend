@@ -4,7 +4,7 @@ class Geolocation {
     required this.longitude,
   });
 
-  factory Geolocation.fromMap(Map<String, dynamic> map) {
+  factory Geolocation.fromMap(Map<dynamic, dynamic> map) {
     return Geolocation(
       latitude: (map['latitude'] as num).toDouble(),
       longitude: (map['longitude'] as num).toDouble(),
