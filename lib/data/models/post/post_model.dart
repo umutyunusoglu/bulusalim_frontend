@@ -1,10 +1,13 @@
+import 'package:bulusalim/application/providers/getIt_init.dart';
 import 'package:bulusalim/core/utils/types/enums/emote_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/model.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
 import 'package:bulusalim/domain/entities/post/post_entity.dart';
+import 'package:bulusalim/domain/services/file_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get_it/get_it.dart';
 
 class PostModel extends Model<PostEntity> {
   PostModel({
@@ -17,7 +20,7 @@ class PostModel extends Model<PostEntity> {
     required this.participants,
     required this.emoteCounts,
     this.location,
-    this.imagePaths,
+    this.imageUrls,
   });
 
   factory PostModel.fromEntity(PostEntity entity) {
@@ -29,13 +32,21 @@ class PostModel extends Model<PostEntity> {
       metadata: entity.metadata,
       location: entity.location,
       hobbies: entity.hobbies,
-      imagePaths: entity.imagePaths,
+      imageUrls: entity.imageUrls,
       participants: entity.participants,
       emoteCounts: entity.emoteCounts,
     );
   }
+  static Future<PostModel> fromFirestore(Map<String, dynamic> doc) async {
+    final FileService fileService = getIt<FileService>();
 
-  factory PostModel.fromFirestore(Map<String, dynamic> doc) {
+    final imagePaths =
+        (doc['imagePaths'] as List<dynamic>?)?.cast<String>().toList() ?? [];
+
+    final imageUrls = await Future.wait(
+      imagePaths.map(fileService.getDownloadUrl),
+    );
+
     final location = doc['location'] as GeoPoint;
     final locationMap = {
       "latitude": location.latitude,
@@ -54,9 +65,7 @@ class PostModel extends Model<PostEntity> {
       hobbies: (doc['hobbies'] as List<dynamic>)
           .map((hobby) => HobbyEntity.fromString(hobby as String))
           .toList(),
-      imagePaths: (doc['imagePaths'] as List<dynamic>?)
-          ?.map((url) => url as String)
-          .toList(),
+      imageUrls: imageUrls,
       participants: List<Identifier>.from(doc['participants'] as List<dynamic>),
       emoteCounts: (doc['emoteCounts'] as Map<String, dynamic>).map(
         (key, value) => MapEntry(
@@ -77,7 +86,7 @@ class PostModel extends Model<PostEntity> {
       metadata: metadata,
       location: location, //TODO
       hobbies: hobbies,
-      imagePaths: imagePaths,
+      imageUrls: imageUrls,
       participants: participants,
       emoteCounts: emoteCounts,
     );
@@ -93,7 +102,7 @@ class PostModel extends Model<PostEntity> {
       'metadata': metadata.toMap(),
       'location': location?.toMap(),
       'hobbies': hobbies.map((hobby) => hobby.name).toList(),
-      'imagePaths': imagePaths,
+      'imagePaths': imageUrls,
       'participants': participants,
       'emoteCounts': emoteCounts.map(
         (key, value) => MapEntry(key.index.toString(), value),
@@ -108,7 +117,7 @@ class PostModel extends Model<PostEntity> {
   final PostMetadata metadata;
   final Geolocation? location;
   final List<HobbyEntity> hobbies;
-  final List<String>? imagePaths;
+  final List<String>? imageUrls;
   final List<Identifier> participants;
   final Map<EmoteEnum, int> emoteCounts;
 }

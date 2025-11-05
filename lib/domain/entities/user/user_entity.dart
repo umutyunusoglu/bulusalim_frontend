@@ -12,7 +12,7 @@ class UserEntity extends Equatable {
     required this.birthDate,
     required this.gender,
     required this.organization,
-    required this.profileImagePaths,
+    required this.profileImageUrl,
     required this.bio,
     required this.permissions,
     required this.metadata,
@@ -29,7 +29,7 @@ class UserEntity extends Equatable {
     DateTime? birthDate,
     GenderEnum? gender,
     String? organization,
-    List<String>? profilePhotoUrls,
+    String? profileImageUrl,
     String? avatarUrl,
     String? bio,
     UserPermissions? permissions,
@@ -44,7 +44,7 @@ class UserEntity extends Equatable {
       birthDate: birthDate ?? this.birthDate,
       gender: gender ?? this.gender,
       organization: organization ?? this.organization,
-      profileImagePaths: profilePhotoUrls ?? this.profileImagePaths,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       bio: bio ?? this.bio,
       permissions: permissions ?? this.permissions,
       metadata: metadata ?? this.metadata,
@@ -59,7 +59,7 @@ class UserEntity extends Equatable {
   final DateTime birthDate;
   final GenderEnum gender;
   final String organization;
-  final List<String>? profileImagePaths;
+  final String profileImageUrl;
   final String? bio;
   final UserPermissions permissions;
   final UserMetadata metadata;

@@ -28,7 +28,7 @@ class RegisterUserData {
     return _userRepository.createUser(
       userID,
       user.copyWith(
-        profilePhotoUrls: photoUrls,
+        profileImageUrl: photoUrls[0], //TODO
       ),
     );
   }

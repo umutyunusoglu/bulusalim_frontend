@@ -29,7 +29,7 @@ class UserRepositoryImpl implements UserRepository {
         _logger
           ..debug(doc.data()!['birthDate'].toString())
           ..debug(doc.data()!['birthDate'].runtimeType.toString());
-        final userModel = UserModel.fromFirestore(doc.data()!);
+        final userModel = await UserModel.fromFirestore(doc.data()!);
 
         _logger
           ..debug(userModel.birthDate.toString())
@@ -196,31 +196,41 @@ class UserRepositoryImpl implements UserRepository {
   @override
   Future<List<UserEntity>> searchUsersByName(String name) async {
     _logger.info('Searching users by name: $name');
+
     final snapshot = await _firestore
         .collection('users')
         .where('name', isGreaterThanOrEqualTo: name)
         .where('name', isLessThan: '$name\uf8ff')
         .get();
 
-    return snapshot.docs
-        .map((doc) => UserModel.fromFirestore(doc.data()).toEntity())
-        .toList();
+    final users = await Future.wait(
+      snapshot.docs.map((doc) async {
+        final model = await UserModel.fromFirestore(doc.data());
+        return model.toEntity();
+      }),
+    );
+
+    return users;
   }
 
   @override
   Future<List<UserEntity>> getUsersByOrg(String org) async {
     _logger.info('Getting users by organization: $org');
+
     final snapshot = await _firestore
         .collection('users')
         .where('organization', isEqualTo: org)
         .get();
 
-    if (snapshot.docs.isEmpty) {
-      return [];
-    }
-    final users = snapshot.docs
-        .map((doc) => UserModel.fromFirestore(doc.data()).toEntity())
-        .toList();
+    if (snapshot.docs.isEmpty) return [];
+
+    final users = await Future.wait(
+      snapshot.docs.map((doc) async {
+        final model = await UserModel.fromFirestore(doc.data());
+        return model.toEntity();
+      }),
+    );
+
     return users;
   }
 }

@@ -1,7 +1,9 @@
+import 'package:bulusalim/application/providers/getIt_init.dart';
 import 'package:bulusalim/core/utils/types/enums/gender_enum.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/model.dart';
 import 'package:bulusalim/domain/entities/user/user_entity.dart';
+import 'package:bulusalim/domain/services/file_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserModel extends Model<UserEntity> {
@@ -12,7 +14,7 @@ class UserModel extends Model<UserEntity> {
     required this.birthDate,
     required this.gender,
     required this.organization,
-    required this.profilePhotoUrls,
+    required this.profileImageUrl,
     required this.bio,
     required this.permissions,
     required this.metadata,
@@ -27,15 +29,20 @@ class UserModel extends Model<UserEntity> {
       birthDate: entity.birthDate,
       gender: entity.gender,
       organization: entity.organization,
-      profilePhotoUrls: entity.profileImagePaths,
+      profileImageUrl: entity.profileImageUrl,
       bio: entity.bio,
       permissions: entity.permissions,
       metadata: entity.metadata,
     );
   }
 
-  @override
-  factory UserModel.fromFirestore(Map<String, dynamic> doc) {
+  static Future<UserModel> fromFirestore(Map<String, dynamic> doc) async {
+    final fileService = getIt<FileService>();
+
+    final profileUrl = await fileService.getDownloadUrl(
+      doc['profileImagePath'] as String,
+    );
+
     return UserModel(
       id: doc['id'] as String,
       email: doc['email'] as String,
@@ -43,9 +50,7 @@ class UserModel extends Model<UserEntity> {
       birthDate: (doc['birthDate'] as Timestamp).toDate(),
       gender: GenderEnum.values[doc['gender'] as int],
       organization: doc['organization'] as String,
-      profilePhotoUrls: (doc['profilePhotoUrls'] as List<dynamic>?)
-          ?.map((url) => url as String)
-          .toList(),
+      profileImageUrl: profileUrl,
       bio: doc['bio'] as String?,
       permissions: userPermissionsFromFirestore(
         doc['permissions'] as Map<String, dynamic>,
@@ -82,8 +87,9 @@ class UserModel extends Model<UserEntity> {
       'birthDate': Timestamp.fromDate(birthDate),
       'gender': gender.index,
       'organization': organization,
-      'profilePhotoUrls': profilePhotoUrls,
+      'profileImagePath': FileService.userProfileImagePath(id, 'profile.jpg'),
       'bio': bio,
+
       'permissions': permissions.toMap(),
       'metadata': metadata.toMap(),
     };
@@ -98,7 +104,7 @@ class UserModel extends Model<UserEntity> {
       birthDate: birthDate,
       gender: gender,
       organization: organization,
-      profileImagePaths: profilePhotoUrls,
+      profileImageUrl: profileImageUrl,
       bio: bio,
       permissions: permissions,
       metadata: metadata,
@@ -111,7 +117,7 @@ class UserModel extends Model<UserEntity> {
   final DateTime birthDate;
   final GenderEnum gender;
   final String organization;
-  final List<String>? profilePhotoUrls;
+  final String profileImageUrl;
   final String? bio;
   final UserPermissions permissions;
   final UserMetadata metadata;

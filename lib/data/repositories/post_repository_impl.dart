@@ -64,7 +64,7 @@ class PostRepositoryImpl implements PostRepository {
       final docSnapshot = await docRef.get();
 
       if (docSnapshot.exists) {
-        final postModel = PostModel.fromFirestore(docSnapshot.data()!);
+        final postModel = await PostModel.fromFirestore(docSnapshot.data()!);
         return postModel.toEntity();
       } else {
         return null;
@@ -83,9 +83,15 @@ class PostRepositoryImpl implements PostRepository {
           .where('userId', isEqualTo: userId)
           .get();
 
-      return querySnapshot.docs
-          .map((doc) => PostModel.fromFirestore(doc.data()).toEntity())
-          .toList();
+      // her doc için async işlem yapacağın için Future.wait kullan
+      final posts = await Future.wait(
+        querySnapshot.docs.map((doc) async {
+          final model = await PostModel.fromFirestore(doc.data());
+          return model.toEntity();
+        }),
+      );
+
+      return posts;
     } catch (e) {
       _logger.error('Failed to get posts by user ID: $e');
       rethrow;
@@ -93,14 +99,22 @@ class PostRepositoryImpl implements PostRepository {
   }
 
   @override
-  Future<List<PostEntity>> getAllPosts() {
-    final querySnapshot = _firestore.collection('posts').get();
+  Future<List<PostEntity>> getAllPosts() async {
+    try {
+      final snapshot = await _firestore.collection('posts').get();
 
-    return querySnapshot.then(
-      (snapshot) => snapshot.docs
-          .map((doc) => PostModel.fromFirestore(doc.data()).toEntity())
-          .toList(),
-    );
+      final posts = await Future.wait(
+        snapshot.docs.map((doc) async {
+          final model = await PostModel.fromFirestore(doc.data());
+          return model.toEntity();
+        }),
+      );
+
+      return posts;
+    } catch (e) {
+      _logger.error('Failed to get all posts: $e');
+      rethrow;
+    }
   }
 
   @override
@@ -111,9 +125,14 @@ class PostRepositoryImpl implements PostRepository {
           .where('eventID', isEqualTo: eventId)
           .get();
 
-      return querySnapshot.docs
-          .map((doc) => PostModel.fromFirestore(doc.data()).toEntity())
-          .toList();
+      final posts = await Future.wait(
+        querySnapshot.docs.map((doc) async {
+          final model = await PostModel.fromFirestore(doc.data());
+          return model.toEntity();
+        }),
+      );
+
+      return posts;
     } catch (e) {
       _logger.error('Failed to get posts by event ID: $e');
       rethrow;
@@ -128,9 +147,14 @@ class PostRepositoryImpl implements PostRepository {
           .where('hobbies', arrayContains: hobby.name)
           .get();
 
-      return querySnapshot.docs
-          .map((doc) => PostModel.fromFirestore(doc.data()).toEntity())
-          .toList();
+      final posts = await Future.wait(
+        querySnapshot.docs.map((doc) async {
+          final model = await PostModel.fromFirestore(doc.data());
+          return model.toEntity();
+        }),
+      );
+
+      return posts;
     } catch (e) {
       _logger.error('Failed to get posts by hobby: $e');
       rethrow;
@@ -142,10 +166,16 @@ class PostRepositoryImpl implements PostRepository {
     Geolocation location,
     double radiusInKm,
   ) async {
-    final querySnapshot = await _firestore.collection('posts').get();
+    final snapshot = await _firestore.collection('posts').get();
 
-    return querySnapshot.docs
-        .map((doc) => PostModel.fromFirestore(doc.data()))
+    final models = await Future.wait(
+      snapshot.docs.map((doc) async {
+        final model = await PostModel.fromFirestore(doc.data());
+        return model;
+      }),
+    );
+
+    final filtered = models
         .where((data) {
           final d = haversineDistance(
             lat1: location.latitude,
@@ -153,11 +183,12 @@ class PostRepositoryImpl implements PostRepository {
             lat2: data.location!.latitude,
             lon2: data.location!.longitude,
           );
-
           return d <= radiusInKm;
         })
         .map((data) => data.toEntity())
         .toList();
+
+    return filtered;
   }
 
   @override
@@ -167,18 +198,30 @@ class PostRepositoryImpl implements PostRepository {
   ) async {
     final docRef = _firestore.collection('posts').doc(postId);
 
-    await _firestore.runTransaction((transaction) async {
-      final snapshot = await transaction.get(docRef);
-      if (!snapshot.exists) {
-        throw Exception('Post not found');
+    // Belirli bir emote sayacını artırmak için kullanılacak alan yolu
+    // Örn: 'emoteCounts.HAPPY'
+    final fieldPath = 'emoteCounts.${emote.name}';
+
+    // Güncelleme verisi
+    final updateData = {
+      fieldPath: FieldValue.increment(1),
+    };
+
+    try {
+      // İşlem (Transaction) kullanmaya GEREK YOK.
+      // increment() metodu zaten sunucuda atomik olarak çalışır.
+      await docRef.update(updateData);
+    } on FirebaseException catch (e) {
+      // Belge bulunamazsa (Post not found) update metodu hata verir
+      if (e.code == 'not-found') {
+        throw Exception('Post not found: ${postId}');
       }
-
-      final postModel = PostModel.fromFirestore(snapshot.data()!);
-      final currentCount = postModel.emoteCounts[emote] ?? 0;
-      postModel.emoteCounts[emote] = currentCount + 1;
-
-      transaction.update(docRef, postModel.toFirestore());
-    });
+      // Diğer Firebase hatalarını işle
+      rethrow;
+    } catch (e) {
+      // Diğer hataları işle
+      rethrow;
+    }
   }
 
   @override
@@ -188,19 +231,22 @@ class PostRepositoryImpl implements PostRepository {
   ) async {
     final docRef = _firestore.collection('posts').doc(postId);
 
-    await _firestore.runTransaction((transaction) async {
-      final snapshot = await transaction.get(docRef);
-      if (!snapshot.exists) {
-        throw Exception('Post not found');
-      }
+    // Belirli bir emote sayacını azaltmak için kullanılacak alan yolu
+    final fieldPath = 'emoteCounts.${emote.name}';
 
-      final postModel = PostModel.fromFirestore(snapshot.data()!);
-      final currentCount = postModel.emoteCounts[emote] ?? 0;
-      if (currentCount > 0) {
-        postModel.emoteCounts[emote] = currentCount - 1;
+    // Güncelleme verisi: Sayacı 1 azalt
+    final updateData = {
+      fieldPath: FieldValue.increment(-1), // Fark: -1 kullanılıyor
+    };
 
-        transaction.update(docRef, postModel.toFirestore());
+    try {
+      // İşlem kullanmaya gerek yok, increment atomiktir.
+      await docRef.update(updateData);
+    } on FirebaseException catch (e) {
+      if (e.code == 'not-found') {
+        throw Exception('Post not found: ${postId}');
       }
-    });
+      rethrow;
+    }
   }
 }
