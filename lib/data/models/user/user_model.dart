@@ -8,7 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserModel extends Model<UserEntity> {
   UserModel({
-    required this.id,
+    required this.userID,
     required this.username,
     required this.email,
     required this.birthDate,
@@ -23,7 +23,7 @@ class UserModel extends Model<UserEntity> {
   @override
   factory UserModel.fromEntity(UserEntity entity) {
     return UserModel(
-      id: entity.id,
+      userID: entity.userID,
       email: entity.email,
       username: entity.username,
       birthDate: entity.birthDate,
@@ -44,7 +44,7 @@ class UserModel extends Model<UserEntity> {
     );
 
     return UserModel(
-      id: doc['id'] as String,
+      userID: doc['userID'] as String,
       email: doc['email'] as String,
       username: doc['username'] as String,
       birthDate: (doc['birthDate'] as Timestamp).toDate(),
@@ -81,13 +81,16 @@ class UserModel extends Model<UserEntity> {
   @override
   Map<String, dynamic> toFirestore() {
     return {
-      'id': id,
+      'userID': userID,
       'email': email,
       'username': username,
       'birthDate': Timestamp.fromDate(birthDate),
       'gender': gender.index,
       'organization': organization,
-      'profileImagePath': FileService.userProfileImagePath(id, 'profile.jpg'),
+      'profileImagePath': FileService.userProfileImagePath(
+        userID,
+        'profile.jpg',
+      ),
       'bio': bio,
 
       'permissions': permissions.toMap(),
@@ -98,7 +101,7 @@ class UserModel extends Model<UserEntity> {
   @override
   UserEntity toEntity() {
     return UserEntity(
-      id: id,
+      userID: userID,
       email: email,
       username: username,
       birthDate: birthDate,
@@ -111,7 +114,7 @@ class UserModel extends Model<UserEntity> {
     );
   }
 
-  final Identifier id;
+  final Identifier userID;
   final String email;
   final String username;
   final DateTime birthDate;

@@ -6,7 +6,7 @@ import 'package:equatable/equatable.dart';
 
 class UserEntity extends Equatable {
   const UserEntity({
-    required this.id,
+    required this.userID,
     required this.username,
     required this.email,
     required this.birthDate,
@@ -21,7 +21,7 @@ class UserEntity extends Equatable {
   });
 
   UserEntity copyWith({
-    Identifier? id,
+    Identifier? userID,
     String? email,
     String? name,
     String? surname,
@@ -38,7 +38,7 @@ class UserEntity extends Equatable {
     List<UserEventEntity>? events,
   }) {
     return UserEntity(
-      id: id ?? this.id,
+      userID: userID ?? this.userID,
       email: email ?? this.email,
       username: username ?? this.username,
       birthDate: birthDate ?? this.birthDate,
@@ -53,7 +53,7 @@ class UserEntity extends Equatable {
     );
   }
 
-  final Identifier id;
+  final Identifier userID;
   final String email;
   final String username;
   final DateTime birthDate;
@@ -69,7 +69,7 @@ class UserEntity extends Equatable {
 
   @override
   List<Object?> get props => [
-    id,
+    userID,
   ];
 }
 

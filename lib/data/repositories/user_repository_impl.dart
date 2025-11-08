@@ -49,7 +49,7 @@ class UserRepositoryImpl implements UserRepository {
   ) async {
     _logger.info('Creating user: $userID');
 
-    final userWithID = user.copyWith(id: userID);
+    final userWithID = user.copyWith(userID: userID);
     final userModel = UserModel.fromEntity(userWithID);
 
     await _firestore
