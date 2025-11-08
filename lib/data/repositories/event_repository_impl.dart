@@ -29,7 +29,7 @@ class EventRepositoryImpl implements EventRepository {
     try {
       final docRef = _firestore.collection('events').doc();
 
-      final eventWithId = event.copyWith(eventId: docRef.id);
+      final eventWithId = event.copyWith(eventID: docRef.id);
 
       final eventModel = EventModel.fromEntity(eventWithId);
 
@@ -48,7 +48,7 @@ class EventRepositoryImpl implements EventRepository {
     try {
       await _firestore
           .collection('events')
-          .doc(event.eventId)
+          .doc(event.eventID)
           .update(eventModel.toFirestore());
     } catch (e) {
       _logger.error('Failed to update event: $e');

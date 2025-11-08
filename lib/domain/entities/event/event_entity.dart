@@ -5,7 +5,7 @@ import 'package:equatable/equatable.dart';
 
 class EventEntity extends Equatable {
   const EventEntity({
-    required this.eventId,
+    required this.eventID,
     required this.name,
     required this.hobbies,
     required this.creator,
@@ -21,7 +21,7 @@ class EventEntity extends Equatable {
   });
 
   EventEntity copyWith({
-    String? eventId,
+    String? eventID,
     String? name,
     String? info,
     List<String>? hobbies,
@@ -36,7 +36,7 @@ class EventEntity extends Equatable {
     EventMetadata? metadata,
   }) {
     return EventEntity(
-      eventId: eventId ?? this.eventId,
+      eventID: eventID ?? this.eventID,
       name: name ?? this.name,
       info: info ?? this.info,
       hobbies: hobbies ?? this.hobbies,
@@ -52,7 +52,7 @@ class EventEntity extends Equatable {
     );
   }
 
-  final String eventId;
+  final String eventID;
   final String name;
   final String? info;
   final List<String> hobbies;
@@ -68,7 +68,7 @@ class EventEntity extends Equatable {
 
   @override
   List<Object?> get props => [
-    eventId,
+    eventID,
     name,
     info,
     hobbies,
