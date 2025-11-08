@@ -6,7 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserEventModel extends Model<UserEventEntity> {
   UserEventModel({
-    required this.eventId,
+    required this.eventID,
     required this.eventDate,
     required this.role,
   });
@@ -14,7 +14,7 @@ class UserEventModel extends Model<UserEventEntity> {
   @override
   factory UserEventModel.fromEntity(UserEventEntity entity) {
     return UserEventModel(
-      eventId: entity.eventId,
+      eventID: entity.eventId,
       eventDate: entity.eventDate,
       role: entity.role,
     );
@@ -23,7 +23,7 @@ class UserEventModel extends Model<UserEventEntity> {
   @override
   factory UserEventModel.fromFirestore(Map<String, dynamic> doc) {
     return UserEventModel(
-      eventId: doc['eventId'] as Identifier,
+      eventID: doc['eventID'] as Identifier,
       eventDate: (doc['eventDate'] as Timestamp).toDate(),
       role: EventRoleEnum.values[doc['role'] as int],
     );
@@ -32,7 +32,7 @@ class UserEventModel extends Model<UserEventEntity> {
   @override
   Map<String, dynamic> toFirestore() {
     return {
-      'eventId': eventId,
+      'eventID': eventID,
       'eventDate': Timestamp.fromDate(eventDate),
       'role': role.index,
     };
@@ -41,13 +41,13 @@ class UserEventModel extends Model<UserEventEntity> {
   @override
   UserEventEntity toEntity() {
     return UserEventEntity(
-      eventId: eventId,
+      eventId: eventID,
       eventDate: eventDate,
       role: role,
     );
   }
 
-  final Identifier eventId;
+  final Identifier eventID;
   final DateTime eventDate;
   final EventRoleEnum role;
 }

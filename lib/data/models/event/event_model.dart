@@ -25,7 +25,7 @@ class EventModel extends Model<EventEntity> {
   @override
   factory EventModel.fromEntity(EventEntity entity) {
     return EventModel(
-      eventId: entity.eventId,
+      eventId: entity.eventID,
       name: entity.name,
       info: entity.info,
       hobbies: entity.hobbies,
@@ -48,7 +48,7 @@ class EventModel extends Model<EventEntity> {
     final metadataMap = doc['metadata'] as Map<String, dynamic>;
 
     return EventModel(
-      eventId: doc['eventId'] as String,
+      eventId: doc['eventID'] as String,
       name: doc['name'] as String,
       info: doc['info'] as String?,
       hobbies: List<String>.from(doc['hobbies'] as List<dynamic>),
@@ -80,7 +80,7 @@ class EventModel extends Model<EventEntity> {
   @override
   Map<String, dynamic> toFirestore() {
     return {
-      'eventId': eventId,
+      'eventID': eventId,
       'name': name,
       'info': info,
       'hobbies': hobbies,
@@ -99,7 +99,7 @@ class EventModel extends Model<EventEntity> {
   @override
   EventEntity toEntity() {
     return EventEntity(
-      eventId: eventId,
+      eventID: eventId,
       name: name,
       info: info,
       hobbies: hobbies,

@@ -53,9 +53,9 @@ class PostModel extends Model<PostEntity> {
       "longitude": location.longitude,
     };
     return PostModel(
-      postID: doc['postId'] as String,
-      userID: doc['userId'] as String,
-      eventID: doc['eventId'] as String,
+      postID: doc['postID'] as String,
+      userID: doc['userID'] as String,
+      eventID: doc['eventID'] as String,
       title: doc['title'] as String,
       metadata: PostMetadata(
         createdAt: DateTime(2003),
