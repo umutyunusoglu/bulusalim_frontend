@@ -1,8 +1,7 @@
+import 'package:bulusalim/components/tab_item.dart';
 import 'package:bulusalim/core/constants/constant.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-
-import 'tab_item.dart';
 
 class CustomTabBar extends StatelessWidget {
   const CustomTabBar({
