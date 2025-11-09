@@ -48,6 +48,7 @@ Future<void> main() async {
 
   await getItSetup();
 
+  //! HATİCE SENİN İÇİN KULLANIM ÖRNEĞİ
   final rc = getIt<RemoteConfigService>();
   print(await rc.getValue<String>("navbar_order"));
 
