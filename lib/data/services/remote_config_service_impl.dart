@@ -15,8 +15,18 @@ class RemoteConfigServiceImpl implements RemoteConfigService {
       AppConfig().remoteConfigDebugPath,
     );
     final defaults = json.decode(jsonString) as Map<String, dynamic>;
+    await _remoteConfig.setConfigSettings(
+      RemoteConfigSettings(
+        // Timeout for fetching
+        fetchTimeout: const Duration(seconds: 10),
+
+        // Minimum interval between fetches
+        minimumFetchInterval: const Duration(minutes: 5),
+      ),
+    );
 
     await _remoteConfig.setDefaults(defaults);
+    await _remoteConfig.fetchAndActivate();
   }
 
   Future<T> getValue<T>(String key) async {
