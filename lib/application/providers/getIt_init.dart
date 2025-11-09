@@ -6,10 +6,12 @@ import 'package:get_it/get_it.dart';
 
 final GetIt getIt = GetIt.instance;
 
-void getItSetup() {
+Future<void> getItSetup() async {
   getIt
     ..registerFirebase()
     ..registerServices()
     ..registerRepositories()
     ..registerUsecases();
+
+  await getIt.allReady();
 }
