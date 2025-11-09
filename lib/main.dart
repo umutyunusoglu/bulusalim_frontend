@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:bulusalim/application/providers/getIt_init.dart';
+import 'package:bulusalim/core/constants/Configs/app_config.dart';
 import 'package:bulusalim/core/constants/theme/app_theme.dart';
+import 'package:bulusalim/domain/services/remote_config_service.dart';
 import 'package:bulusalim/firebase_options.dart';
 import 'package:bulusalim/screens/home/home_page.dart';
 import 'package:bulusalim/screens/login/login_screen.dart';
@@ -11,6 +13,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +28,7 @@ import 'package:bulusalim/screens/sign_in_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   if (kDebugMode) {
@@ -32,22 +36,21 @@ Future<void> main() async {
       androidProvider: AndroidProvider.debug,
       appleProvider: AppleProvider.debug,
     );
+
+    FirebaseFirestore.instance.useFirestoreEmulator(AppConfig.host, 8080);
+    await FirebaseAuth.instance.useAuthEmulator(AppConfig.host, 9099);
+    await FirebaseStorage.instance.useStorageEmulator(AppConfig.host, 9199);
+
+    await FirebaseAuth.instance.signInAnonymously();
   } else {
     await FirebaseAppCheck.instance.activate();
   }
 
-  final String emulatorHost = kIsWeb
-      ? 'localhost'
-      : (Platform.isAndroid ? '10.0.2.2' : 'localhost');
+  await getItSetup();
 
-  if (kDebugMode) {
-    FirebaseFirestore.instance.useFirestoreEmulator(emulatorHost, 8080);
-    await FirebaseAuth.instance.useAuthEmulator(emulatorHost, 9099);
-    await FirebaseStorage.instance.useStorageEmulator(emulatorHost, 9199);
-    await FirebaseAuth.instance.signInAnonymously();
-  }
-
-  getItSetup();
+  //! HATİCE SENİN İÇİN KULLANIM ÖRNEĞİ
+  final rc = getIt<RemoteConfigService>();
+  print(await rc.getValue<String>("navbar_order"));
 
   runApp(const ProviderScope(child: MainApp()));
 }
