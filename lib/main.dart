@@ -14,7 +14,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 /*
@@ -82,6 +81,7 @@ class MainApp extends StatelessWidget {
             '/': (context) => const SignInScreen(),
             '/login': (context) => const LoginScreen(),
             '/register': (context) => const RegisterScreen(),
+            // 🔸 Ana sayfa artık CustomNavBar ile
             '/home': (context) => const HomePage(),
           },
         ),
