@@ -13,44 +13,56 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-/*
-import 'package:bulusalim/screens/login/login_screen.dart';
-import 'package:bulusalim/screens/register_screen.dart';
-import 'package:bulusalim/screens/sign_in_screen.dart';
-*/
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  if (kDebugMode) {
-    await FirebaseAppCheck.instance.activate(
-      androidProvider: AndroidProvider.debug,
-      appleProvider: AppleProvider.debug,
-    );
+  await FirebaseAppCheck.instance.activate(
+    androidProvider: kDebugMode
+        ? AndroidProvider.debug
+        : AndroidProvider.playIntegrity,
+    appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.appAttest,
+    // webRecaptchaSiteKey: 'YOUR_RECAPTCHA_SITE_KEY',
+  );
 
+  if (kDebugMode) {
+    // 1. Emülatörleri bağla
     FirebaseFirestore.instance.useFirestoreEmulator(AppConfig.host, 8080);
     await FirebaseAuth.instance.useAuthEmulator(AppConfig.host, 9099);
     await FirebaseStorage.instance.useStorageEmulator(AppConfig.host, 9199);
 
-    await FirebaseAuth.instance.signInAnonymously();
-  } else {
-    await FirebaseAppCheck.instance.activate();
+    // 2. Önceki oturumu kapat
+    final authInstance = FirebaseAuth.instance;
+    if (authInstance.currentUser != null) {
+      await authInstance.signOut();
+    }
+    // 3. Anonim olarak yeniden oturum aç
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null && !user.isAnonymous) {
+      await authInstance.signOut();
+    }
+    await authInstance.signInAnonymously();
+
+    // Debug amaçlı: Current User ID'sini konsola yazdır
+    if (authInstance.currentUser != null) {
+      print('Emülatörde Anonim Kullanıcı ID: ${authInstance.currentUser!.uid}');
+    }
   }
 
   await getItSetup();
 
-  //! HATİCE SENİN İÇİN KULLANIM ÖRNEĞİ
   final rc = getIt<RemoteConfigService>();
-  print(await rc.getValue<String>("navbar_order"));
+  final navbarOrder = await rc.getValue<String>("navbar_order");
+  if (kDebugMode) {
+    print("Remote Config Navbar Order: $navbarOrder");
+  }
 
   runApp(const ProviderScope(child: MainApp()));
 }
