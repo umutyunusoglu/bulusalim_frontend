@@ -78,7 +78,7 @@ class _HomePageState extends State<HomePage> {
               ),
 
               /// Alt sayfa göstergesi
-              SizedBox(height: 10.h),
+              /*SizedBox(height: 10.h),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(_tabs.length, (index) {
@@ -95,7 +95,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                   );
                 }),
-              ),
+              ),*/
             ],
           ),
         ),

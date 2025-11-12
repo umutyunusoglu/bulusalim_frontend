@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:bulusalim/core/constants/constant.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
@@ -91,7 +92,7 @@ class CustomNavBar extends ConsumerWidget {
             onTap: (index) {
               ref.read(currentIndexProvider.notifier).state = index;
             },
-            selectedItemColor: Colors.orange,
+            selectedItemColor: kBlueColor,
             unselectedItemColor: Colors.grey.shade600,
             showSelectedLabels: false,
             showUnselectedLabels: false,
