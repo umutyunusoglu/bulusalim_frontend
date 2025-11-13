@@ -1,13 +1,18 @@
+import 'dart:collection';
+
+import 'package:bulusalim/core/constants/Configs/app_config.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/core/utils/types/enums/emote_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/distance.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/post/post_model.dart';
+import 'package:bulusalim/data/repositories/in_memory_cache.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
 import 'package:bulusalim/domain/entities/post/post_entity.dart';
 import 'package:bulusalim/domain/repositories/post_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:collection/collection.dart';
 
 class PostRepositoryImpl implements PostRepository {
   PostRepositoryImpl({
@@ -18,6 +23,15 @@ class PostRepositoryImpl implements PostRepository {
 
   final FirebaseFirestore _firestore;
   final LoggingService _logger;
+
+  final _fetchedIds = <Identifier>[];
+  final _fetchedIdSet = <Identifier>{};
+  final _maxFetchedIdsLength = 1000;
+
+  final cache = InMemoryCache<PostEntity>(
+    cacheSizeLimit: AppConfig.postCacheSizeLimit,
+    ttl: AppConfig.postCacheTTL,
+  );
 
   @override
   Future<void> createPost(PostEntity post) async {
@@ -198,8 +212,6 @@ class PostRepositoryImpl implements PostRepository {
   ) async {
     final docRef = _firestore.collection('posts').doc(postId);
 
-    // Belirli bir emote sayacını artırmak için kullanılacak alan yolu
-    // Örn: 'emoteCounts.HAPPY'
     final fieldPath = 'emoteCounts.${emote.name}';
 
     // Güncelleme verisi
@@ -208,18 +220,13 @@ class PostRepositoryImpl implements PostRepository {
     };
 
     try {
-      // İşlem (Transaction) kullanmaya GEREK YOK.
-      // increment() metodu zaten sunucuda atomik olarak çalışır.
       await docRef.update(updateData);
     } on FirebaseException catch (e) {
-      // Belge bulunamazsa (Post not found) update metodu hata verir
       if (e.code == 'not-found') {
         throw Exception('Post not found: ${postId}');
       }
-      // Diğer Firebase hatalarını işle
       rethrow;
     } catch (e) {
-      // Diğer hataları işle
       rethrow;
     }
   }
@@ -248,5 +255,236 @@ class PostRepositoryImpl implements PostRepository {
       }
       rethrow;
     }
+  }
+
+  @override
+  Future<List<PostEntity>> fetchNextBatchOfPosts(
+    PostEntity? referencePost,
+    int batchSize,
+  ) async {
+    final batch = <PostEntity>[];
+    final fetchedLength = _fetchedIds.length; // Use the List
+
+    // If lastPost is null, fetch the first batch
+    if (referencePost == null) {
+      final snapshot = await _firestore
+          .collection('posts')
+          .orderBy('metadata.createdAt')
+          .limit(batchSize)
+          .get();
+
+      final newPosts = await Future.wait(
+        snapshot.docs.map((doc) async {
+          final model = await PostModel.fromFirestore(doc.data());
+          return model.toEntity();
+        }),
+      );
+
+      for (final post in newPosts) {
+        if (_fetchedIdSet.add(post.postID)) {
+          _fetchedIds.add(post.postID);
+        }
+        cache.set(post.postID, post);
+        batch.add(post);
+      }
+
+      return batch;
+    }
+
+    final referenceIdx = _fetchedIds.contains(referencePost.postID)
+        ? _fetchedIds.indexOf(referencePost.postID)
+        : -1;
+
+    final missingPostIds = <Identifier>[];
+
+    if (referenceIdx != -1) {
+      final startIndex = referenceIdx + 1;
+      final endIndex = (referenceIdx + 1 + batchSize).clamp(0, fetchedLength);
+      for (var i = startIndex; i < endIndex; i++) {
+        final postId = _fetchedIds[i];
+
+        if (cache.containsKey(postId)) {
+          final cachedPost = cache.get(postId);
+          if (cachedPost != null) {
+            batch.add(cachedPost);
+          }
+        } else {
+          missingPostIds.add(postId);
+        }
+      }
+
+      final missingPosts = await _firestore
+          .collection('posts')
+          .where(FieldPath.documentId, whereIn: missingPostIds)
+          .get()
+          .then(
+            (snapshot) => Future.wait(
+              snapshot.docs.map((doc) async {
+                final model = await PostModel.fromFirestore(doc.data());
+                return model.toEntity();
+              }),
+            ),
+          );
+      for (final post in missingPosts) {
+        cache.set(post.postID, post);
+        batch.add(post);
+      }
+    }
+
+    if (batch.length < batchSize) {
+      // 1. Determine the post to use as the cursor for Firestore
+      final lastCursorPostID = batch.isNotEmpty
+          ? batch.last.postID
+          : referencePost.postID;
+
+      final startAfterSnapshot = await _firestore
+          .collection('posts')
+          .doc(lastCursorPostID)
+          .get();
+
+      if (!startAfterSnapshot.exists) {
+        _logger.error(
+          'Cursor document ${lastCursorPostID} does not exist for pagination.',
+        );
+        return batch;
+      }
+
+      final remaining = batchSize - batch.length;
+
+      final snapshot = await _firestore
+          .collection('posts')
+          .orderBy('metadata.createdAt')
+          .startAfterDocument(
+            startAfterSnapshot,
+          )
+          .limit(remaining)
+          .get();
+
+      final newPosts = await Future.wait(
+        snapshot.docs.map((doc) async {
+          final model = await PostModel.fromFirestore(doc.data());
+          return model.toEntity();
+        }),
+      );
+
+      // 4. Update the List order
+      for (final post in newPosts) {
+        if (_fetchedIdSet.add(post.postID)) {
+          _fetchedIds.add(post.postID);
+        }
+        cache.set(post.postID, post);
+        batch.add(post);
+      }
+      if (_fetchedIds.length > _maxFetchedIdsLength) {
+        final idsToRemove = _fetchedIds.length - _maxFetchedIdsLength;
+        for (var i = 0; i < idsToRemove; i++) {
+          final removedId = _fetchedIds.removeAt(0);
+          _fetchedIdSet.remove(removedId);
+        }
+      }
+    }
+    return batch;
+  }
+
+  @override
+  Future<List<PostEntity>> fetchPreviousBatchOfPosts(
+    PostEntity referencePost,
+    int batchSize,
+  ) async {
+    final batch = <PostEntity>[];
+    final fetchedLength = _fetchedIds.length;
+
+    final referenceIdx = _fetchedIds.contains(referencePost.postID)
+        ? _fetchedIds.indexOf(referencePost.postID)
+        : -1;
+
+    final missingPostIds = <Identifier>[];
+    if (referenceIdx != -1) {
+      final startIndex = (referenceIdx - batchSize).clamp(0, fetchedLength);
+      for (var i = startIndex; i < referenceIdx; i++) {
+        final postId = _fetchedIds[i];
+
+        if (cache.containsKey(postId)) {
+          final cachedPost = cache.get(postId);
+          if (cachedPost != null) {
+            batch.add(cachedPost);
+          }
+        } else {
+          missingPostIds.add(postId);
+        }
+      }
+      final missingPosts = await _firestore
+          .collection('posts')
+          .where(FieldPath.documentId, whereIn: missingPostIds)
+          .get()
+          .then(
+            (snapshot) => Future.wait(
+              snapshot.docs.map((doc) async {
+                final model = await PostModel.fromFirestore(doc.data());
+                return model.toEntity();
+              }),
+            ),
+          );
+      for (final post in missingPosts) {
+        cache.set(post.postID, post);
+        batch.add(post);
+      }
+    }
+
+    if (batch.length < batchSize) {
+      // 1. Determine the post to use as the cursor for Firestore
+      final lastCursorPostID = batch.isNotEmpty
+          ? batch.last.postID
+          : referencePost.postID;
+
+      final startAfterSnapshot = await _firestore
+          .collection('posts')
+          .doc(lastCursorPostID)
+          .get();
+
+      if (!startAfterSnapshot.exists) {
+        _logger.error(
+          'Cursor document ${lastCursorPostID} does not exist for pagination.',
+        );
+        return batch;
+      }
+
+      final remaining = batchSize - batch.length;
+
+      final snapshot = await _firestore
+          .collection('posts')
+          .orderBy('metadata.createdAt')
+          .endBeforeDocument(
+            startAfterSnapshot,
+          )
+          .limit(remaining)
+          .get();
+
+      final newPosts = await Future.wait(
+        snapshot.docs.map((doc) async {
+          final model = await PostModel.fromFirestore(doc.data());
+          return model.toEntity();
+        }),
+      );
+
+      // 4. Update the List order
+      batch.insertAll(0, newPosts);
+
+      for (final post in newPosts) {
+        if (_fetchedIdSet.add(post.postID)) {
+          _fetchedIds.insert(0, post.postID);
+        }
+        cache.set(post.postID, post);
+      }
+
+      if (_fetchedIds.length > _maxFetchedIdsLength) {
+        final idsToRemove = _fetchedIds.length - _maxFetchedIdsLength;
+        for (var i = 0; i < idsToRemove; i++) {
+          final removedId = _fetchedIds.removeLast();
+          _fetchedIdSet.remove(removedId);
+        }
+      }
+    }
+    return batch;
   }
 }

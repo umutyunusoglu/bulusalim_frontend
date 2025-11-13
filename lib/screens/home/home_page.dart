@@ -1,12 +1,10 @@
-import 'package:bulusalim/application/providers/getIt_init.dart';
+import 'package:bulusalim/components/custom_tab_bar.dart';
+import 'package:bulusalim/components/header.dart';
+import 'package:bulusalim/core/constants/constant.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/data/repositories/post_repository_impl.dart';
 import 'package:bulusalim/domain/repositories/post_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:bulusalim/core/constants/constant.dart';
-import 'package:bulusalim/components/header.dart';
-import 'package:bulusalim/components/custom_tab_bar.dart';
 import 'package:get_it/get_it.dart';
 
 class HomePage extends StatefulWidget {
@@ -114,7 +112,7 @@ class SenlikPage extends StatelessWidget {
     final logger = GetIt.instance<LoggingService>();
 
     return FutureBuilder(
-      future: postRepository.getAllPosts(),
+      future: postRepository.fetchNextBatchOfPosts(null, 10),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -130,14 +128,19 @@ class SenlikPage extends StatelessWidget {
           return const Center(child: Text("No posts available"));
         }
 
-        final postPhotoUrl = posts[0].imageUrls!.first;
-        logger.debug(postPhotoUrl);
+        final postPhotoUrls = posts
+            .map((post) => post.imageUrls!.first)
+            .toList();
 
-        return Center(
-          child: Image.network(
-            postPhotoUrl,
-            fit: BoxFit.cover,
-          ),
+        return ListView.builder(
+          itemCount: postPhotoUrls.length,
+          itemBuilder: (context, index) {
+            final photoUrl = postPhotoUrls[index];
+            return Padding(
+              padding: EdgeInsets.symmetric(vertical: 10.h),
+              child: Image.network(photoUrl),
+            );
+          },
         );
       },
     );
