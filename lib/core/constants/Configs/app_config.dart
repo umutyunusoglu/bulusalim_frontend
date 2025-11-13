@@ -15,4 +15,7 @@ class AppConfig {
   static const maxUserPhotos = 3;
 
   final remoteConfigDebugPath = 'assets/remote_config_defaults.json';
+
+  static const int postCacheSizeLimit = 100;
+  static const Duration postCacheTTL = Duration(minutes: 2);
 }
