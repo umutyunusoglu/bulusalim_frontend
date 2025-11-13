@@ -1,10 +1,12 @@
 import 'package:bulusalim/application/providers/getIt_init.dart';
+import 'package:bulusalim/core/constants/Configs/app_config.dart';
 import 'package:bulusalim/core/utils/types/enums/gender_enum.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/model.dart';
 import 'package:bulusalim/domain/entities/user/user_entity.dart';
 import 'package:bulusalim/domain/services/file_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 class UserModel extends Model<UserEntity> {
   UserModel({
@@ -37,12 +39,15 @@ class UserModel extends Model<UserEntity> {
   }
 
   static Future<UserModel> fromFirestore(Map<String, dynamic> doc) async {
-    final fileService = getIt<FileService>();
-
-    final profileUrl = await fileService.getDownloadUrl(
-      doc['profileImagePath'] as String,
-    );
-
+    late final String profileImageUrl;
+    if (kDebugMode) {
+      profileImageUrl = (doc['profileImageUrl'] as String).replaceAll(
+        'localhost',
+        AppConfig.host,
+      );
+    } else {
+      profileImageUrl = doc['profileImageUrl'] as String;
+    }
     return UserModel(
       userID: doc['userID'] as String,
       email: doc['email'] as String,
@@ -50,7 +55,7 @@ class UserModel extends Model<UserEntity> {
       birthDate: (doc['birthDate'] as Timestamp).toDate(),
       gender: GenderEnum.values[doc['gender'] as int],
       organization: doc['organization'] as String,
-      profileImageUrl: profileUrl,
+      profileImageUrl: profileImageUrl,
       bio: doc['bio'] as String?,
       permissions: userPermissionsFromFirestore(
         doc['permissions'] as Map<String, dynamic>,
@@ -80,6 +85,10 @@ class UserModel extends Model<UserEntity> {
 
   @override
   Map<String, dynamic> toFirestore() {
+    profileImageUrl.replaceAll(
+      AppConfig.host,
+      'localhost',
+    );
     return {
       'userID': userID,
       'email': email,
@@ -87,10 +96,7 @@ class UserModel extends Model<UserEntity> {
       'birthDate': Timestamp.fromDate(birthDate),
       'gender': gender.index,
       'organization': organization,
-      'profileImagePath': FileService.userProfileImagePath(
-        userID,
-        'profile.jpg',
-      ),
+      'profileImageUrl': profileImageUrl,
       'bio': bio,
 
       'permissions': permissions.toMap(),
