@@ -1,7 +1,6 @@
 import 'dart:ui';
 
 import 'package:bulusalim/application/providers/getIt_init.dart';
-import 'package:bulusalim/components/navigator_bar.dart';
 import 'package:bulusalim/core/constants/Configs/app_config.dart';
 import 'package:bulusalim/core/constants/theme/app_theme.dart';
 import 'package:bulusalim/firebase_options.dart';
@@ -84,8 +83,6 @@ class MainApp extends StatelessWidget {
             '/': (context) => const SignInScreen(),
             '/login': (context) => const LoginScreen(),
             '/register': (context) => const RegisterScreen(),
-            // 🔸 Ana sayfa artık CustomNavBar ile
-            '/home': (context) => CustomNavBar(),
           },
         ),
       ),
