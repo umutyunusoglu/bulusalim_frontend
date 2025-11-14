@@ -2,6 +2,7 @@ import 'package:bulusalim/core/utils/types/enums/emote_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
+import 'package:bulusalim/domain/entities/user/user_entity.dart';
 import 'package:equatable/equatable.dart';
 
 class PostEntity extends Equatable {
@@ -16,6 +17,7 @@ class PostEntity extends Equatable {
     required this.emoteCounts,
     this.location,
     this.imageUrls,
+    this.user,
   });
 
   PostEntity copyWith({
@@ -29,6 +31,7 @@ class PostEntity extends Equatable {
     List<String>? imageUrls,
     List<Identifier>? participants,
     Map<EmoteEnum, int>? emoteCounts,
+    UserEntity? user,
   }) {
     return PostEntity(
       postID: postID ?? this.postID,
@@ -41,6 +44,7 @@ class PostEntity extends Equatable {
       imageUrls: imageUrls ?? this.imageUrls,
       participants: participants ?? this.participants,
       emoteCounts: emoteCounts ?? this.emoteCounts,
+      user: user ?? this.user,
     );
   }
 
@@ -48,6 +52,7 @@ class PostEntity extends Equatable {
   List<Object?> get props => [
     postID,
     userID,
+    user,
   ];
 
   final Identifier postID;
@@ -60,6 +65,9 @@ class PostEntity extends Equatable {
   final List<String>? imageUrls;
   final List<Identifier> participants;
   final Map<EmoteEnum, int> emoteCounts;
+  final UserEntity? user;
+
+  //get user => null;
 }
 
 class PostMetadata {
