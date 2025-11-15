@@ -1,6 +1,10 @@
 import 'package:bulusalim/components/custom_tab_bar.dart';
 import 'package:bulusalim/components/header.dart';
 import 'package:bulusalim/core/constants/constant.dart';
+import 'package:bulusalim/core/enums/feed_type.dart';
+import 'package:bulusalim/screens/home/home_content_page.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/domain/repositories/post_repository.dart';
 import 'package:flutter/material.dart';
@@ -152,12 +156,7 @@ class ArkadaslarinPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        "👫 Arkadaşların Sayfası",
-        style: TextStyle(fontSize: 16),
-      ),
-    );
+    return const HomeContentPage(feedType: FeedType.friendsOnly);
   }
 }
 
