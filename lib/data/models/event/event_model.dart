@@ -19,7 +19,8 @@ class EventModel extends Model<EventEntity> {
     required this.endTime,
     required this.location,
     required this.attributes,
-    required this.metadata,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   @override
@@ -37,7 +38,8 @@ class EventModel extends Model<EventEntity> {
       endTime: entity.endTime,
       location: entity.location,
       attributes: entity.attributes,
-      metadata: entity.metadata,
+      createdAt: entity.createdAt,
+      updatedAt: entity.updatedAt,
     );
   }
 
@@ -45,7 +47,6 @@ class EventModel extends Model<EventEntity> {
   factory EventModel.fromFirestore(Map<String, dynamic> doc) {
     final locationMap = doc['location'] as Map<String, dynamic>;
     final attributesMap = doc['attributes'] as Map<String, dynamic>;
-    final metadataMap = doc['metadata'] as Map<String, dynamic>;
 
     return EventModel(
       eventId: doc['eventID'] as String,
@@ -70,10 +71,8 @@ class EventModel extends Model<EventEntity> {
         alcohol: RestrictionEnum.values[attributesMap['alcohol'] as int],
         isPublic: attributesMap['isPublic'] as bool,
       ),
-      metadata: EventMetadata(
-        createdAt: (metadataMap['createdAt'] as Timestamp).toDate(),
-        updatedAt: (metadataMap['updatedAt'] as Timestamp).toDate(),
-      ),
+      createdAt: (doc['createdAt'] as Timestamp).toDate(),
+      updatedAt: (doc['updatedAt'] as Timestamp).toDate(),
     );
   }
 
@@ -92,7 +91,8 @@ class EventModel extends Model<EventEntity> {
       'endTime': endTime,
       'location': location.toMap(),
       'attributes': attributes.toMap(),
-      'metadata': metadata.toMap(),
+      'createdAt': createdAt,
+      'updatedAt': updatedAt,
     };
   }
 
@@ -111,7 +111,8 @@ class EventModel extends Model<EventEntity> {
       endTime: endTime,
       location: location,
       attributes: attributes,
-      metadata: metadata,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
     );
   }
 
@@ -127,5 +128,6 @@ class EventModel extends Model<EventEntity> {
   final DateTime endTime;
   final Geolocation location;
   final EventAttributes attributes;
-  final EventMetadata metadata;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 }

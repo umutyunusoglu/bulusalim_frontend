@@ -16,7 +16,8 @@ class EventEntity extends Equatable {
     required this.endTime,
     required this.location,
     required this.attributes,
-    required this.metadata,
+    required this.createdAt,
+    required this.updatedAt,
     this.info,
   });
 
@@ -33,7 +34,8 @@ class EventEntity extends Equatable {
     DateTime? endTime,
     Geolocation? location,
     EventAttributes? attributes,
-    EventMetadata? metadata,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return EventEntity(
       eventID: eventID ?? this.eventID,
@@ -48,7 +50,8 @@ class EventEntity extends Equatable {
       endTime: endTime ?? this.endTime,
       location: location ?? this.location,
       attributes: attributes ?? this.attributes,
-      metadata: metadata ?? this.metadata,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
@@ -64,24 +67,11 @@ class EventEntity extends Equatable {
   final DateTime endTime;
   final Geolocation location;
   final EventAttributes attributes;
-  final EventMetadata metadata;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   @override
-  List<Object?> get props => [
-    eventID,
-    name,
-    info,
-    hobbies,
-    creator,
-    capacity,
-    participants,
-    participantScores,
-    startTime,
-    endTime,
-    location,
-    attributes,
-    metadata,
-  ];
+  List<Object?> get props => [eventID];
 }
 
 class EventAttributes extends Equatable {
@@ -117,31 +107,4 @@ class EventAttributes extends Equatable {
   final RestrictionEnum smoking;
   final RestrictionEnum alcohol;
   final bool isPublic;
-}
-
-class EventMetadata extends Equatable {
-  const EventMetadata({
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  factory EventMetadata.fromMap(Map<String, dynamic> map) {
-    return EventMetadata(
-      createdAt: map['createdAt'] as DateTime,
-      updatedAt: map['updatedAt'] as DateTime,
-    );
-  }
-
-  @override
-  List<Object?> get props => [createdAt, updatedAt];
-
-  Map<String, dynamic> toMap() {
-    return {
-      'createdAt': createdAt,
-      'updatedAt': updatedAt,
-    };
-  }
-
-  final DateTime createdAt;
-  final DateTime updatedAt;
 }

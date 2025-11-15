@@ -27,8 +27,9 @@ Future<void> main() async {
       providerAndroid: const AndroidDebugProvider(),
 
       providerApple: const AppleDebugProvider(),
-      // webRecaptchaSiteKey: 'YOUR_RECAPTCHA_SITE_KEY',
     );
+
+    print(AppConfig.host);
     FirebaseFirestore.instance.useFirestoreEmulator(AppConfig.host, 8080);
     await FirebaseAuth.instance.useAuthEmulator(AppConfig.host, 9099);
     await FirebaseStorage.instance.useStorageEmulator(AppConfig.host, 9199);

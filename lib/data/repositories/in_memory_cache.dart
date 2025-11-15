@@ -1,19 +1,30 @@
 import 'dart:collection';
 
-class InMemoryCache<T> {
-  InMemoryCache({required this.cacheSizeLimit});
+import 'package:bulusalim/core/constants/Configs/app_config.dart';
 
-  final LinkedHashMap<String, T> _cache = LinkedHashMap<String, T>();
+class InMemoryCache<T> {
+  InMemoryCache({required this.cacheSizeLimit, required this.ttl});
+
+  final LinkedHashMap<String, CacheEntry<T>> _cache =
+      LinkedHashMap<String, CacheEntry<T>>();
+
   final int cacheSizeLimit;
+  final Duration ttl;
 
   T? get(String key) {
     if (!_cache.containsKey(key)) return null;
 
-    final value = _cache[key] as T;
+    final entry = _cache[key];
+    if (entry == null) return null;
+
+    if (DateTime.now().difference(entry.timestamp) > ttl) {
+      _cache.remove(key);
+      return null;
+    }
 
     _cache.remove(key);
-    _cache[key] = value; // LRU Update
-    return value;
+    _cache[key] = entry; // LRU Update
+    return entry.value;
   }
 
   void set(String key, T value) {
@@ -25,10 +36,21 @@ class InMemoryCache<T> {
       _cache.remove(oldestKey);
     }
 
-    _cache[key] = value;
+    _cache[key] = CacheEntry(value, DateTime.now());
+  }
+
+  bool containsKey(String key) {
+    return _cache.containsKey(key);
   }
 
   void clear() {
     _cache.clear();
   }
+}
+
+class CacheEntry<T> {
+  CacheEntry(this.value, this.timestamp);
+
+  final T value;
+  final DateTime timestamp;
 }
