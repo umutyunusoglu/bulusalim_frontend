@@ -5,6 +5,11 @@ import 'package:bulusalim/core/enums/feed_type.dart';
 import 'package:bulusalim/screens/home/home_content_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:bulusalim/core/utils/logging/logging_service.dart';
+import 'package:bulusalim/domain/repositories/post_repository.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get_it/get_it.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -107,7 +112,42 @@ class SenlikPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const HomeContentPage(feedType: FeedType.forYou);
+    final postRepository = GetIt.instance<PostRepository>();
+    final logger = GetIt.instance<LoggingService>();
+
+    return FutureBuilder(
+      future: postRepository.fetchNextBatchOfPosts(null, 10),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(child: Text("Error: ${snapshot.error}"));
+        }
+
+        final posts = snapshot.data ?? [];
+
+        if (posts.isEmpty || posts[0].imageUrls!.isEmpty) {
+          return const Center(child: Text("No posts available"));
+        }
+
+        final postPhotoUrls = posts
+            .map((post) => post.imageUrls!.first)
+            .toList();
+
+        return ListView.builder(
+          itemCount: postPhotoUrls.length,
+          itemBuilder: (context, index) {
+            final photoUrl = postPhotoUrls[index];
+            return Padding(
+              padding: EdgeInsets.symmetric(vertical: 10.h),
+              child: Image.network(photoUrl),
+            );
+          },
+        );
+      },
+    );
   }
 }
 

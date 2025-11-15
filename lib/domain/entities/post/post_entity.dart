@@ -11,10 +11,11 @@ class PostEntity extends Equatable {
     required this.userID,
     required this.eventID,
     required this.title,
-    required this.metadata,
     required this.hobbies,
     required this.participants,
     required this.emoteCounts,
+    required this.createdAt,
+    required this.updatedAt,
     this.location,
     this.imageUrls,
     this.user,
@@ -25,7 +26,6 @@ class PostEntity extends Equatable {
     Identifier? userID,
     Identifier? eventID,
     String? title,
-    PostMetadata? metadata,
     Geolocation? location,
     List<HobbyEntity>? hobbies,
     List<String>? imageUrls,
@@ -38,7 +38,7 @@ class PostEntity extends Equatable {
       userID: userID ?? this.userID,
       eventID: eventID ?? this.eventID,
       title: title ?? this.title,
-      metadata: metadata ?? this.metadata,
+
       location: location ?? this.location,
       hobbies: hobbies ?? this.hobbies,
       imageUrls: imageUrls ?? this.imageUrls,
@@ -59,7 +59,8 @@ class PostEntity extends Equatable {
   final Identifier userID;
   final Identifier eventID;
   final String title;
-  final PostMetadata metadata;
+  final DateTime createdAt;
+  final DateTime updatedAt;
   final Geolocation? location;
   final List<HobbyEntity> hobbies;
   final List<String>? imageUrls;
@@ -68,47 +69,4 @@ class PostEntity extends Equatable {
   final UserEntity? user;
 
   //get user => null;
-}
-
-class PostMetadata {
-  const PostMetadata({
-    required this.createdAt,
-    required this.updatedAt,
-  });
-  factory PostMetadata.fromMap(Map<String, dynamic> map) {
-    final keys = [
-      'createdAt',
-      'updatedAt',
-    ];
-
-    for (final key in keys) {
-      if (!map.containsKey(key)) {
-        throw Exception('Missing key: $key');
-      }
-    }
-
-    return PostMetadata(
-      createdAt: map['createdAt'] as DateTime,
-      updatedAt: map['updatedAt'] as DateTime,
-    );
-  }
-  PostMetadata copyWith({
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) {
-    return PostMetadata(
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return <String, dynamic>{
-      'createdAt': createdAt,
-      'updatedAt': updatedAt,
-    };
-  }
-
-  final DateTime createdAt;
-  final DateTime updatedAt;
 }

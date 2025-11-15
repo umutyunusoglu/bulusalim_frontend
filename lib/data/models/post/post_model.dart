@@ -1,4 +1,5 @@
 import 'package:bulusalim/application/providers/getIt_init.dart';
+import 'package:bulusalim/core/constants/Configs/app_config.dart';
 import 'package:bulusalim/core/utils/types/enums/emote_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
@@ -7,6 +8,7 @@ import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
 import 'package:bulusalim/domain/entities/post/post_entity.dart';
 import 'package:bulusalim/domain/services/file_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 
 class PostModel extends Model<PostEntity> {
@@ -15,10 +17,11 @@ class PostModel extends Model<PostEntity> {
     required this.userID,
     required this.eventID,
     required this.title,
-    required this.metadata,
     required this.hobbies,
     required this.participants,
     required this.emoteCounts,
+    required this.createdAt,
+    required this.updatedAt,
     this.location,
     this.imageUrls,
   });
@@ -29,7 +32,8 @@ class PostModel extends Model<PostEntity> {
       userID: entity.userID,
       eventID: entity.eventID,
       title: entity.title,
-      metadata: entity.metadata,
+      createdAt: entity.createdAt,
+      updatedAt: entity.updatedAt,
       location: entity.location,
       hobbies: entity.hobbies,
       imageUrls: entity.imageUrls,
@@ -37,30 +41,36 @@ class PostModel extends Model<PostEntity> {
       emoteCounts: entity.emoteCounts,
     );
   }
+
   static Future<PostModel> fromFirestore(Map<String, dynamic> doc) async {
-    final FileService fileService = getIt<FileService>();
+    late final List<String>? imageUrls;
 
-    final imagePaths =
-        (doc['imagePaths'] as List<dynamic>?)?.cast<String>().toList() ?? [];
-
-    final imageUrls = await Future.wait(
-      imagePaths.map(fileService.getDownloadUrl),
-    );
+    if (kDebugMode) {
+      imageUrls = (doc['imageUrls'] as List<dynamic>?)
+          ?.map(
+            (path) => (path as String).replaceAll('localhost', AppConfig.host),
+          )
+          .toList();
+    } else {
+      imageUrls = (doc['imageUrls'] as List<dynamic>?)
+          ?.map(
+            (path) => path as String,
+          )
+          .toList();
+    }
 
     final location = doc['location'] as GeoPoint;
     final locationMap = {
-      "latitude": location.latitude,
-      "longitude": location.longitude,
+      'latitude': location.latitude,
+      'longitude': location.longitude,
     };
     return PostModel(
       postID: doc['postID'] as String,
       userID: doc['userID'] as String,
       eventID: doc['eventID'] as String,
       title: doc['title'] as String,
-      metadata: PostMetadata(
-        createdAt: DateTime(2003),
-        updatedAt: DateTime(2000),
-      ), //TODO
+      createdAt: (doc['createdAt'] as Timestamp).toDate(),
+      updatedAt: (doc['updatedAt'] as Timestamp).toDate(),
       location: Geolocation.fromMap(locationMap),
       hobbies: (doc['hobbies'] as List<dynamic>)
           .map((hobby) => HobbyEntity.fromString(hobby as String))
@@ -83,8 +93,9 @@ class PostModel extends Model<PostEntity> {
       userID: userID,
       eventID: eventID,
       title: title,
-      metadata: metadata,
-      location: location, //TODO
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      location: location,
       hobbies: hobbies,
       imageUrls: imageUrls,
       participants: participants,
@@ -94,19 +105,29 @@ class PostModel extends Model<PostEntity> {
 
   @override
   Map<String, dynamic> toFirestore() {
+    final imageUrlsFirestore = imageUrls
+        ?.map(
+          (url) => url.replaceAll(
+            AppConfig.host,
+            'localhost',
+          ),
+        )
+        .toList();
+
     return {
       'postID': postID,
       'userID': userID,
       'eventID': eventID,
       'title': title,
-      'metadata': metadata.toMap(),
       'location': location?.toMap(),
       'hobbies': hobbies.map((hobby) => hobby.name).toList(),
-      'imagePaths': imageUrls,
+      'imageUrls': imageUrlsFirestore,
       'participants': participants,
       'emoteCounts': emoteCounts.map(
         (key, value) => MapEntry(key.index.toString(), value),
       ),
+      'createdAt': createdAt,
+      'updatedAt': updatedAt,
     };
   }
 
@@ -114,7 +135,8 @@ class PostModel extends Model<PostEntity> {
   final Identifier userID;
   final Identifier eventID;
   final String title;
-  final PostMetadata metadata;
+  final DateTime createdAt;
+  final DateTime updatedAt;
   final Geolocation? location;
   final List<HobbyEntity> hobbies;
   final List<String>? imageUrls;

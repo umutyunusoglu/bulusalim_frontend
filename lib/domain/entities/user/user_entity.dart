@@ -15,7 +15,9 @@ class UserEntity extends Equatable {
     required this.profileImageUrl,
     required this.bio,
     required this.permissions,
-    required this.metadata,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.lastActiveAt,
     this.hobbies = const [],
     this.events = const [],
   });
@@ -33,7 +35,6 @@ class UserEntity extends Equatable {
     String? avatarUrl,
     String? bio,
     UserPermissions? permissions,
-    UserMetadata? metadata,
     List<UserHobbyEntity>? hobbies,
     List<UserEventEntity>? events,
   }) {
@@ -46,8 +47,10 @@ class UserEntity extends Equatable {
       organization: organization ?? this.organization,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       bio: bio ?? this.bio,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      lastActiveAt: lastActiveAt,
       permissions: permissions ?? this.permissions,
-      metadata: metadata ?? this.metadata,
       hobbies: hobbies ?? this.hobbies,
       events: events ?? this.events,
     );
@@ -62,7 +65,9 @@ class UserEntity extends Equatable {
   final String profileImageUrl;
   final String? bio;
   final UserPermissions permissions;
-  final UserMetadata metadata;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime lastActiveAt;
 
   final List<UserHobbyEntity> hobbies;
   final List<UserEventEntity> events;
@@ -71,54 +76,6 @@ class UserEntity extends Equatable {
   List<Object?> get props => [
     userID,
   ];
-}
-
-class UserMetadata extends Equatable {
-  const UserMetadata({
-    required this.createdAt,
-    required this.updatedAt,
-    required this.lastActiveAt,
-  });
-
-  factory UserMetadata.fromMap(Map<String, dynamic> map) {
-    final keys = [
-      'createdAt',
-      'updatedAt',
-      'lastActiveAt',
-      'locationEnabled',
-      'notificationsEnabled',
-    ];
-
-    for (final key in keys) {
-      if (!map.containsKey(key)) {
-        throw Exception('Missing key: $key');
-      }
-    }
-    return UserMetadata(
-      createdAt: map['createdAt'] as DateTime,
-      updatedAt: map['updatedAt'] as DateTime,
-      lastActiveAt: map['lastActiveAt'] as DateTime,
-    );
-  }
-
-  @override
-  List<Object?> get props => [
-    createdAt,
-    updatedAt,
-    lastActiveAt,
-  ];
-
-  Map<String, dynamic> toMap() {
-    return {
-      'createdAt': createdAt,
-      'updatedAt': updatedAt,
-      'lastActiveAt': lastActiveAt,
-    };
-  }
-
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final DateTime lastActiveAt;
 }
 
 class UserPermissions extends Equatable {
