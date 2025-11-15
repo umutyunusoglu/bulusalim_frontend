@@ -2,6 +2,7 @@ import 'package:bulusalim/components/login_button.dart';
 import 'package:bulusalim/components/skip_button.dart';
 import 'package:bulusalim/components/text_input.dart';
 import 'package:bulusalim/core/constants/constant.dart';
+import 'package:bulusalim/screens/bottomnav_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -36,7 +37,15 @@ class LoginScreen extends StatelessWidget {
                       width: 70.w,
                     ),
                     SkipButton(
-                      onTap: () => Navigator.pushNamed(context, '/home'),
+                      //onTap: () => Navigator.pushNamed(context, '/home'),
+                      onTap: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const BottomNavScreen(),
+                          ),
+                        );
+                      },
                       text: 'skip',
                     ),
                   ],
