@@ -19,7 +19,9 @@ class UserModel extends Model<UserEntity> {
     required this.profileImageUrl,
     required this.bio,
     required this.permissions,
-    required this.metadata,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.lastActiveAt,
   });
 
   @override
@@ -34,7 +36,9 @@ class UserModel extends Model<UserEntity> {
       profileImageUrl: entity.profileImageUrl,
       bio: entity.bio,
       permissions: entity.permissions,
-      metadata: entity.metadata,
+      createdAt: entity.createdAt,
+      updatedAt: entity.updatedAt,
+      lastActiveAt: entity.lastActiveAt,
     );
   }
 
@@ -60,14 +64,6 @@ class UserModel extends Model<UserEntity> {
       permissions: userPermissionsFromFirestore(
         doc['permissions'] as Map<String, dynamic>,
       ),
-      metadata: userMetadataFromFirestore(
-        doc['metadata'] as Map<String, dynamic>,
-      ),
-    );
-  }
-
-  static UserMetadata userMetadataFromFirestore(Map<String, dynamic> doc) {
-    return UserMetadata(
       createdAt: (doc['createdAt'] as Timestamp).toDate(),
       updatedAt: (doc['updatedAt'] as Timestamp).toDate(),
       lastActiveAt: (doc['lastActiveAt'] as Timestamp).toDate(),
@@ -98,9 +94,10 @@ class UserModel extends Model<UserEntity> {
       'organization': organization,
       'profileImageUrl': profileImageUrl,
       'bio': bio,
-
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
+      'lastActiveAt': Timestamp.fromDate(lastActiveAt),
       'permissions': permissions.toMap(),
-      'metadata': metadata.toMap(),
     };
   }
 
@@ -116,7 +113,9 @@ class UserModel extends Model<UserEntity> {
       profileImageUrl: profileImageUrl,
       bio: bio,
       permissions: permissions,
-      metadata: metadata,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      lastActiveAt: lastActiveAt,
     );
   }
 
@@ -129,5 +128,7 @@ class UserModel extends Model<UserEntity> {
   final String profileImageUrl;
   final String? bio;
   final UserPermissions permissions;
-  final UserMetadata metadata;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime lastActiveAt;
 }
