@@ -17,10 +17,11 @@ class PostModel extends Model<PostEntity> {
     required this.userID,
     required this.eventID,
     required this.title,
-    required this.metadata,
     required this.hobbies,
     required this.participants,
     required this.emoteCounts,
+    required this.createdAt,
+    required this.updatedAt,
     this.location,
     this.imageUrls,
   });
@@ -31,7 +32,8 @@ class PostModel extends Model<PostEntity> {
       userID: entity.userID,
       eventID: entity.eventID,
       title: entity.title,
-      metadata: entity.metadata,
+      createdAt: entity.createdAt,
+      updatedAt: entity.updatedAt,
       location: entity.location,
       hobbies: entity.hobbies,
       imageUrls: entity.imageUrls,
@@ -67,10 +69,8 @@ class PostModel extends Model<PostEntity> {
       userID: doc['userID'] as String,
       eventID: doc['eventID'] as String,
       title: doc['title'] as String,
-      metadata: PostMetadata(
-        createdAt: DateTime(2003),
-        updatedAt: DateTime(2000),
-      ), //TODO
+      createdAt: (doc['createdAt'] as Timestamp).toDate(),
+      updatedAt: (doc['updatedAt'] as Timestamp).toDate(),
       location: Geolocation.fromMap(locationMap),
       hobbies: (doc['hobbies'] as List<dynamic>)
           .map((hobby) => HobbyEntity.fromString(hobby as String))
@@ -93,8 +93,9 @@ class PostModel extends Model<PostEntity> {
       userID: userID,
       eventID: eventID,
       title: title,
-      metadata: metadata,
-      location: location, //TODO
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      location: location,
       hobbies: hobbies,
       imageUrls: imageUrls,
       participants: participants,
@@ -118,7 +119,6 @@ class PostModel extends Model<PostEntity> {
       'userID': userID,
       'eventID': eventID,
       'title': title,
-      'metadata': metadata.toMap(),
       'location': location?.toMap(),
       'hobbies': hobbies.map((hobby) => hobby.name).toList(),
       'imageUrls': imageUrlsFirestore,
@@ -126,6 +126,8 @@ class PostModel extends Model<PostEntity> {
       'emoteCounts': emoteCounts.map(
         (key, value) => MapEntry(key.index.toString(), value),
       ),
+      'createdAt': createdAt,
+      'updatedAt': updatedAt,
     };
   }
 
@@ -133,7 +135,8 @@ class PostModel extends Model<PostEntity> {
   final Identifier userID;
   final Identifier eventID;
   final String title;
-  final PostMetadata metadata;
+  final DateTime createdAt;
+  final DateTime updatedAt;
   final Geolocation? location;
   final List<HobbyEntity> hobbies;
   final List<String>? imageUrls;

@@ -269,7 +269,7 @@ class PostRepositoryImpl implements PostRepository {
     if (referencePost == null) {
       final snapshot = await _firestore
           .collection('posts')
-          .orderBy('metadata.createdAt')
+          .orderBy('createdAt')
           .limit(batchSize)
           .get();
 
@@ -353,7 +353,7 @@ class PostRepositoryImpl implements PostRepository {
 
       final snapshot = await _firestore
           .collection('posts')
-          .orderBy('metadata.createdAt')
+          .orderBy('createdAt')
           .startAfterDocument(
             startAfterSnapshot,
           )
@@ -453,7 +453,7 @@ class PostRepositoryImpl implements PostRepository {
 
       final snapshot = await _firestore
           .collection('posts')
-          .orderBy('metadata.createdAt')
+          .orderBy('createdAt')
           .endBeforeDocument(
             startAfterSnapshot,
           )
