@@ -45,31 +45,38 @@ class EventModel extends Model<EventEntity> {
 
   @override
   factory EventModel.fromFirestore(Map<String, dynamic> doc) {
-    final locationMap = doc['location'] as Map<String, dynamic>;
     final attributesMap = doc['attributes'] as Map<String, dynamic>;
+    final location = doc['location'] as GeoPoint;
 
     return EventModel(
       eventId: doc['eventID'] as String,
       name: doc['name'] as String,
       info: doc['info'] as String?,
-      hobbies: List<String>.from(doc['hobbies'] as List<dynamic>),
+      hobbies: (doc['hobbies'] as List?)?.cast<String>().toList() ?? [],
       creator: doc['creator'] as Identifier,
       capacity: doc['capacity'] as int,
-      participants: List<Identifier>.from(doc['participants'] as List<dynamic>),
-      participantScores: (doc['participantScores'] as Map<String, dynamic>).map(
-        (key, value) => MapEntry(key, value as int),
-      ),
+      participants:
+          (doc['participants'] as List?)?.cast<Identifier>().toList() ?? [],
+      participantScores:
+          (doc['participantScores'] as Map?)?.map(
+            (key, value) => MapEntry(key as Identifier, value as int),
+          ) ??
+          {},
       startTime: (doc['startTime'] as Timestamp).toDate(),
       endTime: (doc['endTime'] as Timestamp).toDate(),
-      location: Geolocation(
-        latitude: (locationMap['latitude'] as num).toDouble(),
-        longitude: (locationMap['longitude'] as num).toDouble(),
-      ),
+      location: Geolocation.fromMap({
+        'latitude': location.latitude,
+        'longitude': location.longitude,
+      }),
       attributes: EventAttributes(
-        price: attributesMap['price'] as double,
-        smoking: RestrictionEnum.values[attributesMap['smoking'] as int],
-        alcohol: RestrictionEnum.values[attributesMap['alcohol'] as int],
-        isPublic: attributesMap['isPublic'] as bool,
+        price: (attributesMap['price'] as num?)?.toDouble() ?? 0.0,
+        smoking: attributesMap['smoking'] != null
+            ? RestrictionEnum.values[attributesMap['smoking'] as int]
+            : RestrictionEnum.allowed,
+        alcohol: attributesMap['alcohol'] != null
+            ? RestrictionEnum.values[attributesMap['alcohol'] as int]
+            : RestrictionEnum.allowed,
+        isPublic: (attributesMap['isPublic'] as bool?) ?? true,
       ),
       createdAt: (doc['createdAt'] as Timestamp).toDate(),
       updatedAt: (doc['updatedAt'] as Timestamp).toDate(),
