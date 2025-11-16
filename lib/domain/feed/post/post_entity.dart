@@ -20,7 +20,7 @@ class PostEntity extends FeedEntity with EquatableMixin {
     this.location,
     this.imageUrls,
     this.user,
-  }) : super(feedType: FeedEntityType.post);
+  }) : super(feedType: FeedEntityType.post, id: postID);
 
   PostEntity copyWith({
     Identifier? postID,

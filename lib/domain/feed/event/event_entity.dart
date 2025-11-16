@@ -20,7 +20,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
     required this.createdAt,
     required this.updatedAt,
     this.info,
-  }) : super(feedType: FeedEntityType.event);
+  }) : super(feedType: FeedEntityType.event, id: eventID);
 
   EventEntity copyWith({
     String? eventID,
