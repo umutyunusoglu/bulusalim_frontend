@@ -1,9 +1,9 @@
+import 'dart:convert';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/data/models/organization/organization_model.dart';
 import 'package:bulusalim/domain/datasources/university_datasource.dart';
 import 'package:bulusalim/domain/entities/organization/organization_entity.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 class UniversityDataSourceImpl implements UniversityDatasource {
   UniversityDataSourceImpl({required this.httpClient, required this.logger});

@@ -17,7 +17,7 @@ class MapPage extends StatefulWidget {
 class _HomePageState extends State<MapPage> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  final List<String> _tabs = ["Senlik", "Arkadaşların"];
+  final List<String> _tabs = ['Senlik', 'Arkadaşların'];
 
   @override
   void dispose() {
@@ -119,13 +119,13 @@ class SenlikPage extends StatelessWidget {
         }
 
         if (snapshot.hasError) {
-          return Center(child: Text("Error: ${snapshot.error}"));
+          return Center(child: Text('Error: ${snapshot.error}'));
         }
 
         final posts = snapshot.data ?? [];
 
         if (posts.isEmpty || posts[0].imageUrls!.isEmpty) {
-          return const Center(child: Text("No posts available"));
+          return const Center(child: Text('No posts available'));
         }
 
         final postPhotoUrl = posts[0].imageUrls!.first;
@@ -149,7 +149,7 @@ class ArkadaslarinPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Center(
       child: Text(
-        "👫 Arkadaşların Sayfası",
+        '👫 Arkadaşların Sayfası',
         style: TextStyle(fontSize: 16),
       ),
     );

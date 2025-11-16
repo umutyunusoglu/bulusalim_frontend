@@ -1,7 +1,6 @@
 // lib/screens/bottom_nav/bottomnav_screen.dart
 
-import 'dart:convert';
-import 'package:bulusalim/application/providers/getIt_init.dart';
+import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/constant.dart';
 import 'package:bulusalim/core/utils/nav_parser.dart';
 import 'package:bulusalim/domain/services/remote_config_service.dart';
@@ -68,7 +67,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
         allPages: _allPages,
         allIcons: _allIcons,
       );
-      int homeIndex = result.pages.indexWhere((page) => page is HomePage);
+      var homeIndex = result.pages.indexWhere((page) => page is HomePage);
       if (homeIndex == -1) {
         homeIndex = 0;
       }
@@ -80,7 +79,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
         _error = null;
         _currentIndex = homeIndex;
       });
-    } catch (e) {
+    } on Exception catch (e) {
       setState(() {
         _error = e.toString();
         _isLoading = false;
@@ -111,7 +110,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
       return Scaffold(
         body: Center(
           child: Padding(
-            padding: const EdgeInsets.all(20.0),
+            padding: const EdgeInsets.all(20),
             child: Text(
               'Hata: Menü yüklenemedi.\n$_error',
               textAlign: TextAlign.center,

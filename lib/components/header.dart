@@ -3,16 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class Header extends StatelessWidget {
-  final Widget? title; // ortadaki logo veya başlık
-  final Widget? trailing; // sağdaki ikon (örneğin bildirim)
-  final EdgeInsetsGeometry? padding;
-
   const Header({
     super.key,
     this.title,
     this.trailing,
     this.padding,
   });
+  final Widget? title; // ortadaki logo veya başlık
+  final Widget? trailing; // sağdaki ikon (örneğin bildirim)
+  final EdgeInsetsGeometry? padding;
 
   @override
   Widget build(BuildContext context) {

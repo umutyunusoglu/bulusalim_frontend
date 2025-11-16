@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:bulusalim/application/providers/getIt_init.dart';
+import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/Configs/app_config.dart';
 import 'package:bulusalim/domain/services/remote_config_service.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
@@ -10,6 +10,7 @@ class RemoteConfigServiceImpl implements RemoteConfigService {
 
   final FirebaseRemoteConfig _remoteConfig;
 
+  @override
   Future<void> init() async {
     final jsonString = await rootBundle.loadString(
       AppConfig().remoteConfigDebugPath,
@@ -29,6 +30,7 @@ class RemoteConfigServiceImpl implements RemoteConfigService {
     await _remoteConfig.fetchAndActivate();
   }
 
+  @override
   Future<T> getValue<T>(String key) async {
     final value = _remoteConfig.getValue(key);
 
