@@ -1,10 +1,11 @@
 import 'package:bulusalim/core/utils/types/enums/restriction_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
+import 'package:bulusalim/domain/feed/feed_entity.dart';
 import 'package:equatable/equatable.dart';
 
-class EventEntity extends Equatable {
-  const EventEntity({
+class EventEntity extends FeedEntity with EquatableMixin {
+  EventEntity({
     required this.eventID,
     required this.name,
     required this.hobbies,
@@ -19,7 +20,7 @@ class EventEntity extends Equatable {
     required this.createdAt,
     required this.updatedAt,
     this.info,
-  });
+  }) : super(feedType: FeedEntityType.event);
 
   EventEntity copyWith({
     String? eventID,
