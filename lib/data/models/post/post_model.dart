@@ -39,7 +39,7 @@ class PostModel extends Model<PostEntity> {
     );
   }
 
-  static Future<PostModel> fromFirestore(Map<String, dynamic> doc) async {
+  factory PostModel.fromFirestore(Map<String, dynamic> doc) {
     late final List<String>? imageUrls;
 
     if (kDebugMode) {
