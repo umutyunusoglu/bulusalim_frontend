@@ -1,5 +1,3 @@
-import 'dart:collection';
-
 import 'package:bulusalim/core/constants/Configs/app_config.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/core/utils/types/enums/emote_enum.dart';
@@ -12,7 +10,6 @@ import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
 import 'package:bulusalim/domain/entities/post/post_entity.dart';
 import 'package:bulusalim/domain/repositories/post_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:collection/collection.dart';
 
 class PostRepositoryImpl implements PostRepository {
   PostRepositoryImpl({
@@ -223,7 +220,7 @@ class PostRepositoryImpl implements PostRepository {
       await docRef.update(updateData);
     } on FirebaseException catch (e) {
       if (e.code == 'not-found') {
-        throw Exception('Post not found: ${postId}');
+        throw Exception('Post not found: $postId');
       }
       rethrow;
     } catch (e) {
@@ -251,7 +248,7 @@ class PostRepositoryImpl implements PostRepository {
       await docRef.update(updateData);
     } on FirebaseException catch (e) {
       if (e.code == 'not-found') {
-        throw Exception('Post not found: ${postId}');
+        throw Exception('Post not found: $postId');
       }
       rethrow;
     }
@@ -344,7 +341,7 @@ class PostRepositoryImpl implements PostRepository {
 
       if (!startAfterSnapshot.exists) {
         _logger.error(
-          'Cursor document ${lastCursorPostID} does not exist for pagination.',
+          'Cursor document $lastCursorPostID does not exist for pagination.',
         );
         return batch;
       }
@@ -444,7 +441,7 @@ class PostRepositoryImpl implements PostRepository {
 
       if (!startAfterSnapshot.exists) {
         _logger.error(
-          'Cursor document ${lastCursorPostID} does not exist for pagination.',
+          'Cursor document $lastCursorPostID does not exist for pagination.',
         );
         return batch;
       }

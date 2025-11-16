@@ -1,10 +1,8 @@
-import 'package:bulusalim/application/providers/getIt_init.dart';
 import 'package:bulusalim/core/constants/Configs/app_config.dart';
 import 'package:bulusalim/core/utils/types/enums/gender_enum.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/model.dart';
 import 'package:bulusalim/domain/entities/user/user_entity.dart';
-import 'package:bulusalim/domain/services/file_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 

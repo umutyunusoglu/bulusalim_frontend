@@ -32,13 +32,16 @@ class PostEntity extends Equatable {
     List<Identifier>? participants,
     Map<EmoteEnum, int>? emoteCounts,
     UserEntity? user,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return PostEntity(
       postID: postID ?? this.postID,
       userID: userID ?? this.userID,
       eventID: eventID ?? this.eventID,
       title: title ?? this.title,
-
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
       location: location ?? this.location,
       hobbies: hobbies ?? this.hobbies,
       imageUrls: imageUrls ?? this.imageUrls,

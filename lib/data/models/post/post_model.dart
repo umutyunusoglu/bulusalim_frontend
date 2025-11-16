@@ -1,4 +1,3 @@
-import 'package:bulusalim/application/providers/getIt_init.dart';
 import 'package:bulusalim/core/constants/Configs/app_config.dart';
 import 'package:bulusalim/core/utils/types/enums/emote_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
@@ -6,10 +5,8 @@ import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/model.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
 import 'package:bulusalim/domain/entities/post/post_entity.dart';
-import 'package:bulusalim/domain/services/file_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import 'package:get_it/get_it.dart';
 
 class PostModel extends Model<PostEntity> {
   PostModel({
