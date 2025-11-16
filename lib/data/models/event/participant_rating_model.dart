@@ -1,6 +1,6 @@
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/model.dart';
-import 'package:bulusalim/domain/entities/event/participant_rating_entity.dart';
+import 'package:bulusalim/domain/feed/event/participant_rating_entity.dart';
 
 class ParticipantRatingModel implements Model<ParticipantRatingEntity> {
   ParticipantRatingModel({
