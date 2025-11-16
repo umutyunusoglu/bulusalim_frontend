@@ -26,8 +26,8 @@ class PostRepositoryImpl implements PostRepository {
   final _maxFetchedIdsLength = 1000;
 
   final cache = InMemoryCache<PostEntity>(
-    cacheSizeLimit: AppConfig.postCacheSizeLimit,
-    ttl: AppConfig.postCacheTTL,
+    cacheSizeLimit: 100,
+    ttl: const Duration(minutes: 2),
   );
 
   @override
