@@ -18,4 +18,6 @@ class AppConfig {
 
   static const int postCacheSizeLimit = 100;
   static const Duration postCacheTTL = Duration(minutes: 2);
+
+  static const int feedBatchSize = 20;
 }

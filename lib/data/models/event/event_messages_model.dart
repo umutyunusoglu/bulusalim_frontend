@@ -1,6 +1,6 @@
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/model.dart';
-import 'package:bulusalim/domain/entities/event/event_messages_entity.dart';
+import 'package:bulusalim/domain/feed/event/event_messages_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EventMessagesModel extends Model<EventMessagesEntity> {
