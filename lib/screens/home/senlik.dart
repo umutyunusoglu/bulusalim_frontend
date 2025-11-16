@@ -19,13 +19,13 @@ class SenlikPage extends StatelessWidget {
         }
 
         if (snapshot.hasError) {
-          return Center(child: Text("Error: ${snapshot.error}"));
+          return Center(child: Text('Error: ${snapshot.error}'));
         }
 
         final posts = snapshot.data ?? [];
 
         if (posts.isEmpty || posts[0].imageUrls!.isEmpty) {
-          return const Center(child: Text("No posts available"));
+          return const Center(child: Text('No posts available'));
         }
 
         final postPhotoUrl = posts[0].imageUrls!.first;

@@ -3,7 +3,7 @@ String maskPhone(String phone) {
     if (phone.length <= 4) return phone;
     final last = phone.substring(phone.length - 4);
     return '****$last';
-  } catch (_) {
+  } on Exception catch (_) {
     return phone;
   }
 }

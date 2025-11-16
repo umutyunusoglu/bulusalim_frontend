@@ -1,18 +1,17 @@
-import 'package:flutter/material.dart';
-import 'package:bulusalim/application/providers/getIt_init.dart';
+import 'package:bulusalim/application/providers/get_it_init.dart';
+import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/entities/user/user_entity.dart';
 import 'package:bulusalim/domain/repositories/user_repository.dart';
-import 'package:bulusalim/core/utils/types/types.dart';
+import 'package:flutter/material.dart';
 
 class UserInfo extends StatefulWidget {
-  final Identifier userID;
-  final Widget Function(UserEntity user) builder;
-
   const UserInfo({
-    super.key,
     required this.userID,
     required this.builder,
+    super.key,
   });
+  final Identifier userID;
+  final Widget Function(UserEntity user) builder;
 
   @override
   State<UserInfo> createState() => _UserInfoState();
@@ -40,7 +39,7 @@ class _UserInfoState extends State<UserInfo> {
         // Veri Yükleniyorsa
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Text(
-            "...",
+            '...',
             style: TextStyle(fontSize: 12, color: Colors.grey),
           );
         }
@@ -48,7 +47,7 @@ class _UserInfoState extends State<UserInfo> {
         // Hata oluştuysa veya kullanıcı bulunamadıysa
         if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
           return const Text(
-            "Bilinmeyen Kullanıcı",
+            'Bilinmeyen Kullanıcı',
             style: TextStyle(
               fontSize: 12,
               color: Colors.red,

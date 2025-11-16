@@ -2,10 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart'; // Widget ve IconData için gerekli
 
 class NavParseResult {
+  NavParseResult({required this.pages, required this.icons});
   final List<Widget> pages;
   final List<IconData> icons;
-
-  NavParseResult({required this.pages, required this.icons});
 }
 
 NavParseResult parseAndSortNavConfig({
@@ -22,20 +21,20 @@ NavParseResult parseAndSortNavConfig({
 
   final entries = orderMap.entries.toList()
     ..sort((a, b) {
-      final int ai = (a.value is num)
+      final ai = (a.value is num)
           ? (a.value as num).toInt()
           : int.tryParse(a.value.toString()) ?? 99;
-      final int bi = (b.value is num)
+      final bi = (b.value is num)
           ? (b.value as num).toInt()
           : int.tryParse(b.value.toString()) ?? 99;
       return ai.compareTo(bi);
     });
 
   // 2. Geçici listeleri oluştur
-  final List<Widget> tempPages = [];
-  final List<IconData> tempIcons = [];
+  final tempPages = <Widget>[];
+  final tempIcons = <IconData>[];
 
-  for (var entry in entries) {
+  for (final entry in entries) {
     final key = entry.key;
     if (allPages.containsKey(key) && allIcons.containsKey(key)) {
       tempPages.add(allPages[key]!);
