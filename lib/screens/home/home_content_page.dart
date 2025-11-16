@@ -1,4 +1,4 @@
-import 'package:bulusalim/application/providers/getIt_init.dart';
+import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/components/post_card.dart';
 import 'package:bulusalim/core/enums/feed_type.dart';
 import 'package:bulusalim/domain/entities/post/post_entity.dart';
@@ -6,9 +6,8 @@ import 'package:bulusalim/domain/repositories/post_repository.dart';
 import 'package:flutter/material.dart';
 
 class HomeContentPage extends StatefulWidget {
+  const HomeContentPage({required this.feedType, super.key});
   final FeedType feedType;
-
-  const HomeContentPage({super.key, required this.feedType});
 
   @override
   State<HomeContentPage> createState() => _HomeContentPageState();
@@ -29,7 +28,7 @@ class _HomeContentPageState extends State<HomeContentPage> {
 
   Future<void> _fetchFeed() async {
     try {
-      List<PostEntity> posts = [];
+      var posts = <PostEntity>[];
       // List<EventEntity> events = [];
 
       if (widget.feedType == FeedType.forYou) {
@@ -49,7 +48,7 @@ class _HomeContentPageState extends State<HomeContentPage> {
           _error = null;
         });
       }
-    } catch (e) {
+    } on Exception catch (e) {
       if (mounted) {
         setState(() {
           _error = e.toString();
@@ -68,7 +67,7 @@ class _HomeContentPageState extends State<HomeContentPage> {
     if (_error != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16),
           child: Text(
             'Akış yüklenemedi:\n$_error',
             textAlign: TextAlign.center,

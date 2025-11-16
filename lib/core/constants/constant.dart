@@ -11,6 +11,6 @@ TextStyle kLoginTextStyle = TextStyle(
 TextStyle kSkipButtonText = TextStyle(
   fontSize: 15.sp,
   fontWeight: FontWeight.w500,
-  color: Color(0xFF25396F),
+  color: const Color(0xFF25396F),
 );
 const kBlueColor = Color(0xFF25396F);

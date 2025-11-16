@@ -1,7 +1,5 @@
 import 'dart:collection';
 
-import 'package:bulusalim/core/constants/Configs/app_config.dart';
-
 class InMemoryCache<T> {
   InMemoryCache({required this.cacheSizeLimit, required this.ttl});
 
