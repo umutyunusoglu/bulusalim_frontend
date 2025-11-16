@@ -4,7 +4,7 @@ import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/model.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
-import 'package:bulusalim/domain/entities/post/post_entity.dart';
+import 'package:bulusalim/domain/feed/post/post_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
@@ -39,7 +39,7 @@ class PostModel extends Model<PostEntity> {
     );
   }
 
-  static Future<PostModel> fromFirestore(Map<String, dynamic> doc) async {
+  factory PostModel.fromFirestore(Map<String, dynamic> doc) {
     late final List<String>? imageUrls;
 
     if (kDebugMode) {
