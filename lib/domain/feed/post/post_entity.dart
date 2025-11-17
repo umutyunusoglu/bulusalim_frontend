@@ -3,10 +3,11 @@ import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
 import 'package:bulusalim/domain/entities/user/user_entity.dart';
+import 'package:bulusalim/domain/feed/feed_entity.dart';
 import 'package:equatable/equatable.dart';
 
-class PostEntity extends Equatable {
-  const PostEntity({
+class PostEntity extends FeedEntity with EquatableMixin {
+  PostEntity({
     required this.postID,
     required this.userID,
     required this.eventID,
@@ -19,7 +20,7 @@ class PostEntity extends Equatable {
     this.location,
     this.imageUrls,
     this.user,
-  });
+  }) : super(feedType: FeedEntityType.post, id: postID);
 
   PostEntity copyWith({
     Identifier? postID,
