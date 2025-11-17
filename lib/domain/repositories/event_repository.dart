@@ -1,9 +1,9 @@
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
-import 'package:bulusalim/domain/entities/event/event_entity.dart';
-import 'package:bulusalim/domain/entities/event/event_messages_entity.dart';
-import 'package:bulusalim/domain/entities/event/participant_entity.dart';
-import 'package:bulusalim/domain/entities/event/participant_rating_entity.dart';
+import 'package:bulusalim/domain/feed/event/event_entity.dart';
+import 'package:bulusalim/domain/feed/event/event_messages_entity.dart';
+import 'package:bulusalim/domain/feed/event/participant_entity.dart';
+import 'package:bulusalim/domain/feed/event/participant_rating_entity.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
 
 abstract class EventRepository {
