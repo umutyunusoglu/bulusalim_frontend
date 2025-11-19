@@ -28,71 +28,68 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10.w),
-          child: Column(
-            children: [
-              /// Üst başlık
-              Header(
-                title: Image.asset('assets/bulusalim.png', height: 40.h),
-                trailing: Icon(
-                  Icons.notifications_none_outlined,
-                  color: kBlueColor,
-                  size: 25.sp,
-                ),
+        child: Column(
+          children: [
+            /// Üst başlık
+            Header(
+              title: Image.asset('assets/bulusalim.png', height: 40.h),
+              trailing: Icon(
+                Icons.notifications_none_outlined,
+                color: kBlueColor,
+                size: 25.sp,
               ),
+            ),
 
-              /// Sekme Bar
-              CustomTabBar(
-                currentIndex: _currentPage,
-                tabs: _tabs,
-                onTabSelected: (index) {
-                  _pageController.animateToPage(
-                    index,
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
+            /// Sekme Bar
+            CustomTabBar(
+              currentIndex: _currentPage,
+              tabs: _tabs,
+              onTabSelected: (index) {
+                _pageController.animateToPage(
+                  index,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
+              },
+            ),
+
+            SizedBox(height: 5.h),
+
+            /// Sayfa içeriği
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() => _currentPage = index);
                 },
+                children: const [
+                  SenlikPage(),
+                  ArkadaslarinPage(),
+                ],
               ),
+            ),
 
-              SizedBox(height: 5.h),
-
-              /// Sayfa içeriği
-              Expanded(
-                child: PageView(
-                  controller: _pageController,
-                  onPageChanged: (index) {
-                    setState(() => _currentPage = index);
-                  },
-                  children: const [
-                    SenlikPage(),
-                    ArkadaslarinPage(),
-                  ],
-                ),
-              ),
-
-              // alt sayfa gösterge
-              /*
-              SizedBox(height: 10.h),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(_tabs.length, (index) {
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    margin: EdgeInsets.symmetric(horizontal: 5.w),
-                    height: 6.h,
-                    width: _currentPage == index ? 20.w : 6.w,
-                    decoration: BoxDecoration(
-                      color: _currentPage == index
-                          ? kBlueColor
-                          : Colors.grey.shade400,
-                      borderRadius: BorderRadius.circular(10.r),
-                    ),
-                  );
-                }),
-              ),*/
-            ],
-          ),
+            // alt sayfa gösterge
+            /*
+            SizedBox(height: 10.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(_tabs.length, (index) {
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  margin: EdgeInsets.symmetric(horizontal: 5.w),
+                  height: 6.h,
+                  width: _currentPage == index ? 20.w : 6.w,
+                  decoration: BoxDecoration(
+                    color: _currentPage == index
+                        ? kBlueColor
+                        : Colors.grey.shade400,
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                );
+              }),
+            ),*/
+          ],
         ),
       ),
     );
