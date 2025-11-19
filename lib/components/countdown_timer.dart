@@ -45,7 +45,7 @@ class _CountdownTimerState extends State<CountdownTimer> {
     final difference = startTime.difference(now);
 
     if (difference.isNegative) {
-      return "Etkinlik başladı";
+      return "2sa";
     }
 
     final days = difference.inDays;
