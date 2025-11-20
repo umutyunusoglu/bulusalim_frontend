@@ -27,7 +27,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
     String? name,
     String? info,
     List<String>? hobbies,
-    Identifier? creator,
+    ParticipantEntity? creator,
     int? capacity,
     List<ParticipantEntity>? participants,
     DateTime? startTime,
@@ -58,7 +58,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
   final String name;
   final String? info;
   final List<String> hobbies;
-  final Identifier creator;
+  final ParticipantEntity creator;
   final int capacity;
   final List<ParticipantEntity> participants;
   final DateTime startTime;
@@ -110,6 +110,7 @@ class EventAttributes extends Equatable {
 class ParticipantEntity extends Equatable {
   const ParticipantEntity({
     required this.userID,
+    required this.profileImageUrl,
     required this.role,
     required this.eventScore,
   });
@@ -117,6 +118,7 @@ class ParticipantEntity extends Equatable {
   factory ParticipantEntity.fromMap(Map<String, dynamic> map) {
     return ParticipantEntity(
       userID: map['userID'] as Identifier,
+      profileImageUrl: map['profileImageUrl'] as String,
       role: EventRoleEnum.values[map['role'] as int],
       eventScore: map['eventScore'] as double,
     );
@@ -125,6 +127,7 @@ class ParticipantEntity extends Equatable {
   Map<String, dynamic> toMap() {
     return {
       'userID': userID,
+      'profileImageUrl': profileImageUrl,
       'role': role.index,
       'eventScore': eventScore,
     };
@@ -134,6 +137,7 @@ class ParticipantEntity extends Equatable {
   List<Object?> get props => [userID, role, eventScore];
 
   final Identifier userID;
+  final String profileImageUrl;
   final EventRoleEnum role;
   final double eventScore;
 }
