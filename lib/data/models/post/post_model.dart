@@ -13,7 +13,7 @@ class PostModel extends Model<PostEntity> {
     required this.postID,
     required this.userID,
     required this.eventID,
-    required this.title,
+    required this.caption,
     required this.hobbies,
     required this.participants,
     required this.emoteCounts,
@@ -21,6 +21,7 @@ class PostModel extends Model<PostEntity> {
     required this.updatedAt,
     this.location,
     this.imageUrls,
+    this.isPinned = false,
   });
 
   factory PostModel.fromEntity(PostEntity entity) {
@@ -28,7 +29,7 @@ class PostModel extends Model<PostEntity> {
       postID: entity.postID,
       userID: entity.userID,
       eventID: entity.eventID,
-      title: entity.title,
+      caption: entity.caption,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
       location: entity.location,
@@ -36,6 +37,7 @@ class PostModel extends Model<PostEntity> {
       imageUrls: entity.imageUrls,
       participants: entity.participants,
       emoteCounts: entity.emoteCounts,
+      isPinned: entity.isPinned,
     );
   }
 
@@ -65,7 +67,7 @@ class PostModel extends Model<PostEntity> {
       postID: doc['postID'] as String,
       userID: doc['userID'] as String,
       eventID: doc['eventID'] as String,
-      title: doc['title'] as String,
+      caption: doc['caption'] as String,
       createdAt: (doc['createdAt'] as Timestamp).toDate(),
       updatedAt: (doc['updatedAt'] as Timestamp).toDate(),
       location: Geolocation.fromMap(locationMap),
@@ -80,6 +82,7 @@ class PostModel extends Model<PostEntity> {
           value as int,
         ),
       ),
+      isPinned: doc['isPinned'] as bool,
     );
   }
 
@@ -89,7 +92,7 @@ class PostModel extends Model<PostEntity> {
       postID: postID,
       userID: userID,
       eventID: eventID,
-      title: title,
+      caption: caption,
       createdAt: createdAt,
       updatedAt: updatedAt,
       location: location,
@@ -115,7 +118,7 @@ class PostModel extends Model<PostEntity> {
       'postID': postID,
       'userID': userID,
       'eventID': eventID,
-      'title': title,
+      'caption': caption,
       'location': location?.toMap(),
       'hobbies': hobbies.map((hobby) => hobby.name).toList(),
       'imageUrls': imageUrlsFirestore,
@@ -125,13 +128,14 @@ class PostModel extends Model<PostEntity> {
       ),
       'createdAt': createdAt,
       'updatedAt': updatedAt,
+      'isPinned': isPinned,
     };
   }
 
   final Identifier postID;
   final Identifier userID;
   final Identifier eventID;
-  final String title;
+  final String caption;
   final DateTime createdAt;
   final DateTime updatedAt;
   final Geolocation? location;
@@ -139,4 +143,5 @@ class PostModel extends Model<PostEntity> {
   final List<String>? imageUrls;
   final List<Identifier> participants;
   final Map<EmoteEnum, int> emoteCounts;
+  final bool isPinned;
 }
