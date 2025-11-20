@@ -3,13 +3,9 @@ import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/event/event_messages_model.dart';
 import 'package:bulusalim/data/models/event/event_model.dart';
-import 'package:bulusalim/data/models/event/participant_model.dart';
-import 'package:bulusalim/data/models/event/participant_rating_model.dart';
+import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
 import 'package:bulusalim/domain/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/feed/event/event_messages_entity.dart';
-import 'package:bulusalim/domain/feed/event/participant_entity.dart';
-import 'package:bulusalim/domain/feed/event/participant_rating_entity.dart';
-import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
 import 'package:bulusalim/domain/repositories/event_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -151,45 +147,18 @@ class EventRepositoryImpl implements EventRepository {
   /// Participants Subcollection
   @override
   Future<void> addParticipant(
+    Identifier eventId,
     ParticipantEntity participant,
   ) async {
-    try {
-      final participantDocRef = _firestore
-          .collection('events')
-          .doc(participant.eventID)
-          .collection('participants')
-          .doc(participant.userID);
-
-      //For safety, ensure the userID is set correctly
-      final participantWithId = participant.copyWith(
-        userID: participantDocRef.id,
-      );
-
-      final participantModel = ParticipantModel.fromEntity(participantWithId);
-
-      await participantDocRef.set(participantModel.toFirestore());
-    } on Exception catch (e) {
-      _logger.error('Failed to add participant: $e');
-      rethrow;
-    }
+    throw UnimplementedError();
   }
 
   @override
   Future<void> updateParticipant(
+    Identifier eventId,
     ParticipantEntity participant,
   ) async {
-    try {
-      final participantModel = ParticipantModel.fromEntity(participant);
-      await _firestore
-          .collection('events')
-          .doc(participant.eventID)
-          .collection('participants')
-          .doc(participant.userID)
-          .update(participantModel.toFirestore());
-    } on Exception catch (e) {
-      _logger.error('Failed to update participant: $e');
-      rethrow;
-    }
+    throw UnimplementedError();
   }
 
   @override
@@ -197,171 +166,7 @@ class EventRepositoryImpl implements EventRepository {
     Identifier eventId,
     Identifier userId,
   ) {
-    return _firestore
-        .collection('events')
-        .doc(eventId)
-        .collection('participants')
-        .doc(userId)
-        .delete();
-  }
-
-  @override
-  Future<List<ParticipantEntity>> getParticipants(Identifier eventId) {
-    return _firestore
-        .collection('events')
-        .doc(eventId)
-        .collection('participants')
-        .get()
-        .then(
-          (snapshot) => snapshot.docs
-              .map(
-                (doc) => ParticipantModel.fromFirestore(doc.data()).toEntity(),
-              )
-              .toList(),
-        );
-  }
-
-  @override
-  Future<ParticipantEntity?> getEventParticipant(
-    Identifier eventId,
-    Identifier userId,
-  ) {
-    return _firestore
-        .collection('events')
-        .doc(eventId)
-        .collection('participants')
-        .doc(userId)
-        .get()
-        .then(
-          (doc) {
-            if (doc.exists) {
-              return ParticipantModel.fromFirestore(doc.data()!).toEntity();
-            }
-            return null;
-          },
-        );
-  }
-
-  /// Participant Ratings Subcollection
-  @override
-  Future<void> addParticipantRating(
-    ParticipantRatingEntity rating,
-  ) {
-    try {
-      final ratingDocRef = _firestore
-          .collection('events')
-          .doc(rating.eventID)
-          .collection('participant_ratings')
-          .doc('${rating.raterID}_${rating.rateeID}');
-
-      final ratingWithId = rating.copyWith(
-        rateeID: ratingDocRef.id,
-      );
-      final ratingModel = ParticipantRatingModel.fromEntity(ratingWithId);
-
-      return ratingDocRef.set(ratingModel.toFirestore());
-    } on Exception catch (e) {
-      _logger.error('Failed to add participant rating: $e');
-      rethrow;
-    }
-  }
-
-  @override
-  Future<List<ParticipantRatingEntity>> getParticipantRatings(
-    Identifier eventId,
-  ) {
-    return _firestore
-        .collection('events')
-        .doc(eventId)
-        .collection('participant_ratings')
-        .get()
-        .then(
-          (snapshot) => snapshot.docs
-              .map(
-                (doc) =>
-                    ParticipantRatingModel.fromFirestore(doc.data()).toEntity(),
-              )
-              .toList(),
-        );
-  }
-
-  @override
-  Future<List<ParticipantRatingEntity>> getRatingsByRater(
-    Identifier eventId,
-    Identifier raterID,
-  ) async {
-    return _firestore
-        .collection('events')
-        .doc(eventId)
-        .collection('participant_ratings')
-        .where('raterID', isEqualTo: raterID)
-        .get()
-        .then(
-          (snapshot) => snapshot.docs
-              .map(
-                (doc) =>
-                    ParticipantRatingModel.fromFirestore(doc.data()).toEntity(),
-              )
-              .toList(),
-        );
-  }
-
-  @override
-  Future<List<ParticipantRatingEntity>> getRatingsByRatee(
-    Identifier eventId,
-    Identifier rateeID,
-  ) async {
-    return _firestore
-        .collection('events')
-        .doc(eventId)
-        .collection('participant_ratings')
-        .where('rateeID', isEqualTo: rateeID)
-        .get()
-        .then(
-          (snapshot) => snapshot.docs
-              .map(
-                (doc) =>
-                    ParticipantRatingModel.fromFirestore(doc.data()).toEntity(),
-              )
-              .toList(),
-        );
-  }
-
-  @override
-  Future<void> updateParticipantRating(
-    ParticipantRatingEntity rating,
-  ) async {
-    try {
-      final ratingModel = ParticipantRatingModel.fromEntity(rating);
-      await _firestore
-          .collection('events')
-          .doc(rating.eventID)
-          .collection('participant_ratings')
-          .doc('${rating.raterID}_${rating.rateeID}')
-          .update(ratingModel.toFirestore());
-    } on Exception catch (e) {
-      _logger.error('Failed to update participant rating: $e');
-      rethrow;
-    }
-  }
-
-  @override
-  Future<void> deleteParticipantRating(
-    Identifier eventId,
-    Identifier raterID,
-    Identifier rateeID,
-  ) async {
-    try {
-      await _firestore
-          .collection('events')
-          .doc(eventId)
-          .collection('participant_ratings')
-          .doc('${raterID}_$rateeID')
-          .delete();
-    } on Exception catch (e) {
-      _logger.error('Failed to delete participant rating: $e');
-      rethrow;
-    }
+    throw UnimplementedError();
   }
 
   /// Query and Search

@@ -1,3 +1,4 @@
+import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart';
 import 'package:bulusalim/core/utils/types/enums/restriction_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
@@ -12,7 +13,6 @@ class EventEntity extends FeedEntity with EquatableMixin {
     required this.creator,
     required this.capacity,
     required this.participants,
-    required this.participantScores,
     required this.startTime,
     required this.endTime,
     required this.location,
@@ -29,8 +29,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
     List<String>? hobbies,
     Identifier? creator,
     int? capacity,
-    List<Identifier>? participants,
-    Map<Identifier, int>? participantScores,
+    List<ParticipantEntity>? participants,
     DateTime? startTime,
     DateTime? endTime,
     Geolocation? location,
@@ -46,7 +45,6 @@ class EventEntity extends FeedEntity with EquatableMixin {
       creator: creator ?? this.creator,
       capacity: capacity ?? this.capacity,
       participants: participants ?? this.participants,
-      participantScores: participantScores ?? this.participantScores,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       location: location ?? this.location,
@@ -62,8 +60,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
   final List<String> hobbies;
   final Identifier creator;
   final int capacity;
-  final List<Identifier> participants;
-  final Map<Identifier, int> participantScores;
+  final List<ParticipantEntity> participants;
   final DateTime startTime;
   final DateTime endTime;
   final Geolocation location;
@@ -108,4 +105,35 @@ class EventAttributes extends Equatable {
   final RestrictionEnum smoking;
   final RestrictionEnum alcohol;
   final bool isPublic;
+}
+
+class ParticipantEntity extends Equatable {
+  const ParticipantEntity({
+    required this.userID,
+    required this.role,
+    required this.eventScore,
+  });
+
+  factory ParticipantEntity.fromMap(Map<String, dynamic> map) {
+    return ParticipantEntity(
+      userID: map['userID'] as Identifier,
+      role: EventRoleEnum.values[map['role'] as int],
+      eventScore: map['eventScore'] as double,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'userID': userID,
+      'role': role.index,
+      'eventScore': eventScore,
+    };
+  }
+
+  @override
+  List<Object?> get props => [userID, role, eventScore];
+
+  final Identifier userID;
+  final EventRoleEnum role;
+  final double eventScore;
 }
