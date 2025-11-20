@@ -51,7 +51,9 @@ class EventModel extends Model<EventEntity> {
       name: doc['name'] as String,
       info: doc['info'] as String?,
       hobbies: (doc['hobbies'] as List?)?.cast<String>().toList() ?? [],
-      creator: doc['creator'] as Identifier,
+      creator: ParticipantEntity.fromMap(
+        doc['creator'] as Map<String, dynamic>,
+      ),
       capacity: doc['capacity'] as int,
       participants:
           (doc['participants'] as List?)
@@ -121,7 +123,7 @@ class EventModel extends Model<EventEntity> {
   final String name;
   final String? info;
   final List<String> hobbies;
-  final Identifier creator;
+  final ParticipantEntity creator;
   final int capacity;
   final List<ParticipantEntity> participants;
   final DateTime startTime;
