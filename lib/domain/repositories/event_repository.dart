@@ -2,8 +2,7 @@ import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/feed/event/event_messages_entity.dart';
-import 'package:bulusalim/domain/feed/event/participant_entity.dart';
-import 'package:bulusalim/domain/feed/event/participant_rating_entity.dart';
+
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
 
 abstract class EventRepository {
@@ -24,44 +23,17 @@ abstract class EventRepository {
 
   /// Participants Subcollection
   Future<void> addParticipant(
+    Identifier eventId,
     ParticipantEntity participant,
   );
 
   Future<void> updateParticipant(
+    Identifier eventId,
     ParticipantEntity participant,
   );
   Future<void> removeParticipant(
     Identifier eventId,
     Identifier userId,
-  );
-  Future<List<ParticipantEntity>> getParticipants(Identifier eventId);
-  Future<ParticipantEntity?> getEventParticipant(
-    Identifier eventId,
-    Identifier userId,
-  );
-
-  /// Participant Ratings Subcollection
-  Future<void> addParticipantRating(
-    ParticipantRatingEntity rating,
-  );
-  Future<List<ParticipantRatingEntity>> getParticipantRatings(
-    Identifier eventId,
-  );
-  Future<List<ParticipantRatingEntity>> getRatingsByRater(
-    Identifier eventId,
-    Identifier raterID,
-  );
-  Future<List<ParticipantRatingEntity>> getRatingsByRatee(
-    Identifier eventId,
-    Identifier rateeID,
-  );
-  Future<void> updateParticipantRating(
-    ParticipantRatingEntity rating,
-  );
-  Future<void> deleteParticipantRating(
-    Identifier eventId,
-    Identifier raterID,
-    Identifier rateeID,
   );
 
   /// === Query & Search ===
