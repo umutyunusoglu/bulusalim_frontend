@@ -2,7 +2,7 @@ import 'package:bulusalim/core/utils/types/enums/restriction_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/model.dart';
-import 'package:bulusalim/domain/feed/event/event_entity.dart';
+import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EventModel extends Model<EventEntity> {
@@ -14,7 +14,6 @@ class EventModel extends Model<EventEntity> {
     required this.creator,
     required this.capacity,
     required this.participants,
-    required this.participantScores,
     required this.startTime,
     required this.endTime,
     required this.location,
@@ -33,7 +32,6 @@ class EventModel extends Model<EventEntity> {
       creator: entity.creator,
       capacity: entity.capacity,
       participants: entity.participants,
-      participantScores: entity.participantScores,
       startTime: entity.startTime,
       endTime: entity.endTime,
       location: entity.location,
@@ -53,15 +51,18 @@ class EventModel extends Model<EventEntity> {
       name: doc['name'] as String,
       info: doc['info'] as String?,
       hobbies: (doc['hobbies'] as List?)?.cast<String>().toList() ?? [],
-      creator: doc['creator'] as Identifier,
+      creator: EventParticipantEntity.fromMap(
+        doc['creator'] as Map<String, dynamic>,
+      ),
       capacity: doc['capacity'] as int,
       participants:
-          (doc['participants'] as List?)?.cast<Identifier>().toList() ?? [],
-      participantScores:
-          (doc['participantScores'] as Map?)?.map(
-            (key, value) => MapEntry(key as Identifier, value as int),
-          ) ??
-          {},
+          (doc['participants'] as List?)
+              ?.map(
+                (p) =>
+                    EventParticipantEntity.fromMap(p as Map<String, dynamic>),
+              )
+              .toList() ??
+          [],
       startTime: (doc['startTime'] as Timestamp).toDate(),
       endTime: (doc['endTime'] as Timestamp).toDate(),
       location: Geolocation.fromMap({
@@ -92,8 +93,7 @@ class EventModel extends Model<EventEntity> {
       'hobbies': hobbies,
       'creator': creator,
       'capacity': capacity,
-      'participants': participants,
-      'participantScores': participantScores,
+      'participants': participants.map((p) => p.toMap()).toList(),
       'startTime': startTime,
       'endTime': endTime,
       'location': location.toMap(),
@@ -113,7 +113,6 @@ class EventModel extends Model<EventEntity> {
       creator: creator,
       capacity: capacity,
       participants: participants,
-      participantScores: participantScores,
       startTime: startTime,
       endTime: endTime,
       location: location,
@@ -127,10 +126,9 @@ class EventModel extends Model<EventEntity> {
   final String name;
   final String? info;
   final List<String> hobbies;
-  final Identifier creator;
+  final EventParticipantEntity creator;
   final int capacity;
-  final List<Identifier> participants;
-  final Map<Identifier, int> participantScores;
+  final List<EventParticipantEntity> participants;
   final DateTime startTime;
   final DateTime endTime;
   final Geolocation location;

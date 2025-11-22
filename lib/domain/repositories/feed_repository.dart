@@ -1,4 +1,4 @@
-import 'package:bulusalim/domain/feed/feed_entity.dart';
+import 'package:bulusalim/domain/entities/feed/feed_entity.dart';
 
 abstract class FeedRepository {
   Future<List<FeedEntity>> fetchNextFeedBatch(
