@@ -2,7 +2,7 @@ import 'package:bulusalim/core/utils/types/enums/restriction_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/model.dart';
-import 'package:bulusalim/domain/feed/event/event_entity.dart';
+import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EventModel extends Model<EventEntity> {
@@ -51,13 +51,16 @@ class EventModel extends Model<EventEntity> {
       name: doc['name'] as String,
       info: doc['info'] as String?,
       hobbies: (doc['hobbies'] as List?)?.cast<String>().toList() ?? [],
-      creator: ParticipantEntity.fromMap(
+      creator: EventParticipantEntity.fromMap(
         doc['creator'] as Map<String, dynamic>,
       ),
       capacity: doc['capacity'] as int,
       participants:
           (doc['participants'] as List?)
-              ?.map((p) => ParticipantEntity.fromMap(p as Map<String, dynamic>))
+              ?.map(
+                (p) =>
+                    EventParticipantEntity.fromMap(p as Map<String, dynamic>),
+              )
               .toList() ??
           [],
       startTime: (doc['startTime'] as Timestamp).toDate(),
@@ -123,9 +126,9 @@ class EventModel extends Model<EventEntity> {
   final String name;
   final String? info;
   final List<String> hobbies;
-  final ParticipantEntity creator;
+  final EventParticipantEntity creator;
   final int capacity;
-  final List<ParticipantEntity> participants;
+  final List<EventParticipantEntity> participants;
   final DateTime startTime;
   final DateTime endTime;
   final Geolocation location;

@@ -1,8 +1,8 @@
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
-import 'package:bulusalim/domain/feed/event/event_entity.dart';
-import 'package:bulusalim/domain/feed/event/event_messages_entity.dart';
+import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
+import 'package:bulusalim/domain/entities/feed/event/event_messages_entity.dart';
 
 abstract class EventRepository {
   ///CRUD operations for Event entity
@@ -23,12 +23,12 @@ abstract class EventRepository {
   /// Participants Subcollection
   Future<void> addParticipant(
     Identifier eventId,
-    ParticipantEntity participant,
+    EventParticipantEntity participant,
   );
 
   Future<void> updateParticipant(
     Identifier eventId,
-    ParticipantEntity participant,
+    EventParticipantEntity participant,
   );
   Future<void> removeParticipant(
     Identifier eventId,

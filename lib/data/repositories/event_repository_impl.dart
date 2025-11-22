@@ -4,8 +4,8 @@ import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/event/event_messages_model.dart';
 import 'package:bulusalim/data/models/event/event_model.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
-import 'package:bulusalim/domain/feed/event/event_entity.dart';
-import 'package:bulusalim/domain/feed/event/event_messages_entity.dart';
+import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
+import 'package:bulusalim/domain/entities/feed/event/event_messages_entity.dart';
 import 'package:bulusalim/domain/repositories/event_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -148,7 +148,7 @@ class EventRepositoryImpl implements EventRepository {
   @override
   Future<void> addParticipant(
     Identifier eventId,
-    ParticipantEntity participant,
+    EventParticipantEntity participant,
   ) async {
     throw UnimplementedError();
   }
@@ -156,7 +156,7 @@ class EventRepositoryImpl implements EventRepository {
   @override
   Future<void> updateParticipant(
     Identifier eventId,
-    ParticipantEntity participant,
+    EventParticipantEntity participant,
   ) async {
     throw UnimplementedError();
   }
