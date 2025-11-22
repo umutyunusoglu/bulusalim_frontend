@@ -1,5 +1,3 @@
-import 'dart:io';
-
 abstract class FileService {
   static const String rootPublic = 'Public/';
   static const String rootPrivate = 'Private/';
