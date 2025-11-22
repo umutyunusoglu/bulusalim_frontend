@@ -1,11 +1,9 @@
-import 'dart:ffi';
-
 import 'package:bulusalim/core/utils/types/enums/emote_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
 import 'package:bulusalim/domain/entities/user/user_entity.dart';
-import 'package:bulusalim/domain/feed/feed_entity.dart';
+import 'package:bulusalim/domain/entities/feed/feed_entity.dart';
 import 'package:equatable/equatable.dart';
 
 class PostEntity extends FeedEntity with EquatableMixin {
@@ -32,7 +30,7 @@ class PostEntity extends FeedEntity with EquatableMixin {
     Geolocation? location,
     List<HobbyEntity>? hobbies,
     List<String>? imageUrls,
-    List<Identifier>? participants,
+    List<PostParticipantEntity>? participants,
     Map<EmoteEnum, int>? emoteCounts,
     UserEntity? user,
     DateTime? createdAt,
@@ -71,7 +69,37 @@ class PostEntity extends FeedEntity with EquatableMixin {
   final Geolocation? location;
   final List<HobbyEntity> hobbies;
   final List<String>? imageUrls;
-  final List<Identifier> participants;
+  final List<PostParticipantEntity> participants;
   final Map<EmoteEnum, int> emoteCounts;
   final bool isPinned;
+}
+
+class PostParticipantEntity extends Equatable {
+  const PostParticipantEntity({
+    required this.userID,
+    required this.username,
+    required this.profileImageUrl,
+  });
+
+  factory PostParticipantEntity.fromMap(Map<String, dynamic> map) {
+    return PostParticipantEntity(
+      userID: map['userID'] as Identifier,
+      username: map['username'] as String,
+      profileImageUrl: map['profileImageUrl'] as String,
+    );
+  }
+  Map<String, dynamic> toMap() {
+    return {
+      'userID': userID,
+      'username': username,
+      'profileImageUrl': profileImageUrl,
+    };
+  }
+
+  @override
+  List<Object?> get props => [userID];
+
+  final Identifier userID;
+  final String username;
+  final String profileImageUrl;
 }

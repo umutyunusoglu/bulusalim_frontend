@@ -1,7 +1,8 @@
+import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart';
 import 'package:bulusalim/core/utils/types/enums/restriction_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
-import 'package:bulusalim/domain/feed/feed_entity.dart';
+import 'package:bulusalim/domain/entities/feed/feed_entity.dart';
 import 'package:equatable/equatable.dart';
 
 class EventEntity extends FeedEntity with EquatableMixin {
@@ -12,7 +13,6 @@ class EventEntity extends FeedEntity with EquatableMixin {
     required this.creator,
     required this.capacity,
     required this.participants,
-    required this.participantScores,
     required this.startTime,
     required this.endTime,
     required this.location,
@@ -27,10 +27,9 @@ class EventEntity extends FeedEntity with EquatableMixin {
     String? name,
     String? info,
     List<String>? hobbies,
-    Identifier? creator,
+    EventParticipantEntity? creator,
     int? capacity,
-    List<Identifier>? participants,
-    Map<Identifier, int>? participantScores,
+    List<EventParticipantEntity>? participants,
     DateTime? startTime,
     DateTime? endTime,
     Geolocation? location,
@@ -46,7 +45,6 @@ class EventEntity extends FeedEntity with EquatableMixin {
       creator: creator ?? this.creator,
       capacity: capacity ?? this.capacity,
       participants: participants ?? this.participants,
-      participantScores: participantScores ?? this.participantScores,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       location: location ?? this.location,
@@ -60,10 +58,9 @@ class EventEntity extends FeedEntity with EquatableMixin {
   final String name;
   final String? info;
   final List<String> hobbies;
-  final Identifier creator;
+  final EventParticipantEntity creator;
   final int capacity;
-  final List<Identifier> participants;
-  final Map<Identifier, int> participantScores;
+  final List<EventParticipantEntity> participants;
   final DateTime startTime;
   final DateTime endTime;
   final Geolocation location;
@@ -108,4 +105,43 @@ class EventAttributes extends Equatable {
   final RestrictionEnum smoking;
   final RestrictionEnum alcohol;
   final bool isPublic;
+}
+
+class EventParticipantEntity extends Equatable {
+  const EventParticipantEntity({
+    required this.userID,
+    required this.username,
+    required this.profileImageUrl,
+    required this.role,
+    required this.eventScore,
+  });
+
+  factory EventParticipantEntity.fromMap(Map<String, dynamic> map) {
+    return EventParticipantEntity(
+      userID: map['userID'] as Identifier,
+      username: map['username'] as String,
+      profileImageUrl: map['profileImageUrl'] as String,
+      role: EventRoleEnum.values[map['role'] as int],
+      eventScore: map['eventScore'] as double,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'userID': userID,
+      'username': username,
+      'profileImageUrl': profileImageUrl,
+      'role': role.index,
+      'eventScore': eventScore,
+    };
+  }
+
+  @override
+  List<Object?> get props => [userID, role, eventScore];
+
+  final Identifier userID;
+  final String username;
+  final String profileImageUrl;
+  final EventRoleEnum role;
+  final double eventScore;
 }

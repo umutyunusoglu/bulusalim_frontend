@@ -6,9 +6,9 @@ import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/event/event_model.dart';
 import 'package:bulusalim/data/models/post/post_model.dart';
 import 'package:bulusalim/data/repositories/in_memory_cache.dart';
-import 'package:bulusalim/domain/feed/event/event_entity.dart';
-import 'package:bulusalim/domain/feed/feed_entity.dart';
-import 'package:bulusalim/domain/feed/post/post_entity.dart';
+import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
+import 'package:bulusalim/domain/entities/feed/feed_entity.dart';
+import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
 import 'package:bulusalim/domain/repositories/feed_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
