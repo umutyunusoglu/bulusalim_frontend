@@ -1,6 +1,6 @@
 import 'package:bulusalim/application/providers/get_It_init.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/domain/feed/post/post_entity.dart';
+import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
 import 'package:flutter/material.dart';
 
 class PostCard extends StatelessWidget {

@@ -2,7 +2,7 @@ import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart';
 import 'package:bulusalim/core/utils/types/enums/restriction_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
-import 'package:bulusalim/domain/feed/feed_entity.dart';
+import 'package:bulusalim/domain/entities/feed/feed_entity.dart';
 import 'package:equatable/equatable.dart';
 
 class EventEntity extends FeedEntity with EquatableMixin {
@@ -27,9 +27,9 @@ class EventEntity extends FeedEntity with EquatableMixin {
     String? name,
     String? info,
     List<String>? hobbies,
-    ParticipantEntity? creator,
+    EventParticipantEntity? creator,
     int? capacity,
-    List<ParticipantEntity>? participants,
+    List<EventParticipantEntity>? participants,
     DateTime? startTime,
     DateTime? endTime,
     Geolocation? location,
@@ -58,9 +58,9 @@ class EventEntity extends FeedEntity with EquatableMixin {
   final String name;
   final String? info;
   final List<String> hobbies;
-  final ParticipantEntity creator;
+  final EventParticipantEntity creator;
   final int capacity;
-  final List<ParticipantEntity> participants;
+  final List<EventParticipantEntity> participants;
   final DateTime startTime;
   final DateTime endTime;
   final Geolocation location;
@@ -107,17 +107,19 @@ class EventAttributes extends Equatable {
   final bool isPublic;
 }
 
-class ParticipantEntity extends Equatable {
-  const ParticipantEntity({
+class EventParticipantEntity extends Equatable {
+  const EventParticipantEntity({
     required this.userID,
+    required this.username,
     required this.profileImageUrl,
     required this.role,
     required this.eventScore,
   });
 
-  factory ParticipantEntity.fromMap(Map<String, dynamic> map) {
-    return ParticipantEntity(
+  factory EventParticipantEntity.fromMap(Map<String, dynamic> map) {
+    return EventParticipantEntity(
       userID: map['userID'] as Identifier,
+      username: map['username'] as String,
       profileImageUrl: map['profileImageUrl'] as String,
       role: EventRoleEnum.values[map['role'] as int],
       eventScore: map['eventScore'] as double,
@@ -127,6 +129,7 @@ class ParticipantEntity extends Equatable {
   Map<String, dynamic> toMap() {
     return {
       'userID': userID,
+      'username': username,
       'profileImageUrl': profileImageUrl,
       'role': role.index,
       'eventScore': eventScore,
@@ -137,6 +140,7 @@ class ParticipantEntity extends Equatable {
   List<Object?> get props => [userID, role, eventScore];
 
   final Identifier userID;
+  final String username;
   final String profileImageUrl;
   final EventRoleEnum role;
   final double eventScore;
