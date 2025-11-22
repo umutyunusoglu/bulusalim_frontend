@@ -63,6 +63,7 @@ class PostModel extends Model<PostEntity> {
       'latitude': location.latitude,
       'longitude': location.longitude,
     };
+
     return PostModel(
       postID: doc['postID'] as String,
       userID: doc['userID'] as String,
