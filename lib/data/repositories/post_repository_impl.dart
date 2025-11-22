@@ -74,7 +74,7 @@ class PostRepositoryImpl implements PostRepository {
       final docSnapshot = await docRef.get();
 
       if (docSnapshot.exists) {
-        final postModel = await PostModel.fromFirestore(docSnapshot.data()!);
+        final postModel = PostModel.fromFirestore(docSnapshot.data()!);
         return postModel.toEntity();
       } else {
         return null;
@@ -96,7 +96,7 @@ class PostRepositoryImpl implements PostRepository {
       // her doc için async işlem yapacağın için Future.wait kullan
       final posts = await Future.wait(
         querySnapshot.docs.map((doc) async {
-          final model = await PostModel.fromFirestore(doc.data());
+          final model = PostModel.fromFirestore(doc.data());
           return model.toEntity();
         }),
       );
@@ -115,7 +115,7 @@ class PostRepositoryImpl implements PostRepository {
 
       final posts = await Future.wait(
         snapshot.docs.map((doc) async {
-          final model = await PostModel.fromFirestore(doc.data());
+          final model = PostModel.fromFirestore(doc.data());
           return model.toEntity();
         }),
       );
@@ -137,7 +137,7 @@ class PostRepositoryImpl implements PostRepository {
 
       final posts = await Future.wait(
         querySnapshot.docs.map((doc) async {
-          final model = await PostModel.fromFirestore(doc.data());
+          final model = PostModel.fromFirestore(doc.data());
           return model.toEntity();
         }),
       );
@@ -159,7 +159,7 @@ class PostRepositoryImpl implements PostRepository {
 
       final posts = await Future.wait(
         querySnapshot.docs.map((doc) async {
-          final model = await PostModel.fromFirestore(doc.data());
+          final model = PostModel.fromFirestore(doc.data());
           return model.toEntity();
         }),
       );
@@ -180,7 +180,7 @@ class PostRepositoryImpl implements PostRepository {
 
     final models = await Future.wait(
       snapshot.docs.map((doc) async {
-        final model = await PostModel.fromFirestore(doc.data());
+        final model = PostModel.fromFirestore(doc.data());
         return model;
       }),
     );
@@ -271,7 +271,7 @@ class PostRepositoryImpl implements PostRepository {
 
       final newPosts = await Future.wait(
         snapshot.docs.map((doc) async {
-          final model = await PostModel.fromFirestore(doc.data());
+          final model = PostModel.fromFirestore(doc.data());
           return model.toEntity();
         }),
       );
@@ -316,7 +316,7 @@ class PostRepositoryImpl implements PostRepository {
           .then(
             (snapshot) => Future.wait(
               snapshot.docs.map((doc) async {
-                final model = await PostModel.fromFirestore(doc.data());
+                final model = PostModel.fromFirestore(doc.data());
                 return model.toEntity();
               }),
             ),
@@ -358,7 +358,7 @@ class PostRepositoryImpl implements PostRepository {
 
       final newPosts = await Future.wait(
         snapshot.docs.map((doc) async {
-          final model = await PostModel.fromFirestore(doc.data());
+          final model = PostModel.fromFirestore(doc.data());
           return model.toEntity();
         }),
       );
@@ -416,7 +416,7 @@ class PostRepositoryImpl implements PostRepository {
           .then(
             (snapshot) => Future.wait(
               snapshot.docs.map((doc) async {
-                final model = await PostModel.fromFirestore(doc.data());
+                final model = PostModel.fromFirestore(doc.data());
                 return model.toEntity();
               }),
             ),
@@ -458,7 +458,7 @@ class PostRepositoryImpl implements PostRepository {
 
       final newPosts = await Future.wait(
         snapshot.docs.map((doc) async {
-          final model = await PostModel.fromFirestore(doc.data());
+          final model = PostModel.fromFirestore(doc.data());
           return model.toEntity();
         }),
       );
