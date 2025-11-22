@@ -82,7 +82,6 @@ class PostParticipantEntity extends Equatable {
   });
 
   factory PostParticipantEntity.fromMap(Map<String, dynamic> map) {
-    final x = 5;
     return PostParticipantEntity(
       userID: map['userID'] as Identifier,
       username: map['username'] as String,
