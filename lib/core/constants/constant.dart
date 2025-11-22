@@ -14,3 +14,9 @@ TextStyle kSkipButtonText = TextStyle(
   color: const Color(0xFF25396F),
 );
 const kBlueColor = Color(0xFF25396F);
+// InfoIconText için standart stil
+final kInfoIconTextStyle = TextStyle(
+  color: Colors.white,
+  fontSize: 10.sp,
+  fontWeight: FontWeight.w600,
+);
