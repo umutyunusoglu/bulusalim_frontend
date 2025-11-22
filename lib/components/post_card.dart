@@ -321,6 +321,10 @@ class _PostCardState extends State<PostCard> {
                     ),
                   )
                   .toList(),
+            padding: const EdgeInsets.all(12),
+            child: Text(
+              post.caption,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ),
         ],
