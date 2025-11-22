@@ -1,7 +1,7 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/components/post_card.dart';
 import 'package:bulusalim/core/enums/feed_type.dart';
-import 'package:bulusalim/domain/feed/post/post_entity.dart';
+import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
 import 'package:bulusalim/domain/repositories/post_repository.dart';
 import 'package:flutter/material.dart';
 

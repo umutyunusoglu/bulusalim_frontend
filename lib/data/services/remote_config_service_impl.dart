@@ -38,6 +38,10 @@ class RemoteConfigServiceImpl implements RemoteConfigService {
     if (T == int) return value.asInt() as T;
     if (T == double) return value.asDouble() as T;
     if (T == bool) return value.asBool() as T;
+    if (T == Map) {
+      final jsonString = value.asString();
+      return json.decode(jsonString) as T;
+    }
 
     throw UnsupportedError('Type $T is not supported');
   }

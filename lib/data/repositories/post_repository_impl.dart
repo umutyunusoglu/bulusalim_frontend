@@ -1,4 +1,3 @@
-import 'package:bulusalim/core/constants/Configs/app_config.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/core/utils/types/enums/emote_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/distance.dart';
@@ -7,7 +6,7 @@ import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/post/post_model.dart';
 import 'package:bulusalim/data/repositories/in_memory_cache.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
-import 'package:bulusalim/domain/feed/post/post_entity.dart';
+import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
 import 'package:bulusalim/domain/repositories/post_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -26,8 +25,8 @@ class PostRepositoryImpl implements PostRepository {
   final _maxFetchedIdsLength = 1000;
 
   final cache = InMemoryCache<PostEntity>(
-    cacheSizeLimit: AppConfig.postCacheSizeLimit,
-    ttl: AppConfig.postCacheTTL,
+    cacheSizeLimit: 100,
+    ttl: const Duration(minutes: 2),
   );
 
   @override
@@ -75,7 +74,7 @@ class PostRepositoryImpl implements PostRepository {
       final docSnapshot = await docRef.get();
 
       if (docSnapshot.exists) {
-        final postModel = await PostModel.fromFirestore(docSnapshot.data()!);
+        final postModel = PostModel.fromFirestore(docSnapshot.data()!);
         return postModel.toEntity();
       } else {
         return null;
@@ -97,7 +96,7 @@ class PostRepositoryImpl implements PostRepository {
       // her doc için async işlem yapacağın için Future.wait kullan
       final posts = await Future.wait(
         querySnapshot.docs.map((doc) async {
-          final model = await PostModel.fromFirestore(doc.data());
+          final model = PostModel.fromFirestore(doc.data());
           return model.toEntity();
         }),
       );
@@ -116,7 +115,7 @@ class PostRepositoryImpl implements PostRepository {
 
       final posts = await Future.wait(
         snapshot.docs.map((doc) async {
-          final model = await PostModel.fromFirestore(doc.data());
+          final model = PostModel.fromFirestore(doc.data());
           return model.toEntity();
         }),
       );
@@ -138,7 +137,7 @@ class PostRepositoryImpl implements PostRepository {
 
       final posts = await Future.wait(
         querySnapshot.docs.map((doc) async {
-          final model = await PostModel.fromFirestore(doc.data());
+          final model = PostModel.fromFirestore(doc.data());
           return model.toEntity();
         }),
       );
@@ -160,7 +159,7 @@ class PostRepositoryImpl implements PostRepository {
 
       final posts = await Future.wait(
         querySnapshot.docs.map((doc) async {
-          final model = await PostModel.fromFirestore(doc.data());
+          final model = PostModel.fromFirestore(doc.data());
           return model.toEntity();
         }),
       );
@@ -181,7 +180,7 @@ class PostRepositoryImpl implements PostRepository {
 
     final models = await Future.wait(
       snapshot.docs.map((doc) async {
-        final model = await PostModel.fromFirestore(doc.data());
+        final model = PostModel.fromFirestore(doc.data());
         return model;
       }),
     );
@@ -272,7 +271,7 @@ class PostRepositoryImpl implements PostRepository {
 
       final newPosts = await Future.wait(
         snapshot.docs.map((doc) async {
-          final model = await PostModel.fromFirestore(doc.data());
+          final model = PostModel.fromFirestore(doc.data());
           return model.toEntity();
         }),
       );
@@ -317,7 +316,7 @@ class PostRepositoryImpl implements PostRepository {
           .then(
             (snapshot) => Future.wait(
               snapshot.docs.map((doc) async {
-                final model = await PostModel.fromFirestore(doc.data());
+                final model = PostModel.fromFirestore(doc.data());
                 return model.toEntity();
               }),
             ),
@@ -359,7 +358,7 @@ class PostRepositoryImpl implements PostRepository {
 
       final newPosts = await Future.wait(
         snapshot.docs.map((doc) async {
-          final model = await PostModel.fromFirestore(doc.data());
+          final model = PostModel.fromFirestore(doc.data());
           return model.toEntity();
         }),
       );
@@ -417,7 +416,7 @@ class PostRepositoryImpl implements PostRepository {
           .then(
             (snapshot) => Future.wait(
               snapshot.docs.map((doc) async {
-                final model = await PostModel.fromFirestore(doc.data());
+                final model = PostModel.fromFirestore(doc.data());
                 return model.toEntity();
               }),
             ),
@@ -459,7 +458,7 @@ class PostRepositoryImpl implements PostRepository {
 
       final newPosts = await Future.wait(
         snapshot.docs.map((doc) async {
-          final model = await PostModel.fromFirestore(doc.data());
+          final model = PostModel.fromFirestore(doc.data());
           return model.toEntity();
         }),
       );
