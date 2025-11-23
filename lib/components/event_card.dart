@@ -1,8 +1,8 @@
+import 'package:bulusalim/components/countdown_timer.dart';
 import 'package:bulusalim/components/stacked_avatars.dart';
 import 'package:bulusalim/core/constants/constant.dart';
+import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/user_entity.dart';
-import 'package:bulusalim/domain/feed/event/event_entity.dart';
-import 'package:bulusalim/components/countdown_timer.dart';
 import 'package:bulusalim/screens/home/eventcomponents/info_icon.dart';
 import 'package:bulusalim/screens/home/eventcomponents/overlay_tag_chip.dart';
 import 'package:flutter/material.dart';
@@ -20,60 +20,64 @@ class EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     /// 1. DİNAMİK VERİLER
-    List<String> dynamicAvatarUrls = participants
+    final dynamicAvatarUrls = participants
         .map((user) => user.profileImageUrl)
         .toList();
-    const List<String> staticAvatarUrls = [
+
+    const staticAvatarUrls = <String>[
       'https://picsum.photos/seed/avatar1/100/100',
       'https://picsum.photos/seed/avatar2/100/100',
       'https://picsum.photos/seed/avatar3/100/100',
     ];
-    final List<String> participantAvatarUrls = dynamicAvatarUrls.isNotEmpty
+    final participantAvatarUrls = dynamicAvatarUrls.isNotEmpty
         ? dynamicAvatarUrls
         : staticAvatarUrls;
 
     /// 2. STATİK VERİLER
-    const String staticBackgroundImageUrl =
+    const staticBackgroundImageUrl =
         'https://picsum.photos/seed/tracking/800/600';
     const String staticLocationName = 'İnegöl, Bolu';
     const double staticDistanceInKm = 225;
 
-    return Container(
-      height: 180.h,
-      margin: EdgeInsets.symmetric(vertical: 8.h),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16.r),
-        child: Stack(
-          children: [
-            _buildBackgroundImage(staticBackgroundImageUrl),
-            _buildGradientOverlay(),
-            Positioned(
-              top: 8.h,
-              right: 16.w,
-              child: _buildIconSection(context),
-            ),
-            Padding(
-              padding: EdgeInsets.only(
+    return Padding(
+      padding: EdgeInsets.only(left: 16.w, right: 16.w),
+      child: Container(
+        height: 180.h,
+        margin: EdgeInsets.symmetric(vertical: 8.h),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16.r),
+          child: Stack(
+            children: [
+              _buildBackgroundImage(staticBackgroundImageUrl),
+              _buildGradientOverlay(),
+              Positioned(
                 top: 8.h,
-                left: 16.w,
                 right: 16.w,
-                bottom: 16.h,
+                child: _buildIconSection(context),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: 8.h),
-                  _buildTopInfoSection(
-                    context,
-                    participantAvatarUrls,
-                    staticLocationName,
-                  ),
-                  const Spacer(),
-                  _buildBottomRow(context, staticDistanceInKm),
-                ],
+              Padding(
+                padding: EdgeInsets.only(
+                  top: 8.h,
+                  left: 16.w,
+                  right: 16.w,
+                  bottom: 16.h,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 8.h),
+                    _buildTopInfoSection(
+                      context,
+                      participantAvatarUrls,
+                      staticLocationName,
+                    ),
+                    const Spacer(),
+                    _buildBottomRow(context, staticDistanceInKm),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

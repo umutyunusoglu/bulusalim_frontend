@@ -2,7 +2,11 @@ import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/components/event_card.dart';
 import 'package:bulusalim/components/post_card.dart';
 import 'package:bulusalim/core/enums/feed_type.dart';
+import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
+import 'package:bulusalim/domain/entities/feed/feed_entity.dart';
 import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
+import 'package:bulusalim/domain/entities/user/user_entity.dart';
+import 'package:bulusalim/domain/repositories/event_repository.dart';
 import 'package:bulusalim/domain/repositories/post_repository.dart';
 import 'package:bulusalim/domain/repositories/user_repository.dart';
 import 'package:flutter/material.dart';
@@ -34,8 +38,8 @@ class _HomeContentPageState extends State<HomeContentPage> {
   Future<void> _fetchFeed() async {
     try {
       // 1. Post'ları ve Event'leri Çek
-      List<PostEntity> posts = [];
-      List<EventEntity> events = [];
+      var posts = <PostEntity>[];
+      var events = <EventEntity>[];
 
       if (widget.feedType == FeedType.forYou) {
         posts = await _postRepository.getAllPosts();
@@ -55,7 +59,7 @@ class _HomeContentPageState extends State<HomeContentPage> {
 
       // Event katılımcılarının ID'leri
       for (final event in events) {
-        allUserIds.addAll(event.participants);
+        allUserIds.addAll(event.participants.map((p) => p.userID));
       }
 
       // 3. Tüm Kullanıcıları Tek Seferde (Paralel) Çek
@@ -73,9 +77,7 @@ class _HomeContentPageState extends State<HomeContentPage> {
       }
 
       // 5. Feed Listesini Oluştur ve Sırala
-      final combinedList = <Object>[]
-        ..addAll(posts)
-        ..addAll(events)
+      final combinedList = <FeedEntity>[...posts, ...events]
         ..sort((a, b) {
           DateTime dateA;
           DateTime dateB;

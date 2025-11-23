@@ -121,8 +121,8 @@ class EventParticipantEntity extends Equatable {
       userID: map['userID'] as Identifier,
       username: map['username'] as String,
       profileImageUrl: map['profileImageUrl'] as String,
-      role: EventRoleEnum.values[map['role'] as int],
-      eventScore: map['eventScore'] as double,
+      role: EventRoleEnum.fromString(map['role'] as String),
+      eventScore: (map['eventScore'] as num).toDouble(),
     );
   }
 
