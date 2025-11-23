@@ -109,36 +109,3 @@ class LoginScreen extends StatelessWidget {
     );
   }
 }
-
-
-/*Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Stack(
-                      children: [
-                        Image.asset(
-                          'assets/ellipse5.png',
-                          width: 50.w,
-                          height: 100.h,
-                        ),
-                        Image.asset(
-                          'assets/b2.png',
-                          width: 50.w,
-                          height: 80.h,
-                        ),
-                        Row(
-                          children: [
-                            const SizedBox(
-                              width: 30,
-                            ),
-                            Image.asset(
-                              'assets/ulusalim.png',
-                              width: 120.w,
-                              height: 86.h,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ), */
