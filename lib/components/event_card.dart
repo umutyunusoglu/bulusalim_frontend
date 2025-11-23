@@ -39,42 +39,45 @@ class EventCard extends StatelessWidget {
     const String staticLocationName = 'İnegöl, Bolu';
     const double staticDistanceInKm = 225;
 
-    return Container(
-      height: 180.h,
-      margin: EdgeInsets.symmetric(vertical: 8.h),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16.r),
-        child: Stack(
-          children: [
-            _buildBackgroundImage(staticBackgroundImageUrl),
-            _buildGradientOverlay(),
-            Positioned(
-              top: 8.h,
-              right: 16.w,
-              child: _buildIconSection(context),
-            ),
-            Padding(
-              padding: EdgeInsets.only(
+    return Padding(
+      padding: EdgeInsets.only(left: 16.w, right: 16.w),
+      child: Container(
+        height: 180.h,
+        margin: EdgeInsets.symmetric(vertical: 8.h),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16.r),
+          child: Stack(
+            children: [
+              _buildBackgroundImage(staticBackgroundImageUrl),
+              _buildGradientOverlay(),
+              Positioned(
                 top: 8.h,
-                left: 16.w,
                 right: 16.w,
-                bottom: 16.h,
+                child: _buildIconSection(context),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: 8.h),
-                  _buildTopInfoSection(
-                    context,
-                    participantAvatarUrls,
-                    staticLocationName,
-                  ),
-                  const Spacer(),
-                  _buildBottomRow(context, staticDistanceInKm),
-                ],
+              Padding(
+                padding: EdgeInsets.only(
+                  top: 8.h,
+                  left: 16.w,
+                  right: 16.w,
+                  bottom: 16.h,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 8.h),
+                    _buildTopInfoSection(
+                      context,
+                      participantAvatarUrls,
+                      staticLocationName,
+                    ),
+                    const Spacer(),
+                    _buildBottomRow(context, staticDistanceInKm),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
