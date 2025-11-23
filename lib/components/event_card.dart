@@ -1,8 +1,8 @@
+import 'package:bulusalim/components/countdown_timer.dart';
 import 'package:bulusalim/components/stacked_avatars.dart';
 import 'package:bulusalim/core/constants/constant.dart';
+import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/user_entity.dart';
-import 'package:bulusalim/domain/feed/event/event_entity.dart';
-import 'package:bulusalim/components/countdown_timer.dart';
 import 'package:bulusalim/screens/home/eventcomponents/info_icon.dart';
 import 'package:bulusalim/screens/home/eventcomponents/overlay_tag_chip.dart';
 import 'package:flutter/material.dart';
@@ -20,20 +20,21 @@ class EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     /// 1. DİNAMİK VERİLER
-    List<String> dynamicAvatarUrls = participants
+    final dynamicAvatarUrls = participants
         .map((user) => user.profileImageUrl)
         .toList();
-    const List<String> staticAvatarUrls = [
+
+    const staticAvatarUrls = <String>[
       'https://picsum.photos/seed/avatar1/100/100',
       'https://picsum.photos/seed/avatar2/100/100',
       'https://picsum.photos/seed/avatar3/100/100',
     ];
-    final List<String> participantAvatarUrls = dynamicAvatarUrls.isNotEmpty
+    final participantAvatarUrls = dynamicAvatarUrls.isNotEmpty
         ? dynamicAvatarUrls
         : staticAvatarUrls;
 
     /// 2. STATİK VERİLER
-    const String staticBackgroundImageUrl =
+    const staticBackgroundImageUrl =
         'https://picsum.photos/seed/tracking/800/600';
     const String staticLocationName = 'İnegöl, Bolu';
     const double staticDistanceInKm = 225;
