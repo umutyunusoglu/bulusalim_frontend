@@ -1,9 +1,11 @@
+import 'package:bulusalim/core/constants/Configs/app_config.dart';
 import 'package:bulusalim/core/utils/types/enums/restriction_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/model.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 class EventModel extends Model<EventEntity> {
   EventModel({
@@ -46,23 +48,47 @@ class EventModel extends Model<EventEntity> {
     final attributesMap = doc['attributes'] as Map<String, dynamic>;
     final location = doc['location'] as GeoPoint;
 
+    late final EventParticipantEntity creator;
+    late final List<EventParticipantEntity> participants;
+
+    if (kDebugMode) {
+      print(doc['participants']);
+
+      creator =
+          EventParticipantEntity.fromMap(
+            doc['creator'] as Map<String, dynamic>,
+          ).copyWith(
+            profileImageUrl: (doc['creator']['profileImageUrl'] as String)
+                .replaceAll(
+                  'localhost',
+                  AppConfig.host,
+                ),
+          );
+
+      participants =
+          (doc['participants'] as List?)
+              ?.map(
+                (p) => EventParticipantEntity.fromMap(p as Map<String, dynamic>)
+                    .copyWith(
+                      profileImageUrl: (p['profileImageUrl'] as String)
+                          .replaceAll(
+                            'localhost',
+                            AppConfig.host,
+                          ),
+                    ),
+              )
+              .toList() ??
+          [];
+    }
+
     return EventModel(
       eventId: doc['eventID'] as String,
       name: doc['name'] as String,
       info: doc['info'] as String?,
       hobbies: (doc['hobbies'] as List?)?.cast<String>().toList() ?? [],
-      creator: EventParticipantEntity.fromMap(
-        doc['creator'] as Map<String, dynamic>,
-      ),
+      creator: creator,
       capacity: doc['capacity'] as int,
-      participants:
-          (doc['participants'] as List?)
-              ?.map(
-                (p) =>
-                    EventParticipantEntity.fromMap(p as Map<String, dynamic>),
-              )
-              .toList() ??
-          [],
+      participants: participants,
       startTime: (doc['startTime'] as Timestamp).toDate(),
       endTime: (doc['endTime'] as Timestamp).toDate(),
       location: Geolocation.fromMap({
@@ -86,14 +112,33 @@ class EventModel extends Model<EventEntity> {
 
   @override
   Map<String, dynamic> toFirestore() {
+    final participantsMaps = participants
+        .map(
+          (p) => p
+              .copyWith(
+                profileImageUrl: p.profileImageUrl.replaceAll(
+                  AppConfig.host,
+                  'localhost',
+                ),
+              )
+              .toMap(),
+        )
+        .toList();
+
+    final creatorMap = creator.toMap();
+    creatorMap['profileImageUrl'] = creator.profileImageUrl.replaceAll(
+      AppConfig.host,
+      'localhost',
+    );
+
     return {
       'eventID': eventId,
       'name': name,
       'info': info,
       'hobbies': hobbies,
-      'creator': creator,
+      'creator': creatorMap,
       'capacity': capacity,
-      'participants': participants.map((p) => p.toMap()).toList(),
+      'participants': participantsMaps,
       'startTime': startTime,
       'endTime': endTime,
       'location': location.toMap(),

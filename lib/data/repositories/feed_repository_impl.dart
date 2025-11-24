@@ -25,7 +25,7 @@ class FeedRepositoryImpl implements FeedRepository {
   final LoggingService _logger;
   final List<Identifier> _fetchedIds = [];
   Set<Identifier> _fetchedIdsSet = {};
-  final _maxFetchedIdsLength = 1000;
+  final int _maxFetchedIdsLength = AppConfig.feedIDListSize;
 
   final cache = InMemoryCache<FeedEntity>(
     cacheSizeLimit: AppConfig.feedCacheSizeLimit,
@@ -35,7 +35,6 @@ class FeedRepositoryImpl implements FeedRepository {
   @override
   Future<List<FeedEntity>> fetchNextFeedBatch(
     FeedEntity? referenceFeedItem,
-    int batchSize,
   ) async {
     final batch = <FeedEntity>[];
 
@@ -44,7 +43,7 @@ class FeedRepositoryImpl implements FeedRepository {
 
     if (referenceFeedItem == null) {
       final snapshot = await _firestore
-          .collection('feeds')
+          .collection('feed')
           .orderBy('createdAt', descending: true)
           .limit(batchSize)
           .get();
@@ -90,7 +89,7 @@ class FeedRepositoryImpl implements FeedRepository {
     // If there are missing entities fetch them from database
     if (missingEntityIds.isNotEmpty) {
       final snapshot = await _firestore
-          .collection('feeds')
+          .collection('feed')
           .where(FieldPath.documentId, whereIn: missingEntityIds)
           .orderBy('createdAt', descending: true)
           .get();
@@ -114,10 +113,10 @@ class FeedRepositoryImpl implements FeedRepository {
           : referenceFeedItem.id;
 
       final snapshot = await _firestore
-          .collection('feeds')
+          .collection('feed')
           .orderBy('createdAt', descending: true)
           .startAfterDocument(
-            await _firestore.collection('feeds').doc(lastFetchedId).get(),
+            await _firestore.collection('feed').doc(lastFetchedId).get(),
           )
           .limit(batchSize - batch.length)
           .get();
@@ -149,7 +148,6 @@ class FeedRepositoryImpl implements FeedRepository {
   @override
   Future<List<FeedEntity>> fetchPreviousFeedBatch(
     FeedEntity referenceFeedItem,
-    int batchSize,
   ) async {
     final batch = <FeedEntity>[];
     final referenceIdx = _fetchedIdsSet.contains(referenceFeedItem.id)
@@ -175,7 +173,7 @@ class FeedRepositoryImpl implements FeedRepository {
     }
     if (missingEntityIds.isNotEmpty) {
       final snapshot = await _firestore
-          .collection('feeds')
+          .collection('feed')
           .where(FieldPath.documentId, whereIn: missingEntityIds)
           .orderBy('createdAt', descending: true)
           .get();
@@ -198,10 +196,10 @@ class FeedRepositoryImpl implements FeedRepository {
           : referenceFeedItem.id;
 
       final snapshot = await _firestore
-          .collection('feeds')
+          .collection('feed')
           .orderBy('createdAt', descending: true)
           .endBeforeDocument(
-            await _firestore.collection('feeds').doc(firstFetchedId).get(),
+            await _firestore.collection('feed').doc(firstFetchedId).get(),
           )
           .limit(batchSize - batch.length)
           .get();

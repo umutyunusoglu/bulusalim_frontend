@@ -9,7 +9,7 @@ import 'package:equatable/equatable.dart';
 class PostEntity extends FeedEntity with EquatableMixin {
   PostEntity({
     required this.postID,
-    required this.userID,
+    required this.creator,
     required this.eventID,
     required this.caption,
     required this.hobbies,
@@ -19,12 +19,11 @@ class PostEntity extends FeedEntity with EquatableMixin {
     required this.updatedAt,
     this.location,
     this.imageUrls,
-    this.isPinned = false,
   }) : super(feedType: FeedEntityType.post, id: postID);
 
   PostEntity copyWith({
     Identifier? postID,
-    Identifier? userID,
+    PostParticipantEntity? creator,
     Identifier? eventID,
     String? caption,
     Geolocation? location,
@@ -35,11 +34,10 @@ class PostEntity extends FeedEntity with EquatableMixin {
     UserEntity? user,
     DateTime? createdAt,
     DateTime? updatedAt,
-    bool? isPinned,
   }) {
     return PostEntity(
       postID: postID ?? this.postID,
-      userID: userID ?? this.userID,
+      creator: creator ?? this.creator,
       eventID: eventID ?? this.eventID,
       caption: caption ?? this.caption,
       createdAt: createdAt ?? this.createdAt,
@@ -49,19 +47,18 @@ class PostEntity extends FeedEntity with EquatableMixin {
       imageUrls: imageUrls ?? this.imageUrls,
       participants: participants ?? this.participants,
       emoteCounts: emoteCounts ?? this.emoteCounts,
-      isPinned: isPinned ?? this.isPinned,
     );
   }
 
   @override
   List<Object?> get props => [
     postID,
-    userID,
+    creator,
     eventID,
   ];
 
   final Identifier postID;
-  final Identifier userID;
+  final PostParticipantEntity creator;
   final Identifier eventID;
   final String caption;
   final DateTime createdAt;
@@ -71,7 +68,6 @@ class PostEntity extends FeedEntity with EquatableMixin {
   final List<String>? imageUrls;
   final List<PostParticipantEntity> participants;
   final Map<EmoteEnum, int> emoteCounts;
-  final bool isPinned;
 }
 
 class PostParticipantEntity extends Equatable {
@@ -80,6 +76,18 @@ class PostParticipantEntity extends Equatable {
     required this.username,
     required this.profileImageUrl,
   });
+
+  PostParticipantEntity copyWith({
+    Identifier? userID,
+    String? username,
+    String? profileImageUrl,
+  }) {
+    return PostParticipantEntity(
+      userID: userID ?? this.userID,
+      username: username ?? this.username,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+    );
+  }
 
   factory PostParticipantEntity.fromMap(Map<String, dynamic> map) {
     return PostParticipantEntity(
