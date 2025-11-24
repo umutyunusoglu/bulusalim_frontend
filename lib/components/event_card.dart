@@ -44,7 +44,12 @@ class EventCard extends StatelessWidget {
 
     // 2. ARAYÜZ (UI) YAPISI
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      padding: EdgeInsets.only(
+        left: 16.w,
+        right: 16.w,
+        top: 20.h,
+        bottom: 20.h,
+      ),
       child: Container(
         height: 180.h,
         margin: EdgeInsets.symmetric(vertical: 8.h),

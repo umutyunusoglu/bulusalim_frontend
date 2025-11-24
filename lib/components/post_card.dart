@@ -2,7 +2,6 @@ import 'package:bulusalim/components/countdown_timer.dart';
 import 'package:bulusalim/core/constants/constant.dart';
 import 'package:bulusalim/core/utils/types/enums/emote_enum.dart';
 import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
-import 'package:bulusalim/domain/entities/user/user_entity.dart';
 import 'package:bulusalim/screens/home/post%20components/content_tag_chip.dart';
 import 'package:bulusalim/screens/home/post%20components/emoji_chip.dart';
 import 'package:bulusalim/screens/home/post%20components/small_stacked_avatars.dart';
@@ -62,7 +61,7 @@ class _PostCardState extends State<PostCard> {
 
     return Card(
       elevation: 0,
-      margin: EdgeInsets.only(bottom: 16.h, left: 16.w, right: 16.w),
+      margin: EdgeInsets.only(bottom: 20.h, left: 16.w, right: 16.w, top: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
