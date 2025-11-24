@@ -15,7 +15,7 @@ class EventCard extends StatelessWidget {
     super.key,
   });
   final EventEntity event;
-  final List<UserEntity> participants;
+  final List<EventParticipantEntity> participants;
 
   @override
   Widget build(BuildContext context) {

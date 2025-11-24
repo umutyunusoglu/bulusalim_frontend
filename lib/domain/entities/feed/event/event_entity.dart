@@ -116,6 +116,22 @@ class EventParticipantEntity extends Equatable {
     required this.eventScore,
   });
 
+  EventParticipantEntity copyWith({
+    Identifier? userID,
+    String? username,
+    String? profileImageUrl,
+    EventRoleEnum? role,
+    double? eventScore,
+  }) {
+    return EventParticipantEntity(
+      userID: userID ?? this.userID,
+      username: username ?? this.username,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      role: role ?? this.role,
+      eventScore: eventScore ?? this.eventScore,
+    );
+  }
+
   factory EventParticipantEntity.fromMap(Map<String, dynamic> map) {
     return EventParticipantEntity(
       userID: map['userID'] as Identifier,

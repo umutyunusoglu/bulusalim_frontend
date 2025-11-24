@@ -16,7 +16,7 @@ class PostCard extends StatefulWidget {
     super.key,
   });
   final PostEntity post;
-  final UserEntity? user;
+  final PostParticipantEntity? user;
 
   @override
   State<PostCard> createState() => _PostCardState();
@@ -50,11 +50,10 @@ class _PostCardState extends State<PostCard> {
 
     /// 2. STATİK VERİLER
     const staticLocationName = 'Blackfish Cafe, Kızılay, Çankaya';
-    final staticLikedByAvatars = <String>[
-      'https://picsum.photos/seed/avatar2/100/100',
-      'https://picsum.photos/seed/avatar3/100/100',
-      'https://picsum.photos/seed/avatar4/100/100',
-    ];
+    final staticLikedByAvatars = widget.post.participants
+        .take(3)
+        .map((p) => p.profileImageUrl)
+        .toList();
     const defaultImageUrl = 'https://picsum.photos/seed/cafe/600/800';
 
     final effectiveMediaUrls = mediaUrls.isNotEmpty
