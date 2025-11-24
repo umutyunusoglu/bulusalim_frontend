@@ -11,7 +11,7 @@ import 'package:flutter/foundation.dart';
 class PostModel extends Model<PostEntity> {
   PostModel({
     required this.postID,
-    required this.userID,
+    required this.creator,
     required this.eventID,
     required this.caption,
     required this.hobbies,
@@ -21,13 +21,12 @@ class PostModel extends Model<PostEntity> {
     required this.updatedAt,
     this.location,
     this.imageUrls,
-    this.isPinned = false,
   });
 
   factory PostModel.fromEntity(PostEntity entity) {
     return PostModel(
       postID: entity.postID,
-      userID: entity.userID,
+      creator: entity.creator,
       eventID: entity.eventID,
       caption: entity.caption,
       createdAt: entity.createdAt,
@@ -37,25 +36,61 @@ class PostModel extends Model<PostEntity> {
       imageUrls: entity.imageUrls,
       participants: entity.participants,
       emoteCounts: entity.emoteCounts,
-      isPinned: entity.isPinned,
     );
   }
 
   factory PostModel.fromFirestore(Map<String, dynamic> doc) {
     late final List<String>? imageUrls;
-
+    late final List<PostParticipantEntity> participants;
+    late final PostParticipantEntity creator;
     if (kDebugMode) {
       imageUrls = (doc['imageUrls'] as List<dynamic>?)
           ?.map(
             (path) => (path as String).replaceAll('localhost', AppConfig.host),
           )
           .toList();
+
+      participants = (doc['participants'] as List<dynamic>)
+          .map(
+            (participant) =>
+                PostParticipantEntity.fromMap(
+                  participant as Map<String, dynamic>,
+                ).copyWith(
+                  profileImageUrl: (participant['profileImageUrl'] as String)
+                      .replaceAll(
+                        'localhost',
+                        AppConfig.host,
+                      ),
+                ),
+          )
+          .toList();
+      creator =
+          PostParticipantEntity.fromMap(
+            doc['creator'] as Map<String, dynamic>,
+          ).copyWith(
+            profileImageUrl: (doc['creator']['profileImageUrl'] as String)
+                .replaceAll(
+                  'localhost',
+                  AppConfig.host,
+                ),
+          );
     } else {
       imageUrls = (doc['imageUrls'] as List<dynamic>?)
           ?.map(
             (path) => path as String,
           )
           .toList();
+      participants = (doc['participants'] as List<dynamic>)
+          .map(
+            (participant) => PostParticipantEntity.fromMap(
+              participant as Map<String, dynamic>,
+            ),
+          )
+          .toList();
+
+      creator = PostParticipantEntity.fromMap(
+        doc['creator'] as Map<String, dynamic>,
+      );
     }
 
     final location = doc['location'] as GeoPoint;
@@ -66,7 +101,7 @@ class PostModel extends Model<PostEntity> {
 
     return PostModel(
       postID: doc['postID'] as String,
-      userID: doc['userID'] as String,
+      creator: creator,
       eventID: doc['eventID'] as String,
       caption: doc['caption'] as String,
       createdAt: (doc['createdAt'] as Timestamp).toDate(),
@@ -76,20 +111,13 @@ class PostModel extends Model<PostEntity> {
           .map((hobby) => HobbyEntity.fromString(hobby as String))
           .toList(),
       imageUrls: imageUrls,
-      participants: (doc['participants'] as List<dynamic>)
-          .map(
-            (participant) => PostParticipantEntity.fromMap(
-              participant as Map<String, dynamic>,
-            ),
-          )
-          .toList(),
+      participants: participants,
       emoteCounts: (doc['emoteCounts'] as Map<String, dynamic>).map(
         (key, value) => MapEntry(
           EmoteEnum.values[int.parse(key)],
           value as int,
         ),
       ),
-      isPinned: doc['isPinned'] as bool,
     );
   }
 
@@ -97,7 +125,7 @@ class PostModel extends Model<PostEntity> {
   PostEntity toEntity() {
     return PostEntity(
       postID: postID,
-      userID: userID,
+      creator: creator,
       eventID: eventID,
       caption: caption,
       createdAt: createdAt,
@@ -121,26 +149,41 @@ class PostModel extends Model<PostEntity> {
         )
         .toList();
 
+    final creatorMap = creator.toMap();
+    creatorMap['profileImageUrl'] = creator.profileImageUrl.replaceAll(
+      AppConfig.host,
+      'localhost',
+    );
+
+    final participantsMaps = participants.map((participant) {
+      final participantMap = participant.toMap();
+      participantMap['profileImageUrl'] = participant.profileImageUrl
+          .replaceAll(
+            AppConfig.host,
+            'localhost',
+          );
+      return participantMap;
+    }).toList();
+
     return {
       'postID': postID,
-      'userID': userID,
+      'creator': creatorMap,
       'eventID': eventID,
       'caption': caption,
       'location': location?.toMap(),
       'hobbies': hobbies.map((hobby) => hobby.name).toList(),
       'imageUrls': imageUrlsFirestore,
-      'participants': participants.map((p) => p.toMap()).toList(),
+      'participants': participantsMaps,
       'emoteCounts': emoteCounts.map(
         (key, value) => MapEntry(key.index.toString(), value),
       ),
       'createdAt': createdAt,
       'updatedAt': updatedAt,
-      'isPinned': isPinned,
     };
   }
 
   final Identifier postID;
-  final Identifier userID;
+  final PostParticipantEntity creator;
   final Identifier eventID;
   final String caption;
   final DateTime createdAt;
@@ -150,5 +193,4 @@ class PostModel extends Model<PostEntity> {
   final List<String>? imageUrls;
   final List<PostParticipantEntity> participants;
   final Map<EmoteEnum, int> emoteCounts;
-  final bool isPinned;
 }
