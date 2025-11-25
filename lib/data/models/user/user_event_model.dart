@@ -1,4 +1,5 @@
 import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart';
+import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/model.dart';
 import 'package:bulusalim/domain/entities/user/user_event_entity.dart';
@@ -9,6 +10,8 @@ class UserEventModel extends Model<UserEventEntity> {
     required this.eventID,
     required this.eventDate,
     required this.role,
+    this.status = EventStatusEnum.upcoming,
+    this.pinned = false,
   });
 
   @override
@@ -17,6 +20,8 @@ class UserEventModel extends Model<UserEventEntity> {
       eventID: entity.eventId,
       eventDate: entity.eventDate,
       role: entity.role,
+      status: entity.status,
+      pinned: entity.pinned,
     );
   }
 
@@ -26,6 +31,8 @@ class UserEventModel extends Model<UserEventEntity> {
       eventID: doc['eventID'] as Identifier,
       eventDate: (doc['eventDate'] as Timestamp).toDate(),
       role: EventRoleEnum.values[doc['role'] as int],
+      status: EventStatusEnum.fromString(doc['status'] as String),
+      pinned: doc['pinned'] as bool,
     );
   }
 
@@ -35,6 +42,8 @@ class UserEventModel extends Model<UserEventEntity> {
       'eventID': eventID,
       'eventDate': Timestamp.fromDate(eventDate),
       'role': role.index,
+      'status': status.toString(),
+      'pinned': pinned,
     };
   }
 
@@ -44,10 +53,14 @@ class UserEventModel extends Model<UserEventEntity> {
       eventId: eventID,
       eventDate: eventDate,
       role: role,
+      status: status,
+      pinned: pinned,
     );
   }
 
   final Identifier eventID;
   final DateTime eventDate;
   final EventRoleEnum role;
+  final EventStatusEnum status;
+  final bool pinned;
 }

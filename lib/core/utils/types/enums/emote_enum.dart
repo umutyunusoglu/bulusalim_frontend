@@ -7,6 +7,9 @@ enum EmoteEnum {
 
   final String value;
 
+  @override
+  String toString() => value;
+
   static EmoteEnum fromString(String value) {
     switch (value) {
       case 'heart':
