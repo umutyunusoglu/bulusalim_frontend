@@ -62,7 +62,7 @@ class _CameraPageState extends State<CameraPage> {
           children: [
             // --- 1. BÜYÜK KAMERA ALANI (Kamera + Kontroller + Kapatma) ---
             Expanded(
-              flex: 3, // Ekranın büyük kısmını kaplar
+              flex: 3,
               child: Container(
                 // Kenar boşlukları
                 margin: EdgeInsets.fromLTRB(10.w, 10.h, 10.w, 0),
@@ -146,7 +146,7 @@ class _CameraPageState extends State<CameraPage> {
                           onPressed: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const HomePage(),
+                              builder: (context) => const BottomNavScreen(),
                             ),
                           ),
                         ),
@@ -178,7 +178,7 @@ class _CameraPageState extends State<CameraPage> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: _customOrange, // Turuncu Çerçeve
+                                      color: _customOrange,
                                       width: 4.w,
                                     ),
                                   ),
@@ -227,29 +227,50 @@ class _CameraPageState extends State<CameraPage> {
                             ? _takenPhotos[index]
                             : null;
 
-                        return GestureDetector(
-                          onTap: () {
-                            if (imageFile != null) _removePhoto(index);
-                          },
-                          child: Container(
-                            width: 100.w,
-                            height: 100.w,
-                            margin: EdgeInsets.symmetric(horizontal: 8.w),
-                            decoration: BoxDecoration(
-                              color: Colors.transparent,
-                              borderRadius: BorderRadius.circular(12.r),
-                              border: Border.all(
-                                color: Colors.grey.shade700,
-                                width: 1,
+                        return Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              width: 94.w,
+                              height: 94.w,
+                              margin: EdgeInsets.symmetric(horizontal: 8.w),
+                              decoration: BoxDecoration(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(12.r),
+                                border: Border.all(
+                                  color: Colors.grey.shade700,
+                                  width: 1,
+                                ),
+                                image: imageFile != null
+                                    ? DecorationImage(
+                                        image: FileImage(imageFile),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null,
                               ),
-                              image: imageFile != null
-                                  ? DecorationImage(
-                                      image: FileImage(imageFile),
-                                      fit: BoxFit.cover,
-                                    )
-                                  : null,
                             ),
-                          ),
+                            // Çöp Kutusu İkonu (Sadece fotoğraf varsa göster)
+                            if (imageFile != null)
+                              Positioned(
+                                top: -10.h,
+                                right: 0.w,
+                                child: GestureDetector(
+                                  onTap: () => _removePhoto(index),
+                                  child: Container(
+                                    padding: EdgeInsets.all(4.w),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.black,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.delete_outline,
+                                      color: Colors.white,
+                                      size: 18.sp,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         );
                       }),
                     ),
@@ -291,12 +312,10 @@ class _CameraPageState extends State<CameraPage> {
                           child: SizedBox(
                             height: 50.h,
                             child: ElevatedButton(
-                              // DÜZELTME: Artık koşulsuz olarak aktif
                               onPressed: () {
                                 debugPrint(
                                   "Paylaş butonu tıklandı, ana sayfaya dönülüyor.",
                                 );
-                                // Ana kısma (HomePage) yönlendirme
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -306,8 +325,7 @@ class _CameraPageState extends State<CameraPage> {
                                 );
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    _customOrange, // Her zaman turuncu
+                                backgroundColor: _customOrange,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30.r),
                                 ),
