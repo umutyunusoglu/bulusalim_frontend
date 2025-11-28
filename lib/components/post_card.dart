@@ -35,41 +35,6 @@ class _PostCardState extends State<PostCard> {
     super.dispose();
   }
 
-  // --- İşlevsel Metotlar ---
-  // Sağ üstteki ikona tıklandığında açılan alt menü (Bottom Sheet)
-  void _handleMoreOptions(BuildContext context) {
-    CustomBottomSheet.show(
-      context,
-      options: [
-        CustomBottomSheetOption(
-          icon: Icons.person_off_outlined,
-          label: 'Takibi Bırak',
-          onTap: () {
-            Navigator.pop(context);
-            // TODO: Takibi bırakma servisini buraya bağla
-          },
-        ),
-        CustomBottomSheetOption(
-          icon: Icons.ios_share,
-          label: 'Paylaş',
-          onTap: () {
-            Navigator.pop(context);
-            // TODO: Paylaşma özelliğini buraya bağla
-          },
-        ),
-        CustomBottomSheetOption(
-          icon: Icons.error_outline,
-          label: 'Şikayet Et',
-          color: const Color(0xFFFD6B68), // Özel uyarı rengi
-          onTap: () {
-            Navigator.pop(context);
-            // TODO: Şikayet servisini buraya bağla
-          },
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     // --- Veri Hazırlığı ---
@@ -108,7 +73,7 @@ class _PostCardState extends State<PostCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. BÖLÜM: HEADER (Kullanıcı Avatarı, İsim, Konum, Seçenekler)
+          // 1. Kart Başlığı (HEADER) - Ortalanmış ve Kısıtlanmış
           Center(
             child: SizedBox(
               child: _buildHeader(
@@ -120,7 +85,7 @@ class _PostCardState extends State<PostCard> {
             ),
           ),
 
-          // 2. BÖLÜM: İÇERİK (Resim Slider'ı ve Üzerindeki Etkileşimler)
+          // 2. İçerik (RESİM) - Ortalanmış ve Kısıtlanmış
           Center(
             child: _buildContent(
               context,
@@ -132,6 +97,7 @@ class _PostCardState extends State<PostCard> {
             ),
           ),
 
+          // --- BOŞLUK (Bitişiklik Sorununun Çözümü) ---
           SizedBox(height: 10.h),
 
           // Sayfa Göstergesi (Sadece birden fazla resim varsa gösterilir)
@@ -141,7 +107,7 @@ class _PostCardState extends State<PostCard> {
             ),
           ],
 
-          // 3. BÖLÜM: FOOTER (Açıklama metni, Geri sayım, Etiketler)
+          // 3. Alt Kısım (FOOTER) - Ortalanmış ve Kısıtlanmış
           Center(
             child: SizedBox(
               child: _buildFooter(
@@ -179,7 +145,7 @@ class _PostCardState extends State<PostCard> {
       trailing: IconButton(
         icon: const Icon(Icons.share_outlined),
         onPressed: () {
-          _handleMoreOptions(context);
+          /* Paylaşma fonksiyonu */
         },
       ),
     );
@@ -312,10 +278,12 @@ class _PostCardState extends State<PostCard> {
     required String caption,
     required List<String> tags,
   }) {
+    // Geri sayım için stil (PostCard'a özel gri renk)
     final timeStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
       color: Colors.grey.shade600,
     );
 
+    // içeriği 12.w ile hizalıyoruz.
     return Padding(
       padding: EdgeInsets.fromLTRB(0, 4.h, 0, 12.h),
       child: Column(
