@@ -1,4 +1,4 @@
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:bulusalim/core/constants/constant.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -8,40 +8,29 @@ class OverlayTagChip extends StatelessWidget {
     required this.icon,
     super.key,
   });
-
   final String label;
   final IconData icon;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      // İç boşluk (Padding)
       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-      // Dış boşluk (Margin)
       margin: EdgeInsets.only(bottom: 6.h),
-
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.2), // Hafif karartma
+        color: Colors.black.withOpacity(
+          0.2,
+        ), //
         borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(
-          color: AppColors.tagBorder,
-          width: 1.w,
-        ),
+        border: Border.all(color: kTagBorderColor, width: 1.w),
       ),
-
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            icon,
-            color: Colors.white,
-            size: 14.sp,
-          ),
-          SizedBox(width: 4.w), // İkon ve metin arası boşluk
+          Icon(icon, color: Colors.white, size: 14.sp),
+          SizedBox(width: 2.w),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelSmall,
+            style: TextStyle(color: Colors.white, fontSize: 10.sp),
           ),
         ],
       ),

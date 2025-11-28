@@ -1,7 +1,7 @@
 // lib/screens/bottom_nav/bottomnav_screen.dart
 
 import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:bulusalim/core/constants/constant.dart';
 import 'package:bulusalim/core/utils/nav_parser.dart';
 import 'package:bulusalim/domain/services/remote_config_service.dart';
 import 'package:bulusalim/screens/chat/chat_page.dart';
@@ -135,7 +135,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
         onTap: _onItemTapped,
 
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.navyBlue,
+        selectedItemColor: kBlueColor,
         unselectedItemColor: Colors.grey.shade600,
         showSelectedLabels: false,
         showUnselectedLabels: false,
