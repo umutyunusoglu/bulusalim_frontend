@@ -1,4 +1,5 @@
 import 'package:bulusalim/core/utils/types/types.dart';
+import 'package:bulusalim/domain/entities/user/friend_entity.dart';
 import 'package:bulusalim/domain/entities/user/index.dart';
 import 'package:bulusalim/domain/entities/user/user_entity.dart';
 import 'package:bulusalim/domain/entities/user/user_event_entity.dart';
@@ -29,21 +30,40 @@ abstract class UserRepository {
     String hobbyName,
   );
 
-  Future<List<UserHobbyEntity>> getUserHobbies(
-    Identifier userID,
-  );
-
   // === Events Subcollection ===
   Future<void> addEvent(
     Identifier userID,
     UserEventEntity event,
   );
-  Future<List<UserEventEntity>> getUserEvents(
+  Future<List<UserEventEntity>> getUserEventHistory(
     Identifier userID,
   );
   Future<void> deleteEvent(
     Identifier userID,
     Identifier eventID,
+  );
+
+  // Hobbies Subcollection
+  Future<List<UserHobbyEntity>> getUserHobbies(
+    Identifier userID,
+  );
+
+  // Friendships Subcollection
+  Future<void> addFollower(
+    Identifier userID,
+    Follower follower,
+  );
+  Future<void> removeFollower(
+    Identifier userID,
+    Identifier followerID,
+  );
+  Future<void> addFollowee(
+    Identifier userID,
+    Followee followee,
+  );
+  Future<void> removeFollowee(
+    Identifier userID,
+    Identifier followeeID,
   );
 
   // === Query & Search ===
