@@ -1,5 +1,6 @@
 import 'package:bulusalim/components/countdown_timer.dart';
-import 'package:bulusalim/core/constants/constant.dart';
+import 'package:bulusalim/components/custom_bottom_sheet.dart';
+import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:bulusalim/core/utils/types/enums/emote_enum.dart';
 import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
 import 'package:bulusalim/screens/home/post%20components/content_tag_chip.dart';
@@ -22,7 +23,10 @@ class PostCard extends StatefulWidget {
 }
 
 class _PostCardState extends State<PostCard> {
+  // --- State Yönetimi ---
+  // Resimler arasında geçiş yapmak için kullanılan kontrolcü
   final PageController _pageController = PageController();
+  // Şu an hangi resimde olduğumuzu tutan değişken
   int _currentPage = 0;
 
   @override
@@ -33,21 +37,24 @@ class _PostCardState extends State<PostCard> {
 
   @override
   Widget build(BuildContext context) {
-    /// 1. DİNAMİK VERİLER
+    // --- Veri Hazırlığı ---
+    // UI içerisinde kullanmak için Entity'den verileri ayıklıyoruz
     final caption = widget.post.caption;
     final mediaUrls = widget.post.imageUrls ?? [];
     final tags = widget.post.hobbies.map((h) => h.name).toList();
 
+    // Etkileşim sayıları (Kalp, Alkış, Yumurta vb.)
     final likeCount = widget.post.emoteCounts[EmoteEnum.heart] ?? 0;
     final clapCount = widget.post.emoteCounts[EmoteEnum.clap] ?? 0;
     final eggCount = widget.post.emoteCounts[EmoteEnum.egg] ?? 0;
 
+    // Kullanıcı bilgileri (Null kontrolü ile varsayılan değerler)
     final username = widget.user?.username ?? 'Buluşalım Kullanıcısı';
     final userAvatarUrl =
         widget.user?.profileImageUrl ??
         'https://picsum.photos/seed/avatar_default/100/100';
 
-    /// 2. STATİK VERİLER
+    // Statik veriler (İleride dinamik hale getirilebilir)
     const staticLocationName = 'Blackfish Cafe, Kızılay, Çankaya';
     final staticLikedByAvatars = widget.post.participants
         .take(3)
@@ -55,6 +62,7 @@ class _PostCardState extends State<PostCard> {
         .toList();
     const defaultImageUrl = 'https://picsum.photos/seed/cafe/600/800';
 
+    // Eğer resim yoksa varsayılan resmi göster
     final effectiveMediaUrls = mediaUrls.isNotEmpty
         ? mediaUrls
         : [defaultImageUrl];
@@ -92,6 +100,7 @@ class _PostCardState extends State<PostCard> {
           // --- BOŞLUK (Bitişiklik Sorununun Çözümü) ---
           SizedBox(height: 10.h),
 
+          // Sayfa Göstergesi (Sadece birden fazla resim varsa gösterilir)
           if (effectiveMediaUrls.length > 1) ...[
             Center(
               child: _buildPageIndicator(effectiveMediaUrls.length),
@@ -113,7 +122,9 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  // 1. Kart Başlığı
+  // --- Yardımcı Widget Metotları ---
+
+  // Header oluşturucu: Avatar ve kullanıcı bilgilerini içerir
   Widget _buildHeader(
     BuildContext context, {
     required String avatarUrl,
@@ -140,7 +151,7 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  // 2. İçerik (Kaydırılabilir Resimler + Overlay)
+  // İçerik oluşturucu: Resimlerin olduğu PageView ve üzerindeki butonları içerir
   Widget _buildContent(
     BuildContext context, {
     required List<String> mediaUrls,
@@ -151,7 +162,7 @@ class _PostCardState extends State<PostCard> {
   }) {
     return Stack(
       children: [
-        // Kaydırılabilir Resimler
+        // Resim Kaydırıcı (Carousel)
         ClipRRect(
           borderRadius: BorderRadius.circular(12.r),
           child: SizedBox(
@@ -174,8 +185,7 @@ class _PostCardState extends State<PostCard> {
             ),
           ),
         ),
-
-        // Resim Üzerindeki Overlay (Etkileşimler)
+        // Resmin üzerindeki etkileşim çipleri (Overlay)
         Positioned(
           bottom: 12.h,
           left: 12.w,
@@ -192,7 +202,7 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  // 2a. Etkileşim Overlay'i
+  // Etkileşim katmanı: Kalp, yorum ikonları ve beğenenlerin avatarları
   Widget _buildInteractionsOverlay(
     BuildContext context, {
     required int likeCount,
@@ -203,7 +213,7 @@ class _PostCardState extends State<PostCard> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
       decoration: BoxDecoration(
-        color: Colors.transparent,
+        color: Colors.transparent, // Arkaplan şeffaf
         borderRadius: BorderRadius.circular(35.r),
       ),
       child: Row(
@@ -226,6 +236,7 @@ class _PostCardState extends State<PostCard> {
             color: Colors.white,
           ),
           const Spacer(),
+          // İç içe geçmiş küçük avatarlar
           SmallStackedAvatars(
             avatarUrls: likedByAvatars,
             size: 28.r,
@@ -236,7 +247,7 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  // 2b. Sayfa Gösterge Noktaları
+  // Sayfa indikatörü (Noktalar): Hangi resimde olduğumuzu gösterir
   Widget _buildPageIndicator(int pageCount) {
     return Padding(
       padding: EdgeInsets.all(4.r),
@@ -250,8 +261,9 @@ class _PostCardState extends State<PostCard> {
             margin: EdgeInsets.symmetric(horizontal: 4.w),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
+              // Aktif sayfa ise tema rengi, değilse gri
               color: _currentPage == index
-                  ? kButtonBackgroundColor //TODO: theme
+                  ? AppColors.slateBlue
                   : Colors.grey.shade400,
             ),
           );
@@ -260,7 +272,7 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  // 3. Alt Kısım (Caption, Zaman ve Etiketler)
+  // Footer oluşturucu: Başlık, geri sayım ve etiketler
   Widget _buildFooter(
     BuildContext context, {
     required String caption,
@@ -277,6 +289,7 @@ class _PostCardState extends State<PostCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Başlık ve Süre
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 12.w),
             child: Row(
@@ -294,6 +307,7 @@ class _PostCardState extends State<PostCard> {
                   ),
                 ),
                 SizedBox(width: 16.w),
+                // Etkinlik için geri sayım bileşeni
                 CountdownTimer(
                   targetTime: widget.post.createdAt,
                   style: timeStyle,
@@ -301,10 +315,8 @@ class _PostCardState extends State<PostCard> {
               ],
             ),
           ),
-
           SizedBox(height: 8.h),
-
-          // Etiketler
+          // Etiketler (Chips) - Kahve içeriyorsa farklı ikon
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 12.w),
             child: Row(

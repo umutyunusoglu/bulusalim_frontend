@@ -3,10 +3,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class StackedAvatars extends StatelessWidget {
   final List<String> avatarUrls;
+
   const StackedAvatars({
-    Key? key,
     required this.avatarUrls,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +19,6 @@ class StackedAvatars extends StatelessWidget {
     final double overlap = 16.r;
 
     final items = avatarUrls.take(3).toList();
-
     if (items.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -34,8 +34,8 @@ class StackedAvatars extends StatelessWidget {
       avatarWidgets.add(
         Positioned(
           left: currentLeftPosition,
-          bottom: 0, // Alttan hizalama
-          child: Container(
+          bottom: 0,
+          child: SizedBox(
             width: currentSize,
             height: currentSize,
             child: CircleAvatar(
@@ -50,7 +50,7 @@ class StackedAvatars extends StatelessWidget {
         ),
       );
 
-      // Bir sonraki avatarın 'left' pozisyonunu hazırla
+      // Bir sonraki avatarın pozisyonunu hazırla
       if (isFirst) {
         currentLeftPosition += (firstAvatarSize - overlap);
       } else {
@@ -74,6 +74,7 @@ class StackedAvatars extends StatelessWidget {
     return SizedBox(
       height: firstAvatarSize,
       width: totalWidth,
+      // Stack içindeki öğeleri ters çeviriyoruz ki ilk sıradaki en üstte görünsün
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.bottomLeft,

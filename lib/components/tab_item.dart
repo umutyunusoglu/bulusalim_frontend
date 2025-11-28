@@ -1,4 +1,4 @@
-import 'package:bulusalim/core/constants/constant.dart';
+import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -10,6 +10,7 @@ class TabItem extends StatelessWidget {
     required this.onTap,
     super.key,
   });
+
   final String label;
   final bool isSelected;
   final double width;
@@ -27,7 +28,7 @@ class TabItem extends StatelessWidget {
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-              color: isSelected ? kBlueColor : Colors.grey.shade600,
+              color: isSelected ? AppColors.navyBlue : Colors.grey.shade600,
             ),
           ),
         ),
