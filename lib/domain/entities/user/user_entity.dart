@@ -1,7 +1,5 @@
 import 'package:bulusalim/core/utils/types/enums/gender_enum.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
-import 'package:bulusalim/domain/entities/user/user_event_entity.dart';
-import 'package:bulusalim/domain/entities/user/user_hobby_entity.dart';
 import 'package:equatable/equatable.dart';
 
 class UserEntity extends Equatable {
@@ -19,7 +17,6 @@ class UserEntity extends Equatable {
     required this.updatedAt,
     required this.lastActiveAt,
     this.hobbies = const [],
-    this.events = const [],
   });
 
   UserEntity copyWith({
@@ -35,8 +32,7 @@ class UserEntity extends Equatable {
     String? avatarUrl,
     String? bio,
     UserPermissions? permissions,
-    List<UserHobbyEntity>? hobbies,
-    List<UserEventEntity>? events,
+    List<String>? hobbies,
   }) {
     return UserEntity(
       userID: userID ?? this.userID,
@@ -52,7 +48,6 @@ class UserEntity extends Equatable {
       lastActiveAt: lastActiveAt,
       permissions: permissions ?? this.permissions,
       hobbies: hobbies ?? this.hobbies,
-      events: events ?? this.events,
     );
   }
 
@@ -69,8 +64,7 @@ class UserEntity extends Equatable {
   final DateTime updatedAt;
   final DateTime lastActiveAt;
 
-  final List<UserHobbyEntity> hobbies;
-  final List<UserEventEntity> events;
+  final List<String> hobbies;
 
   @override
   List<Object?> get props => [
