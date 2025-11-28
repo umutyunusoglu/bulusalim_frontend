@@ -1,4 +1,4 @@
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:bulusalim/core/constants/constant.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -9,9 +9,8 @@ class Header extends StatelessWidget {
     this.trailing,
     this.padding,
   });
-
-  final Widget? title;
-  final Widget? trailing;
+  final Widget? title; // ortadaki logo veya başlık
+  final Widget? trailing; // sağdaki ikon (örneğin bildirim)
   final EdgeInsetsGeometry? padding;
 
   @override
@@ -26,10 +25,10 @@ class Header extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Sol taraf boşluk (Görsel denge için sağdaki ikon kadar yer kaplar)
+          // sol taraf boşluk (görsel denge için)
           SizedBox(width: 30.w),
 
-          // Ortada Logo veya Başlık
+          // ortada logo veya başlık
           Expanded(
             child: Center(
               child:
@@ -41,11 +40,11 @@ class Header extends StatelessWidget {
             ),
           ),
 
-          // Sağdaki İkon
+          // sağdaki ikon
           trailing ??
               Icon(
                 Icons.notifications_none_outlined,
-                color: AppColors.navyBlue,
+                color: kBlueColor,
                 size: 28.sp,
               ),
         ],
@@ -53,3 +52,18 @@ class Header extends StatelessWidget {
     );
   }
 }
+
+/*
+// 🔝 Üst Bar
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Image.asset('assets/bulusalim.png'),
+                  SizedBox(width: 110.sp),
+                  Icon(
+                    Icons.notifications_none,
+                    size: 25.sp,
+                    color: kBlueColor,
+                  ),
+                ],
+              ),*/

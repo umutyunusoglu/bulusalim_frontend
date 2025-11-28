@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:bulusalim/screens/bottomnav_screen.dart';
+import 'package:bulusalim/screens/home/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
@@ -14,6 +14,9 @@ class CameraPage extends StatefulWidget {
 
 class _CameraPageState extends State<CameraPage> {
   final ImagePicker _picker = ImagePicker();
+
+  // Görselden alınan özel turuncu renk
+  final Color _customOrange = const Color(0xFFF27A5E);
 
   // Çekilen fotoğrafları tutacak liste (Maksimum 3 adet)
   final List<File> _takenPhotos = [];
@@ -175,8 +178,7 @@ class _CameraPageState extends State<CameraPage> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      // GÜNCELLEME: AppColors'dan customOrange kullanıldı
-                                      color: AppColors.customOrange,
+                                      color: _customOrange,
                                       width: 4.w,
                                     ),
                                   ),
@@ -283,9 +285,8 @@ class _CameraPageState extends State<CameraPage> {
                             child: OutlinedButton(
                               onPressed: () => Navigator.pop(context),
                               style: OutlinedButton.styleFrom(
-                                side: const BorderSide(
-                                  // GÜNCELLEME: AppColors'dan customOrange kullanıldı
-                                  color: AppColors.customOrange,
+                                side: BorderSide(
+                                  color: _customOrange, // Turuncu kenarlık
                                   width: 1,
                                 ),
                                 shape: RoundedRectangleBorder(
@@ -324,8 +325,7 @@ class _CameraPageState extends State<CameraPage> {
                                 );
                               },
                               style: ElevatedButton.styleFrom(
-                                // GÜNCELLEME: AppColors'dan customOrange kullanıldı
-                                backgroundColor: AppColors.customOrange,
+                                backgroundColor: _customOrange,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30.r),
                                 ),

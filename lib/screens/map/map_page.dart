@@ -1,5 +1,6 @@
 import 'package:bulusalim/components/custom_tab_bar.dart';
 import 'package:bulusalim/components/header.dart';
+import 'package:bulusalim/core/constants/constant.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/domain/repositories/post_repository.dart';
 import 'package:flutter/material.dart';
@@ -37,6 +38,7 @@ class _HomePageState extends State<MapPage> {
                 title: Image.asset('assets/bulusalim.png', height: 40.h),
                 trailing: Icon(
                   Icons.notifications_none_outlined,
+                  color: kBlueColor,
                   size: 25.sp,
                 ),
               ),
