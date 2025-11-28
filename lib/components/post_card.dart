@@ -31,103 +31,6 @@ class _PostCardState extends State<PostCard> {
     super.dispose();
   }
 
-  // --- ALTTAN AÇILAN MENÜ FONKSİYONU ---
-  void _showOptionsBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.symmetric(vertical: 10.h),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Gri Tutma Çubuğu (Handle)
-              Container(
-                width: 40.w,
-                height: 4.h,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2.r),
-                ),
-              ),
-              SizedBox(height: 20.h),
-
-              // 1. Seçenek: Takibi Bırak
-              _buildBottomSheetOption(
-                context,
-                icon: Icons.person_off_outlined,
-                text: 'Takibi Bırak',
-                onTap: () {
-                  Navigator.pop(context);
-                  // Takibi bırakma işlemleri...
-                },
-              ),
-
-              // 2. Seçenek: Paylaş
-              _buildBottomSheetOption(
-                context,
-                icon: Icons.ios_share,
-                text: 'Paylaş',
-                onTap: () {
-                  Navigator.pop(context);
-                  // Paylaşma işlemleri...
-                },
-              ),
-
-              // 3. Seçenek: Şikayet Et (Kırmızı)
-              _buildBottomSheetOption(
-                context,
-                icon: Icons.error_outline,
-                text: 'Şikayet Et',
-                textColor: const Color(0xFFFD6B68), // Özel Kırmızı Tonu
-                onTap: () {
-                  Navigator.pop(context);
-                  // Şikayet işlemleri...
-                },
-              ),
-              SizedBox(height: 10.h),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  // Menü Seçeneği Widget'ı
-  Widget _buildBottomSheetOption(
-    BuildContext context, {
-    required IconData icon,
-    required String text,
-    required VoidCallback onTap,
-    Color textColor = Colors.black87,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
-        child: Row(
-          children: [
-            Icon(icon, color: textColor, size: 24.sp),
-            SizedBox(width: 16.w),
-            Text(
-              text,
-              style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w500,
-                color: textColor,
-                fontFamily: 'Urbanist',
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     /// 1. DİNAMİK VERİLER
@@ -162,7 +65,7 @@ class _PostCardState extends State<PostCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Kart Başlığı (HEADER)
+          // 1. Kart Başlığı (HEADER) - Ortalanmış ve Kısıtlanmış
           Center(
             child: SizedBox(
               child: _buildHeader(
@@ -174,7 +77,7 @@ class _PostCardState extends State<PostCard> {
             ),
           ),
 
-          // 2. İçerik (RESİM)
+          // 2. İçerik (RESİM) - Ortalanmış ve Kısıtlanmış
           Center(
             child: _buildContent(
               context,
@@ -186,6 +89,7 @@ class _PostCardState extends State<PostCard> {
             ),
           ),
 
+          // --- BOŞLUK (Bitişiklik Sorununun Çözümü) ---
           SizedBox(height: 10.h),
 
           if (effectiveMediaUrls.length > 1) ...[
@@ -194,7 +98,7 @@ class _PostCardState extends State<PostCard> {
             ),
           ],
 
-          // 3. Alt Kısım (FOOTER)
+          // 3. Alt Kısım (FOOTER) - Ortalanmış ve Kısıtlanmış
           Center(
             child: SizedBox(
               child: _buildFooter(
@@ -228,10 +132,9 @@ class _PostCardState extends State<PostCard> {
       ),
       subtitle: Text(location),
       trailing: IconButton(
-        icon: const Icon(Icons.share_outlined), // İkon aynı kaldı
+        icon: const Icon(Icons.share_outlined),
         onPressed: () {
-          // --- BUTONA BASINCA MENÜYÜ AÇ ---
-          _showOptionsBottomSheet(context);
+          /* Paylaşma fonksiyonu */
         },
       ),
     );
@@ -363,10 +266,12 @@ class _PostCardState extends State<PostCard> {
     required String caption,
     required List<String> tags,
   }) {
+    // Geri sayım için stil (PostCard'a özel gri renk)
     final timeStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
       color: Colors.grey.shade600,
     );
 
+    // içeriği 12.w ile hizalıyoruz.
     return Padding(
       padding: EdgeInsets.fromLTRB(0, 4.h, 0, 12.h),
       child: Column(
