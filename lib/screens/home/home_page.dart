@@ -1,8 +1,7 @@
 import 'package:bulusalim/components/custom_tab_bar.dart';
 import 'package:bulusalim/components/header.dart';
 import 'package:bulusalim/core/constants/constant.dart';
-import 'package:bulusalim/core/enums/feed_type.dart';
-import 'package:bulusalim/screens/camera/splash_screen.dart';
+import 'package:bulusalim/core/utils/types/enums/feed_type.dart';
 import 'package:bulusalim/screens/home/home_content_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
