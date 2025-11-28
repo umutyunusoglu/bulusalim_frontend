@@ -1,10 +1,15 @@
-import 'package:bulusalim/core/constants/constant.dart';
+import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-// İçerik Etiketi Çipi
+// İçerik Etiketi Çipi (PostCard altında kullanılır)
 class ContentTagChip extends StatelessWidget {
-  const ContentTagChip({required this.label, required this.icon, super.key});
+  const ContentTagChip({
+    required this.label,
+    required this.icon,
+    super.key,
+  });
+
   final String label;
   final IconData icon;
 
@@ -18,18 +23,20 @@ class ContentTagChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(20.r),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min, // İçerik kadar yer kaplasın
         children: [
           Icon(
             icon,
             size: 14.sp,
-            color: kBlueColor,
+            color: AppColors.navyBlue,
           ),
           SizedBox(width: 4.w),
           Text(
             label,
             style: TextStyle(
-              color: kBlueColor,
+              color: AppColors.navyBlue,
               fontSize: 12.sp,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],

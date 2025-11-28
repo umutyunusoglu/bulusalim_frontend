@@ -6,11 +6,7 @@ import 'package:bulusalim/core/enums/feed_type.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/feed/feed_entity.dart';
 import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
-import 'package:bulusalim/domain/entities/user/user_entity.dart';
-import 'package:bulusalim/domain/repositories/event_repository.dart';
 import 'package:bulusalim/domain/repositories/feed_repository.dart';
-import 'package:bulusalim/domain/repositories/post_repository.dart';
-import 'package:bulusalim/domain/repositories/user_repository.dart';
 import 'package:flutter/material.dart';
 
 class HomeContentPage extends StatefulWidget {
@@ -29,16 +25,16 @@ class _HomeContentPageState extends State<HomeContentPage> {
   bool _isLoadingPrev = false;
   bool _isInitialLoad = true;
 
-  final double _scrollThreshold = 800.0; // Pixel buffer for triggering fetch
+  final double _scrollThreshold = 800.0; // Veri çekme tetikleme eşiği
 
   final _feedRepository = getIt<FeedRepository>();
 
   @override
   void initState() {
     super.initState();
-    // 1. Setup Listener
+    // 1. Scroll Dinleyici
     _scrollController.addListener(_onScroll);
-    // 2. Initial Fetch
+    // 2. İlk Veri Çekme
     _fetchInitial();
   }
 
@@ -54,26 +50,20 @@ class _HomeContentPageState extends State<HomeContentPage> {
     final maxScroll = _scrollController.position.maxScrollExtent;
     final currentScroll = _scrollController.position.pixels;
 
-    // 1. Trigger Fetch Next (Bottom)
-    // If we are within the threshold of the bottom and not already loading
+    // 1. Aşağı Kaydırma (Eski gönderileri getir)
     if (currentScroll >= (maxScroll - _scrollThreshold) && !_isLoadingNext) {
       _fetchNextBatch();
     }
 
-    // 2. Trigger Fetch Previous (Top)
-    // If we are near the top (scrolling up) and not already loading
+    // 2. Yukarı Kaydırma (Yeni gönderileri getir - Opsiyonel)
     if (currentScroll <= _scrollThreshold && !_isLoadingPrev) {
-      // Ensure we aren't at the absolute top (0) unless you want pull-to-refresh behavior
-      // This logic depends on if 'previous' implies history or updates.
       _fetchPreviousBatch();
     }
   }
 
   Future<void> _fetchInitial() async {
     try {
-      final newItems = await _feedRepository.fetchNextFeedBatch(
-        null,
-      );
+      final newItems = await _feedRepository.fetchNextFeedBatch(null);
 
       if (mounted) {
         setState(() {
@@ -82,7 +72,8 @@ class _HomeContentPageState extends State<HomeContentPage> {
         });
       }
     } catch (e) {
-      // Handle Error
+      debugPrint("Initial fetch error: $e");
+      if (mounted) setState(() => _isInitialLoad = false);
     }
   }
 
@@ -90,10 +81,8 @@ class _HomeContentPageState extends State<HomeContentPage> {
     setState(() => _isLoadingNext = true);
 
     try {
-      final lastPost = _feedItems.last;
-      final newItems = await _feedRepository.fetchNextFeedBatch(
-        lastPost,
-      );
+      final lastPost = _feedItems.isNotEmpty ? _feedItems.last : null;
+      final newItems = await _feedRepository.fetchNextFeedBatch(lastPost);
 
       if (mounted && newItems.isNotEmpty) {
         setState(() {
@@ -101,48 +90,44 @@ class _HomeContentPageState extends State<HomeContentPage> {
         });
       }
     } catch (e) {
-      print("Error fetching next: $e");
+      debugPrint("Error fetching next: $e");
     } finally {
       if (mounted) setState(() => _isLoadingNext = false);
     }
   }
 
   Future<void> _fetchPreviousBatch() async {
-    // Prevent spamming the top trigger
+    // Spam engelleme
     if (_feedItems.isEmpty) return;
 
     setState(() => _isLoadingPrev = true);
 
     try {
       final firstPost = _feedItems.first;
-      // Assuming you have a similar method for 'previous'
-      // If your API is purely time-based, this might fetch items NEWER than 'firstPost'
-      final newItems = await _feedRepository.fetchPreviousFeedBatch(
-        firstPost,
-      );
+      final newItems = await _feedRepository.fetchPreviousFeedBatch(firstPost);
 
       if (mounted && newItems.isNotEmpty) {
-        // --- CRITICAL UI FIX ---
-        // When you insert at the top, the scroll view will visually "jump" because
-        // index 0 changes. We must save the previous scroll extent to fix this.
-        // (Note: For perfect bidirectional scrolling, use a 'center' key or advanced physics,
-        // but this manual adjustment works for basic cases).
-
+        // --- SCROLL POZİSYONUNU KORUMA ---
+        // Üste eleman eklenince liste kaymasın diye scroll'u düzeltiyoruz.
         double previousHeight = _scrollController.position.maxScrollExtent;
 
         setState(() {
           _feedItems.insertAll(0, newItems);
         });
 
-        // Post-frame: adjust scroll so user doesn't lose position
+        // Frame çizildikten sonra scroll'u eski konumuna zıplat
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          final newHeight = _scrollController.position.maxScrollExtent;
-          final double heightDifference = newHeight - previousHeight;
-          _scrollController.jumpTo(_scrollController.offset + heightDifference);
+          if (_scrollController.hasClients) {
+            final newHeight = _scrollController.position.maxScrollExtent;
+            final double heightDifference = newHeight - previousHeight;
+            _scrollController.jumpTo(
+              _scrollController.offset + heightDifference,
+            );
+          }
         });
       }
     } catch (e) {
-      print("Error fetching previous: $e");
+      debugPrint("Error fetching previous: $e");
     } finally {
       if (mounted) setState(() => _isLoadingPrev = false);
     }
@@ -150,36 +135,53 @@ class _HomeContentPageState extends State<HomeContentPage> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Loading State
+    // 1. Yükleniyor Durumu
     if (_isInitialLoad) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator.adaptive());
     }
 
-    // 2. Empty State (Fix for "seeing nothing" if API returns [])
+    // 2. Boş Durum (Empty State)
     if (_feedItems.isEmpty) {
-      return const Center(
-        child: Text("Henüz içerik yok."), // "No content yet"
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.feed_outlined,
+              size: 64,
+              color: Colors.grey.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              "Henüz içerik yok.",
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
       );
     }
+
     const itemThreshold = AppConfig.feedFetchThreshold;
 
     return ListView.builder(
       controller: _scrollController,
+      // Altta loading varsa +1 ekle
       itemCount: _feedItems.length + (_isLoadingNext ? 1 : 0),
       itemBuilder: (context, index) {
+        // --- OTOMATİK YÜKLEME TETİKLEYİCİLERİ (Fallback) ---
+
+        // Listenin sonuna yaklaşıldı mı?
         if (index >= _feedItems.length - itemThreshold &&
             !_isLoadingNext &&
             !_isInitialLoad) {
-          // Build işlemi sırasında setState çağırmamak için
-          // işlemi frame sonuna erteliyoruz (Microtask)
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _fetchNextBatch();
           });
         }
 
-        // --- PREVIOUS (YUKARI) TETİKLEME ---
-        // Eğer listenin başındaysak (örn: ilk 3 elemandan biri)
-        // Ve yukarı scroll yapılıyorsa (bunu kontrol etmek iyi olur ama zorunlu değil)
+        // Listenin başına yaklaşıldı mı?
         if (index <= itemThreshold &&
             !_isLoadingPrev &&
             !_isInitialLoad &&
@@ -189,13 +191,13 @@ class _HomeContentPageState extends State<HomeContentPage> {
           });
         }
 
-        // --- UI ÇİZİMİ (Mevcut kodun) ---
+        // --- UI ÇİZİMİ ---
 
-        // A. Bottom Loading Indicator
+        // A. Alt Loading İndikatörü
         if (index == _feedItems.length) {
           return const Padding(
             padding: EdgeInsets.all(16.0),
-            child: Center(child: CircularProgressIndicator()),
+            child: Center(child: CircularProgressIndicator.adaptive()),
           );
         }
 
@@ -210,7 +212,7 @@ class _HomeContentPageState extends State<HomeContentPage> {
           );
         }
 
-        return const SizedBox.shrink();
+        return const SizedBox.shrink(); // Bilinmeyen tip
       },
     );
   }

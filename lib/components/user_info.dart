@@ -3,6 +3,7 @@ import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/entities/user/user_entity.dart';
 import 'package:bulusalim/domain/repositories/user_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class UserInfo extends StatefulWidget {
   const UserInfo({
@@ -23,8 +24,7 @@ class _UserInfoState extends State<UserInfo> {
   @override
   void initState() {
     super.initState();
-    //GetIt'ten UserRepository'yi al
-
+    // GetIt'ten UserRepository'yi al
     final userRepository = getIt<UserRepository>();
 
     // 'getUser' metodunu çağır
@@ -38,19 +38,22 @@ class _UserInfoState extends State<UserInfo> {
       builder: (context, snapshot) {
         // Veri Yükleniyorsa
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Text(
+          return Text(
             '...',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
+            style: TextStyle(
+              fontSize: 12.sp, // Responsive boyut
+              color: Colors.grey,
+            ),
           );
         }
 
         // Hata oluştuysa veya kullanıcı bulunamadıysa
         if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-          return const Text(
+          return Text(
             'Bilinmeyen Kullanıcı',
             style: TextStyle(
-              fontSize: 12,
-              color: Colors.red,
+              fontSize: 12.sp,
+              color: Theme.of(context).colorScheme.error, // Tema hata rengi
               fontWeight: FontWeight.bold,
             ),
           );
