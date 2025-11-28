@@ -1,6 +1,5 @@
-import 'package:bulusalim/core/constants/theme/color_themes.dart'; // Renklerimizi buradan çekiyoruz
+import 'package:bulusalim/core/constants/constant.dart' as TextStyles;
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class SkipButton extends StatelessWidget {
   const SkipButton({
@@ -8,49 +7,34 @@ class SkipButton extends StatelessWidget {
     required this.text,
     super.key,
     this.backgroundColor = Colors.transparent,
-    this.textColor,
-    this.padding,
-    this.hasBorder = false,
+    //this.borderRadius = 20,
+    this.padding = const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
   });
-
   final String text;
   final VoidCallback onTap;
   final Color? backgroundColor;
-  final Color? textColor;
-  final EdgeInsetsGeometry? padding;
-  final bool hasBorder;
+  //final double borderRadius;
+  final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    final effectiveTextColor = textColor ?? AppColors.slateBlue;
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding:
-            padding ?? EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+        padding: padding,
         decoration: BoxDecoration(
           color: backgroundColor,
-          borderRadius: BorderRadius.circular(
-            20.r,
-          ),
-          border: hasBorder
-              ? Border.all(
-                  color: effectiveTextColor.withOpacity(0.5),
-                  width: 1,
-                )
-              : null,
+          //border için
+          /*
+          borderRadius: BorderRadius.circular(borderRadius.r),
+          border: Border.all(
+            color: TextStyles.skipButtonText.color!.withOpacity(0.5),
+            width: 1,
+          ),*/
         ),
         child: Text(
           text,
-
-          style: theme.textTheme.labelLarge?.copyWith(
-            color: effectiveTextColor,
-            fontWeight: FontWeight.bold,
-            fontSize: 14.sp,
-          ),
+          style: TextStyles.kSkipButtonText,
         ),
       ),
     );

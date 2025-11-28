@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:bulusalim/core/constants/constant.dart';
 import 'package:flutter/material.dart';
 
 class CountdownTimer extends StatefulWidget {
@@ -34,20 +35,17 @@ class _CountdownTimerState extends State<CountdownTimer> {
   }
 
   void _updateTime() {
-    if (mounted) {
-      setState(() {
-        _countdownText = _formatCountdown(widget.targetTime);
-      });
-    }
+    setState(() {
+      _countdownText = _formatCountdown(widget.targetTime);
+    });
   }
 
   String _formatCountdown(DateTime startTime) {
     final now = DateTime.now();
     final difference = startTime.difference(now);
 
-    // Süre dolduysa veya geçmişse
     if (difference.isNegative) {
-      return "Süre Doldu"; // veya "Etkinlik Başladı" gibi bir ifade
+      return "2sa";
     }
 
     final days = difference.inDays;
@@ -57,7 +55,6 @@ class _CountdownTimerState extends State<CountdownTimer> {
     List<String> parts = [];
     if (days > 0) parts.add("$days g.");
     if (hours > 0) parts.add("$hours sa.");
-    // Sadece günler 0 ise dakikayı gösterelim (yer tasarrufu)
     if (days == 0 && minutes > 0) parts.add("$minutes dk.");
 
     if (parts.isEmpty) return "Başlıyor";
@@ -67,9 +64,11 @@ class _CountdownTimerState extends State<CountdownTimer> {
 
   @override
   Widget build(BuildContext context) {
+    kInfoIconTextStyle;
+
     return Text(
       _countdownText,
-      style: widget.style ?? Theme.of(context).textTheme.labelSmall,
+      style: widget.style ?? kInfoIconTextStyle,
     );
   }
 }
