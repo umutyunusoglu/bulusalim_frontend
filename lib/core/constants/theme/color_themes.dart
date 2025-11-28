@@ -1,24 +1,30 @@
-// lib/core/constants/theme/color_themes.dart
-
 import 'package:flutter/material.dart';
 
-// Blue - Beige Palette
-//#1F748B    #2A97A6   #7FE4F3   #D9D3C2    #8B7A6A
-
 abstract class AppColors {
+  // --- Ana Marka Renkleri (Mevcut Kırmızı Teman) ---
   static const Color primaryColor = Color(0xFFF52837);
   static const Color secondaryColor = Color(0xFFA62828);
   static const Color backgroundColor = Color(0xFFFAFAFA);
 
+  // --- Yazı/İkon Renkleri (Light Mode) ---
   static const Color onPrimaryColor = Colors.white;
   static const Color onSecondaryColor = Colors.black87;
   static const Color onBackgroundColor = Color(0xFF2B2A2A);
 
-  // Koyu tema renkleri
-  static const Color darkPrimaryColor = Color.fromARGB(255, 27, 15, 15);
-  static const Color darkSecondaryColor = Color(0xFF555555);
-  static const Color darkBackgroundColor = Color.fromARGB(255, 190, 76, 76);
+  // --- Yeni Eklediğin Mavi/Slate Paleti (Etkinlik ve Post Kartları İçin) ---
+  static const Color slateBlue = Color(0XFF5B7A98);
+  static const Color navyBlue = Color(0xFF25396F);
+  static const Color tagBorder = Color(0xFFFCAD9F);
 
-  static const Color darkOnBackgroundColor = Color.fromARGB(255, 151, 67, 67);
-  static const Color darkOnSecondaryColor = Color.fromARGB(179, 48, 32, 32);
+  // --- KAMERA SAYFASI ÖZEL RENKLERİ ---
+  // Buradaki turuncu rengi koruduk ve isimlendirdik
+  static const Color customOrange = Color(0xFFF27A5E);
+
+  // --- Koyu Tema (Dark Mode) Renkleri ---
+  static const Color darkPrimaryColor = Color(0xFF2D1F1F);
+  static const Color darkSecondaryColor = Color(0xFF555555);
+  static const Color darkBackgroundColor = Color(0xFF1B1B1B);
+
+  static const Color darkOnBackgroundColor = Color(0xFFE0E0E0);
+  static const Color darkOnSecondaryColor = Color(0xFFD9D9D9);
 }
