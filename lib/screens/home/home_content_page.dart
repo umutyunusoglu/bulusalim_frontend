@@ -90,7 +90,7 @@ class _HomeContentPageState extends State<HomeContentPage> {
   @override
   Widget build(BuildContext context) {
     if (_isInitialLoad) {
-      return const Center(child: CircularProgressIndicator.adaptive());
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_feedItems.isEmpty) {

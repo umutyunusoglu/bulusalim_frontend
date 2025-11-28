@@ -74,7 +74,6 @@ class SignInScreen extends StatelessWidget {
                 borderWidth: 2,
                 borderRadius: 40,
                 width: 340.w,
-                // Renkler belirtilmediği için LoginButton varsayılan (SlateBlue) temasını kullanır.
               ),
 
               SizedBox(height: 20.h),
@@ -83,7 +82,6 @@ class SignInScreen extends StatelessWidget {
               LoginButton(
                 label: 'Giriş Yap',
                 onPress: () {
-                  // Rota yapınıza göre burası değişebilir, mevcut kodunuzdaki gibi bıraktım
                   Navigator.pushNamed(context, '/explore');
                 },
                 height: 50.h,
@@ -98,3 +96,81 @@ class SignInScreen extends StatelessWidget {
     );
   }
 }
+
+/*class SignInScreen extends StatelessWidget {
+  const SignInScreen({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      //backgroundColor: Colors.white, //backgroundColor beyaz yapıldı
+      body: Stack(
+        // fit: StackFit.expand, // Arka planın her zaman tam ekran olmasını garanti eder
+        children: [
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/logo2.png'),
+                  fit: BoxFit.fill,
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            // Telefonun çentik gibi alanlarından içeriği korur
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
+              child: Column(
+                children: [
+                  SizedBox(height: 50.h),
+                  // BAŞLIK
+                  Text(
+                    'Buluşmaya Hazır Mısın?',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: const Color(0xFFE4553F),
+                      fontSize: 50.sp,
+                      fontWeight: FontWeight.w800,
+                      fontFamily: 'QuicksansAccurateICG',
+                    ),
+                  ),
+                  const Spacer(),
+                  LoginButton(
+                    label: 'Hesap Oluştur',
+                    onPress: () {
+                      Navigator.pushNamed(context, '/login');
+                    },
+                    height: 50.h,
+                    borderWidth: 2,
+                    borderRadius: 40,
+                    width: double.infinity,
+                    backgroundColor: Colors.white,
+                    textColor: kLoginTextStyle.color, // Renk güncellendi
+                    borderColor: kButtonBackgroundColor,
+                  ),
+
+                  SizedBox(height: 20.h),
+                  LoginButton(
+                    label: 'Giriş Yap',
+                    onPress: () {
+                      Navigator.pushNamed(context, '/register');
+                    },
+                    height: 50.h,
+                    borderWidth: 2,
+                    borderRadius: 40,
+                    width: double.infinity,
+                    backgroundColor: Colors.white,
+                    textColor: kLoginTextStyle.color,
+                    borderColor: kButtonBackgroundColor,
+                  ),
+                  SizedBox(height: 40.h),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+*/

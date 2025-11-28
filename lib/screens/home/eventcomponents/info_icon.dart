@@ -6,24 +6,17 @@ class InfoIconText extends StatelessWidget {
   final Widget child;
 
   const InfoIconText({
+    Key? key,
     required this.icon,
     required this.child,
-    super.key,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          icon,
-          color: Colors.white,
-          size: 12.sp,
-        ),
-        SizedBox(
-          width: 4.w,
-        ),
+        Icon(icon, color: Colors.white, size: 12.sp),
+        SizedBox(width: 6.w),
         child,
       ],
     );

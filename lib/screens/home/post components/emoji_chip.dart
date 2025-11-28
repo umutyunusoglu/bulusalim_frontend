@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-// Emoji Çipi (PostCard üzerindeki overlay etkileşimler için)
+// Emoji Çipi
 class EmojiChip extends StatelessWidget {
   const EmojiChip({
     required this.icon,
@@ -9,7 +9,6 @@ class EmojiChip extends StatelessWidget {
     required this.color,
     super.key,
   });
-
   final IconData icon;
   final String text;
   final Color color;
@@ -19,9 +18,7 @@ class EmojiChip extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 6.h),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(
-          0.3,
-        ), // Arka plan (Glassmorphism etkisi)
+        color: Colors.white.withOpacity(0.3),
         borderRadius: BorderRadius.circular(30.r),
         border: Border.all(color: Colors.white24),
       ),
@@ -29,12 +26,13 @@ class EmojiChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: color, size: 14.sp),
-          SizedBox(width: 6.w),
+          SizedBox(width: 10.w),
           Text(
             text,
             style: TextStyle(
               color: Colors.white,
-              fontWeight: FontWeight.w600,
+              fontFamily: 'Urbanist',
+              fontWeight: FontWeight.w500,
               fontSize: 14.sp,
             ),
           ),

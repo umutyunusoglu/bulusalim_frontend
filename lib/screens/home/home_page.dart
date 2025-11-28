@@ -29,16 +29,17 @@ class _HomePageState extends State<HomePage> {
       context,
       MaterialPageRoute(builder: (context) => const CameraSplashScreen()),
     );
+    debugPrint("Kamera butonuna tıklandı!");
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Güvenli olması için beyaz zemin
+      // Stack'in ekranın güvenli alanları içinde kalması için SafeArea kullanıyoruz
       body: SafeArea(
         child: Stack(
           children: [
-            // KATMAN 1: ANA İÇERİK
+            // KATMAN 1: ANA İÇERİK (Sizin eski Column yapınız)
             Column(
               children: [
                 /// Üst başlık
@@ -46,8 +47,7 @@ class _HomePageState extends State<HomePage> {
                   title: Image.asset('assets/bulusalim.png', height: 40.h),
                   trailing: Icon(
                     Icons.notifications_none_outlined,
-                    // Eski: kBlueColor -> Yeni: AppColors.navyBlue
-                    color: AppColors.navyBlue,
+                    color: kBlueColor,
                     size: 25.sp,
                   ),
                 ),
@@ -83,15 +83,16 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
 
-            // KATMAN 2: FOTOĞRAF ÇEKME BUTONU (Floating Action Button mantığı)
+            // KATMAN 2: FOTOĞRAF ÇEKME BUTONU (En üstte durur)
             Positioned(
-              right: 6.w,
-              bottom: 14.h,
+              right: 6.w, // Sağdan boşluk
+              bottom: 14.h, // Alttan boşluk
               child: GestureDetector(
-                onTap: _navigateToCamera,
+                onTap: _navigateToCamera, // Tıklama aksiyonu
+                // İsteğe bağlı gölge efekti (Resmin kendisinde gölge yoksa)
                 child: Image.asset(
-                  'assets/group103.png',
-                  width: 62.w,
+                  'assets/group103.png', // Sizin belirttiğiniz görsel
+                  width: 62.w, // Görselin boyutu (İhtiyaca göre ayarlayın)
                   height: 80.w,
                   fit: BoxFit.contain,
                 ),
@@ -104,7 +105,6 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// Yardımcı Sayfalar (İsteğe bağlı ayrı dosyalara da taşınabilir)
 class SenlikPage extends StatelessWidget {
   const SenlikPage({super.key});
 
