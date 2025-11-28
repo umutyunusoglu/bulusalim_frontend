@@ -7,16 +7,7 @@ enum LifestyleEnum {
   final String value;
 
   @override
-  String toString() {
-    switch (this) {
-      case LifestyleEnum.never:
-        return 'Never';
-      case LifestyleEnum.social:
-        return 'Social';
-      case LifestyleEnum.regular:
-        return 'Regular';
-    }
-  }
+  String toString() => value;
 
   static LifestyleEnum fromString(String value) {
     switch (value) {

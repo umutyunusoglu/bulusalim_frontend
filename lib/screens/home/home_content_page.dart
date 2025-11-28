@@ -2,7 +2,7 @@ import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/components/event_card.dart';
 import 'package:bulusalim/components/post_card.dart';
 import 'package:bulusalim/core/constants/Configs/app_config.dart';
-import 'package:bulusalim/core/enums/feed_type.dart';
+import 'package:bulusalim/core/utils/types/enums/feed_type.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/feed/feed_entity.dart';

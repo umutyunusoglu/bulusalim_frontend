@@ -7,6 +7,9 @@ enum GenderEnum {
 
   final String value;
 
+  @override
+  String toString() => value;
+
   static GenderEnum fromString(String value) {
     switch (value) {
       case 'male':
@@ -16,7 +19,7 @@ enum GenderEnum {
       case 'other':
         return other;
       default:
-        throw Exception('Unknown gender: $value');
+        throw ArgumentError('Unknown gender: $value');
     }
   }
 }
