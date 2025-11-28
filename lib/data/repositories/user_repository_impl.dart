@@ -4,6 +4,7 @@ import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/user/user_event_model.dart';
 import 'package:bulusalim/data/models/user/user_hobby_model.dart';
 import 'package:bulusalim/data/models/user/user_model.dart';
+import 'package:bulusalim/domain/entities/user/friend_entity.dart';
 import 'package:bulusalim/domain/entities/user/index.dart';
 import 'package:bulusalim/domain/entities/user/user_event_entity.dart';
 import 'package:bulusalim/domain/entities/user/user_hobby_entity.dart';
@@ -157,7 +158,7 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Future<List<UserEventEntity>> getUserEvents(
+  Future<List<UserEventEntity>> getUserEventHistory(
     Identifier userID,
   ) async {
     _logger.info('Getting events for user: $userID');
@@ -189,6 +190,81 @@ class UserRepositoryImpl implements UserRepository {
         .doc(userID)
         .collection('events')
         .doc(eventID)
+        .delete();
+  }
+
+  // Friendships Subcollection
+  @override
+  Future<void> addFollower(
+    Identifier userID,
+    Follower follower,
+  ) async {
+    _logger.info('Adding follower for user: $userID');
+
+    final followerData = {
+      'userID': follower.userID,
+      'username': follower.username,
+      'profileImageUrl': follower.profileImageUrl,
+      'createdAt': Timestamp.fromDate(follower.createdAt),
+    };
+
+    await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('followers')
+        .doc(follower.userID)
+        .set(followerData);
+  }
+
+  @override
+  Future<void> removeFollower(
+    Identifier userID,
+    Identifier followerID,
+  ) async {
+    _logger.info('Removing follower for user: $userID');
+
+    await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('followers')
+        .doc(followerID)
+        .delete();
+  }
+
+  @override
+  Future<void> addFollowee(
+    Identifier userID,
+    Followee followee,
+  ) async {
+    _logger.info('Adding followee for user: $userID');
+
+    final followeeData = {
+      'userID': followee.userID,
+      'username': followee.username,
+      'profileImageUrl': followee.profileImageUrl,
+      'createdAt': Timestamp.fromDate(followee.createdAt),
+    };
+
+    await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('followees')
+        .doc(followee.userID)
+        .set(followeeData);
+  }
+
+  @override
+  Future<void> removeFollowee(
+    Identifier userID,
+    Identifier followeeID,
+  ) async {
+    _logger.info('Removing followee for user: $userID');
+
+    await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('followees')
+        .doc(followeeID)
         .delete();
   }
 
