@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/core/constants/Configs/app_config.dart';
+import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/constants/theme/app_theme.dart';
 import 'package:bulusalim/firebase_options.dart';
 import 'package:bulusalim/screens/login/login_screen.dart';
