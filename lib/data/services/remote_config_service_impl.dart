@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/core/constants/Configs/app_config.dart';
+import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/domain/services/remote_config_service.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/services.dart';
