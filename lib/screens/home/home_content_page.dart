@@ -1,7 +1,7 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/components/event_card.dart';
 import 'package:bulusalim/components/post_card.dart';
-import 'package:bulusalim/core/constants/Configs/app_config.dart';
+import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/utils/types/enums/feed_type.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
@@ -26,9 +26,10 @@ class _HomeContentPageState extends State<HomeContentPage> {
   List<FeedEntity> _feedItems = [];
   bool _isLoadingNext = false;
   bool _isInitialLoad = true;
-  final LoggingService _logger = getIt<LoggingService>();
 
   final int _nextPageThreshold = AppConfig.feedFetchThreshold;
+
+  bool _hasMoreData = true;
 
   @override
   void initState() {
@@ -43,29 +44,31 @@ class _HomeContentPageState extends State<HomeContentPage> {
   }
 
   Future<void> _fetchInitial() async {
-    try {
-      if (_feedItems.isEmpty) {
-        setState(() => _isInitialLoad = true);
-      }
+    if (_feedItems.isEmpty) {
+      setState(() => _isInitialLoad = true);
+    }
 
+    _hasMoreData = true;
+
+    try {
       final newItems = await _feedRepository.fetchNextFeedBatch(null);
 
       if (mounted) {
         setState(() {
           _feedItems = newItems;
           _isInitialLoad = false;
-
           _isLoadingNext = false;
         });
       }
     } on Exception catch (e) {
-      _logger.debug('Initial Fetch Error: $e');
+      // Hata yönetimi (Loglama vs.)
       if (mounted) setState(() => _isInitialLoad = false);
     }
   }
 
   Future<void> _fetchNextBatch() async {
-    if (_isLoadingNext || _feedItems.isEmpty) return;
+    // Zaten yükleniyorsa veya daha fazla veri yoksa dur.
+    if (_isLoadingNext || !_hasMoreData) return;
 
     setState(() => _isLoadingNext = true);
 
@@ -78,10 +81,12 @@ class _HomeContentPageState extends State<HomeContentPage> {
           setState(() {
             _feedItems.addAll(newItems);
           });
+        } else {
+          setState(() => _hasMoreData = false);
         }
       }
-    } on Exception catch (e) {
-      _logger.debug('Next Batch Error: $e');
+    } catch (e) {
+      // Hata loglama
     } finally {
       if (mounted) setState(() => _isLoadingNext = false);
     }
@@ -94,41 +99,39 @@ class _HomeContentPageState extends State<HomeContentPage> {
     }
 
     if (_feedItems.isEmpty) {
+      // Empty state widget'ın
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text('Henüz içerik yok.'),
-            const SizedBox(height: 10),
-            ElevatedButton.icon(
+            ElevatedButton(
               onPressed: _fetchInitial,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Yenile'),
+              child: const Text("Yenile"),
             ),
           ],
         ),
       );
     }
 
-    // 3. İçerik Listesi
     return RefreshIndicator(
       onRefresh: _fetchInitial,
       child: ListView.builder(
         controller: _scrollController,
         itemCount: _feedItems.length + (_isLoadingNext ? 1 : 0),
         itemBuilder: (context, index) {
-          if (index == _feedItems.length - _nextPageThreshold &&
-              !_isLoadingNext) {
+          if (index >= _feedItems.length - _nextPageThreshold &&
+              !_isLoadingNext &&
+              _hasMoreData) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               _fetchNextBatch();
             });
           }
-          // -------------------------------
 
           if (index == _feedItems.length) {
             return const Padding(
               padding: EdgeInsets.all(16),
-              child: Center(child: CircularProgressIndicator()),
+              child: Center(child: CircularProgressIndicator.adaptive()),
             );
           }
 
@@ -142,7 +145,6 @@ class _HomeContentPageState extends State<HomeContentPage> {
               participants: item.participants,
             );
           }
-
           return const SizedBox.shrink();
         },
       ),
