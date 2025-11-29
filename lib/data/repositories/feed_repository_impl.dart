@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:bulusalim/core/constants/Configs/app_config.dart';
+import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/event/event_model.dart';
