@@ -6,7 +6,7 @@ class MessageModel implements Model<MessageEntity> {
   MessageModel({
     required this.content,
     required this.senderID,
-    required this.timestamp,
+    required this.createdAt,
   });
   factory MessageModel.fromFirestore(
     Map<String, dynamic> firestoreData,
@@ -14,7 +14,7 @@ class MessageModel implements Model<MessageEntity> {
     return MessageModel(
       content: firestoreData['content'] as String,
       senderID: firestoreData['senderID'] as String,
-      timestamp: firestoreData['createdAt'] as DateTime,
+      createdAt: (firestoreData['createdAt'] as Timestamp).toDate(),
     );
   }
 
@@ -22,25 +22,28 @@ class MessageModel implements Model<MessageEntity> {
     return MessageModel(
       content: entity.content,
       senderID: entity.senderID,
-      timestamp: entity.timestamp,
+      createdAt: entity.createdAt,
     );
   }
 
   final String content;
   final String senderID;
-  final DateTime? timestamp;
+  final DateTime? createdAt;
 
   @override
   MessageEntity toEntity() {
     return MessageEntity(
       content: content,
       senderID: senderID,
-      timestamp: timestamp!,
+      createdAt: createdAt!,
     );
   }
 
   @override
   Map<String, dynamic> toFirestore() {
+    final Timestamp? timestamp = createdAt != null
+        ? Timestamp.fromDate(createdAt!)
+        : null;
     return {
       'content': content,
       'senderID': senderID,

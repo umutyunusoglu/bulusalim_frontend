@@ -45,18 +45,14 @@ class UserRepositoryImpl implements UserRepository {
 
   @override
   Future<void> createUser(
-    Identifier userID,
     UserEntity user,
   ) async {
-    _logger.info('Creating user: $userID');
+    _logger.info('Creating user: ${user.userID}');
 
-    final userWithID = user.copyWith(userID: userID);
-    final userModel = UserModel.fromEntity(userWithID);
+    final doc = _firestore.collection('users').doc();
+    final userModel = UserModel.fromEntity(user.copyWith(userID: doc.id));
 
-    await _firestore
-        .collection('users')
-        .doc(userID)
-        .set(userModel.toFirestore());
+    await doc.set(userModel.toFirestore());
   }
 
   @override
