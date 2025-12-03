@@ -1,12 +1,10 @@
 import 'dart:io';
+import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:bulusalim/screens/bottomnav_screen.dart';
 import 'package:bulusalim/screens/camera/new_post_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
-
-// Tasarımdaki özel turuncu renk
-const Color kOrangeColor = Color(0xFFF27A5E);
 
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
@@ -19,12 +17,13 @@ class _CameraPageState extends State<CameraPage> {
   final ImagePicker _picker = ImagePicker();
   final List<File> _takenPhotos = [];
 
-  // --- KAMERA AÇMA ---
   Future<void> _takePhoto() async {
     if (_takenPhotos.length >= 3) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("En fazla 3 fotoğraf çekebilirsin!")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("En fazla 3 fotoğraf çekebilirsin!")),
+        );
+      }
       return;
     }
 
@@ -32,7 +31,7 @@ class _CameraPageState extends State<CameraPage> {
       final XFile? photo = await _picker.pickImage(
         source: ImageSource.camera,
         preferredCameraDevice: CameraDevice.rear,
-        imageQuality: 80, // Performans için kalite optimizasyonu
+        imageQuality: 80,
       );
 
       if (photo != null) {
@@ -45,27 +44,25 @@ class _CameraPageState extends State<CameraPage> {
     }
   }
 
-  // --- FOTOĞRAF SİLME ---
   void _removePhoto(int index) {
     setState(() {
       _takenPhotos.removeAt(index);
     });
   }
 
-  // --- SAYFA YÖNLENDİRME ---
   void _navigateToNextPage() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => NewPostPage(
-          takenPhotos: _takenPhotos,
-        ),
+        builder: (context) => NewPostPage(takenPhotos: _takenPhotos),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    const primaryColor = AppColors.primaryColor;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
@@ -79,24 +76,20 @@ class _CameraPageState extends State<CameraPage> {
               child: Container(
                 margin: EdgeInsets.fromLTRB(10.w, 10.h, 10.w, 0),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12.r),
+                  borderRadius: BorderRadius.circular(16.r),
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      // A) Arka Plan / Önizleme
+                      // A) Arka Plan / Önizleme Placeholder
                       Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade900,
-                          image: _takenPhotos.isNotEmpty
-                              ? DecorationImage(
-                                  image: FileImage(_takenPhotos.last),
-                                  fit: BoxFit.cover,
-                                  opacity: 0.6,
-                                )
-                              : null,
-                        ),
-                        child: _takenPhotos.isEmpty
-                            ? Center(
+                        color: const Color(0xFF1A1A1A), // Koyu Gri
+                        child: _takenPhotos.isNotEmpty
+                            ? Image.file(
+                                _takenPhotos.last,
+                                fit: BoxFit.cover,
+                                opacity: const AlwaysStoppedAnimation(0.6),
+                              )
+                            : Center(
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -109,17 +102,17 @@ class _CameraPageState extends State<CameraPage> {
                                     Text(
                                       "Kamera Önizleme",
                                       style: TextStyle(
+                                        fontFamily: 'Urbanist',
                                         color: Colors.white24,
                                         fontSize: 14.sp,
                                       ),
                                     ),
                                   ],
                                 ),
-                              )
-                            : null,
+                              ),
                       ),
 
-                      // B) Kılavuz Çerçevesi
+                      // B) Kılavuz Çerçevesi (Guide)
                       Positioned(
                         top: 60.h,
                         left: 0,
@@ -133,7 +126,7 @@ class _CameraPageState extends State<CameraPage> {
                                 color: Colors.white.withOpacity(0.3),
                                 width: 1,
                               ),
-                              borderRadius: BorderRadius.circular(12.r),
+                              borderRadius: BorderRadius.circular(16.r),
                             ),
                           ),
                         ),
@@ -160,7 +153,7 @@ class _CameraPageState extends State<CameraPage> {
                         ),
                       ),
 
-                      // D) Kontrol Paneli (Deklanşör vb.)
+                      // D) Kontrol Paneli
                       Positioned(
                         bottom: 24.h,
                         left: 0,
@@ -170,14 +163,17 @@ class _CameraPageState extends State<CameraPage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
+                              // Flaş
                               IconButton(
                                 icon: Icon(
                                   Icons.flash_off,
                                   color: Colors.white,
-                                  size: 40.sp,
+                                  size: 32.sp,
                                 ),
                                 onPressed: () {},
                               ),
+
+                              // Deklanşör
                               GestureDetector(
                                 onTap: _takePhoto,
                                 child: Container(
@@ -186,7 +182,7 @@ class _CameraPageState extends State<CameraPage> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: kOrangeColor,
+                                      color: primaryColor,
                                       width: 4.w,
                                     ),
                                   ),
@@ -199,11 +195,13 @@ class _CameraPageState extends State<CameraPage> {
                                   ),
                                 ),
                               ),
+
+                              // Kamera Çevir
                               IconButton(
                                 icon: Icon(
                                   Icons.flip_camera_ios,
                                   color: Colors.white,
-                                  size: 40.sp,
+                                  size: 32.sp,
                                 ),
                                 onPressed: () {},
                               ),
@@ -244,12 +242,12 @@ class _CameraPageState extends State<CameraPage> {
                             Container(
                               width: 94.w,
                               height: 94.w,
-                              margin: EdgeInsets.symmetric(horizontal: 8.w),
+                              margin: EdgeInsets.symmetric(horizontal: 6.w),
                               decoration: BoxDecoration(
                                 color: Colors.transparent,
                                 borderRadius: BorderRadius.circular(12.r),
                                 border: Border.all(
-                                  color: Colors.grey.shade700,
+                                  color: Colors.grey.shade800,
                                   width: 1,
                                 ),
                                 image: imageFile != null
@@ -262,8 +260,8 @@ class _CameraPageState extends State<CameraPage> {
                             ),
                             if (imageFile != null)
                               Positioned(
-                                top: -10.h,
-                                right: 0.w,
+                                top: -8.h,
+                                right: 0,
                                 child: GestureDetector(
                                   onTap: () => _removePhoto(index),
                                   child: Container(
@@ -273,9 +271,10 @@ class _CameraPageState extends State<CameraPage> {
                                       shape: BoxShape.circle,
                                     ),
                                     child: Icon(
-                                      Icons.delete_outline,
+                                      Icons
+                                          .remove, // Delete yerine eksi daha temiz durabilir
                                       color: Colors.white,
-                                      size: 18.sp,
+                                      size: 16.sp,
                                     ),
                                   ),
                                 ),
@@ -294,9 +293,9 @@ class _CameraPageState extends State<CameraPage> {
                             child: OutlinedButton(
                               onPressed: () => Navigator.pop(context),
                               style: OutlinedButton.styleFrom(
-                                side: const BorderSide(
-                                  color: kOrangeColor,
-                                  width: 1,
+                                side: BorderSide(
+                                  color: primaryColor,
+                                  width: 1.5,
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30.r),
@@ -306,8 +305,9 @@ class _CameraPageState extends State<CameraPage> {
                               child: Text(
                                 "etkinliğe dön",
                                 style: TextStyle(
+                                  fontFamily: 'Urbanist',
                                   fontSize: 16.sp,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
@@ -320,15 +320,17 @@ class _CameraPageState extends State<CameraPage> {
                             child: ElevatedButton(
                               onPressed: _navigateToNextPage,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: kOrangeColor,
+                                backgroundColor: primaryColor,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30.r),
                                 ),
                                 foregroundColor: Colors.white,
+                                elevation: 0,
                               ),
                               child: Text(
                                 "paylaş",
                                 style: TextStyle(
+                                  fontFamily: 'Urbanist',
                                   fontSize: 16.sp,
                                   fontWeight: FontWeight.bold,
                                 ),
