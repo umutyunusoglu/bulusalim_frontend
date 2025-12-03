@@ -1,40 +1,41 @@
-import 'package:bulusalim/core/constants/constant.dart' as TextStyles;
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class SkipButton extends StatelessWidget {
   const SkipButton({
     required this.onTap,
     required this.text,
     super.key,
-    this.backgroundColor = Colors.transparent,
-    //this.borderRadius = 20,
-    this.padding = const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+    this.color,
   });
+
   final String text;
   final VoidCallback onTap;
-  final Color? backgroundColor;
-  //final double borderRadius;
-  final EdgeInsets padding;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: padding,
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          //border için
-          /*
-          borderRadius: BorderRadius.circular(borderRadius.r),
-          border: Border.all(
-            color: TextStyles.skipButtonText.color!.withOpacity(0.5),
-            width: 1,
-          ),*/
+    final theme = Theme.of(context);
+    // Eğer dışarıdan renk verilmezse, AppThemeden
+    // 'tertiary' (Deep Blue - #004B75) rengini kullanır.
+    final effectiveColor = color ?? theme.colorScheme.tertiary;
+
+    return TextButton(
+      onPressed: onTap,
+      style: TextButton.styleFrom(
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+        foregroundColor: effectiveColor.withOpacity(0.1),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
         ),
-        child: Text(
-          text,
-          style: TextStyles.kSkipButtonText,
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontFamily: 'Urbanist',
+          fontSize: 16.sp,
+          fontWeight: FontWeight.w600,
+          color: effectiveColor,
         ),
       ),
     );
