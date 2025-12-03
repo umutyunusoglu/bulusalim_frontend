@@ -1,9 +1,11 @@
 // lib/application/providers/repository_providers.dart
 
+import 'package:bulusalim/data/repositories/chat_repository_impl.dart';
 import 'package:bulusalim/data/repositories/event_repository_impl.dart';
 import 'package:bulusalim/data/repositories/feed_repository_impl.dart';
 import 'package:bulusalim/data/repositories/post_repository_impl.dart';
 import 'package:bulusalim/data/repositories/user_repository_impl.dart';
+import 'package:bulusalim/domain/repositories/chat_repository.dart';
 import 'package:bulusalim/domain/repositories/event_repository.dart';
 import 'package:bulusalim/domain/repositories/feed_repository.dart';
 import 'package:bulusalim/domain/repositories/post_repository.dart';
@@ -33,6 +35,12 @@ extension RepositoryModule on GetIt {
       )
       ..registerSingleton<FeedRepository>(
         FeedRepositoryImpl(
+          firestore: this(),
+          logger: this(),
+        ),
+      )
+      ..registerSingleton<ChatRepository>(
+        ChatRepositoryImpl(
           firestore: this(),
           logger: this(),
         ),
