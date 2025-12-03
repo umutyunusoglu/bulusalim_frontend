@@ -1,9 +1,12 @@
 import 'dart:io';
 import 'package:bulusalim/screens/bottomnav_screen.dart';
-import 'package:bulusalim/screens/home/home_page.dart';
+import 'package:bulusalim/screens/camera/new_post_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
+
+// Tasarımdaki özel turuncu renk
+const Color kOrangeColor = Color(0xFFF27A5E);
 
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
@@ -14,14 +17,9 @@ class CameraPage extends StatefulWidget {
 
 class _CameraPageState extends State<CameraPage> {
   final ImagePicker _picker = ImagePicker();
-
-  // Görselden alınan özel turuncu renk
-  final Color _customOrange = const Color(0xFFF27A5E);
-
-  // Çekilen fotoğrafları tutacak liste (Maksimum 3 adet)
   final List<File> _takenPhotos = [];
 
-  // Kamera açma fonksiyonu
+  // --- KAMERA AÇMA ---
   Future<void> _takePhoto() async {
     if (_takenPhotos.length >= 3) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -34,6 +32,7 @@ class _CameraPageState extends State<CameraPage> {
       final XFile? photo = await _picker.pickImage(
         source: ImageSource.camera,
         preferredCameraDevice: CameraDevice.rear,
+        imageQuality: 80, // Performans için kalite optimizasyonu
       );
 
       if (photo != null) {
@@ -46,11 +45,23 @@ class _CameraPageState extends State<CameraPage> {
     }
   }
 
-  // Fotoğraf silme
+  // --- FOTOĞRAF SİLME ---
   void _removePhoto(int index) {
     setState(() {
       _takenPhotos.removeAt(index);
     });
+  }
+
+  // --- SAYFA YÖNLENDİRME ---
+  void _navigateToNextPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NewPostPage(
+          takenPhotos: _takenPhotos,
+        ),
+      ),
+    );
   }
 
   @override
@@ -60,24 +71,19 @@ class _CameraPageState extends State<CameraPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // --- 1. BÜYÜK KAMERA ALANI (Kamera + Kontroller + Kapatma) ---
+            // ----------------------------------------------------------
+            // 1. ÜST ALAN: KAMERA ÖNİZLEME + KONTROLLER
+            // ----------------------------------------------------------
             Expanded(
               flex: 3,
               child: Container(
-                // Kenar boşlukları
                 margin: EdgeInsets.fromLTRB(10.w, 10.h, 10.w, 0),
-                // Köşeleri yuvarlatılmış Gri Alan
                 child: ClipRRect(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(12.r),
-                    topRight: Radius.circular(12.r),
-                    bottomLeft: Radius.circular(12.r),
-                    bottomRight: Radius.circular(12.r),
-                  ),
+                  borderRadius: BorderRadius.circular(12.r),
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      // A) KAMERA GÖRÜNTÜSÜ / GRİ ZEMİN
+                      // A) Arka Plan / Önizleme
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.grey.shade900,
@@ -113,7 +119,7 @@ class _CameraPageState extends State<CameraPage> {
                             : null,
                       ),
 
-                      // B) ORTADAKİ KILAVUZ ÇERÇEVESİ
+                      // B) Kılavuz Çerçevesi
                       Positioned(
                         top: 60.h,
                         left: 0,
@@ -133,7 +139,7 @@ class _CameraPageState extends State<CameraPage> {
                         ),
                       ),
 
-                      // C) KAPATMA BUTONU
+                      // C) Kapatma Butonu
                       Positioned(
                         top: 16.h,
                         right: 16.w,
@@ -143,16 +149,18 @@ class _CameraPageState extends State<CameraPage> {
                             color: Colors.white,
                             size: 28.sp,
                           ),
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const BottomNavScreen(),
-                            ),
-                          ),
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const BottomNavScreen(),
+                              ),
+                            );
+                          },
                         ),
                       ),
 
-                      // D) KONTROL ÇUBUĞU
+                      // D) Kontrol Paneli (Deklanşör vb.)
                       Positioned(
                         bottom: 24.h,
                         left: 0,
@@ -178,7 +186,7 @@ class _CameraPageState extends State<CameraPage> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: _customOrange,
+                                      color: kOrangeColor,
                                       width: 4.w,
                                     ),
                                   ),
@@ -209,7 +217,9 @@ class _CameraPageState extends State<CameraPage> {
               ),
             ),
 
-            // --- 2. ALT PANEL (Galeri Kutuları + Butonlar) ---
+            // ----------------------------------------------------------
+            // 2. ALT ALAN: GALERİ + AKSİYON BUTONLARI
+            // ----------------------------------------------------------
             Expanded(
               flex: 1,
               child: Container(
@@ -219,11 +229,12 @@ class _CameraPageState extends State<CameraPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     SizedBox(height: 10.h),
-                    // 3 Adet Fotoğraf Kutusu
+
+                    // Fotoğraf Listesi
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(3, (index) {
-                        File? imageFile = index < _takenPhotos.length
+                        final File? imageFile = index < _takenPhotos.length
                             ? _takenPhotos[index]
                             : null;
 
@@ -249,7 +260,6 @@ class _CameraPageState extends State<CameraPage> {
                                     : null,
                               ),
                             ),
-                            // Çöp Kutusu İkonu (Sadece fotoğraf varsa göster)
                             if (imageFile != null)
                               Positioned(
                                 top: -10.h,
@@ -275,18 +285,17 @@ class _CameraPageState extends State<CameraPage> {
                       }),
                     ),
 
-                    // --- BUTONLAR ---
+                    // Butonlar
                     Row(
                       children: [
-                        // Etkinliğe Dön Butonu (Siyah zemin, Turuncu kenarlık)
                         Expanded(
                           child: SizedBox(
                             height: 50.h,
                             child: OutlinedButton(
                               onPressed: () => Navigator.pop(context),
                               style: OutlinedButton.styleFrom(
-                                side: BorderSide(
-                                  color: _customOrange, // Turuncu kenarlık
+                                side: const BorderSide(
+                                  color: kOrangeColor,
                                   width: 1,
                                 ),
                                 shape: RoundedRectangleBorder(
@@ -304,28 +313,14 @@ class _CameraPageState extends State<CameraPage> {
                             ),
                           ),
                         ),
-
                         SizedBox(width: 16.w),
-
-                        // Paylaş Butonu (Turuncu zemin - Her zaman aktif)
                         Expanded(
                           child: SizedBox(
                             height: 50.h,
                             child: ElevatedButton(
-                              onPressed: () {
-                                debugPrint(
-                                  "Paylaş butonu tıklandı, ana sayfaya dönülüyor.",
-                                );
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const BottomNavScreen(),
-                                  ),
-                                );
-                              },
+                              onPressed: _navigateToNextPage,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: _customOrange,
+                                backgroundColor: kOrangeColor,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30.r),
                                 ),
@@ -353,3 +348,378 @@ class _CameraPageState extends State<CameraPage> {
     );
   }
 }
+// import 'dart:io';
+// // NOT: Aşağıdaki dosya yollarının projenizdeki yerlerine göre doğru olduğundan emin olun.
+// import 'package:bulusalim/screens/bottomnav_screen.dart'; // Ana ekrana dönüş için
+// import 'package:bulusalim/screens/camera/new_post_page.dart'; // Paylaşım ekranı
+// import 'package:flutter/material.dart';
+// import 'package:flutter_screenutil/flutter_screenutil.dart';
+// import 'package:image_picker/image_picker.dart';
+
+// class CameraPage extends StatefulWidget {
+//   const CameraPage({super.key});
+
+//   @override
+//   State<CameraPage> createState() => _CameraPageState();
+// }
+
+// class _CameraPageState extends State<CameraPage> {
+//   final ImagePicker _picker = ImagePicker();
+
+//   // Tasarımdaki özel turuncu (mercan) rengi
+//   final Color _customOrange = const Color(0xFFF27A5E);
+
+//   // Çekilen fotoğrafları tutacak liste (Maksimum 3 adet)
+//   final List<File> _takenPhotos = [];
+
+//   // --- KAMERA AÇMA FONKSİYONU ---
+//   Future<void> _takePhoto() async {
+//     if (_takenPhotos.length >= 3) {
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         const SnackBar(content: Text("En fazla 3 fotoğraf çekebilirsin!")),
+//       );
+//       return;
+//     }
+
+//     try {
+//       final XFile? photo = await _picker.pickImage(
+//         source: ImageSource.camera,
+//         preferredCameraDevice: CameraDevice.rear,
+//       );
+
+//       if (photo != null) {
+//         setState(() {
+//           _takenPhotos.add(File(photo.path));
+//         });
+//       }
+//     } catch (e) {
+//       debugPrint("Kamera hatası: $e");
+//     }
+//   }
+
+//   // --- FOTOĞRAF SİLME FONKSİYONU ---
+//   void _removePhoto(int index) {
+//     setState(() {
+//       _takenPhotos.removeAt(index);
+//     });
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       backgroundColor: Colors.black,
+//       body: SafeArea(
+//         child: Column(
+//           children: [
+//             // ==========================================================
+//             // 1. ÜST ALAN: KAMERA ÖNİZLEME + KONTROLLER
+//             // ==========================================================
+//             Expanded(
+//               flex: 3, // Ekranın büyük kısmını kaplar
+//               child: Container(
+//                 margin: EdgeInsets.fromLTRB(10.w, 10.h, 10.w, 0),
+//                 child: ClipRRect(
+//                   borderRadius: BorderRadius.all(Radius.circular(12.r)),
+//                   child: Stack(
+//                     fit: StackFit.expand,
+//                     children: [
+//                       // A) KAMERA GÖRÜNTÜSÜ / GRİ ZEMİN
+//                       Container(
+//                         decoration: BoxDecoration(
+//                           color: Colors.grey.shade900,
+//                           image: _takenPhotos.isNotEmpty
+//                               ? DecorationImage(
+//                                   image: FileImage(_takenPhotos.last),
+//                                   fit: BoxFit.cover,
+//                                   opacity: 0.6, // Canlı kamera hissi için flu
+//                                 )
+//                               : null,
+//                         ),
+//                         child: _takenPhotos.isEmpty
+//                             ? Center(
+//                                 child: Column(
+//                                   mainAxisSize: MainAxisSize.min,
+//                                   children: [
+//                                     Icon(
+//                                       Icons.camera_alt,
+//                                       color: Colors.white24,
+//                                       size: 50.sp,
+//                                     ),
+//                                     SizedBox(height: 10.h),
+//                                     Text(
+//                                       "Kamera Önizleme",
+//                                       style: TextStyle(
+//                                         color: Colors.white24,
+//                                         fontSize: 14.sp,
+//                                       ),
+//                                     ),
+//                                   ],
+//                                 ),
+//                               )
+//                             : null,
+//                       ),
+
+//                       // B) ORTADAKİ KILAVUZ ÇERÇEVESİ
+//                       Positioned(
+//                         top: 60.h,
+//                         left: 0,
+//                         right: 0,
+//                         child: Center(
+//                           child: Container(
+//                             width: 341.w,
+//                             height: 371.h,
+//                             decoration: BoxDecoration(
+//                               border: Border.all(
+//                                 color: Colors.white.withOpacity(0.3),
+//                                 width: 1,
+//                               ),
+//                               borderRadius: BorderRadius.circular(12.r),
+//                             ),
+//                           ),
+//                         ),
+//                       ),
+
+//                       // C) KAPATMA BUTONU (SAĞ ÜST)
+//                       Positioned(
+//                         top: 16.h,
+//                         right: 16.w,
+//                         child: IconButton(
+//                           icon: Icon(
+//                             Icons.close,
+//                             color: Colors.white,
+//                             size: 28.sp,
+//                           ),
+//                           onPressed: () {
+//                             // Ana Sayfaya (BottomNav) dön
+//                             Navigator.pushReplacement(
+//                               context,
+//                               MaterialPageRoute(
+//                                 builder: (context) => const BottomNavScreen(),
+//                               ),
+//                             );
+//                           },
+//                         ),
+//                       ),
+
+//                       // D) KAMERA KONTROL ÇUBUĞU (EN ALTTA)
+//                       Positioned(
+//                         bottom: 24.h,
+//                         left: 0,
+//                         right: 0,
+//                         child: Padding(
+//                           padding: EdgeInsets.symmetric(horizontal: 30.w),
+//                           child: Row(
+//                             mainAxisAlignment: MainAxisAlignment.spaceAround,
+//                             children: [
+//                               // Flash İkonu
+//                               IconButton(
+//                                 icon: Icon(
+//                                   Icons.flash_off,
+//                                   color: Colors.white,
+//                                   size: 40.sp,
+//                                 ),
+//                                 onPressed: () {},
+//                               ),
+
+//                               // Deklanşör (Shutter) Butonu
+//                               GestureDetector(
+//                                 onTap: _takePhoto,
+//                                 child: Container(
+//                                   width: 80.w,
+//                                   height: 80.w,
+//                                   decoration: BoxDecoration(
+//                                     shape: BoxShape.circle,
+//                                     border: Border.all(
+//                                       color: _customOrange,
+//                                       width: 4.w,
+//                                     ),
+//                                   ),
+//                                   padding: EdgeInsets.all(4.w),
+//                                   child: Container(
+//                                     decoration: const BoxDecoration(
+//                                       color: Colors.white,
+//                                       shape: BoxShape.circle,
+//                                     ),
+//                                   ),
+//                                 ),
+//                               ),
+
+//                               // Döndürme İkonu
+//                               IconButton(
+//                                 icon: Icon(
+//                                   Icons.flip_camera_ios,
+//                                   color: Colors.white,
+//                                   size: 40.sp,
+//                                 ),
+//                                 onPressed: () {},
+//                               ),
+//                             ],
+//                           ),
+//                         ),
+//                       ),
+//                     ],
+//                   ),
+//                 ),
+//               ),
+//             ),
+
+//             // ==========================================================
+//             // 2. ALT ALAN: FOTOĞRAFLAR + BUTONLAR
+//             // ==========================================================
+//             Expanded(
+//               flex: 1,
+//               child: Container(
+//                 color: Colors.black,
+//                 padding: EdgeInsets.symmetric(horizontal: 20.w),
+//                 child: Column(
+//                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+//                   children: [
+//                     SizedBox(height: 10.h),
+
+//                     // --- ÇEKİLEN FOTOĞRAFLAR (THUMBNAILS) ---
+//                     Row(
+//                       mainAxisAlignment: MainAxisAlignment.center,
+//                       children: List.generate(3, (index) {
+//                         File? imageFile = index < _takenPhotos.length
+//                             ? _takenPhotos[index]
+//                             : null;
+
+//                         return Stack(
+//                           clipBehavior: Clip.none,
+//                           children: [
+//                             // Fotoğraf Kutusu
+//                             Container(
+//                               width: 94.w,
+//                               height: 94.w,
+//                               margin: EdgeInsets.symmetric(horizontal: 8.w),
+//                               decoration: BoxDecoration(
+//                                 color: Colors.transparent,
+//                                 borderRadius: BorderRadius.circular(12.r),
+//                                 border: Border.all(
+//                                   color: Colors.grey.shade700,
+//                                   width: 1,
+//                                 ),
+//                                 image: imageFile != null
+//                                     ? DecorationImage(
+//                                         image: FileImage(imageFile),
+//                                         fit: BoxFit.cover,
+//                                       )
+//                                     : null,
+//                               ),
+//                             ),
+
+//                             // Silme (Çöp Kutusu) İkonu
+//                             if (imageFile != null)
+//                               Positioned(
+//                                 top: -10.h,
+//                                 right: 0.w,
+//                                 child: GestureDetector(
+//                                   onTap: () => _removePhoto(index),
+//                                   child: Container(
+//                                     padding: EdgeInsets.all(4.w),
+//                                     decoration: const BoxDecoration(
+//                                       color: Colors.black,
+//                                       shape: BoxShape.circle,
+//                                     ),
+//                                     child: Icon(
+//                                       Icons.delete_outline,
+//                                       color: Colors.white,
+//                                       size: 18.sp,
+//                                     ),
+//                                   ),
+//                                 ),
+//                               ),
+//                           ],
+//                         );
+//                       }),
+//                     ),
+
+//                     // --- BUTONLAR (Etkinliğe Dön / Paylaş) ---
+//                     Row(
+//                       children: [
+//                         // Etkinliğe Dön Butonu
+//                         Expanded(
+//                           child: SizedBox(
+//                             height: 50.h,
+//                             child: OutlinedButton(
+//                               onPressed: () => Navigator.pop(context),
+//                               style: OutlinedButton.styleFrom(
+//                                 side: BorderSide(
+//                                   color: _customOrange,
+//                                   width: 1,
+//                                 ),
+//                                 shape: RoundedRectangleBorder(
+//                                   borderRadius: BorderRadius.circular(30.r),
+//                                 ),
+//                                 foregroundColor: Colors.white,
+//                               ),
+//                               child: Text(
+//                                 "etkinliğe dön",
+//                                 style: TextStyle(
+//                                   fontSize: 16.sp,
+//                                   fontWeight: FontWeight.w500,
+//                                 ),
+//                               ),
+//                             ),
+//                           ),
+//                         ),
+
+//                         SizedBox(width: 16.w),
+
+//                         // Paylaş Butonu
+//                         Expanded(
+//                           child: SizedBox(
+//                             height: 50.h,
+//                             child: ElevatedButton(
+//                               onPressed: () {
+//                                 // Fotoğraf yoksa uyarı ver
+//                                 if (_takenPhotos.isEmpty) {
+//                                   ScaffoldMessenger.of(context).showSnackBar(
+//                                     const SnackBar(
+//                                       content: Text(
+//                                         "Lütfen paylaşmak için en az bir fotoğraf çekin.",
+//                                       ),
+//                                     ),
+//                                   );
+//                                   return;
+//                                 }
+
+//                                 // Fotoğraflarla birlikte NewPostPage'e git
+//                                 Navigator.push(
+//                                   context,
+//                                   MaterialPageRoute(
+//                                     builder: (context) => NewPostPage(
+//                                       takenPhotos: _takenPhotos,
+//                                     ),
+//                                   ),
+//                                 );
+//                               },
+//                               style: ElevatedButton.styleFrom(
+//                                 backgroundColor: _customOrange,
+//                                 shape: RoundedRectangleBorder(
+//                                   borderRadius: BorderRadius.circular(30.r),
+//                                 ),
+//                                 foregroundColor: Colors.white,
+//                               ),
+//                               child: Text(
+//                                 "paylaş",
+//                                 style: TextStyle(
+//                                   fontSize: 16.sp,
+//                                   fontWeight: FontWeight.bold,
+//                                 ),
+//                               ),
+//                             ),
+//                           ),
+//                         ),
+//                       ],
+//                     ),
+//                   ],
+//                 ),
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
