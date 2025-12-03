@@ -70,8 +70,8 @@ class EventRepositoryImpl implements EventRepository {
         final eventModel = EventModel.fromFirestore(doc.data()!);
         return eventModel.toEntity();
       }
-    } on Exception {
-      _logger.error('Failed to fetch event');
+    } on Exception catch (e) {
+      _logger.error('Failed to fetch event: $e');
       rethrow;
     }
     return null;

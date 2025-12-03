@@ -4,10 +4,10 @@ class MessageEntity {
   MessageEntity({
     required this.content,
     required this.senderID,
-    required this.timestamp,
+    required this.createdAt,
   });
 
   final String content;
   final Identifier senderID;
-  final DateTime timestamp;
+  final DateTime createdAt;
 }
