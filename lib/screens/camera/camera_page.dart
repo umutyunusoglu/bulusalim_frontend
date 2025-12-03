@@ -1,9 +1,12 @@
 import 'dart:io';
 import 'package:bulusalim/screens/bottomnav_screen.dart';
-import 'package:bulusalim/screens/home/home_page.dart';
+import 'package:bulusalim/screens/camera/new_post_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
+
+// Tasarımdaki özel turuncu renk
+const Color kOrangeColor = Color(0xFFF27A5E);
 
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
@@ -14,14 +17,9 @@ class CameraPage extends StatefulWidget {
 
 class _CameraPageState extends State<CameraPage> {
   final ImagePicker _picker = ImagePicker();
-
-  // Görselden alınan özel turuncu renk
-  final Color _customOrange = const Color(0xFFF27A5E);
-
-  // Çekilen fotoğrafları tutacak liste (Maksimum 3 adet)
   final List<File> _takenPhotos = [];
 
-  // Kamera açma fonksiyonu
+  // --- KAMERA AÇMA ---
   Future<void> _takePhoto() async {
     if (_takenPhotos.length >= 3) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -34,6 +32,7 @@ class _CameraPageState extends State<CameraPage> {
       final XFile? photo = await _picker.pickImage(
         source: ImageSource.camera,
         preferredCameraDevice: CameraDevice.rear,
+        imageQuality: 80, // Performans için kalite optimizasyonu
       );
 
       if (photo != null) {
@@ -46,11 +45,23 @@ class _CameraPageState extends State<CameraPage> {
     }
   }
 
-  // Fotoğraf silme
+  // --- FOTOĞRAF SİLME ---
   void _removePhoto(int index) {
     setState(() {
       _takenPhotos.removeAt(index);
     });
+  }
+
+  // --- SAYFA YÖNLENDİRME ---
+  void _navigateToNextPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NewPostPage(
+          takenPhotos: _takenPhotos,
+        ),
+      ),
+    );
   }
 
   @override
@@ -60,24 +71,19 @@ class _CameraPageState extends State<CameraPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // --- 1. BÜYÜK KAMERA ALANI (Kamera + Kontroller + Kapatma) ---
+            // ----------------------------------------------------------
+            // 1. ÜST ALAN: KAMERA ÖNİZLEME + KONTROLLER
+            // ----------------------------------------------------------
             Expanded(
               flex: 3,
               child: Container(
-                // Kenar boşlukları
                 margin: EdgeInsets.fromLTRB(10.w, 10.h, 10.w, 0),
-                // Köşeleri yuvarlatılmış Gri Alan
                 child: ClipRRect(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(12.r),
-                    topRight: Radius.circular(12.r),
-                    bottomLeft: Radius.circular(12.r),
-                    bottomRight: Radius.circular(12.r),
-                  ),
+                  borderRadius: BorderRadius.circular(12.r),
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      // A) KAMERA GÖRÜNTÜSÜ / GRİ ZEMİN
+                      // A) Arka Plan / Önizleme
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.grey.shade900,
@@ -113,7 +119,7 @@ class _CameraPageState extends State<CameraPage> {
                             : null,
                       ),
 
-                      // B) ORTADAKİ KILAVUZ ÇERÇEVESİ
+                      // B) Kılavuz Çerçevesi
                       Positioned(
                         top: 60.h,
                         left: 0,
@@ -133,7 +139,7 @@ class _CameraPageState extends State<CameraPage> {
                         ),
                       ),
 
-                      // C) KAPATMA BUTONU
+                      // C) Kapatma Butonu
                       Positioned(
                         top: 16.h,
                         right: 16.w,
@@ -143,16 +149,18 @@ class _CameraPageState extends State<CameraPage> {
                             color: Colors.white,
                             size: 28.sp,
                           ),
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const BottomNavScreen(),
-                            ),
-                          ),
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const BottomNavScreen(),
+                              ),
+                            );
+                          },
                         ),
                       ),
 
-                      // D) KONTROL ÇUBUĞU
+                      // D) Kontrol Paneli (Deklanşör vb.)
                       Positioned(
                         bottom: 24.h,
                         left: 0,
@@ -178,7 +186,7 @@ class _CameraPageState extends State<CameraPage> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: _customOrange,
+                                      color: kOrangeColor,
                                       width: 4.w,
                                     ),
                                   ),
@@ -209,7 +217,9 @@ class _CameraPageState extends State<CameraPage> {
               ),
             ),
 
-            // --- 2. ALT PANEL (Galeri Kutuları + Butonlar) ---
+            // ----------------------------------------------------------
+            // 2. ALT ALAN: GALERİ + AKSİYON BUTONLARI
+            // ----------------------------------------------------------
             Expanded(
               flex: 1,
               child: Container(
@@ -219,11 +229,12 @@ class _CameraPageState extends State<CameraPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     SizedBox(height: 10.h),
-                    // 3 Adet Fotoğraf Kutusu
+
+                    // Fotoğraf Listesi
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(3, (index) {
-                        File? imageFile = index < _takenPhotos.length
+                        final File? imageFile = index < _takenPhotos.length
                             ? _takenPhotos[index]
                             : null;
 
@@ -249,7 +260,6 @@ class _CameraPageState extends State<CameraPage> {
                                     : null,
                               ),
                             ),
-                            // Çöp Kutusu İkonu (Sadece fotoğraf varsa göster)
                             if (imageFile != null)
                               Positioned(
                                 top: -10.h,
@@ -275,18 +285,17 @@ class _CameraPageState extends State<CameraPage> {
                       }),
                     ),
 
-                    // --- BUTONLAR ---
+                    // Butonlar
                     Row(
                       children: [
-                        // Etkinliğe Dön Butonu (Siyah zemin, Turuncu kenarlık)
                         Expanded(
                           child: SizedBox(
                             height: 50.h,
                             child: OutlinedButton(
                               onPressed: () => Navigator.pop(context),
                               style: OutlinedButton.styleFrom(
-                                side: BorderSide(
-                                  color: _customOrange, // Turuncu kenarlık
+                                side: const BorderSide(
+                                  color: kOrangeColor,
                                   width: 1,
                                 ),
                                 shape: RoundedRectangleBorder(
@@ -304,28 +313,14 @@ class _CameraPageState extends State<CameraPage> {
                             ),
                           ),
                         ),
-
                         SizedBox(width: 16.w),
-
-                        // Paylaş Butonu (Turuncu zemin - Her zaman aktif)
                         Expanded(
                           child: SizedBox(
                             height: 50.h,
                             child: ElevatedButton(
-                              onPressed: () {
-                                debugPrint(
-                                  "Paylaş butonu tıklandı, ana sayfaya dönülüyor.",
-                                );
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const BottomNavScreen(),
-                                  ),
-                                );
-                              },
+                              onPressed: _navigateToNextPage,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: _customOrange,
+                                backgroundColor: kOrangeColor,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30.r),
                                 ),
