@@ -19,6 +19,8 @@ class PostModel extends Model<PostEntity> {
     required this.emoteCounts,
     required this.createdAt,
     required this.updatedAt,
+    required this.showParticipants,
+    required this.includeInDump,
     this.location,
     this.imageUrls,
   });
@@ -36,6 +38,9 @@ class PostModel extends Model<PostEntity> {
       imageUrls: entity.imageUrls,
       participants: entity.participants,
       emoteCounts: entity.emoteCounts,
+
+      showParticipants: entity.showParticipants,
+      includeInDump: entity.includeInDump,
     );
   }
 
@@ -118,6 +123,9 @@ class PostModel extends Model<PostEntity> {
           value as int,
         ),
       ),
+
+      showParticipants: doc['showParticipants'] as bool,
+      includeInDump: doc['includeInDump'] as bool,
     );
   }
 
@@ -135,6 +143,8 @@ class PostModel extends Model<PostEntity> {
       imageUrls: imageUrls,
       participants: participants,
       emoteCounts: emoteCounts,
+      showParticipants: showParticipants,
+      includeInDump: includeInDump,
     );
   }
 
@@ -179,6 +189,8 @@ class PostModel extends Model<PostEntity> {
       ),
       'createdAt': createdAt,
       'updatedAt': updatedAt,
+      'showParticipants': showParticipants,
+      'includeInDump': includeInDump,
     };
   }
 
@@ -189,6 +201,8 @@ class PostModel extends Model<PostEntity> {
   final DateTime createdAt;
   final DateTime updatedAt;
   final Geolocation? location;
+  final bool showParticipants;
+  final bool includeInDump;
   final List<HobbyEntity> hobbies;
   final List<String>? imageUrls;
   final List<PostParticipantEntity> participants;
