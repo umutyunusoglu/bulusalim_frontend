@@ -34,16 +34,23 @@ Future<void> main() async {
     await FirebaseStorage.instance.useStorageEmulator(AppConfig.host, 9199);
 
     final authInstance = FirebaseAuth.instance;
-    if (authInstance.currentUser != null) {
-      await authInstance.signOut();
+
+    const testUserId = 'user1@example.com';
+
+    if (testUserId == 'A') {
+      if (authInstance.currentUser != null) {
+        await authInstance.signOut();
+      }
+
+      await authInstance.signInAnonymously();
+    } else {
+      await authInstance.signInWithEmailAndPassword(
+        email: testUserId,
+        password: '123456',
+      );
     }
 
-    await authInstance.signInAnonymously();
-
-    // Debug amaçlı: Current User ID'sini konsola yazdır
-    if (authInstance.currentUser != null) {
-      print('Emülatörde Anonim Kullanıcı ID: ${authInstance.currentUser!.uid}');
-    }
+    debugPrint("Current ${authInstance.currentUser?.email ?? "No user"}");
   } else {
     await FirebaseAppCheck.instance.activate();
   }
