@@ -23,7 +23,7 @@ class _CameraPageState extends State<CameraPage> {
   Future<void> _takePhoto() async {
     if (_takenPhotos.length >= 3) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("En fazla 3 fotoğraf çekebilirsin!")),
+        const SnackBar(content: Text('En fazla 3 fotoğraf çekebilirsin!')),
       );
       return;
     }
@@ -41,7 +41,7 @@ class _CameraPageState extends State<CameraPage> {
         });
       }
     } catch (e) {
-      debugPrint("Kamera hatası: $e");
+      debugPrint('Kamera hatası: $e');
     }
   }
 
@@ -54,6 +54,13 @@ class _CameraPageState extends State<CameraPage> {
 
   // --- SAYFA YÖNLENDİRME ---
   void _navigateToNextPage() {
+    if (_takenPhotos.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lütfen en az bir fotoğraf çekin!')),
+      );
+      return;
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -107,7 +114,7 @@ class _CameraPageState extends State<CameraPage> {
                                     ),
                                     SizedBox(height: 10.h),
                                     Text(
-                                      "Kamera Önizleme",
+                                      'Kamera Önizleme',
                                       style: TextStyle(
                                         color: Colors.white24,
                                         fontSize: 14.sp,
@@ -304,7 +311,7 @@ class _CameraPageState extends State<CameraPage> {
                                 foregroundColor: Colors.white,
                               ),
                               child: Text(
-                                "etkinliğe dön",
+                                'etkinliğe dön',
                                 style: TextStyle(
                                   fontSize: 16.sp,
                                   fontWeight: FontWeight.w500,
@@ -327,7 +334,7 @@ class _CameraPageState extends State<CameraPage> {
                                 foregroundColor: Colors.white,
                               ),
                               child: Text(
-                                "paylaş",
+                                'paylaş',
                                 style: TextStyle(
                                   fontSize: 16.sp,
                                   fontWeight: FontWeight.bold,
