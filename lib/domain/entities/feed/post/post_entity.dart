@@ -1,9 +1,9 @@
 import 'package:bulusalim/core/utils/types/enums/emote_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
+import 'package:bulusalim/domain/entities/feed/feed_entity.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
 import 'package:bulusalim/domain/entities/user/user_entity.dart';
-import 'package:bulusalim/domain/entities/feed/feed_entity.dart';
 import 'package:equatable/equatable.dart';
 
 class PostEntity extends FeedEntity with EquatableMixin {
@@ -13,6 +13,8 @@ class PostEntity extends FeedEntity with EquatableMixin {
     required this.eventID,
     required this.caption,
     required this.hobbies,
+    required this.showParticipants,
+    required this.includeInDump,
     required this.participants,
     required this.emoteCounts,
     required this.createdAt,
@@ -34,6 +36,8 @@ class PostEntity extends FeedEntity with EquatableMixin {
     UserEntity? user,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? showParticipants,
+    bool? includeInDump,
   }) {
     return PostEntity(
       postID: postID ?? this.postID,
@@ -47,6 +51,8 @@ class PostEntity extends FeedEntity with EquatableMixin {
       imageUrls: imageUrls ?? this.imageUrls,
       participants: participants ?? this.participants,
       emoteCounts: emoteCounts ?? this.emoteCounts,
+      showParticipants: showParticipants ?? this.showParticipants,
+      includeInDump: includeInDump ?? this.includeInDump,
     );
   }
 
@@ -66,6 +72,8 @@ class PostEntity extends FeedEntity with EquatableMixin {
   final Geolocation? location;
   final List<HobbyEntity> hobbies;
   final List<String>? imageUrls;
+  final bool showParticipants;
+  final bool includeInDump;
   final List<PostParticipantEntity> participants;
   final Map<EmoteEnum, int> emoteCounts;
 }
