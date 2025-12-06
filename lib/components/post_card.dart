@@ -295,7 +295,7 @@ class _PostCardState extends State<PostCard> {
                 ),
                 SizedBox(width: 16.w),
                 CountdownTimer(
-                  targetTime: widget.post.createdAt,
+                  targetTime: widget.post.createdAt!,
                   style: timeStyle,
                 ),
               ],

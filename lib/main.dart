@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/constants/theme/app_theme.dart';
+import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/firebase_options.dart';
 import 'package:bulusalim/screens/login/login_screen.dart';
 import 'package:bulusalim/screens/register_screen.dart';
@@ -35,7 +36,7 @@ Future<void> main() async {
 
     final authInstance = FirebaseAuth.instance;
 
-    const testUserId = 'user1@example.com';
+    const testUserId = 'A';
 
     if (testUserId == 'A') {
       if (authInstance.currentUser != null) {
@@ -56,6 +57,9 @@ Future<void> main() async {
   }
 
   await getItSetup();
+
+  final sessionService = getIt<SessionService>();
+  await sessionService.init();
 
   runApp(const ProviderScope(child: MainApp()));
 }

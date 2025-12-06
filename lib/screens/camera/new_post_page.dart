@@ -1,5 +1,11 @@
 import 'dart:io';
+import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/constant.dart'; // Constant dosyasını import ediyoruz
+import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
+import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
+import 'package:bulusalim/domain/repositories/post_repository.dart';
+import 'package:bulusalim/domain/services/auth_service.dart';
+import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -94,7 +100,7 @@ class _NewPostPageState extends State<NewPostPage> {
                     Align(
                       alignment: Alignment.center,
                       child: Text(
-                        "Yeni Gönderi",
+                        'Yeni Gönderi',
                         style: kLoginTextStyle.copyWith(fontSize: 20.sp),
                       ),
                     ),
@@ -154,7 +160,7 @@ class _NewPostPageState extends State<NewPostPage> {
                   ),
                   child: Center(
                     child: Text(
-                      "Fotoğraf Yok",
+                      'Fotoğraf Yok',
                       style: TextStyle(
                         color: Colors.grey.shade500,
                         fontFamily: 'Urbanist',
@@ -213,7 +219,7 @@ class _NewPostPageState extends State<NewPostPage> {
                           fontWeight: FontWeight.w500,
                         ),
                         decoration: InputDecoration(
-                          hintText: "Açıklama yaz.",
+                          hintText: 'Açıklama yaz.',
                           hintStyle: TextStyle(
                             color: Colors.grey.shade500,
                             fontSize: 14.sp,
@@ -225,7 +231,7 @@ class _NewPostPageState extends State<NewPostPage> {
                           errorBorder: InputBorder.none,
                           disabledBorder: InputBorder.none,
                           contentPadding: EdgeInsets.only(right: 40.w),
-                          counterText: "",
+                          counterText: '',
                         ),
                       ),
                     ),
@@ -234,9 +240,9 @@ class _NewPostPageState extends State<NewPostPage> {
                       alignment: Alignment.bottomRight,
                       child: ValueListenableBuilder(
                         valueListenable: _captionController,
-                        builder: (context, TextEditingValue value, __) {
+                        builder: (context, TextEditingValue value, _) {
                           return Text(
-                            "${value.text.length}/50",
+                            '${value.text.length}/50',
                             style: TextStyle(
                               color: Colors.grey.shade600,
                               fontSize: 12.sp,
@@ -255,9 +261,9 @@ class _NewPostPageState extends State<NewPostPage> {
 
               // 4. KATILIMCILARI GÖSTER
               _buildCustomSwitchTile(
-                title: "Katılımcıları göster.",
+                title: 'Katılımcıları göster.',
                 subtitle:
-                    "Bunu kabul ederek katıldığın etkinlikte bulunan diğer katılımcılar paylaşımında yer alacak ve diğer kullanıcılar tarafından görüntülenebilecek.",
+                    'Bunu kabul ederek katıldığın etkinlikte bulunan diğer katılımcılar paylaşımında yer alacak ve diğer kullanıcılar tarafından görüntülenebilecek.',
                 value: _showParticipants,
                 onChanged: (val) => setState(() => _showParticipants = val),
               ),
@@ -268,7 +274,7 @@ class _NewPostPageState extends State<NewPostPage> {
               _buildCustomSwitchTile(
                 title: "Dump'a dahil et.",
                 subtitle:
-                    "Bunu kabul ederek paylaştığın gönderideki fotoğrafların ay sonunda senin için hazırlayacağımız dump gönderisine dahil olmasına izin verirsin. Seçtiğin 3.fotoğraf Dump’larda yer almayacak.)",
+                    'Bunu kabul ederek paylaştığın gönderideki fotoğrafların ay sonunda senin için hazırlayacağımız dump gönderisine dahil olmasına izin verirsin. Seçtiğin 3.fotoğraf Dump’larda yer almayacak.)',
                 value: _addToDump,
                 onChanged: (val) => setState(() => _addToDump = val),
               ),
@@ -296,7 +302,8 @@ class _NewPostPageState extends State<NewPostPage> {
                       onPressed: _selectedMedia.isEmpty
                           ? null
                           : () {
-                              debugPrint("Paylaşılıyor...");
+                              _sendPost();
+                              debugPrint('Paylaşılıyor...');
                             },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: kButtonBackgroundColor,
@@ -308,7 +315,7 @@ class _NewPostPageState extends State<NewPostPage> {
                         alignment: Alignment.center,
                       ),
                       child: Text(
-                        "paylaş",
+                        'paylaş',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white,
@@ -385,5 +392,46 @@ class _NewPostPageState extends State<NewPostPage> {
         ],
       ),
     );
+  }
+
+  void _sendPost() {
+    final postRepository = getIt<PostRepository>();
+    final sessionService = getIt<SessionService>();
+    final currentUser = sessionService.currentUser!;
+
+    final creator = PostParticipantEntity(
+      userID: currentUser.userID,
+      username: currentUser.username,
+      profileImageUrl: currentUser.profileImageUrl,
+    );
+
+    final currentEvent = sessionService.currentEvent!;
+
+    final post = PostEntity(
+      postID: '',
+      creator: creator,
+      eventID: currentEvent.eventID,
+      caption: _captionController.text.trim(),
+      hobbies: currentEvent.hobbies
+          .map((hobby) => HobbyEntity.fromString(hobby))
+          .toList(),
+
+      showParticipants: _showParticipants,
+      includeInDump: _addToDump,
+      participants: currentEvent.participants
+          .map(
+            (participant) => PostParticipantEntity(
+              userID: participant.userID,
+              username: participant.username,
+              profileImageUrl: participant.profileImageUrl,
+            ),
+          )
+          .toList(),
+      emoteCounts: {},
+      createdAt: null,
+      updatedAt: null,
+    );
+
+    postRepository.createPost(post);
   }
 }

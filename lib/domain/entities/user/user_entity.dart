@@ -1,5 +1,7 @@
 import 'package:bulusalim/core/utils/types/enums/gender_enum.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
+import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
+import 'package:bulusalim/domain/entities/user/user_event_entity.dart';
 import 'package:equatable/equatable.dart';
 
 class UserEntity extends Equatable {
@@ -16,6 +18,9 @@ class UserEntity extends Equatable {
     required this.createdAt,
     required this.updatedAt,
     required this.lastActiveAt,
+    required this.followeeCount,
+    required this.followerCount,
+    required this.activeEvents,
     this.hobbies = const [],
   });
 
@@ -33,6 +38,12 @@ class UserEntity extends Equatable {
     String? bio,
     UserPermissions? permissions,
     List<String>? hobbies,
+    int? followeeCount,
+    int? followerCount,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    DateTime? lastActiveAt,
+    List<EventEntity>? activeEvents,
   }) {
     return UserEntity(
       userID: userID ?? this.userID,
@@ -43,11 +54,14 @@ class UserEntity extends Equatable {
       organization: organization ?? this.organization,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       bio: bio ?? this.bio,
-      createdAt: createdAt,
-      updatedAt: updatedAt,
-      lastActiveAt: lastActiveAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      lastActiveAt: lastActiveAt ?? this.lastActiveAt,
       permissions: permissions ?? this.permissions,
       hobbies: hobbies ?? this.hobbies,
+      followeeCount: followeeCount ?? this.followeeCount,
+      followerCount: followerCount ?? this.followerCount,
+      activeEvents: activeEvents ?? this.activeEvents,
     );
   }
 
@@ -63,7 +77,9 @@ class UserEntity extends Equatable {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime lastActiveAt;
-
+  final int followeeCount;
+  final int followerCount;
+  final List<EventEntity> activeEvents;
   final List<String> hobbies;
 
   @override

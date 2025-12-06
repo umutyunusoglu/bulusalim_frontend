@@ -1,9 +1,10 @@
-import 'package:bulusalim/core/errors/exceptions/database_exceptions.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
+import 'package:bulusalim/data/models/event/event_model.dart';
 import 'package:bulusalim/data/models/user/user_event_model.dart';
 import 'package:bulusalim/data/models/user/user_hobby_model.dart';
 import 'package:bulusalim/data/models/user/user_model.dart';
+import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/friend_entity.dart';
 import 'package:bulusalim/domain/entities/user/index.dart';
 import 'package:bulusalim/domain/entities/user/user_event_entity.dart';
@@ -25,22 +26,79 @@ class UserRepositoryImpl implements UserRepository {
   @override
   Future<UserEntity?> getUser(Identifier userID) async {
     try {
-      final doc = await _firestore.collection('users').doc(userID).get();
-      if (doc.exists) {
-        _logger
-          ..debug(doc.data()!['birthDate'].toString())
-          ..debug(doc.data()!['birthDate'].runtimeType.toString());
-        final userModel = await UserModel.fromFirestore(doc.data()!);
+      final String uid = userID.toString();
 
-        _logger
-          ..debug(userModel.birthDate.toString())
-          ..debug(userModel.birthDate.runtimeType.toString());
-        return userModel.toEntity();
-      }
-    } catch (e) {
-      throw DatabaseException('Failed to get user: $e');
+      // 1. KULLANICI DÖKÜMANINI ÇEK (Hobbies bunun içinde)
+      final userDocSnapshot = await _firestore
+          .collection('users')
+          .doc(uid)
+          .get();
+
+      if (!userDocSnapshot.exists) return null;
+
+      // 2. AKTİF ETKİNLİK ID'LERİNİ BUL (Bridge / Köprü Adımı)
+      // Sadece 'upcoming' veya 'ongoing' olanların ID'lerini öğreniyoruz.
+      final historySnapshot = await _firestore
+          .collection('users')
+          .doc(uid)
+          .collection('eventHistory')
+          .where('status', whereIn: ['upcoming', 'ongoing'])
+          .orderBy('date')
+          .get();
+
+      // 3. GERÇEK EVENT DATALARINI ÇEK (Parallel Fetching)
+      // Elimizde ID'ler var, şimdi gidip gerçek 'events' tablosundan detayları alalım.
+
+      final List<Future<EventEntity?>> eventFutures = historySnapshot.docs.map((
+        doc,
+      ) async {
+        final historyData = doc.data();
+        final eventId = historyData['eventID'] as Identifier; // ID'yi al
+
+        // 'events' koleksiyonundan gerçek detayı çek
+        final eventDoc = await _firestore
+            .collection('events')
+            .doc(eventId)
+            .get();
+
+        if (!eventDoc.exists) return null; // Event silinmişse null dön
+
+        // EventModel -> EventEntity dönüşümü
+        final eventEntity = EventModel.fromFirestore(
+          eventDoc.data()!,
+        ).toEntity();
+
+        // OPTIONAL: Kullanıcının rolünü ve statusünü EventEntity içine enjekte et
+        // Böylece UI'da "Ben bu eventin Adminiyim" diyebilirsin.
+        return eventEntity.copyWith(
+          myStatus: historyData['status'].toString(),
+          myRole: historyData['role'].toString(),
+        );
+      }).toList();
+
+      // Tüm eventlerin inmesini bekle ve null olanları (silinenleri) temizle
+      final realActiveEvents = (await Future.wait(
+        eventFutures,
+      )).whereType<EventEntity>().toList();
+
+      // 4. HOBİLERİ AL (User Doc içinden direkt string listesi olarak)
+      final hobbyList =
+          (userDocSnapshot.data()?['hobbies'] as List<dynamic>?)
+              ?.map((hobby) => hobby.toString())
+              .toList() ??
+          [];
+
+      // 5. UserEntity OLUŞTUR VE DÖN
+      final userModel = await UserModel.fromFirestore(userDocSnapshot.data()!);
+
+      return userModel.toEntity().copyWith(
+        activeEvents: realActiveEvents, // Artık gerçek EventEntity listesi
+        hobbies: hobbyList, // Direkt String listesi
+      );
+    } on Exception catch (e) {
+      _logger.error('User Repository Error: $e');
+      return null;
     }
-    return null;
   }
 
   @override
