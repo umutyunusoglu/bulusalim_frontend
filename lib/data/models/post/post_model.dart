@@ -198,8 +198,8 @@ class PostModel extends Model<PostEntity> {
   final PostParticipantEntity creator;
   final Identifier eventID;
   final String caption;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
   final Geolocation? location;
   final bool showParticipants;
   final bool includeInDump;

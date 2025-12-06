@@ -67,8 +67,8 @@ class PostEntity extends FeedEntity with EquatableMixin {
   final PostParticipantEntity creator;
   final Identifier eventID;
   final String caption;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
   final Geolocation? location;
   final List<HobbyEntity> hobbies;
   final List<String>? imageUrls;
