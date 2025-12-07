@@ -1,5 +1,4 @@
 import 'package:bulusalim/components/tab_item.dart';
-import 'package:bulusalim/core/constants/constant.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -10,40 +9,41 @@ class CustomTabBar extends StatelessWidget {
     required this.onTabSelected,
     super.key,
   });
+
   final int currentIndex;
   final List<String> tabs;
   final void Function(int) onTabSelected;
 
   @override
   Widget build(BuildContext context) {
+    // TEMA BAĞLANTISI:
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+
+    final indicatorColor = theme.colorScheme.secondary;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final totalWidth = constraints.maxWidth;
         final tabCount = tabs.length;
 
-        // Hata Çözümü: Sıfıra bölme kontrolü
-        if (tabCount == 0) {
-          return const SizedBox.shrink();
-        }
+        if (tabCount == 0) return const SizedBox.shrink();
 
         final tabWidth = totalWidth / tabCount;
         final indicatorWidth = (tabWidth * 0.6).clamp(40.w, 140.w);
 
-        // currentIndex güvenliği
         final safeIndex = currentIndex.clamp(0, tabCount - 1);
         final leftOffset =
             safeIndex * tabWidth + (tabWidth - indicatorWidth) / 2;
 
-        // Mavi çubuğun yüksekliği
-        final double indicatorHeight = 4.h;
-        // Gradient gölgenin yayılacağı alanın yüksekliği
-        final double gradientSpread = 8.h;
-
-        // Stack'in toplam yüksekliği: Çubuk + Gölge
+        // Gölge ve Çubuk Yükseklik Ayarları
+        final double indicatorHeight = 4.h; // Mavi çubuğun kalınlığı
+        final double gradientSpread = 8.h; // Gölgenin aşağı yayılma mesafesi
         final double totalStackHeight = indicatorHeight + gradientSpread;
 
         return Column(
           children: [
+            // 1. TAB BUTONLARI
             Row(
               children: List.generate(
                 tabCount,
@@ -57,133 +57,66 @@ class CustomTabBar extends StatelessWidget {
             ),
             SizedBox(height: 8.h),
 
-            // --- YAPI GÜNCELLEMESİ: Stack dışarıdan SizedBox ile boyutlandırılıyor ---
+            // 2. GÖLGELİ VE ANİMASYONLU ALAN
             SizedBox(
               height: totalStackHeight,
               child: Stack(
                 children: [
-                  // 1. GRADIENT GÖLGE (FULL WIDTH)
+                  // A) GÖLGE KATMANI (Gradient Shadow)
+                  // Mavi çubuğun altından aşağı doğru süzülen gölge
                   Positioned(
-                    top:
-                        indicatorHeight, // Mavi çubuğun hemen altından başlar (4.h)
+                    top: indicatorHeight - 1, // Çubuğun tam altından başlar
                     child: Container(
-                      height: gradientSpread, // 8.h
+                      height: gradientSpread,
                       width: totalWidth,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.grey.withOpacity(0.6), // Üstte koyu gölge
-                            Colors.grey.shade300, // Altta açık gölge
-                          ],
-                          stops: const [0.0, 0.9],
+                          // Light Mod: Gri gölge | Dark Mod: Siyah gölge (parlamayı önler)
+                          colors: isDarkMode
+                              ? [
+                                  Colors.black.withOpacity(0.5),
+                                  Colors.transparent,
+                                ]
+                              : [
+                                  Colors.grey.withOpacity(0.4),
+                                  Colors.grey.withOpacity(0.0),
+                                ],
+                          stops: const [0.0, 1.0],
                         ),
                       ),
                     ),
                   ),
 
-                  // 2. MAVİ GÖSTERGE (Üstte)
+                  // B) HAREKETLİ ÇUBUK (INDICATOR)
                   AnimatedPositioned(
                     duration: const Duration(milliseconds: 260),
                     curve: Curves.easeInOut,
                     left: leftOffset,
-                    top: 0, // Stack'in en tepesine oturur.
+                    top: 0,
                     child: Container(
                       width: indicatorWidth,
                       height: indicatorHeight,
                       decoration: BoxDecoration(
-                        color: kBlueColor,
+                        color: indicatorColor,
                         borderRadius: BorderRadius.circular(10.r),
+                        boxShadow: [
+                          BoxShadow(
+                            color: indicatorColor.withOpacity(0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            // --- YAPI GÜNCELLEME SONU ---
           ],
         );
       },
     );
   }
 }
-// import 'package:bulusalim/components/tab_item.dart';
-// import 'package:bulusalim/core/constants/constant.dart';
-// import 'package:flutter/material.dart';
-// import 'package:flutter_screenutil/flutter_screenutil.dart';
-
-// class CustomTabBar extends StatelessWidget {
-//   const CustomTabBar({
-//     required this.currentIndex,
-//     required this.tabs,
-//     required this.onTabSelected,
-//     super.key,
-//   });
-//   final int currentIndex;
-//   final List<String> tabs;
-//   final void Function(int) onTabSelected;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return LayoutBuilder(
-//       builder: (context, constraints) {
-//         final totalWidth = constraints.maxWidth;
-//         final tabCount = tabs.length;
-//         final tabWidth = totalWidth / tabCount;
-//         final indicatorWidth = (tabWidth * 0.6).clamp(40.w, 140.w);
-//         final leftOffset =
-//             currentIndex * tabWidth + (tabWidth - indicatorWidth) / 2;
-
-//         return Column(
-//           children: [
-//             Row(
-//               children: List.generate(
-//                 tabCount,
-//                 (index) => TabItem(
-//                   label: tabs[index],
-//                   isSelected: currentIndex == index,
-//                   width: tabWidth,
-//                   onTap: () => onTabSelected(index),
-//                 ),
-//               ),
-//             ),
-//             SizedBox(height: 8.h),
-//             Stack(
-//               children: [
-//                 Container(
-//                   height: 3.5.h,
-//                   decoration: const BoxDecoration(
-//                     color: Colors.transparent,
-//                     boxShadow: [
-//                       BoxShadow(
-//                         color: Colors.transparent,
-//                         offset: Offset(0, 2),
-//                         blurRadius: 4,
-//                         spreadRadius: 1,
-//                       ),
-//                     ],
-//                   ),
-//                 ),
-//                 AnimatedPositioned(
-//                   duration: const Duration(milliseconds: 260),
-//                   curve: Curves.easeInOut,
-//                   left: leftOffset,
-//                   top: 0,
-//                   child: Container(
-//                     width: indicatorWidth,
-//                     height: 3.h,
-//                     decoration: BoxDecoration(
-//                       color: kBlueColor,
-//                       borderRadius: BorderRadius.circular(10.r),
-//                     ),
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           ],
-//         );
-//       },
-//     );
-//   }
-// }
