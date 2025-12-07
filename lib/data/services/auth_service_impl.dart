@@ -18,15 +18,16 @@ class AuthServiceImpl implements AuthService {
   final FirebaseAuth _firebaseAuth;
 
   @override
-  Future<Identifier> getCurrentUserCredential() {
+  Identifier getCurrentUserID() {
     _logger.debug('getCurrentUserCredential called');
+
     if (_firebaseAuth.currentUser == null) {
       _logger.warn('getCurrentUserCredential: no current user');
-      return Future.error(AuthException('No user is currently signed in.'));
+      throw AuthException('No user is currently signed in.');
     }
     final uid = _firebaseAuth.currentUser!.uid;
     _logger.info('getCurrentUserCredential: userId=$uid');
-    return Future.value(uid);
+    return uid;
   }
 
   @override
@@ -242,4 +243,8 @@ class AuthServiceImpl implements AuthService {
       );
     }
   }
+
+  @override
+  Stream<String?> get onAuthStateChanged =>
+      _firebaseAuth.authStateChanges().map((user) => user?.uid);
 }

@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/constants/theme/app_theme.dart';
+import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/firebase_options.dart';
 import 'package:bulusalim/screens/login/login_screen.dart';
 import 'package:bulusalim/screens/register_screen.dart';
@@ -31,24 +32,37 @@ Future<void> main() async {
     print(AppConfig.host);
     FirebaseFirestore.instance.useFirestoreEmulator(AppConfig.host, 8080);
     await FirebaseAuth.instance.useAuthEmulator(AppConfig.host, 9099);
-    await FirebaseStorage.instance.useStorageEmulator(AppConfig.host, 9199);
+    await FirebaseStorage.instance.useStorageEmulator(
+      AppConfig.host,
+      9199,
+    );
 
     final authInstance = FirebaseAuth.instance;
-    if (authInstance.currentUser != null) {
-      await authInstance.signOut();
+
+    const testUserId = 'user1@example.com';
+
+    if (testUserId == 'A') {
+      if (authInstance.currentUser != null) {
+        await authInstance.signOut();
+      }
+
+      await authInstance.signInAnonymously();
+    } else {
+      await authInstance.signInWithEmailAndPassword(
+        email: testUserId,
+        password: '123456',
+      );
     }
 
-    await authInstance.signInAnonymously();
-
-    // Debug amaçlı: Current User ID'sini konsola yazdır
-    if (authInstance.currentUser != null) {
-      print('Emülatörde Anonim Kullanıcı ID: ${authInstance.currentUser!.uid}');
-    }
+    debugPrint("Current ${authInstance.currentUser?.email ?? "No user"}");
   } else {
     await FirebaseAppCheck.instance.activate();
   }
 
   await getItSetup();
+
+  final sessionService = getIt<SessionService>();
+  await sessionService.init();
 
   runApp(const ProviderScope(child: MainApp()));
 }
