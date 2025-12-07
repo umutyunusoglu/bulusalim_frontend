@@ -52,8 +52,6 @@ class EventModel extends Model<EventEntity> {
     late final List<EventParticipantEntity> participants;
 
     if (kDebugMode) {
-      print(doc['participants']);
-
       creator =
           EventParticipantEntity.fromMap(
             doc['creator'] as Map<String, dynamic>,

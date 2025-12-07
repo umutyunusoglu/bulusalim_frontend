@@ -288,21 +288,37 @@ class _PostCardState extends State<PostCard> {
     required String caption,
     required List<String> tags,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Text(
-                caption,
-                style: const TextStyle(
-                  fontFamily: 'Urbanist',
-                  fontSize: 14,
-                  fontWeight: FontWeight.normal,
-                  color: Color(0xFF1A1A1A),
+    // Geri sayım için stil (PostCard'a özel gri renk)
+    final timeStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
+      color: Colors.grey.shade600,
+    );
+
+    // içeriği 12.w ile hizalıyoruz.
+    return Padding(
+      padding: EdgeInsets.fromLTRB(0, 4.h, 0, 12.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12.w),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    caption,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                SizedBox(width: 16.w),
+                CountdownTimer(
+                  targetTime: widget.post.createdAt!,
+                  style: timeStyle,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
