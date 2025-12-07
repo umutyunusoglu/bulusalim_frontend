@@ -1,7 +1,6 @@
 // lib/screens/bottom_nav/bottomnav_screen.dart
 
 import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/core/constants/constant.dart';
 import 'package:bulusalim/core/utils/nav_parser.dart';
 import 'package:bulusalim/domain/services/remote_config_service.dart';
 import 'package:bulusalim/screens/chat/chat_page.dart';
@@ -19,14 +18,13 @@ class BottomNavScreen extends StatefulWidget {
 }
 
 class _BottomNavScreenState extends State<BottomNavScreen> {
-  // Bu değişkenler, widget'ın o anki durumunu temsil eder.
-  bool _isLoading = true; // Sayfa ilk açıldığında yükleme modunda başla
-  String? _error; // Olası bir hata mesajını tutmak için
-  int _currentIndex = 0; // Seçili olan sekmenin indeksi
-  List<Widget> _orderedPages = []; // Firebase'den gelecek sıralı sayfalar
-  List<IconData> _orderedIcons = []; // Firebase'den gelecek sıralı ikonlar
+  bool _isLoading = true;
+  String? _error;
+  int _currentIndex = 0;
+  List<Widget> _orderedPages = [];
+  List<IconData> _orderedIcons = [];
 
-  // Firebase'deki key'ler ile Sayfa/İkon eşleştirmesi
+  // Sayfa ve İkon Tanımları
   final Map<String, Widget> _allPages = {
     'map_page': const MapPage(),
     'search_page': const SearchPage(),
@@ -36,61 +34,58 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
   };
 
   final Map<String, IconData> _allIcons = {
-    'map_page': Icons.map,
+    'map_page': Icons.map_outlined,
     'search_page': Icons.search,
-    'home_page': Icons.home,
-    'chat_page': Icons.chat,
-    'profile_page': Icons.person,
+    'home_page': Icons.home_outlined,
+    'chat_page': Icons.chat_bubble_outline,
+    'profile_page': Icons.person_outline,
   };
 
   @override
   void initState() {
     super.initState();
-    // veriyi yükleme fonksiyonunu tetikler
     _loadNavConfig();
   }
 
-  /// Firebase Remote Config'ten navigasyon verisini çeker,
-  /// parse eder ve sıralar.
   Future<void> _loadNavConfig() async {
     try {
-      // 1. Veriyi çek
       final remoteConfigService = getIt<RemoteConfigService>();
       await remoteConfigService.init();
+
       final jsonString = await remoteConfigService.getValue<String>(
         'navbar_order',
       );
 
-      //  parser fonksiyonu
       final result = parseAndSortNavConfig(
         jsonString: jsonString,
         allPages: _allPages,
         allIcons: _allIcons,
       );
+
+      // HomePage'i bul ve başlangıç indexi yap, yoksa 0
       var homeIndex = result.pages.indexWhere((page) => page is HomePage);
-      if (homeIndex == -1) {
-        homeIndex = 0;
+      if (homeIndex == -1) homeIndex = 0;
+
+      if (mounted) {
+        setState(() {
+          _orderedPages = result.pages;
+          _orderedIcons = result.icons;
+          _isLoading = false;
+          _error = null;
+          _currentIndex = homeIndex;
+        });
       }
-      // 3. Başarılı: setState() ile hafızayı güncelle
-      setState(() {
-        _orderedPages = result.pages;
-        _orderedIcons = result.icons;
-        _isLoading = false;
-        _error = null;
-        _currentIndex = homeIndex;
-      });
-    } on Exception catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  /// Kullanıcı bir sekmeye tıkladığında bu fonksiyon çalışır.
   void _onItemTapped(int index) {
-    // Sadece _currentIndex'i güncellemek için setState çağır.
-    // Bu, 'build' metodunu tetikler ve ekran güncellenir.
     setState(() {
       _currentIndex = index;
     });
@@ -98,10 +93,17 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // TEMA BAĞLANTISI
+    final theme = Theme.of(context);
+
     // Durum 1: Yükleniyor
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(
+            color: theme.colorScheme.secondary,
+          ),
+        ),
       );
     }
 
@@ -111,10 +113,21 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(20),
-            child: Text(
-              'Hata: Menü yüklenemedi.\n$_error',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.red),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: theme.colorScheme.error,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Menü yüklenemedi. Lütfen internetinizi kontrol edin.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ],
             ),
           ),
         ),
@@ -123,30 +136,41 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
 
     // Durum 3: Başarılı
     return Scaffold(
-      // Gövde:
-      // IndexedStack, sayfalar arası geçişte sayfaların durumunu(scroll pozisyonu) korur
       body: IndexedStack(
         index: _currentIndex,
         children: _orderedPages,
       ),
+      bottomNavigationBar: Container(
+        // Üstüne ince bir çizgi ekleyerek ayrımı netleştiriyoruz
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(
+              color: theme.dividerColor.withOpacity(0.1),
+              width: 1,
+            ),
+          ),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: _onItemTapped,
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: theme.scaffoldBackgroundColor,
+          selectedItemColor: theme.colorScheme.tertiary,
 
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: _onItemTapped,
+          unselectedItemColor: theme.textTheme.bodyMedium?.color?.withOpacity(
+            0.5,
+          ),
 
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: kBlueColor,
-        unselectedItemColor: Colors.grey.shade600,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-
-        // İkonlar:
-        items: _orderedIcons.map((iconData) {
-          return BottomNavigationBarItem(
-            icon: Icon(iconData, size: 26),
-            label: '',
-          );
-        }).toList(),
+          showSelectedLabels: false,
+          showUnselectedLabels: false,
+          elevation: 0,
+          items: _orderedIcons.map((iconData) {
+            return BottomNavigationBarItem(
+              icon: Icon(iconData, size: 25),
+              label: '',
+            );
+          }).toList(),
+        ),
       ),
     );
   }

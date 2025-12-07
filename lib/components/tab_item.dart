@@ -1,4 +1,3 @@
-import 'package:bulusalim/core/constants/constant.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -10,6 +9,7 @@ class TabItem extends StatelessWidget {
     required this.onTap,
     super.key,
   });
+
   final String label;
   final bool isSelected;
   final double width;
@@ -17,17 +17,24 @@ class TabItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final activeColor = theme.colorScheme.tertiary;
+    final passiveColor =
+        theme.textTheme.bodyMedium?.color?.withOpacity(0.5) ?? Colors.grey;
+
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: SizedBox(
         width: width,
         child: Center(
           child: Text(
             label,
             style: TextStyle(
+              fontFamily: 'Urbanist',
               fontSize: 16.sp,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-              color: isSelected ? kBlueColor : Colors.grey.shade600,
+              color: isSelected ? activeColor : passiveColor,
             ),
           ),
         ),

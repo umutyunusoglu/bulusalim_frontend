@@ -10,6 +10,7 @@ class UserInfo extends StatefulWidget {
     required this.builder,
     super.key,
   });
+
   final Identifier userID;
   final Widget Function(UserEntity user) builder;
 
@@ -23,42 +24,58 @@ class _UserInfoState extends State<UserInfo> {
   @override
   void initState() {
     super.initState();
-    //GetIt'ten UserRepository'yi al
+    _fetchUser();
+  }
 
-    final userRepository = getIt<UserRepository>();
+  @override
+  void didUpdateWidget(covariant UserInfo oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.userID != widget.userID) {
+      _fetchUser();
+    }
+  }
 
-    // 'getUser' metodunu çağır
-    _userFuture = userRepository.getUser(widget.userID);
+  void _fetchUser() {
+    // Repository çağrısı
+    _userFuture = getIt<UserRepository>().getUser(widget.userID);
   }
 
   @override
   Widget build(BuildContext context) {
+    // Tema Bağlantısı
+    final theme = Theme.of(context);
+
+    // Yükleniyor/Hata durumları için ortak küçük stil (12px Urbanist)
+    final placeholderStyle = theme.textTheme.bodySmall?.copyWith(
+      fontFamily: 'Urbanist',
+      fontSize: 12,
+      color: Colors.grey.shade500,
+    );
+
     return FutureBuilder<UserEntity?>(
       future: _userFuture,
       builder: (context, snapshot) {
-        // Veri Yükleniyorsa
+        // 1. Yükleniyor
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Text(
+          return Text(
             '...',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
+            style: placeholderStyle,
           );
         }
 
-        // Hata oluştuysa veya kullanıcı bulunamadıysa
+        // 2. Hata veya Boş Veri
         if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-          return const Text(
+          return Text(
             'Bilinmeyen Kullanıcı',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.red,
-              fontWeight: FontWeight.bold,
+            style: placeholderStyle?.copyWith(
+              color: theme.colorScheme.error, // Temadan hata rengi (Kırmızı)
+              fontWeight: FontWeight.w600,
             ),
           );
         }
 
-        // Başarılı
+        // 3. Başarılı
         final user = snapshot.data!;
-
         return widget.builder(user);
       },
     );
