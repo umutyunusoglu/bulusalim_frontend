@@ -1,4 +1,5 @@
 import 'package:bulusalim/core/utils/types/enums/emote_enum.dart';
+import 'package:bulusalim/core/utils/types/enums/feed_entity_type_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/entities/feed/feed_entity.dart';
@@ -21,7 +22,7 @@ class PostEntity extends FeedEntity with EquatableMixin {
     required this.updatedAt,
     this.location,
     this.imageUrls,
-  }) : super(feedType: FeedEntityType.post, id: postID);
+  }) : super(feedType: FeedEntityTypeEnum.post, id: postID);
 
   PostEntity copyWith({
     Identifier? postID,

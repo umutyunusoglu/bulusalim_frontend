@@ -1,21 +1,24 @@
 import 'dart:io';
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/constant.dart'; // Constant dosyasını import ediyoruz
+import 'package:bulusalim/core/utils/types/enums/feed_type.dart';
 import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
 import 'package:bulusalim/domain/repositories/post_repository.dart';
 import 'package:bulusalim/domain/services/auth_service.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
+import 'package:bulusalim/domain/usecases/upload_post_usecase.dart';
+import 'package:bulusalim/screens/home/home_content_page.dart';
+import 'package:bulusalim/screens/home/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class NewPostPage extends StatefulWidget {
-  final List<File> takenPhotos;
-
   const NewPostPage({
     this.takenPhotos = const [],
     super.key,
   });
+  final List<File> takenPhotos;
 
   @override
   State<NewPostPage> createState() => _NewPostPageState();
@@ -25,7 +28,7 @@ class _NewPostPageState extends State<NewPostPage> {
   final TextEditingController _captionController = TextEditingController();
   final PageController _pageController = PageController();
 
-  List<dynamic> _selectedMedia = [];
+  List<File> _selectedMedia = [];
   int _currentImageIndex = 0;
   bool _showParticipants = false;
   bool _addToDump = false;
@@ -33,15 +36,8 @@ class _NewPostPageState extends State<NewPostPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.takenPhotos.isEmpty) {
-      _selectedMedia = [
-        'https://picsum.photos/id/15/800/800',
-        'https://picsum.photos/id/11/800/800',
-        'https://picsum.photos/id/32/800/800',
-      ];
-    } else {
-      _selectedMedia = List.from(widget.takenPhotos);
-    }
+
+    _selectedMedia = List.from(widget.takenPhotos);
   }
 
   @override
@@ -381,7 +377,7 @@ class _NewPostPageState extends State<NewPostPage> {
             child: Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: Colors.white,
+              activeThumbColor: Colors.white,
               activeTrackColor: kButtonBackgroundColor,
               inactiveThumbColor: Colors.white,
               inactiveTrackColor: const Color(0xFFE7E7E7),
@@ -394,44 +390,24 @@ class _NewPostPageState extends State<NewPostPage> {
     );
   }
 
-  void _sendPost() {
-    final postRepository = getIt<PostRepository>();
-    final sessionService = getIt<SessionService>();
-    final currentUser = sessionService.currentUser!;
+  Future<void> _sendPost() async {
+    final uploadPost = getIt<UploadPost>();
 
-    final creator = PostParticipantEntity(
-      userID: currentUser.userID,
-      username: currentUser.username,
-      profileImageUrl: currentUser.profileImageUrl,
+    await uploadPost(
+      _selectedMedia,
+      _showParticipants,
+      _addToDump,
+      _captionController.text.trim(),
     );
+    if (!mounted) return;
+    await Navigator.pushAndRemoveUntil(
+      context,
 
-    final currentEvent = sessionService.currentEvent!;
-
-    final post = PostEntity(
-      postID: '',
-      creator: creator,
-      eventID: currentEvent.eventID,
-      caption: _captionController.text.trim(),
-      hobbies: currentEvent.hobbies
-          .map((hobby) => HobbyEntity.fromString(hobby))
-          .toList(),
-
-      showParticipants: _showParticipants,
-      includeInDump: _addToDump,
-      participants: currentEvent.participants
-          .map(
-            (participant) => PostParticipantEntity(
-              userID: participant.userID,
-              username: participant.username,
-              profileImageUrl: participant.profileImageUrl,
-            ),
-          )
-          .toList(),
-      emoteCounts: {},
-      createdAt: null,
-      updatedAt: null,
+      MaterialPageRoute<void>(
+        builder: (context) => const HomePage(),
+      ), // Buraya kendi ana sayfa widget ismini yaz
+      (Route<dynamic> route) =>
+          false, // false: Geriye dönük tüm sayfaları sil demektir
     );
-
-    postRepository.createPost(post);
   }
 }
