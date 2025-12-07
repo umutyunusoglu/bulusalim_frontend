@@ -1,5 +1,5 @@
 enum EventRoleEnum {
-  organizer._('creator'),
+  organizer._('organizer'),
   participant._('participant');
 
   const EventRoleEnum._(this.value);
@@ -11,7 +11,7 @@ enum EventRoleEnum {
 
   static EventRoleEnum fromString(String value) {
     switch (value) {
-      case 'creator':
+      case 'organizer':
         return organizer;
       case 'participant':
         return participant;

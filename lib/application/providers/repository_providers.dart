@@ -15,32 +15,32 @@ import 'package:get_it/get_it.dart';
 extension RepositoryModule on GetIt {
   void registerRepositories() {
     this
-      ..registerLazySingleton<UserRepository>(
-        () => UserRepositoryImpl(
+      ..registerSingleton<UserRepository>(
+        UserRepositoryImpl(
           firestore: this(),
           logger: this(),
         ),
       )
-      ..registerLazySingleton<EventRepository>(
-        () => EventRepositoryImpl(
+      ..registerSingleton<EventRepository>(
+        EventRepositoryImpl(
           firestore: this(),
           logger: this(),
         ),
       )
-      ..registerLazySingleton<PostRepository>(
-        () => PostRepositoryImpl(
+      ..registerSingleton<PostRepository>(
+        PostRepositoryImpl(
           firestore: this(),
           logger: this(),
         ),
       )
-      ..registerLazySingleton<FeedRepository>(
-        () => FeedRepositoryImpl(
+      ..registerSingleton<FeedRepository>(
+        FeedRepositoryImpl(
           firestore: this(),
           logger: this(),
         ),
       )
-      ..registerLazySingleton<ChatRepository>(
-        () => ChatRepositoryImpl(
+      ..registerSingleton<ChatRepository>(
+        ChatRepositoryImpl(
           firestore: this(),
           logger: this(),
         ),

@@ -3,7 +3,6 @@ import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/utils/types/enums/gender_enum.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/model.dart';
-import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/user_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
@@ -23,9 +22,6 @@ class UserModel extends Model<UserEntity> {
     required this.updatedAt,
     required this.lastActiveAt,
     required this.hobbies,
-    required this.followeeCount,
-    required this.followerCount,
-    required this.activeEvents,
   });
 
   @override
@@ -44,9 +40,6 @@ class UserModel extends Model<UserEntity> {
       updatedAt: entity.updatedAt,
       lastActiveAt: entity.lastActiveAt,
       hobbies: entity.hobbies,
-      followeeCount: entity.followeeCount,
-      followerCount: entity.followerCount,
-      activeEvents: entity.activeEvents,
     );
   }
 
@@ -98,9 +91,6 @@ class UserModel extends Model<UserEntity> {
       hobbies: (doc['hobbies'] as List<dynamic>? ?? [])
           .map((e) => e as String)
           .toList(),
-      followeeCount: doc['followeeCount'] as int? ?? 0,
-      followerCount: doc['followerCount'] as int? ?? 0,
-      activeEvents: [], // Aktif etkinlikler daha sonra yüklenebilir
     );
   }
 
@@ -134,9 +124,6 @@ class UserModel extends Model<UserEntity> {
       'lastActiveAt': Timestamp.fromDate(lastActiveAt),
       'permissions': permissions.toMap(),
       'hobbies': hobbies,
-      'followeeCount': followeeCount,
-      'followerCount': followerCount,
-      'activeEvents': activeEvents,
     };
   }
 
@@ -156,9 +143,6 @@ class UserModel extends Model<UserEntity> {
       updatedAt: updatedAt,
       lastActiveAt: lastActiveAt,
       hobbies: hobbies,
-      followeeCount: followeeCount,
-      followerCount: followerCount,
-      activeEvents: activeEvents,
     );
   }
 
@@ -174,9 +158,6 @@ class UserModel extends Model<UserEntity> {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime lastActiveAt;
-  final int followeeCount;
-  final int followerCount;
-  final List<EventEntity> activeEvents;
 
   final List<String> hobbies;
 }

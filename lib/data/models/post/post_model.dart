@@ -1,11 +1,8 @@
 import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/utils/types/enums/emote_enum.dart';
-import 'package:bulusalim/core/utils/types/enums/feed_entity_type_enum.dart';
-import 'package:bulusalim/core/utils/types/enums/feed_type.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/model.dart';
-import 'package:bulusalim/domain/entities/feed/feed_entity.dart';
 import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -22,8 +19,6 @@ class PostModel extends Model<PostEntity> {
     required this.emoteCounts,
     required this.createdAt,
     required this.updatedAt,
-    required this.showParticipants,
-    required this.includeInDump,
     this.location,
     this.imageUrls,
   });
@@ -41,9 +36,6 @@ class PostModel extends Model<PostEntity> {
       imageUrls: entity.imageUrls,
       participants: entity.participants,
       emoteCounts: entity.emoteCounts,
-
-      showParticipants: entity.showParticipants,
-      includeInDump: entity.includeInDump,
     );
   }
 
@@ -101,10 +93,10 @@ class PostModel extends Model<PostEntity> {
       );
     }
 
-    final location = doc['location'] as Map<String, dynamic>;
+    final location = doc['location'] as GeoPoint;
     final locationMap = {
-      'latitude': location['latitude'],
-      'longitude': location['longitude'],
+      'latitude': location.latitude,
+      'longitude': location.longitude,
     };
 
     return PostModel(
@@ -126,9 +118,6 @@ class PostModel extends Model<PostEntity> {
           value as int,
         ),
       ),
-
-      showParticipants: doc['showParticipants'] as bool,
-      includeInDump: doc['includeInDump'] as bool,
     );
   }
 
@@ -146,8 +135,6 @@ class PostModel extends Model<PostEntity> {
       imageUrls: imageUrls,
       participants: participants,
       emoteCounts: emoteCounts,
-      showParticipants: showParticipants,
-      includeInDump: includeInDump,
     );
   }
 
@@ -192,9 +179,6 @@ class PostModel extends Model<PostEntity> {
       ),
       'createdAt': createdAt,
       'updatedAt': updatedAt,
-      'showParticipants': showParticipants,
-      'includeInDump': includeInDump,
-      'feedType': feedType.toString(),
     };
   }
 
@@ -202,14 +186,11 @@ class PostModel extends Model<PostEntity> {
   final PostParticipantEntity creator;
   final Identifier eventID;
   final String caption;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
   final Geolocation? location;
-  final bool showParticipants;
-  final bool includeInDump;
   final List<HobbyEntity> hobbies;
   final List<String>? imageUrls;
   final List<PostParticipantEntity> participants;
   final Map<EmoteEnum, int> emoteCounts;
-  final FeedEntityTypeEnum feedType = FeedEntityTypeEnum.post;
 }

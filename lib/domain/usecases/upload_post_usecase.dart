@@ -1,88 +1,49 @@
-import 'dart:io';
-
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
-import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
 import 'package:bulusalim/domain/repositories/post_repository.dart';
 import 'package:bulusalim/domain/services/file_service.dart';
-import 'package:bulusalim/domain/services/session_service.dart';
 
 class UploadPost {
   UploadPost({
     required LoggingService logger,
     required PostRepository postRepository,
     required FileService fileService,
-    required SessionService sessionService,
   }) : _logger = logger,
        _postRepository = postRepository,
-       _fileService = fileService,
-       _sessionService = sessionService;
+       _fileService = fileService;
 
   final LoggingService _logger;
   final PostRepository _postRepository;
   final FileService _fileService;
-  final SessionService _sessionService;
 
   Future<PostEntity> call(
-    List<File> files,
-    bool showParticipants,
-    bool addToDump,
-    String caption,
+    PostEntity post,
+    List<PostParticipantEntity> participants,
+    List<String> filePaths,
   ) async {
     final uploadUrls = <String>[];
 
-    if (files.isNotEmpty) {
-      for (final file in files) {
-        final postname = file.path.split('/').last;
+    if (filePaths.isNotEmpty) {
+      _logger.info('Uploading images for post: ${post.postID}');
+      for (final path in filePaths) {
         final url = await _fileService.uploadFile(
-          file,
-          '${FileService.privateUsers}/${_sessionService.currentUser!.userID}/posts/images/$postname',
+          path,
+          FileService.publicImages,
         );
-
         uploadUrls.add(url);
       }
+      _logger.info('Images uploaded for post: ${post.postID}');
     }
 
-    final currentUser = _sessionService.currentUser!;
-    final creator = PostParticipantEntity(
-      userID: currentUser.userID,
-      username: currentUser.username,
-      profileImageUrl: currentUser.profileImageUrl,
-    );
-
-    final currentEvent = _sessionService.currentEvent!;
-
-    final post = PostEntity(
-      postID: '',
-      creator: creator,
-      eventID: currentEvent.eventID,
-      caption: caption,
-      hobbies: currentEvent.hobbies
-          .map((hobby) => HobbyEntity.fromString(hobby))
-          .toList(),
-
-      showParticipants: showParticipants,
-      includeInDump: addToDump,
-      participants: currentEvent.participants
-          .map(
-            (participant) => PostParticipantEntity(
-              userID: participant.userID,
-              username: participant.username,
-              profileImageUrl: participant.profileImageUrl,
-            ),
-          )
-          .toList(),
-      emoteCounts: {},
+    final updatedPost = post.copyWith(
       imageUrls: uploadUrls,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-      location: currentEvent.location,
+      participants: participants,
     );
 
     _logger.info('Uploading post: ${post.postID}');
-    await _postRepository.createPost(post);
+    await _postRepository.createPost(updatedPost);
 
     _logger.info('Post uploaded: ${post.postID}');
-    return post;
+    return updatedPost;
   }
 }

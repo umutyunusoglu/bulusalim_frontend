@@ -1,10 +1,9 @@
+import 'package:bulusalim/core/errors/exceptions/database_exceptions.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
-import 'package:bulusalim/data/models/event/event_model.dart';
 import 'package:bulusalim/data/models/user/user_event_model.dart';
 import 'package:bulusalim/data/models/user/user_hobby_model.dart';
 import 'package:bulusalim/data/models/user/user_model.dart';
-import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/friend_entity.dart';
 import 'package:bulusalim/domain/entities/user/index.dart';
 import 'package:bulusalim/domain/entities/user/user_event_entity.dart';
@@ -26,66 +25,22 @@ class UserRepositoryImpl implements UserRepository {
   @override
   Future<UserEntity?> getUser(Identifier userID) async {
     try {
-      final uid = userID;
+      final doc = await _firestore.collection('users').doc(userID).get();
+      if (doc.exists) {
+        _logger
+          ..debug(doc.data()!['birthDate'].toString())
+          ..debug(doc.data()!['birthDate'].runtimeType.toString());
+        final userModel = await UserModel.fromFirestore(doc.data()!);
 
-      final userDocSnapshot = await _firestore
-          .collection('users')
-          .doc(uid)
-          .get();
-
-      if (!userDocSnapshot.exists) return null;
-
-      final historySnapshot = await _firestore
-          .collection('users')
-          .doc(uid)
-          .collection('eventHistory')
-          .where('status', whereIn: ['upcoming', 'ongoing'])
-          .orderBy('date')
-          .get();
-
-      final eventFutures = historySnapshot.docs.map((
-        doc,
-      ) async {
-        final historyData = doc.data();
-        final eventId = historyData['eventID'] as Identifier; // ID'yi al
-
-        final eventDoc = await _firestore
-            .collection('events')
-            .doc(eventId)
-            .get();
-
-        if (!eventDoc.exists) return null;
-
-        final eventEntity = EventModel.fromFirestore(
-          eventDoc.data()!,
-        ).toEntity();
-
-        return eventEntity.copyWith(
-          myStatus: historyData['status'].toString(),
-          myRole: historyData['role'].toString(),
-        );
-      }).toList();
-
-      final realActiveEvents = (await Future.wait(
-        eventFutures,
-      )).whereType<EventEntity>().toList();
-
-      final hobbyList =
-          (userDocSnapshot.data()?['hobbies'] as List<dynamic>?)
-              ?.map((hobby) => hobby.toString())
-              .toList() ??
-          [];
-
-      final userModel = await UserModel.fromFirestore(userDocSnapshot.data()!);
-
-      return userModel.toEntity().copyWith(
-        activeEvents: realActiveEvents,
-        hobbies: hobbyList,
-      );
-    } on Exception catch (e) {
-      _logger.error('User Repository Error: $e');
-      return null;
+        _logger
+          ..debug(userModel.birthDate.toString())
+          ..debug(userModel.birthDate.runtimeType.toString());
+        return userModel.toEntity();
+      }
+    } catch (e) {
+      throw DatabaseException('Failed to get user: $e');
     }
+    return null;
   }
 
   @override
@@ -216,48 +171,6 @@ class UserRepositoryImpl implements UserRepository {
       'Found events for user: $userID, events: $events',
     );
     return events;
-  }
-
-  @override
-  Stream<List<EventEntity>> watchActiveEvents(String userID) {
-    // 1. Subcollection'ı DİNLE (snapshots)
-    return _firestore
-        .collection('users')
-        .doc(userID)
-        .collection('eventHistory')
-        .where('status', whereIn: ['upcoming', 'ongoing']) // Sadece aktifler
-        .orderBy('date')
-        .snapshots()
-        .asyncMap((snapshot) async {
-          if (snapshot.docs.isEmpty) return [];
-
-          // ID'leri alıp detayları çekme (Parallel Fetch)
-          final eventFutures = snapshot.docs.map((doc) async {
-            final historyData = doc.data();
-            final eventId = historyData['eventID'] as Identifier;
-
-            // Event detayını çek
-            final eventDoc = await _firestore
-                .collection('events')
-                .doc(eventId)
-                .get();
-            if (!eventDoc.exists) return null;
-
-            final eventEntity = EventModel.fromFirestore(
-              eventDoc.data()!,
-            ).toEntity();
-
-            // Status ve Role bilgisini güncelle
-            return eventEntity.copyWith(
-              myStatus: historyData['status'] as String,
-              myRole: historyData['role'].toString(),
-            );
-          });
-
-          // Null olanları temizle ve listeyi döndür
-          final events = await Future.wait(eventFutures);
-          return events.whereType<EventEntity>().toList();
-        });
   }
 
   @override

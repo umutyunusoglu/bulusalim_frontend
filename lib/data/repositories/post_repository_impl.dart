@@ -33,11 +33,7 @@ class PostRepositoryImpl implements PostRepository {
   Future<void> createPost(PostEntity post) async {
     try {
       final docRef = _firestore.collection('posts').doc();
-
-      final postWithID = post.copyWith(
-        postID: docRef.id,
-      );
-
+      final postWithID = post.copyWith(postID: docRef.id);
       final postModel = PostModel.fromEntity(postWithID);
 
       await docRef.set(postModel.toFirestore());

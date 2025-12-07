@@ -67,41 +67,26 @@ class _HomeContentPageState extends State<HomeContentPage> {
   }
 
   Future<void> _fetchNextBatch() async {
+    // Zaten yükleniyorsa veya daha fazla veri yoksa dur.
     if (_isLoadingNext || !_hasMoreData) return;
 
     setState(() => _isLoadingNext = true);
 
     try {
       final lastItem = _feedItems.last;
-      // Backend'den yeni veri iste
       final newItems = await _feedRepository.fetchNextFeedBatch(lastItem);
 
       if (mounted) {
-        // ÇÖZÜM BURADA:
-        // Gelen yeni listedeki her bir elemanın ID'sine bak,
-        // eğer bu ID zaten mevcut listemizde (_feedItems) varsa, onu filtrele.
-        final uniqueNewItems = newItems.where((newItem) {
-          // any: "listede bu şartı sağlayan herhangi biri var mı?"
-          bool isAlreadyInList = _feedItems.any(
-            (existingItem) => existingItem.id == newItem.id,
-          );
-          return !isAlreadyInList; // Listede YOKSA al, varsa alma.
-        }).toList();
-
-        if (uniqueNewItems.isNotEmpty) {
-          // Sadece gerçekten YENİ olanları ekle
+        if (newItems.isNotEmpty) {
           setState(() {
-            _feedItems.addAll(uniqueNewItems);
+            _feedItems.addAll(newItems);
           });
         } else {
-          // Eğer newItems dolu geldiyse ama hepsi zaten bizde varsa (uniqueNewItems boşsa),
-          // demek ki backend başa sardı veya aynılarını yolluyor.
-          // Sonsuz döngüyü kırmak için "veri bitti" diyoruz.
           setState(() => _hasMoreData = false);
         }
       }
     } catch (e) {
-      // Hata yönetimi
+      // Hata loglama
     } finally {
       if (mounted) setState(() => _isLoadingNext = false);
     }

@@ -1,5 +1,4 @@
 import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart';
-import 'package:bulusalim/core/utils/types/enums/feed_entity_type_enum.dart';
 import 'package:bulusalim/core/utils/types/enums/restriction_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
@@ -21,9 +20,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
     required this.createdAt,
     required this.updatedAt,
     this.info,
-    this.currentUserStatus,
-    this.currentUserRole,
-  }) : super(feedType: FeedEntityTypeEnum.event, id: eventID);
+  }) : super(feedType: FeedEntityType.event, id: eventID);
 
   EventEntity copyWith({
     String? eventID,
@@ -39,8 +36,6 @@ class EventEntity extends FeedEntity with EquatableMixin {
     EventAttributes? attributes,
     DateTime? createdAt,
     DateTime? updatedAt,
-    String? myStatus,
-    String? myRole,
   }) {
     return EventEntity(
       eventID: eventID ?? this.eventID,
@@ -56,13 +51,8 @@ class EventEntity extends FeedEntity with EquatableMixin {
       attributes: attributes ?? this.attributes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      currentUserStatus: myStatus ?? currentUserStatus,
-      currentUserRole: myRole ?? currentUserRole,
     );
   }
-
-  final String? currentUserStatus;
-  final String? currentUserRole;
 
   final String eventID;
   final String name;

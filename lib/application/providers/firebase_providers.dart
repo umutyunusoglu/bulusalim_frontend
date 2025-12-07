@@ -7,13 +7,9 @@ import 'package:get_it/get_it.dart';
 extension FirebaseModule on GetIt {
   void registerFirebase() {
     this
-      ..registerLazySingleton<FirebaseFirestore>(
-        () => FirebaseFirestore.instance,
-      )
-      ..registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance)
-      ..registerLazySingleton<FirebaseStorage>(() => FirebaseStorage.instance)
-      ..registerLazySingleton<FirebaseRemoteConfig>(
-        () => FirebaseRemoteConfig.instance,
-      );
+      ..registerSingleton(FirebaseFirestore.instance)
+      ..registerSingleton(FirebaseAuth.instance)
+      ..registerSingleton(FirebaseStorage.instance)
+      ..registerSingleton(FirebaseRemoteConfig.instance);
   }
 }

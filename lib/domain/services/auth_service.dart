@@ -16,8 +16,7 @@ abstract class AuthService {
 
   Future<String> signInWithApple();
 
-  Identifier getCurrentUserID();
-  Stream<String?> get onAuthStateChanged;
+  Future<Identifier> getCurrentUserCredential();
 
   Future<void> signOut();
   Future<bool> isUserLoggedIn();

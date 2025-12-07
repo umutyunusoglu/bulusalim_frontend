@@ -16,35 +16,13 @@ class FileServiceImpl implements FileService {
   final LoggingService _logger;
 
   @override
-  Future<String> uploadFileFromPath(
+  Future<String> uploadFile(
     String absoluteSourcePath,
     String absoluteTargetPath,
   ) async {
     final file = File(absoluteSourcePath);
     if (!file.existsSync()) {
       throw FileNotFoundException('File not found', absoluteSourcePath);
-    }
-
-    try {
-      final storageRef = _storage.ref().child(absoluteTargetPath);
-
-      final uploadTask = storageRef.putFile(file);
-      await uploadTask.whenComplete(() => null);
-      return storageRef.getDownloadURL().then((downloadUrl) {
-        return downloadUrl;
-      });
-    } on FirebaseException catch (e) {
-      throw _handleFirebaseStorageException(e, absoluteTargetPath);
-    } on Exception catch (e) {
-      _logger.error('File Upload Exception: $e');
-      throw FileSystemException('File Upload Exception: $e');
-    }
-  }
-
-  @override
-  Future<String> uploadFile(File file, String absoluteTargetPath) async {
-    if (!file.existsSync()) {
-      throw FileNotFoundException('File not found', file.path);
     }
 
     try {
