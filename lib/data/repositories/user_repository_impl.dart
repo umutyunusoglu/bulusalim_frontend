@@ -26,9 +26,8 @@ class UserRepositoryImpl implements UserRepository {
   @override
   Future<UserEntity?> getUser(Identifier userID) async {
     try {
-      final String uid = userID.toString();
+      final uid = userID;
 
-      // 1. KULLANICI DÖKÜMANINI ÇEK (Hobbies bunun içinde)
       final userDocSnapshot = await _firestore
           .collection('users')
           .doc(uid)
@@ -36,8 +35,6 @@ class UserRepositoryImpl implements UserRepository {
 
       if (!userDocSnapshot.exists) return null;
 
-      // 2. AKTİF ETKİNLİK ID'LERİNİ BUL (Bridge / Köprü Adımı)
-      // Sadece 'upcoming' veya 'ongoing' olanların ID'lerini öğreniyoruz.
       final historySnapshot = await _firestore
           .collection('users')
           .doc(uid)
@@ -46,54 +43,44 @@ class UserRepositoryImpl implements UserRepository {
           .orderBy('date')
           .get();
 
-      // 3. GERÇEK EVENT DATALARINI ÇEK (Parallel Fetching)
-      // Elimizde ID'ler var, şimdi gidip gerçek 'events' tablosundan detayları alalım.
-
-      final List<Future<EventEntity?>> eventFutures = historySnapshot.docs.map((
+      final eventFutures = historySnapshot.docs.map((
         doc,
       ) async {
         final historyData = doc.data();
         final eventId = historyData['eventID'] as Identifier; // ID'yi al
 
-        // 'events' koleksiyonundan gerçek detayı çek
         final eventDoc = await _firestore
             .collection('events')
             .doc(eventId)
             .get();
 
-        if (!eventDoc.exists) return null; // Event silinmişse null dön
+        if (!eventDoc.exists) return null;
 
-        // EventModel -> EventEntity dönüşümü
         final eventEntity = EventModel.fromFirestore(
           eventDoc.data()!,
         ).toEntity();
 
-        // OPTIONAL: Kullanıcının rolünü ve statusünü EventEntity içine enjekte et
-        // Böylece UI'da "Ben bu eventin Adminiyim" diyebilirsin.
         return eventEntity.copyWith(
           myStatus: historyData['status'].toString(),
           myRole: historyData['role'].toString(),
         );
       }).toList();
 
-      // Tüm eventlerin inmesini bekle ve null olanları (silinenleri) temizle
       final realActiveEvents = (await Future.wait(
         eventFutures,
       )).whereType<EventEntity>().toList();
 
-      // 4. HOBİLERİ AL (User Doc içinden direkt string listesi olarak)
       final hobbyList =
           (userDocSnapshot.data()?['hobbies'] as List<dynamic>?)
               ?.map((hobby) => hobby.toString())
               .toList() ??
           [];
 
-      // 5. UserEntity OLUŞTUR VE DÖN
       final userModel = await UserModel.fromFirestore(userDocSnapshot.data()!);
 
       return userModel.toEntity().copyWith(
-        activeEvents: realActiveEvents, // Artık gerçek EventEntity listesi
-        hobbies: hobbyList, // Direkt String listesi
+        activeEvents: realActiveEvents,
+        hobbies: hobbyList,
       );
     } on Exception catch (e) {
       _logger.error('User Repository Error: $e');
@@ -229,6 +216,48 @@ class UserRepositoryImpl implements UserRepository {
       'Found events for user: $userID, events: $events',
     );
     return events;
+  }
+
+  @override
+  Stream<List<EventEntity>> watchActiveEvents(String userID) {
+    // 1. Subcollection'ı DİNLE (snapshots)
+    return _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('eventHistory')
+        .where('status', whereIn: ['upcoming', 'ongoing']) // Sadece aktifler
+        .orderBy('date')
+        .snapshots()
+        .asyncMap((snapshot) async {
+          if (snapshot.docs.isEmpty) return [];
+
+          // ID'leri alıp detayları çekme (Parallel Fetch)
+          final eventFutures = snapshot.docs.map((doc) async {
+            final historyData = doc.data();
+            final eventId = historyData['eventID'] as Identifier;
+
+            // Event detayını çek
+            final eventDoc = await _firestore
+                .collection('events')
+                .doc(eventId)
+                .get();
+            if (!eventDoc.exists) return null;
+
+            final eventEntity = EventModel.fromFirestore(
+              eventDoc.data()!,
+            ).toEntity();
+
+            // Status ve Role bilgisini güncelle
+            return eventEntity.copyWith(
+              myStatus: historyData['status'] as String,
+              myRole: historyData['role'].toString(),
+            );
+          });
+
+          // Null olanları temizle ve listeyi döndür
+          final events = await Future.wait(eventFutures);
+          return events.whereType<EventEntity>().toList();
+        });
   }
 
   @override

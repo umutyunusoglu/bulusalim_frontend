@@ -30,6 +30,7 @@ class SessionServiceImpl implements SessionService {
   final ValueNotifier<UserEntity?> _userNotifier = ValueNotifier(null);
   final ValueNotifier<EventEntity?> _eventNotifier = ValueNotifier(null);
 
+  StreamSubscription<List<EventEntity>>? _eventsSubscription;
   StreamSubscription<String?>? _authSubscription;
 
   // --- GETTERS ---
@@ -45,43 +46,63 @@ class SessionServiceImpl implements SessionService {
   // --- INIT (KRİTİK BÖLÜM) ---
   @override
   Future<void> init() async {
-    // 1. Önce manuel bir kontrol yapalım (Stream bazen ilk değeri hemen vermeyebilir)
-    await _checkCurrentSession();
+    // Auth dinleyicisi
+    _authSubscription = _authService.onAuthStateChanged.listen((
+      userID,
+    ) async {
+      // 1. Önce eski etkinlik dinleyicisini kapat (Memory Leak önlemi)
+      await _eventsSubscription?.cancel();
+      _eventsSubscription = null;
 
-    // 2. Stream'i dinlemeye başla (Anlık değişimler için)
-    _authSubscription = _authService.onAuthStateChanged.listen((userId) async {
-      await _handleAuthChange(userId);
+      if (userID == null) {
+        _userNotifier.value = null;
+        _eventNotifier.value = null;
+      } else {
+        // 2. Kullanıcı Giriş Yaptı: Önce temel bilgileri çek
+        final userEntity = await _userRepository.getUser(userID);
+        if (userEntity != null) {
+          _userNotifier.value = userEntity;
+
+          // 3. VE ŞİMDİ CANLI YAYINA BAĞLAN (Active Events Stream)
+          _eventsSubscription = _userRepository
+              .watchActiveEvents(userID)
+              .listen(
+                (realTimeEvents) {
+                  _updateUserEvents(realTimeEvents);
+
+                  _refreshCurrentEventState(realTimeEvents);
+                },
+                onError: (error) {
+                  print("Event Stream Hatası: $error");
+                },
+              );
+        }
+      }
     });
   }
 
-  // ID geldiğinde yapılacak işi tek bir fonksiyona topladım (DRY Prensibi)
-  Future<void> _handleAuthChange(String? userId) async {
-    if (userId == null) {
-      // Çıkış yapılmış
-      _logger.debug('Session: Kullanıcı oturumu kapalı.');
-      _userNotifier.value = null;
-      _eventNotifier.value = null;
-    } else {
-      // Giriş yapılmış -> ID var, şimdi UserRepository ile veriyi çekelim
-      _logger.debug('Session: ID yakalandı ($userId), detaylar çekiliyor...');
-      try {
-        final userEntity = await _userRepository.getUser(userId);
-        _userNotifier.value = userEntity;
-      } on Exception catch (e) {
-        _logger.error('Session: Kullanıcı verisi çekilemedi: $e');
-        // Hata durumunda null yapabilir veya retry mekanizması kurabilirsin
-        _userNotifier.value = null;
-      }
+  void _updateUserEvents(List<EventEntity> newEvents) {
+    final currentUser = _userNotifier.value;
+    if (currentUser != null) {
+      _userNotifier.value = currentUser.copyWith(
+        activeEvents: newEvents,
+      );
     }
   }
 
-  // Uygulama ilk açıldığında Stream gelmeden önceki boşluğu doldurmak için
-  Future<void> _checkCurrentSession() async {
-    final isLoggedIn = await _authService.isUserLoggedIn();
-    if (isLoggedIn) {
-      final userId = _authService.getCurrentUserID();
+  void _refreshCurrentEventState(List<EventEntity> events) {
+    try {
+      final ongoingEvent = events.firstWhere(
+        (e) => e.currentUserStatus == 'ongoing',
+      );
 
-      await _handleAuthChange(userId);
+      _eventNotifier.value = ongoingEvent;
+    } on Exception {
+      if (events.isNotEmpty) {
+        _eventNotifier.value = events.first;
+      } else {
+        _eventNotifier.value = null;
+      }
     }
   }
 
@@ -103,7 +124,9 @@ class SessionServiceImpl implements SessionService {
   @override
   void dispose() {
     _authSubscription?.cancel();
+    _eventsSubscription?.cancel();
     _userNotifier.dispose();
+
     _eventNotifier.dispose();
   }
 }

@@ -32,11 +32,14 @@ Future<void> main() async {
     print(AppConfig.host);
     FirebaseFirestore.instance.useFirestoreEmulator(AppConfig.host, 8080);
     await FirebaseAuth.instance.useAuthEmulator(AppConfig.host, 9099);
-    await FirebaseStorage.instance.useStorageEmulator(AppConfig.host, 9199);
+    await FirebaseStorage.instance.useStorageEmulator(
+      AppConfig.host,
+      9199,
+    );
 
     final authInstance = FirebaseAuth.instance;
 
-    const testUserId = 'A';
+    const testUserId = 'user1@example.com';
 
     if (testUserId == 'A') {
       if (authInstance.currentUser != null) {
