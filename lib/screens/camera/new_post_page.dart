@@ -47,14 +47,6 @@ class _NewPostPageState extends State<NewPostPage> {
     super.dispose();
   }
 
-  ImageProvider _getImageProvider(dynamic media) {
-    if (media is File) {
-      return FileImage(media);
-    } else {
-      return NetworkImage(media as String);
-    }
-  }
-
   Widget _buildImageWidget(dynamic media, BoxFit fit) {
     if (media is File) {
       return Image.file(media, fit: fit);
@@ -66,10 +58,7 @@ class _NewPostPageState extends State<NewPostPage> {
           if (loadingProgress == null) return child;
           return Center(
             child: CircularProgressIndicator(
-              value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded /
-                        loadingProgress.expectedTotalBytes!
-                  : null,
+              color: Theme.of(context).colorScheme.secondary,
             ),
           );
         },
@@ -79,6 +68,12 @@ class _NewPostPageState extends State<NewPostPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final headerColor = colorScheme.tertiary;
+    final actionColor = colorScheme.secondary;
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
@@ -87,9 +82,9 @@ class _NewPostPageState extends State<NewPostPage> {
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 2.h),
           child: Column(
             children: [
-              // --- BAŞLIK ALANI ---
+              // --- 1. BAŞLIK ALANI ---
               SizedBox(
-                height: 40.h,
+                height: 30.h,
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
@@ -108,8 +103,8 @@ class _NewPostPageState extends State<NewPostPage> {
                         onPressed: () => Navigator.pop(context),
                         icon: Icon(
                           Icons.close,
-                          color: Colors.black,
-                          size: 24.sp,
+                          color: headerColor,
+                          size: 26.sp,
                         ),
                       ),
                     ),
@@ -117,7 +112,7 @@ class _NewPostPageState extends State<NewPostPage> {
                 ),
               ),
 
-              SizedBox(height: 4.h),
+              SizedBox(height: 12.h),
 
               // 1. FOTOĞRAF ALANI (361x361)
               if (_selectedMedia.isNotEmpty)
@@ -164,51 +159,61 @@ class _NewPostPageState extends State<NewPostPage> {
                     ),
                   ),
                 ),
+              ),
 
               SizedBox(height: 8.h),
 
-              // 2. SAYFA NOKTALARI
+              // --- 3. SAYFA NOKTALARI ---
               if (_selectedMedia.length > 1)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(_selectedMedia.length, (index) {
-                    return Container(
-                      margin: EdgeInsets.symmetric(horizontal: 4.w),
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      margin: EdgeInsets.symmetric(horizontal: 3.w),
                       width: 5.w,
                       height: 5.w,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: _currentImageIndex == index
-                            ? Colors.grey.shade800
+                            ? Colors.grey.shade400
                             : Colors.grey.shade300,
                       ),
                     );
                   }),
                 )
               else
-                SizedBox(height: 5.w),
+                SizedBox(height: 5.h),
 
               SizedBox(height: 8.h),
 
-              // 3. AÇIKLAMA ALANI
+              // --- 4. AÇIKLAMA ALANI ---
               Container(
-                height: 68.h,
+                height: 60.h,
                 width: 361.w,
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                 decoration: BoxDecoration(
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(color: Colors.black, width: 1.5),
+                  border: Border.all(color: Colors.black, width: 1),
                 ),
                 child: Stack(
                   children: [
-                    // TextField
-                    Positioned.fill(
-                      child: TextField(
-                        controller: _captionController,
-                        maxLength: 50,
-                        maxLines: 2,
-                        textAlignVertical: TextAlignVertical.top,
-                        style: TextStyle(
+                    TextField(
+                      controller: _captionController,
+                      maxLength: 50,
+                      maxLines: 3,
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontFamily: 'Urbanist',
+                        color: Colors.black,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      decoration: InputDecoration(
+                        filled: false,
+                        hintText: "Açıklama yaz.",
+                        hintStyle: TextStyle(
+                          color: Colors.grey.shade500,
                           fontSize: 14.sp,
                           fontFamily: 'Urbanist',
                           color: Colors.black,
@@ -229,9 +234,13 @@ class _NewPostPageState extends State<NewPostPage> {
                           contentPadding: EdgeInsets.only(right: 40.w),
                           counterText: '',
                         ),
+                        border: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                        counterText: "",
                       ),
                     ),
-                    // Karakter Sayacı
                     Align(
                       alignment: Alignment.bottomRight,
                       child: ValueListenableBuilder(
@@ -240,10 +249,9 @@ class _NewPostPageState extends State<NewPostPage> {
                           return Text(
                             '${value.text.length}/50',
                             style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 12.sp,
+                              color: Colors.grey.shade500,
+                              fontSize: 10.sp,
                               fontFamily: 'Urbanist',
-                              fontWeight: FontWeight.w500,
                             ),
                           );
                         },
@@ -253,7 +261,7 @@ class _NewPostPageState extends State<NewPostPage> {
                 ),
               ),
 
-              SizedBox(height: 18.h),
+              SizedBox(height: 24.h),
 
               // 4. KATILIMCILARI GÖSTER
               _buildCustomSwitchTile(
@@ -262,34 +270,40 @@ class _NewPostPageState extends State<NewPostPage> {
                     'Bunu kabul ederek katıldığın etkinlikte bulunan diğer katılımcılar paylaşımında yer alacak ve diğer kullanıcılar tarafından görüntülenebilecek.',
                 value: _showParticipants,
                 onChanged: (val) => setState(() => _showParticipants = val),
+                activeColor: actionColor,
               ),
 
-              SizedBox(height: 8.h),
+              SizedBox(height: 16.h),
 
-              // 5. DUMP'A DAHİL ET (Yazılarınız korundu)
-              _buildCustomSwitchTile(
+              _buildSwitchOption(
+                context,
                 title: "Dump'a dahil et.",
                 subtitle:
                     'Bunu kabul ederek paylaştığın gönderideki fotoğrafların ay sonunda senin için hazırlayacağımız dump gönderisine dahil olmasına izin verirsin. Seçtiğin 3.fotoğraf Dump’larda yer almayacak.)',
                 value: _addToDump,
                 onChanged: (val) => setState(() => _addToDump = val),
+                activeColor: actionColor,
               ),
 
               const Spacer(),
 
-              // 6. PAYLAŞ BUTONU
-              Center(
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.25),
-                        spreadRadius: 0,
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+              SizedBox(height: 10.h),
+
+              // --- 6. PAYLAŞ BUTONU ---
+              SizedBox(
+                width: 173.w,
+                height: 40.h,
+                child: ElevatedButton(
+                  onPressed: () {
+                    debugPrint("Paylaş...");
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: actionColor,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.r),
+                    ),
                   ),
                   child: SizedBox(
                     width: 240.w,
@@ -326,7 +340,7 @@ class _NewPostPageState extends State<NewPostPage> {
                 ),
               ),
 
-              SizedBox(height: 10.h),
+              SizedBox(height: 20.h),
             ],
           ),
         ),
@@ -334,14 +348,16 @@ class _NewPostPageState extends State<NewPostPage> {
     );
   }
 
-  Widget _buildCustomSwitchTile({
+  Widget _buildSwitchOption(
+    BuildContext context, {
     required String title,
     required String subtitle,
     required bool value,
     required Function(bool) onChanged,
+    required Color activeColor,
   }) {
-    return Container(
-      width: 361.w, // İçeriği de 361w genişliğine sabitledim
+    return SizedBox(
+      width: 361.w,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -352,37 +368,36 @@ class _NewPostPageState extends State<NewPostPage> {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 12.sp,
+                    fontFamily: 'Urbanist',
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
                     color: Colors.black,
-                    fontFamily: 'Urbanist',
                   ),
                 ),
-                SizedBox(height: 2.h),
+                SizedBox(height: 4.h),
                 Text(
                   subtitle,
                   style: TextStyle(
-                    fontSize: 10.sp,
-                    color: Colors.grey.shade600,
-                    height: 1.1,
                     fontFamily: 'Urbanist',
+                    fontSize: 11.sp,
+                    color: Colors.grey.shade600,
+                    height: 1.2,
                   ),
                 ),
               ],
             ),
           ),
-          SizedBox(width: 8.w),
+          SizedBox(width: 12.w),
           Transform.scale(
-            scale: 0.7,
+            scale: 0.8,
             child: Switch(
               value: value,
               onChanged: onChanged,
               activeThumbColor: Colors.white,
               activeTrackColor: kButtonBackgroundColor,
               inactiveThumbColor: Colors.white,
-              inactiveTrackColor: const Color(0xFFE7E7E7),
+              inactiveTrackColor: Colors.grey.shade300,
               trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
-              trackOutlineWidth: WidgetStateProperty.all(0),
             ),
           ),
         ],

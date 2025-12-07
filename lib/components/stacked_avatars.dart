@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class StackedAvatars extends StatelessWidget {
   final List<String> avatarUrls;
+
   const StackedAvatars({
     Key? key,
     required this.avatarUrls,
@@ -10,65 +11,20 @@ class StackedAvatars extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Boyutları tanımla
+    if (avatarUrls.isEmpty) return const SizedBox.shrink();
+
+    // 1. Boyut Ayarları
     final double firstAvatarSize = 42.r;
     final double otherAvatarSize = 33.r;
-
-    // 2. Üst üste binme miktarını tanımla
-    final double overlap = 16.r;
+    final double overlap = 14.r;
 
     final items = avatarUrls.take(3).toList();
+    final int count = items.length;
 
-    if (items.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    List<Widget> avatarWidgets = [];
-    double currentLeftPosition = 0;
-
-    // 3. Avatarları ve pozisyonlarını hesapla
-    for (int i = 0; i < items.length; i++) {
-      final isFirst = (i == 0);
-      final currentSize = isFirst ? firstAvatarSize : otherAvatarSize;
-
-      avatarWidgets.add(
-        Positioned(
-          left: currentLeftPosition,
-          bottom: 0, // Alttan hizalama
-          child: Container(
-            width: currentSize,
-            height: currentSize,
-            child: CircleAvatar(
-              radius: (currentSize / 2),
-              backgroundImage: NetworkImage(items[i]),
-              backgroundColor: Colors.grey.shade300,
-              onBackgroundImageError: (exception, stackTrace) {
-                debugPrint('Avatar yüklenemedi: $exception');
-              },
-            ),
-          ),
-        ),
-      );
-
-      // Bir sonraki avatarın 'left' pozisyonunu hazırla
-      if (isFirst) {
-        currentLeftPosition += (firstAvatarSize - overlap);
-      } else {
-        currentLeftPosition += (otherAvatarSize - overlap);
-      }
-    }
-
-    // 4. Toplam genişliği hesapla
-    double totalWidth;
-    if (items.length == 1) {
-      totalWidth = firstAvatarSize;
-    } else if (items.length == 2) {
-      totalWidth = (firstAvatarSize - overlap) + otherAvatarSize;
-    } else {
-      totalWidth =
-          (firstAvatarSize - overlap) +
-          (otherAvatarSize - overlap) +
-          otherAvatarSize;
+    // 2. Toplam Genişlik Hesabı
+    double totalWidth = firstAvatarSize;
+    if (count > 1) {
+      totalWidth += (count - 1) * (otherAvatarSize - overlap);
     }
 
     return SizedBox(
@@ -77,7 +33,36 @@ class StackedAvatars extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.bottomLeft,
-        children: avatarWidgets.reversed.toList(),
+        children: List.generate(
+          count,
+          (index) {
+            final isFirst = index == 0;
+            final currentSize = isFirst ? firstAvatarSize : otherAvatarSize;
+
+            // Sol pozisyonu hesapla
+            double leftPos = 0;
+            if (index > 0) {
+              leftPos =
+                  (firstAvatarSize - overlap) +
+                  ((index - 1) * (otherAvatarSize - overlap));
+            }
+
+            return Positioned(
+              left: leftPos,
+              bottom: 0,
+              child: SizedBox(
+                width: currentSize,
+                height: currentSize,
+                child: CircleAvatar(
+                  radius: currentSize / 2,
+                  backgroundColor: Colors.grey.shade300,
+                  backgroundImage: NetworkImage(items[index]),
+                  onBackgroundImageError: (_, __) {},
+                ),
+              ),
+            );
+          },
+        ).reversed.toList(),
       ),
     );
   }
