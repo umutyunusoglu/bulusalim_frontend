@@ -1,6 +1,5 @@
 import 'package:bulusalim/components/custom_tab_bar.dart';
 import 'package:bulusalim/components/header.dart';
-import 'package:bulusalim/core/constants/constant.dart';
 import 'package:bulusalim/core/utils/types/enums/feed_type.dart';
 import 'package:bulusalim/screens/camera/splash_screen.dart';
 import 'package:bulusalim/screens/home/home_content_page.dart';
@@ -30,34 +29,41 @@ class _HomePageState extends State<HomePage> {
       context,
       MaterialPageRoute(builder: (context) => const CameraSplashScreen()),
     );
-    debugPrint("Kamera butonuna tıklandı!");
   }
 
   @override
   Widget build(BuildContext context) {
+    // TEMA BAĞLANTISI
+    final theme = Theme.of(context);
+    final iconColor = theme.colorScheme.secondary;
+
     return Scaffold(
-      // Stack'in ekranın güvenli alanları içinde kalması için SafeArea kullanıyoruz
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Stack(
           children: [
-            // KATMAN 1: ANA İÇERİK (Sizin eski Column yapınız)
+            // KATMAN 1: ANA İÇERİK
             Column(
               children: [
-                /// Üst başlık
+                /// Üst Başlık (Header)
                 Header(
-                  title: Image.asset('assets/bulusalim.png', height: 40.h),
+                  title: Image.asset(
+                    'assets/bulusalim.png',
+                    height: 40.h,
+                  ),
                   trailing: Icon(
                     Icons.notifications_none_outlined,
-                    color: kBlueColor,
-                    size: 25.sp,
+                    color: iconColor,
+                    size: 28.sp,
                   ),
                 ),
 
-                /// Sekme Bar
+                /// Sekme Bar (TabBar)
                 CustomTabBar(
                   currentIndex: _currentPage,
                   tabs: _tabs,
                   onTabSelected: (index) {
+                    setState(() => _currentPage = index);
                     _pageController.animateToPage(
                       index,
                       duration: const Duration(milliseconds: 300),
@@ -68,7 +74,7 @@ class _HomePageState extends State<HomePage> {
 
                 SizedBox(height: 5.h),
 
-                /// Sayfa içeriği (PageView)
+                /// Sayfa İçeriği (PageView)
                 Expanded(
                   child: PageView(
                     controller: _pageController,
@@ -84,18 +90,29 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
 
-            // KATMAN 2: FOTOĞRAF ÇEKME BUTONU (En üstte durur)
+            // KATMAN 2: FOTOĞRAF ÇEKME BUTONU (Custom FAB)
             Positioned(
-              right: 6.w, // Sağdan boşluk
-              bottom: 14.h, // Alttan boşluk
+              right: 16.w,
+              bottom: 24.h,
               child: GestureDetector(
-                onTap: _navigateToCamera, // Tıklama aksiyonu
-                // İsteğe bağlı gölge efekti (Resmin kendisinde gölge yoksa)
-                child: Image.asset(
-                  'assets/group103.png', // Sizin belirttiğiniz görsel
-                  width: 62.w, // Görselin boyutu (İhtiyaca göre ayarlayın)
-                  height: 80.w,
-                  fit: BoxFit.contain,
+                onTap: _navigateToCamera,
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Image.asset(
+                    'assets/group103.png',
+                    width: 64.w,
+                    height: 64.w,
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
             ),
@@ -106,6 +123,7 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
+// "Senlik" Akışı
 class SenlikPage extends StatelessWidget {
   const SenlikPage({super.key});
 
@@ -115,6 +133,7 @@ class SenlikPage extends StatelessWidget {
   }
 }
 
+// "Arkadaşların" Akışı
 class ArkadaslarinPage extends StatelessWidget {
   const ArkadaslarinPage({super.key});
 
