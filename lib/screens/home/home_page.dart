@@ -93,24 +93,17 @@ class _HomePageState extends State<HomePage> {
             // KATMAN 2: FOTOĞRAF ÇEKME BUTONU (Custom FAB)
             Positioned(
               right: 16.w,
-              bottom: 24.h,
+              bottom: 14.h,
               child: GestureDetector(
                 onTap: _navigateToCamera,
                 child: Container(
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
                   ),
                   child: Image.asset(
                     'assets/group103.png',
-                    width: 64.w,
-                    height: 64.w,
+                    width: 62.w,
+                    height: 90.w,
                     fit: BoxFit.contain,
                   ),
                 ),
