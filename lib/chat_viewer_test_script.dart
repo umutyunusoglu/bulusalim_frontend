@@ -1,19 +1,16 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'package:intl/intl.dart'; // Tarih formatı için (pubspec'e ekli değilse ekle veya çıkar)
-
 // Proje importları
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/domain/entities/chat/message_entity.dart';
 import 'package:bulusalim/domain/repositories/chat_repository.dart';
 import 'package:bulusalim/domain/repositories/event_repository.dart';
 import 'package:bulusalim/firebase_options.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 // Firebase importları
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 void main() async {
   const eventID = String.fromEnvironment('EVENT_ID');
@@ -43,8 +40,8 @@ void main() async {
 }
 
 class ChatMonitorApp extends StatelessWidget {
+  const ChatMonitorApp({required this.eventID, super.key});
   final String eventID;
-  const ChatMonitorApp({super.key, required this.eventID});
 
   @override
   Widget build(BuildContext context) {
@@ -60,8 +57,8 @@ class ChatMonitorApp extends StatelessWidget {
 }
 
 class ChatScreen extends StatefulWidget {
+  const ChatScreen({required this.eventID, super.key});
   final String eventID;
-  const ChatScreen({super.key, required this.eventID});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -164,9 +161,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildMessageCard(MessageEntity msg) {
     // Repository descending getirdiği için en üstteki en yenidir.
-    final timeStr = msg.createdAt != null
-        ? "${msg.createdAt!.hour}:${msg.createdAt!.minute.toString().padLeft(2, '0')}:${msg.createdAt!.second.toString().padLeft(2, '0')}"
-        : "Zaman Yok";
+    final timeStr =
+        "${msg.createdAt.hour}:${msg.createdAt.minute.toString().padLeft(2, '0')}:${msg.createdAt.second.toString().padLeft(2, '0')}";
 
     return Card(
       elevation: 2,
