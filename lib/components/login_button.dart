@@ -1,74 +1,73 @@
-import 'package:bulusalim/core/constants/constant.dart';
 import 'package:flutter/material.dart';
 
-// LoginButton artık bir StatefulWidget'tır
-class LoginButton extends StatefulWidget {
+class LoginButton extends StatelessWidget {
   const LoginButton({
+    super.key,
     required this.label,
     required this.onPress,
     required this.height,
-    required this.borderWidth,
-    required this.borderRadius,
     required this.width,
-    super.key,
+    required this.borderRadius,
+    required this.borderWidth,
+
     this.backgroundColor,
     this.textColor,
     this.borderColor,
+
+    this.fontSize = 18.0,
+    this.fontWeight = FontWeight.w700,
   });
+
   final String label;
   final VoidCallback onPress;
   final double height;
-  final double borderWidth;
+  final double? width;
   final double borderRadius;
+  final double borderWidth;
+
   final Color? backgroundColor;
   final Color? textColor;
   final Color? borderColor;
-  final double? width;
-
-  @override
-  State<LoginButton> createState() => _LoginButtonState();
-}
-
-class _LoginButtonState extends State<LoginButton> {
-  // Widget durumuna (State) özgü değişkenleri burada tutabilirsiniz,
-  // örneğin tıklanma anında rengini değiştirmek gibi.
-  // Şu an için sadece görsel düzenlemeleri yapıyoruz.
+  final double fontSize;
+  final FontWeight fontWeight;
 
   @override
   Widget build(BuildContext context) {
-    // Border rengi sağlanmamışsa varsayılan olarak gri bir renk kullanır
-    // (Aksi halde widget.borderColor! kullanımı null hatası verecektir)
-    final resolvedBorderColor = widget.borderColor ?? const Color(0xFF5B7A98);
+    final theme = Theme.of(context);
 
-    return GestureDetector(
-      onTap: widget.onPress,
-      child: Container(
-        height: widget.height,
-        width: widget.width,
-        decoration: BoxDecoration(
-          color: widget.backgroundColor ?? Colors.white, // Arkaplan rengi
-          borderRadius: BorderRadius.circular(widget.borderRadius),
-          border: Border.all(
-            color: resolvedBorderColor,
-            width: widget.borderWidth,
+    // Renkler null gelirse varsayılan tema renklerini kullan
+    final defaultColor = theme.colorScheme.secondary;
+
+    final effectiveBackgroundColor = backgroundColor ?? Colors.white;
+    final effectiveBorderColor = borderColor ?? defaultColor;
+    final effectiveTextColor = textColor ?? defaultColor;
+
+    return SizedBox(
+      height: height,
+      width: width,
+      child: Material(
+        color: effectiveBackgroundColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(borderRadius),
+          side: BorderSide(
+            color: effectiveBorderColor,
+            width: borderWidth,
           ),
         ),
-
-        // InkWell'ı doğrudan Container'ın üzerine yerleştiriyoruz
-        child: Material(
-          color: Colors.transparent, // Material'ın rengi şeffaf olmalı
-          child: InkWell(
-            borderRadius: BorderRadius.circular(widget.borderRadius),
-            onTap: widget.onPress, // Tıklama fonksiyonu
-            child: Center(
-              child: Text(
-                widget.label,
-                style: TextStyle(
-                  color:
-                      widget.textColor ?? kButtonBackgroundColor, // Metin rengi
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
+        child: InkWell(
+          onTap: onPress,
+          borderRadius: BorderRadius.circular(borderRadius),
+          // Tıklama efekti rengi
+          splashColor: effectiveTextColor.withOpacity(0.1),
+          highlightColor: effectiveTextColor.withOpacity(0.05),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Urbanist',
+                color: effectiveTextColor,
+                fontSize: fontSize,
+                fontWeight: fontWeight,
               ),
             ),
           ),
