@@ -25,11 +25,11 @@ Future<void> main() async {
   if (kDebugMode) {
     await FirebaseAppCheck.instance.activate(
       providerAndroid: const AndroidDebugProvider(),
-
       providerApple: const AppleDebugProvider(),
     );
 
     print(AppConfig.host);
+    // Emülatör ayarları
     FirebaseFirestore.instance.useFirestoreEmulator(AppConfig.host, 8080);
     await FirebaseAuth.instance.useAuthEmulator(AppConfig.host, 9099);
     await FirebaseStorage.instance.useStorageEmulator(
@@ -76,30 +76,43 @@ class MainApp extends StatelessWidget {
       designSize: const Size(393, 852),
       minTextAdapt: true,
       splitScreenMode: true,
-      child: GestureDetector(
-        onTap: () {
-          final currentFocus = FocusScope.of(context);
-          if (!currentFocus.hasPrimaryFocus) {
-            currentFocus.unfocus();
-          }
-        },
-        child: MaterialApp(
-          debugShowCheckedModeBanner: false,
-
-          scrollBehavior: const MaterialScrollBehavior().copyWith(
-            dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse},
-          ),
-          theme: AppTheme.lightTheme,
-          locale: const Locale('tr'),
-          title: 'Flutter Demo',
-          initialRoute: '/',
-          routes: {
-            '/': (context) => const SignInScreen(),
-            '/login': (context) => const LoginScreen(),
-            '/register': (context) => const RegisterScreen(),
+      builder: (context, child) {
+        return GestureDetector(
+          onTap: () {
+            // Klavyeyi kapatma işlemi
+            final currentFocus = FocusScope.of(context);
+            if (!currentFocus.hasPrimaryFocus &&
+                currentFocus.focusedChild != null) {
+              FocusManager.instance.primaryFocus?.unfocus();
+            }
           },
-        ),
-      ),
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            scrollBehavior: const MaterialScrollBehavior().copyWith(
+              dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse},
+            ),
+            theme: AppTheme.lightTheme,
+            locale: const Locale('tr'),
+            title: 'Buluşalım',
+            // 2. ÖNEMLİ: Pixel Perfect için Sihirli Dokunuş Burası
+            builder: (context, widget) {
+              return MediaQuery(
+                // Kullanıcının telefonundaki yazı tipi boyutu ayarını yok sayar ve tasarımdaki oranı (1.0) zorlar.
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: const TextScaler.linear(1.0)),
+                child: widget!,
+              );
+            },
+            initialRoute: '/',
+            routes: {
+              '/': (context) => const SignInScreen(),
+              '/login': (context) => const LoginScreen(),
+              '/register': (context) => const RegisterScreen(),
+            },
+          ),
+        );
+      },
     );
   }
 }
