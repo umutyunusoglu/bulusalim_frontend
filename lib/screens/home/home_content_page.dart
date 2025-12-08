@@ -3,7 +3,6 @@ import 'package:bulusalim/components/event_card.dart';
 import 'package:bulusalim/components/post_card.dart';
 import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/utils/types/enums/feed_type.dart';
-import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/feed/feed_entity.dart';
 import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
