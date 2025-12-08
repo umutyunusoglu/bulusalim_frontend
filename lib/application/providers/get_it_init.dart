@@ -9,8 +9,8 @@ final GetIt getIt = GetIt.instance;
 Future<void> getItSetup() async {
   getIt
     ..registerFirebase()
-    ..registerServices()
     ..registerRepositories()
+    ..registerServices()
     ..registerUsecases();
 
   await getIt.allReady();
