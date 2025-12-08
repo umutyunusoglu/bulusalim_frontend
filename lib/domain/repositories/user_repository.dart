@@ -1,4 +1,5 @@
 import 'package:bulusalim/core/utils/types/types.dart';
+import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/friend_entity.dart';
 import 'package:bulusalim/domain/entities/user/index.dart';
 import 'package:bulusalim/domain/entities/user/user_entity.dart';
@@ -38,6 +39,9 @@ abstract class UserRepository {
   Future<List<UserEventEntity>> getUserEventHistory(
     Identifier userID,
   );
+
+  Stream<List<EventEntity>> watchActiveEvents(String userID);
+
   Future<void> deleteEvent(
     Identifier userID,
     Identifier eventID,
