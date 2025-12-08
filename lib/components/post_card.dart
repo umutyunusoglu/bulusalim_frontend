@@ -310,7 +310,7 @@ class _PostCardState extends State<PostCard> {
             ),
             SizedBox(width: 12.w),
             CountdownTimer(
-              targetTime: widget.post.createdAt,
+              targetTime: widget.post.createdAt!,
               style: const TextStyle(
                 fontFamily: 'Urbanist',
                 fontSize: 12,

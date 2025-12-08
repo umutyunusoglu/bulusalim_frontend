@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/core/constants/constant.dart'; // Constant dosyasını import ediyoruz
+import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/utils/types/enums/feed_type.dart';
 import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
@@ -91,8 +91,13 @@ class _NewPostPageState extends State<NewPostPage> {
                     Align(
                       alignment: Alignment.center,
                       child: Text(
-                        'Yeni Gönderi',
-                        style: kLoginTextStyle.copyWith(fontSize: 20.sp),
+                        "Yeni Gönderi",
+                        style: TextStyle(
+                          fontFamily: 'Urbanist',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20.sp,
+                          color: headerColor,
+                        ),
                       ),
                     ),
                     Align(
@@ -114,49 +119,30 @@ class _NewPostPageState extends State<NewPostPage> {
 
               SizedBox(height: 12.h),
 
-              // 1. FOTOĞRAF ALANI (361x361)
-              if (_selectedMedia.isNotEmpty)
-                Container(
-                  height: 361.h,
-                  width: 361.w,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12.r),
-                    child: PageView.builder(
-                      controller: _pageController,
-                      itemCount: _selectedMedia.length,
-                      onPageChanged: (index) {
-                        setState(() {
-                          _currentImageIndex = index;
-                        });
-                      },
-                      itemBuilder: (context, index) {
-                        return _buildImageWidget(
-                          _selectedMedia[index],
-                          BoxFit.cover,
-                        );
-                      },
-                    ),
-                  ),
-                )
-              else
-                Container(
-                  height: 361.h,
-                  width: 361.w,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Center(
-                    child: Text(
-                      'Fotoğraf Yok',
-                      style: TextStyle(
-                        color: Colors.grey.shade500,
-                        fontFamily: 'Urbanist',
-                      ),
-                    ),
+              // --- 2. FOTOĞRAF ALANI ---
+              Container(
+                height: 361.h,
+                width: 361.w,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16.r),
+                  color: Colors.grey.shade100,
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16.r),
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: _selectedMedia.length,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentImageIndex = index;
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      return _buildImageWidget(
+                        _selectedMedia[index],
+                        BoxFit.cover,
+                      );
+                    },
                   ),
                 ),
               ),
@@ -201,7 +187,7 @@ class _NewPostPageState extends State<NewPostPage> {
                   children: [
                     TextField(
                       controller: _captionController,
-                      maxLength: 50,
+                      maxLength: AppConfig.maxPostCaptionLength,
                       maxLines: 3,
                       style: TextStyle(
                         fontSize: 14.sp,
@@ -216,23 +202,6 @@ class _NewPostPageState extends State<NewPostPage> {
                           color: Colors.grey.shade500,
                           fontSize: 14.sp,
                           fontFamily: 'Urbanist',
-                          color: Colors.black,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'Açıklama yaz.',
-                          hintStyle: TextStyle(
-                            color: Colors.grey.shade500,
-                            fontSize: 14.sp,
-                            fontFamily: 'Urbanist',
-                          ),
-                          border: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          errorBorder: InputBorder.none,
-                          disabledBorder: InputBorder.none,
-                          contentPadding: EdgeInsets.only(right: 40.w),
-                          counterText: '',
                         ),
                         border: InputBorder.none,
                         focusedBorder: InputBorder.none,
@@ -245,9 +214,9 @@ class _NewPostPageState extends State<NewPostPage> {
                       alignment: Alignment.bottomRight,
                       child: ValueListenableBuilder(
                         valueListenable: _captionController,
-                        builder: (context, TextEditingValue value, _) {
+                        builder: (context, TextEditingValue value, __) {
                           return Text(
-                            '${value.text.length}/50',
+                            '${value.text.length}/+${AppConfig.maxPostCaptionLength}',
                             style: TextStyle(
                               color: Colors.grey.shade500,
                               fontSize: 10.sp,
@@ -263,11 +232,12 @@ class _NewPostPageState extends State<NewPostPage> {
 
               SizedBox(height: 24.h),
 
-              // 4. KATILIMCILARI GÖSTER
-              _buildCustomSwitchTile(
-                title: 'Katılımcıları göster.',
+              // --- 5. SWITCHLER ---
+              _buildSwitchOption(
+                context,
+                title: "Katılımcıları göster.",
                 subtitle:
-                    'Bunu kabul ederek katıldığın etkinlikte bulunan diğer katılımcılar paylaşımında yer alacak ve diğer kullanıcılar tarafından görüntülenebilecek.',
+                    "Bunu kabul ederek katıldığın etkinlikte bulunan diğer katılımcılar paylaşımında yer alacak ve diğer kullanıcılar tarafından görüntülenebilecek.",
                 value: _showParticipants,
                 onChanged: (val) => setState(() => _showParticipants = val),
                 activeColor: actionColor,
@@ -279,7 +249,7 @@ class _NewPostPageState extends State<NewPostPage> {
                 context,
                 title: "Dump'a dahil et.",
                 subtitle:
-                    'Bunu kabul ederek paylaştığın gönderideki fotoğrafların ay sonunda senin için hazırlayacağımız dump gönderisine dahil olmasına izin verirsin. Seçtiğin 3.fotoğraf Dump’larda yer almayacak.)',
+                    "Bunu kabul ederek paylaştığın gönderideki fotoğrafların ay sonunda senin için hazırlayacağımız dump gönderisine dahil olmasına izin verirsin. Seçtiğin 3.fotoğraf Dump'larda yer almayacak.)",
                 value: _addToDump,
                 onChanged: (val) => setState(() => _addToDump = val),
                 activeColor: actionColor,
@@ -295,7 +265,7 @@ class _NewPostPageState extends State<NewPostPage> {
                 height: 40.h,
                 child: ElevatedButton(
                   onPressed: () {
-                    debugPrint("Paylaş...");
+                    _sendPost();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: actionColor,
@@ -305,36 +275,13 @@ class _NewPostPageState extends State<NewPostPage> {
                       borderRadius: BorderRadius.circular(30.r),
                     ),
                   ),
-                  child: SizedBox(
-                    width: 240.w,
-                    height: 50.h,
-                    child: ElevatedButton(
-                      onPressed: _selectedMedia.isEmpty
-                          ? null
-                          : () {
-                              _sendPost();
-                              debugPrint('Paylaşılıyor...');
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: kButtonBackgroundColor,
-                        side: BorderSide.none,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30.r),
-                        ),
-                        elevation: 0,
-                        alignment: Alignment.center,
-                      ),
-                      child: Text(
-                        'paylaş',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.w400,
-                          fontFamily: 'Urbanist',
-                          letterSpacing: 0.5,
-                        ),
-                      ),
+                  child: Text(
+                    "paylaş",
+                    style: TextStyle(
+                      fontFamily: 'Urbanist',
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ),
@@ -393,8 +340,8 @@ class _NewPostPageState extends State<NewPostPage> {
             child: Switch(
               value: value,
               onChanged: onChanged,
-              activeThumbColor: Colors.white,
-              activeTrackColor: kButtonBackgroundColor,
+              activeColor: Colors.white,
+              activeTrackColor: activeColor,
               inactiveThumbColor: Colors.white,
               inactiveTrackColor: Colors.grey.shade300,
               trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
