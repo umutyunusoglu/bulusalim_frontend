@@ -9,9 +9,6 @@ class AppConfig {
       ? '10.0.2.2'
       : 'localhost';
 
-  static final String functionsUrl =
-      'http://$host:5001/bulusalim-e8e7c/us-central1/'; //TODO : MAKE IT ENVIRONMENT SPECIFIC AND SECURE
-
   static const maxUserPhotos = 3;
 
   final remoteConfigDebugPath = 'assets/remote_config_defaults.json';
@@ -23,4 +20,6 @@ class AppConfig {
   static const int feedBatchSize = 40;
   static const int feedIDListSize = 1000;
   static const int feedFetchThreshold = 20;
+
+  static const int maxPostCaptionLength = 50;
 }
