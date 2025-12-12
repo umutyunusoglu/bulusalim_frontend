@@ -1,7 +1,14 @@
 import 'package:bulusalim/components/login_button.dart';
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart';
+import 'package:bulusalim/core/utils/types/enums/restriction_enum.dart';
+import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
+import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/screens/home/post%20components/small_stacked_avatars.dart';
+import 'package:bulusalim/screens/profile/dump_tab.dart';
+import 'package:bulusalim/screens/profile/events_tab.dart';
+import 'package:bulusalim/screens/profile/grid_tab.dart';
 import 'package:bulusalim/screens/profile/profile_photo.dart';
+import 'package:bulusalim/screens/profile/profile_tab_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -12,11 +19,17 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _ProfilePageState extends State<ProfilePage> {
+  // --- DURUM YÖNETİMİ ---
+  int _selectedTabIndex = 0;
+  final PageController _pageController = PageController();
 
-  // --- MOCK VERİLER ---
+  // --- VERİLER ---
+  List<EventEntity> _currentEvents = [];
+  List<EventEntity> _consideredEvents = [];
+  bool _isLoadingEvents = true;
+
+  // --- MOCK PROFİL BİLGİLERİ ---
   final String _username = "elif_dogan";
   final String _fullName = "Elif Doğan";
   final String _bio = "İşletme okuyorum adım elif merhaba ";
@@ -26,80 +39,143 @@ class _ProfilePageState extends State<ProfilePage>
     "https://cdn-icons-png.flaticon.com/512/616/616490.png",
   ];
 
-  // --- DURUM YÖNETİMİ ---
   final bool _isPrivateAccount = false;
   bool _isFollowing = false;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _fetchProfileEvents();
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
-  void _toggleFollow() {
+  // --- MOCK VERİ ÇEKME ---
+  Future<void> _fetchProfileEvents() async {
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (!mounted) return;
+
+    final mockCreator = EventParticipantEntity(
+      userID: 'user1',
+      username: 'elif_dogan',
+      profileImageUrl: _avatarUrl,
+      role: EventRoleEnum.organizer,
+      eventScore: 4.8,
+    );
+
+    const mockAttributes = EventAttributes(
+      price: 0.0,
+      smoking: RestrictionEnum.prohibited,
+      alcohol: RestrictionEnum.prohibited,
+      isPublic: true,
+    );
+
+    final mockLocation = Geolocation(
+      latitude: 41.0082,
+      longitude: 28.9784,
+    );
+
+    final mockEvent1 = EventEntity(
+      eventID: '101',
+      name: 'Tracking yapıyoruz.',
+      info: 'Doğa yürüyüşü.',
+      hobbies: const ['Doğa', 'Spor'],
+      creator: mockCreator,
+      capacity: 15,
+      participants: const [],
+      startTime: DateTime.now().add(const Duration(days: 2)),
+      endTime: DateTime.now().add(const Duration(days: 2, hours: 5)),
+      location: mockLocation,
+      attributes: mockAttributes,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    final mockEvent2 = EventEntity(
+      eventID: '102',
+      name: 'Kahve Festivali',
+      info: 'Kahve tadımı.',
+      hobbies: const ['Kahve'],
+      creator: mockCreator,
+      capacity: 50,
+      participants: const [],
+      startTime: DateTime.now().add(const Duration(days: 5)),
+      endTime: DateTime.now().add(const Duration(days: 5, hours: 3)),
+      location: mockLocation,
+      attributes: mockAttributes,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
     setState(() {
-      _isFollowing = !_isFollowing;
+      _currentEvents = [mockEvent1];
+      _consideredEvents = [mockEvent2];
+      _isLoadingEvents = false;
     });
+  }
+
+  void _toggleFollow() {
+    setState(() => _isFollowing = !_isFollowing);
+  }
+
+  void _onTabSelected(int index) {
+    setState(() => _selectedTabIndex = index);
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    const activeColor = AppColors.secondaryColor;
+    final theme = Theme.of(context);
 
     return SafeArea(
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.colorScheme.surface,
         body: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) {
             return [
-              // 1. HEADER (Profil Bilgileri - Scroll ile kaybolur)
-              SliverToBoxAdapter(
-                child: _buildProfileHeader(context),
-              ),
+              // 1. HEADER
+              SliverToBoxAdapter(child: _buildProfileHeader(context)),
 
-              // 2. TAB BAR (Sticky - Tepeye yapışır)
+              // 2. TAB BAR (Sticky)
               SliverPersistentHeader(
                 delegate: SectionHeaderDelegate(
-                  TabBar(
-                    controller: _tabController,
-                    indicatorColor: activeColor,
-                    indicatorWeight: 2,
-                    labelColor: activeColor,
-                    unselectedLabelColor: Colors.grey.shade400,
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    padding: EdgeInsets.zero,
-                    tabs: const [
-                      Tab(
-                        icon: Icon(Icons.grid_view_rounded, size: 24),
-                        height: 48,
-                      ),
-                      Tab(
-                        icon: Icon(Icons.location_on_outlined, size: 24),
-                        height: 48,
-                      ),
-                      Tab(
-                        icon: Icon(Icons.assignment_ind_outlined, size: 24),
-                        height: 48,
-                      ),
-                    ],
+                  child: ProfileTabBar(
+                    currentIndex: _selectedTabIndex,
+                    onTabSelected: _onTabSelected,
                   ),
                 ),
                 pinned: true,
               ),
             ];
           },
-          body: TabBarView(
-            controller: _tabController,
+          // 3. İÇERİK (Modüler Yapı)
+          body: PageView(
+            controller: _pageController,
+            onPageChanged: (index) {
+              setState(() => _selectedTabIndex = index);
+            },
             children: [
-              _buildPhotosTab(),
-              _buildEventsTab(),
-              _buildDumpTab(),
+              // TAB 1: Grid (Fotoğraflar)
+              const ProfileGridTab(),
+
+              // TAB 2: Events (Etkinlikler)
+              ProfileEventsTab(
+                currentEvents: _currentEvents,
+                consideredEvents: _consideredEvents,
+                isLoading: _isLoadingEvents,
+              ),
+
+              // TAB 3: Dump (Kilitli)
+              const ProfileDumpTab(),
             ],
           ),
         ),
@@ -109,15 +185,19 @@ class _ProfilePageState extends State<ProfilePage>
 
   // --- HEADER ALANI ---
   Widget _buildProfileHeader(BuildContext context) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+    final secondaryColor = theme.colorScheme.secondary;
+    final onSurface = theme.colorScheme.onSurface;
+
     return Padding(
-      padding: EdgeInsets.only(left: 21.w, right: 16.w, top: 45, bottom: 20.h),
+      padding: EdgeInsets.only(left: 16.w, right: 16.w, top: 30, bottom: 20.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. PROFİL FOTOĞRAFI (Üstten 45vardı + Boşluk)
               Padding(
                 padding: EdgeInsets.only(top: 25.h),
                 child: ProfilePhoto(
@@ -125,22 +205,18 @@ class _ProfilePageState extends State<ProfilePage>
                   badgeUrls: _badges,
                 ),
               ),
-
               SizedBox(width: 21.w),
-
-              // 2. SAĞ TARAFTAKİ ALAN
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // İSİM SATIRI
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
                           child: Padding(
-                            padding: EdgeInsets.only(top: 19.h),
+                            padding: EdgeInsets.only(top: 15.h),
                             child: Row(
                               children: [
                                 Flexible(
@@ -151,7 +227,7 @@ class _ProfilePageState extends State<ProfilePage>
                                       fontFamily: 'Urbanist',
                                       fontWeight: FontWeight.w500,
                                       fontSize: 20.sp,
-                                      color: Colors.black,
+                                      color: onSurface,
                                       height: 1.0.sp,
                                     ),
                                   ),
@@ -167,14 +243,14 @@ class _ProfilePageState extends State<ProfilePage>
                                           fontFamily: 'Urbanist',
                                           fontWeight: FontWeight.w400,
                                           fontSize: 12.sp,
-                                          color: const Color(0xFF004B75),
+                                          color: secondaryColor,
                                         ),
                                       ),
                                       SizedBox(width: 4.w),
                                       Icon(
                                         Icons.camera_alt_outlined,
                                         size: 16.sp,
-                                        color: Colors.black54,
+                                        color: onSurface.withOpacity(0.6),
                                       ),
                                     ],
                                   ),
@@ -183,52 +259,45 @@ class _ProfilePageState extends State<ProfilePage>
                             ),
                           ),
                         ),
-                        // Ayarlar İkonu
                         Icon(
                           Icons.category_outlined,
-                          color: const Color(0xFF004B75),
+                          color: secondaryColor,
                           size: 24.sp,
                         ),
                       ],
                     ),
-
                     SizedBox(height: 9.h),
-
-                    // İSTATİSTİKLER
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const ProfileStatItem(count: "47", label: "Etkinlik"),
-                        ProfileStatItem(
-                          count: _isFollowing ? "139" : "138",
-                          label: "Takipçi",
-                        ),
-                        const ProfileStatItem(count: "125", label: "Takip"),
-                      ],
+                    Padding(
+                      padding: const EdgeInsets.only(right: 26),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const ProfileStatItem(count: "47", label: "Etkinlik"),
+                          ProfileStatItem(
+                            count: _isFollowing ? "139" : "138",
+                            label: "Takipçi",
+                          ),
+                          const ProfileStatItem(count: "125", label: "Takip"),
+                        ],
+                      ),
                     ),
-
                     SizedBox(height: 13.h),
-
-                    // BIO
                     Text(
                       _bio,
                       style: TextStyle(
                         fontFamily: 'Urbanist',
                         fontSize: 12.sp,
                         fontWeight: FontWeight.w400,
-                        color: Colors.black87,
+                        color: onSurface.withOpacity(0.8),
                       ),
                     ),
-
                     SizedBox(height: 12.h),
-
-                    // OKUL
                     Row(
                       children: [
                         Icon(
                           Icons.school_outlined,
                           size: 16.sp,
-                          color: Colors.grey.shade600,
+                          color: theme.disabledColor,
                         ),
                         SizedBox(width: 4.w),
                         Expanded(
@@ -239,7 +308,7 @@ class _ProfilePageState extends State<ProfilePage>
                               fontFamily: 'Urbanist',
                               fontSize: 12.sp,
                               fontWeight: FontWeight.w400,
-                              color: Colors.grey.shade600,
+                              color: theme.disabledColor,
                             ),
                           ),
                         ),
@@ -250,10 +319,7 @@ class _ProfilePageState extends State<ProfilePage>
               ),
             ],
           ),
-
           SizedBox(height: 12.h),
-
-          // --- BUTONLAR ---
           Row(
             children: [
               Expanded(
@@ -267,31 +333,30 @@ class _ProfilePageState extends State<ProfilePage>
                   borderRadius: 20.r,
                   borderWidth: 1.5,
                   backgroundColor: _isFollowing
-                      ? Colors.white
-                      : const Color(0xFFFE6348),
+                      ? theme.colorScheme.surface
+                      : primaryColor,
                   textColor: _isFollowing
-                      ? const Color(0xFFFE6348)
-                      : Colors.white,
-                  borderColor: const Color(0xFFFE6348),
+                      ? primaryColor
+                      : theme.colorScheme.surface,
+                  borderColor: primaryColor,
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-
               if (_isFollowing) ...[
                 SizedBox(width: 16.w),
                 Container(
                   height: 32.h,
                   width: 78.w,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
+                    color: theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(16.r),
                   ),
                   child: IconButton(
                     icon: Center(
                       child: Icon(
                         Icons.campaign_outlined,
-                        color: Colors.black87,
+                        color: onSurface,
                         size: 18.sp,
                       ),
                     ),
@@ -301,114 +366,71 @@ class _ProfilePageState extends State<ProfilePage>
               ],
             ],
           ),
-
-          SizedBox(height: 16.h),
-
-          // TAKİP EDENLER
-          _buildFollowedBySection(),
+          SizedBox(height: 12.h),
+          _buildFollowedBySection(context),
         ],
       ),
     );
   }
 
-  // --- HELPER BİLEŞENLER ---
-
-  Widget _buildFollowedBySection() {
-    // Mock Data
+  Widget _buildFollowedBySection(BuildContext context) {
+    final theme = Theme.of(context);
     final avatars = [
       'https://picsum.photos/seed/1/100/100',
       'https://picsum.photos/seed/2/100/100',
-      'https://picsum.photos/seed/3/100/100',
     ];
 
     return Row(
       children: [
-        // SmallStackedAvatars Bileşeni
         SmallStackedAvatars(
           avatarUrls: avatars,
           size: 24.r,
           overlap: 9.r,
           borderWidth: 0.sp,
         ),
-
         SizedBox(width: 8.w),
-
-        // Açıklama Metni
         Expanded(
-          child: RichText(
-            text: TextSpan(
-              style: TextStyle(
-                fontFamily: 'Urbanist',
-                fontSize: 10.sp,
-                color: Colors.black87,
-                fontWeight: FontWeight.w500,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: RichText(
+              text: TextSpan(
+                style: TextStyle(
+                  fontFamily: 'Urbanist',
+                  fontSize: 10.sp,
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w400,
+                ),
+                children: const [
+                  TextSpan(
+                    text: "durucetin, yarkinyoruk",
+                    style: TextStyle(fontWeight: FontWeight.w400),
+                  ),
+                  TextSpan(text: " ve "),
+                  TextSpan(
+                    text: "4 diğer kişi",
+                    style: TextStyle(fontWeight: FontWeight.w400),
+                  ),
+                  TextSpan(text: " tarafından takip ediliyor."),
+                ],
               ),
-              children: const [
-                TextSpan(
-                  text: "durucetin, yarkinyoruk",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                TextSpan(text: " ve "),
-                TextSpan(
-                  text: "4 diğer kişi",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                TextSpan(text: " tarafından takip ediliyor."),
-              ],
             ),
           ),
         ),
       ],
     );
   }
-
-  Widget _buildPhotosTab() {
-    return GridView.builder(
-      padding: EdgeInsets.all(2.w),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 2,
-        mainAxisSpacing: 2,
-        childAspectRatio: 1,
-      ),
-      itemCount: 15,
-      itemBuilder: (context, index) => Image.network(
-        'https://picsum.photos/seed/photo$index/400/400',
-        fit: BoxFit.cover,
-      ),
-    );
-  }
-
-  Widget _buildEventsTab() {
-    return ListView.builder(
-      padding: EdgeInsets.only(top: 10.h, bottom: 20.h),
-      itemCount: 3,
-      itemBuilder: (context, index) => Container(
-        margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-        height: 120.h,
-        decoration: BoxDecoration(
-          color: Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(16.r),
-        ),
-        child: Center(child: Text("Etkinlik Kartı $index")),
-      ),
-    );
-  }
-
-  Widget _buildDumpTab() {
-    return Center(
-      child: Icon(Icons.lock_outline, size: 40.sp, color: Colors.grey),
-    );
-  }
 }
 
-// İSTATİSTİK BİLEŞENİ
+// --- YARDIMCI COMPONENTLER ---
 class ProfileStatItem extends StatelessWidget {
   final String count;
   final String label;
   const ProfileStatItem({super.key, required this.count, required this.label});
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme.secondary;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.baseline,
       textBaseline: TextBaseline.alphabetic,
@@ -419,7 +441,7 @@ class ProfileStatItem extends StatelessWidget {
             fontFamily: 'Urbanist',
             fontSize: 12.sp,
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF004B75),
+            color: color,
           ),
         ),
         SizedBox(width: 4.w),
@@ -429,7 +451,7 @@ class ProfileStatItem extends StatelessWidget {
             fontFamily: 'Urbanist',
             fontSize: 12.sp,
             fontWeight: FontWeight.w500,
-            color: const Color(0xFF004B75),
+            color: color,
           ),
         ),
       ],
@@ -437,15 +459,16 @@ class ProfileStatItem extends StatelessWidget {
   }
 }
 
-// TAB BAR DELEGATE (Temiz Tasarım)
 class SectionHeaderDelegate extends SliverPersistentHeaderDelegate {
-  final TabBar tabBar;
-  SectionHeaderDelegate(this.tabBar);
+  final Widget child;
+
+  SectionHeaderDelegate({required this.child});
 
   @override
-  double get minExtent => 48; // TabBar Yüksekliği
+  double get minExtent => 80.h;
+
   @override
-  double get maxExtent => 48;
+  double get maxExtent => 80.h;
 
   @override
   Widget build(
@@ -453,18 +476,21 @@ class SectionHeaderDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
+    final theme = Theme.of(context);
+
     return Container(
-      color: Colors.white,
+      color: theme.colorScheme.surface,
+      alignment: Alignment.center,
       child: Stack(
         alignment: Alignment.bottomCenter,
         children: [
-          Container(height: 1, color: Colors.grey.shade200), // İnce Alt Çizgi
-          tabBar, // TabBar ve Mavi Indicator
+          // Çizgi kaldırıldı (İsteğine göre)
+          child,
         ],
       ),
     );
   }
 
   @override
-  bool shouldRebuild(SectionHeaderDelegate oldDelegate) => false;
+  bool shouldRebuild(SectionHeaderDelegate oldDelegate) => true;
 }

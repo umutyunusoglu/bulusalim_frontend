@@ -32,9 +32,7 @@ class _PostCardState extends State<PostCard> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    /// 1. DİNAMİK VERİLER
+    // Dynamic Data
     final caption = widget.post.caption;
     final mediaUrls = widget.post.imageUrls ?? [];
     final tags = widget.post.hobbies.map((h) => h.name).toList();
@@ -48,7 +46,7 @@ class _PostCardState extends State<PostCard> {
         widget.user?.profileImageUrl ??
         'https://picsum.photos/seed/avatar_default/100/100';
 
-    /// 2. STATİK VERİLER
+    // Static Data
     const staticLocationName = 'Blackfish Cafe, Kızılay, Çankaya';
     final staticLikedByAvatars = widget.post.participants
         .take(3)
@@ -62,13 +60,13 @@ class _PostCardState extends State<PostCard> {
 
     return Center(
       child: Container(
-        width: 361.w, // SABİT GENİŞLİK
+        width: 361.w, // Fixed Width
         margin: EdgeInsets.only(bottom: 24.h, top: 12.h),
         color: Colors.transparent,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Kart Başlığı (HEADER)
+            // 1. Header
             _buildHeader(
               context,
               avatarUrl: userAvatarUrl,
@@ -78,7 +76,7 @@ class _PostCardState extends State<PostCard> {
 
             SizedBox(height: 12.h),
 
-            // 2. İçerik (RESİM)
+            // 2. Content (Image/PageView)
             _buildContent(
               context,
               mediaUrls: effectiveMediaUrls,
@@ -88,7 +86,7 @@ class _PostCardState extends State<PostCard> {
               likedByAvatars: staticLikedByAvatars,
             ),
 
-            // --- Sayfa Göstergesi (Dots) ---
+            // Page Indicator
             if (effectiveMediaUrls.length > 1) ...[
               SizedBox(height: 10.h),
               Center(
@@ -98,7 +96,7 @@ class _PostCardState extends State<PostCard> {
 
             SizedBox(height: 12.h),
 
-            // 3. Alt Kısım (FOOTER)
+            // 3. Footer
             _buildFooter(
               context,
               caption: caption,
@@ -110,7 +108,7 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  // 1. Kart Başlığı
+  // 1. Header Widget
   Widget _buildHeader(
     BuildContext context, {
     required String avatarUrl,
@@ -162,7 +160,7 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  // 2. İçerik
+  // 2. Content Widget
   Widget _buildContent(
     BuildContext context, {
     required List<String> mediaUrls,
@@ -198,7 +196,7 @@ class _PostCardState extends State<PostCard> {
           ),
         ),
 
-        // Overlay (Etkileşimler)
+        // Interaction Overlay
         Positioned(
           bottom: 12.h,
           left: 12.w,
@@ -215,7 +213,7 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  // 2a. Etkileşim Overlay'i (KAP ALANI KALDIRILDI)
+  // 2a. Interaction Overlay Widget
   Widget _buildInteractionsOverlay(
     BuildContext context, {
     required int likeCount,
@@ -225,9 +223,7 @@ class _PostCardState extends State<PostCard> {
   }) {
     return Container(
       height: 44.h,
-      padding: EdgeInsets.symmetric(
-        horizontal: 0.w,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: 0.w),
       child: Row(
         children: [
           EmojiChip(
@@ -258,7 +254,7 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  // 2b. Sayfa Noktaları
+  // 2b. Page Indicator Widget
   Widget _buildPageIndicator(int pageCount) {
     final activeColor = Theme.of(context).colorScheme.secondary;
 
@@ -282,23 +278,25 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  // 3. Alt Kısım
+  // 3. Footer Widget (Corrected)
   Widget _buildFooter(
     BuildContext context, {
     required String caption,
     required List<String> tags,
   }) {
-    // Geri sayım için stil (PostCard'a özel gri renk)
-    final timeStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
-      color: Colors.grey.shade600,
+    // Style for the countdown timer
+    final timeStyle = const TextStyle(
+      fontFamily: 'Urbanist',
+      fontSize: 12,
+      color: Color(0xFF8E8E93),
     );
 
-    // içeriği 12.w ile hizalıyoruz.
     return Padding(
       padding: EdgeInsets.fromLTRB(0, 4.h, 0, 12.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Row containing Caption and Timer
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 12.w),
             child: Row(
@@ -316,48 +314,42 @@ class _PostCardState extends State<PostCard> {
                   ),
                 ),
                 SizedBox(width: 16.w),
+                // Corrected CountdownTimer placement
                 CountdownTimer(
                   targetTime: widget.post.createdAt!,
                   style: timeStyle,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
+              ],
             ),
-            SizedBox(width: 12.w),
-            CountdownTimer(
-              targetTime: widget.post.createdAt!,
-              style: const TextStyle(
-                fontFamily: 'Urbanist',
-                fontSize: 12,
-                color: Color(0xFF8E8E93),
-              ),
+          ),
+          SizedBox(height: 8.h),
+
+          // Tags Row
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12.w),
+            child: Row(
+              children: tags
+                  .take(3)
+                  .map(
+                    (tagLabel) => Padding(
+                      padding: EdgeInsets.only(right: 8.w),
+                      child: ContentTagChip(
+                        label: tagLabel,
+                        icon: tagLabel.toLowerCase().contains('kahve')
+                            ? Icons.coffee_outlined
+                            : Icons.chat_bubble_outline,
+                      ),
+                    ),
+                  )
+                  .toList(),
             ),
-          ],
-        ),
-
-        SizedBox(height: 8.h),
-
-        Row(
-          children: tags
-              .take(3)
-              .map(
-                (tagLabel) => Padding(
-                  padding: EdgeInsets.only(right: 8.w),
-                  child: ContentTagChip(
-                    label: tagLabel,
-                    icon: tagLabel.toLowerCase().contains('kahve')
-                        ? Icons.coffee_outlined
-                        : Icons.chat_bubble_outline,
-                  ),
-                ),
-              )
-              .toList(),
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }
+// import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
 // import 'package:bulusalim/components/countdown_timer.dart';
 // import 'package:bulusalim/core/constants/constant.dart';
 // import 'package:bulusalim/core/utils/types/enums/emote_enum.dart';

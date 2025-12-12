@@ -1,5 +1,3 @@
-// Dosya Yolu: lib/screens/profile/components/profile_photo.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -15,7 +13,14 @@ class ProfilePhoto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const glowColor = Color(0xFFFE6348);
+    // TEMA BAĞLANTISI
+    final theme = Theme.of(context);
+
+    // Primary (Turuncu): Fotoğrafın arkasındaki glow efekti için
+    final glowColor = theme.colorScheme.primary;
+
+    // Secondary (Mavi): Pasif rozetlerin rengi için
+    final inactiveBadgeColor = theme.colorScheme.secondary;
 
     final double photoSize = 61.w;
     final double spreadSize = 4.5.w;
@@ -23,6 +28,7 @@ class ProfilePhoto extends StatelessWidget {
 
     return Column(
       children: [
+        // 1. GLOW EFEKTLİ FOTOĞRAF
         Container(
           width: photoSize,
           height: photoSize,
@@ -52,29 +58,40 @@ class ProfilePhoto extends StatelessWidget {
 
         SizedBox(height: 16.h),
 
-        // Rozetler
+        // 2. ROZETLER
         SizedBox(
           height: badgeSize,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: _buildBadgeSlots(badgeSize),
+            children: _buildBadgeSlots(badgeSize, inactiveBadgeColor),
           ),
         ),
       ],
     );
   }
 
-  List<Widget> _buildBadgeSlots(double size) {
+  List<Widget> _buildBadgeSlots(double size, Color inactiveColor) {
     List<Widget> slots = [];
     const int totalSlots = 3;
 
     for (int i = 0; i < totalSlots; i++) {
       if (i < badgeUrls.length) {
         slots.add(
-          _buildSingleBadge(isActive: true, imageUrl: badgeUrls[i], size: size),
+          _buildSingleBadge(
+            isActive: true,
+            imageUrl: badgeUrls[i],
+            size: size,
+            inactiveColor: inactiveColor,
+          ),
         );
       } else {
-        slots.add(_buildSingleBadge(isActive: false, size: size));
+        slots.add(
+          _buildSingleBadge(
+            isActive: false,
+            size: size,
+            inactiveColor: inactiveColor,
+          ),
+        );
       }
 
       if (i < totalSlots - 1) {
@@ -88,15 +105,14 @@ class ProfilePhoto extends StatelessWidget {
     required bool isActive,
     String? imageUrl,
     required double size,
+    required Color inactiveColor,
   }) {
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isActive
-            ? Colors.white
-            : const Color(0xFF5B7A98).withOpacity(0.8),
+        color: isActive ? Colors.white : inactiveColor.withOpacity(0.8),
         border: Border.all(
           color: Colors.white,
           width: 1.w,
