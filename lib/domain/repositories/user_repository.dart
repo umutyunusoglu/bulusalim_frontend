@@ -1,7 +1,9 @@
+import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/friend_entity.dart';
 import 'package:bulusalim/domain/entities/user/index.dart';
+import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart';
 import 'package:bulusalim/domain/entities/user/user_entity.dart';
 import 'package:bulusalim/domain/entities/user/user_event_entity.dart';
 import 'package:bulusalim/domain/entities/user/user_hobby_entity.dart';
@@ -40,12 +42,20 @@ abstract class UserRepository {
     Identifier userID,
   );
 
+  Future<List<UserEventEntity>?> getUserEventHistoryFiltered(
+    Identifier userID,
+    List<EventStatusEnum> statuses,
+  );
+
   Stream<List<EventEntity>> watchActiveEvents(String userID);
 
   Future<void> deleteEvent(
     Identifier userID,
     Identifier eventID,
   );
+
+  // === Pinned Posts Subcollection ===
+  Future<List<PinnedPostEntity>> getPinnedPosts(Identifier userID);
 
   // Hobbies Subcollection
   Future<List<UserHobbyEntity>> getUserHobbies(

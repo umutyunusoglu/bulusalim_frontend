@@ -8,7 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class UserEventModel extends Model<UserEventEntity> {
   UserEventModel({
     required this.eventID,
-    required this.eventDate,
+    required this.date,
     required this.role,
     this.status = EventStatusEnum.upcoming,
     this.pinned = false,
@@ -18,7 +18,7 @@ class UserEventModel extends Model<UserEventEntity> {
   factory UserEventModel.fromEntity(UserEventEntity entity) {
     return UserEventModel(
       eventID: entity.eventId,
-      eventDate: entity.eventDate,
+      date: entity.eventDate,
       role: entity.role,
       status: entity.status,
       pinned: entity.pinned,
@@ -29,8 +29,8 @@ class UserEventModel extends Model<UserEventEntity> {
   factory UserEventModel.fromFirestore(Map<String, dynamic> doc) {
     return UserEventModel(
       eventID: doc['eventID'] as Identifier,
-      eventDate: (doc['eventDate'] as Timestamp).toDate(),
-      role: EventRoleEnum.values[doc['role'] as int],
+      date: (doc['date'] as Timestamp).toDate(),
+      role: EventRoleEnum.fromString(doc['role'] as String),
       status: EventStatusEnum.fromString(doc['status'] as String),
       pinned: doc['pinned'] as bool,
     );
@@ -40,7 +40,7 @@ class UserEventModel extends Model<UserEventEntity> {
   Map<String, dynamic> toFirestore() {
     return {
       'eventID': eventID,
-      'eventDate': Timestamp.fromDate(eventDate),
+      'date': Timestamp.fromDate(date),
       'role': role.index,
       'status': status.toString(),
       'pinned': pinned,
@@ -51,7 +51,7 @@ class UserEventModel extends Model<UserEventEntity> {
   UserEventEntity toEntity() {
     return UserEventEntity(
       eventId: eventID,
-      eventDate: eventDate,
+      eventDate: date,
       role: role,
       status: status,
       pinned: pinned,
@@ -59,7 +59,7 @@ class UserEventModel extends Model<UserEventEntity> {
   }
 
   final Identifier eventID;
-  final DateTime eventDate;
+  final DateTime date;
   final EventRoleEnum role;
   final EventStatusEnum status;
   final bool pinned;

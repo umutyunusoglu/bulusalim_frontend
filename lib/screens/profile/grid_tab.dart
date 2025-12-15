@@ -1,8 +1,12 @@
+import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
+import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ProfileGridTab extends StatelessWidget {
-  const ProfileGridTab({super.key});
+  const ProfileGridTab({required this.pinnedPosts, super.key});
+
+  final List<PinnedPostEntity> pinnedPosts;
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +21,7 @@ class ProfileGridTab extends StatelessWidget {
         mainAxisSpacing: 16.h, // Dikey boşluk
         childAspectRatio: 1, // Kare (173x173 için)
       ),
-      itemCount: 15,
+      itemCount: pinnedPosts.length,
       itemBuilder: (context, index) {
         // İkon Mantığı: 0. eleman Access Time, diğerleri Push Pin
         final IconData iconData = index == 0
@@ -33,7 +37,7 @@ class ProfileGridTab extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16.r),
                 image: DecorationImage(
                   image: NetworkImage(
-                    'https://picsum.photos/seed/photo$index/400/400',
+                    pinnedPosts[index].imageUrls.first,
                   ),
                   fit: BoxFit.cover,
                 ),
