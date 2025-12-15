@@ -1,8 +1,19 @@
+import 'dart:math';
+
+import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/components/login_button.dart';
 import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart';
+import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
 import 'package:bulusalim/core/utils/types/enums/restriction_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
+import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
+import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
+import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart';
+import 'package:bulusalim/domain/entities/user/user_event_entity.dart';
+import 'package:bulusalim/domain/repositories/event_repository.dart';
+import 'package:bulusalim/domain/repositories/user_repository.dart';
+import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/screens/home/post%20components/small_stacked_avatars.dart';
 import 'package:bulusalim/screens/profile/dump_tab.dart';
 import 'package:bulusalim/screens/profile/events_tab.dart';
@@ -13,7 +24,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  const ProfilePage({required this.profileUserID, super.key});
+
+  final String profileUserID;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -27,17 +40,20 @@ class _ProfilePageState extends State<ProfilePage> {
   // --- VERİLER ---
   List<EventEntity> _currentEvents = [];
   List<EventEntity> _consideredEvents = [];
+  List<PinnedPostEntity> _pinnedPosts = [];
+
   bool _isLoadingEvents = true;
 
   // --- MOCK PROFİL BİLGİLERİ ---
-  final String _username = "elif_dogan";
-  final String _fullName = "Elif Doğan";
-  final String _bio = "İşletme okuyorum adım elif merhaba ";
-  final String _school = "İstanbul Teknik Üniversitesi";
-  final String _avatarUrl = "https://picsum.photos/seed/elif/400/400";
-  final List<String> _badges = [
-    "https://cdn-icons-png.flaticon.com/512/616/616490.png",
-  ];
+  String _username = '';
+  String _fullName = '';
+  String _bio = '';
+  String _school = '';
+  String _avatarUrl = '';
+  List<String> _badges = [];
+  int numberOfFollowers = 0;
+  int numberOfFollowing = 0;
+  int numberOfEvents = 0;
 
   final bool _isPrivateAccount = false;
   bool _isFollowing = false;
@@ -45,7 +61,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    _fetchProfileEvents();
+    _fetchProfileData();
   }
 
   @override
@@ -55,66 +71,70 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   // --- MOCK VERİ ÇEKME ---
-  Future<void> _fetchProfileEvents() async {
+  Future<void> _fetchProfileData() async {
     await Future.delayed(const Duration(seconds: 1));
 
     if (!mounted) return;
 
-    final mockCreator = EventParticipantEntity(
-      userID: 'user1',
-      username: 'elif_dogan',
-      profileImageUrl: _avatarUrl,
-      role: EventRoleEnum.organizer,
-      eventScore: 4.8,
+    final userRepository = getIt<UserRepository>();
+    final eventRepository = getIt<EventRepository>();
+    final user = await userRepository.getUser(widget.profileUserID);
+    final pinnedPosts = await userRepository.getPinnedPosts(
+      widget.profileUserID,
     );
 
-    const mockAttributes = EventAttributes(
-      price: 0.0,
-      smoking: RestrictionEnum.prohibited,
-      alcohol: RestrictionEnum.prohibited,
-      isPublic: true,
+    final userEventsEnrolled = await userRepository.getUserEventHistory(
+      widget.profileUserID,
     );
+    final List<Identifier> enrolledEventIds = [];
+    final List<Identifier> savedEventIds = [];
 
-    final mockLocation = Geolocation(
-      latitude: 41.0082,
-      longitude: 28.9784,
-    );
+    for (final event in userEventsEnrolled) {
+      switch (event.status) {
+        case EventStatusEnum.upcoming:
+        case EventStatusEnum.ongoing:
+          enrolledEventIds.add(event.eventId);
+        case EventStatusEnum.saved:
+          savedEventIds.add(event.eventId);
+        case EventStatusEnum.completed:
+          numberOfEvents += 1;
+        case EventStatusEnum.cancelled:
+          break;
+      }
+    }
 
-    final mockEvent1 = EventEntity(
-      eventID: '101',
-      name: 'Tracking yapıyoruz.',
-      info: 'Doğa yürüyüşü.',
-      hobbies: const ['Doğa', 'Spor'],
-      creator: mockCreator,
-      capacity: 15,
-      participants: const [],
-      startTime: DateTime.now().add(const Duration(days: 2)),
-      endTime: DateTime.now().add(const Duration(days: 2, hours: 5)),
-      location: mockLocation,
-      attributes: mockAttributes,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
+    List<EventEntity> enrolledEvents;
+    if (enrolledEventIds != null && enrolledEventIds.isNotEmpty) {
+      enrolledEvents = await eventRepository.getEventsByIds(
+        enrolledEventIds,
+      );
+    } else {
+      enrolledEvents = [];
+    }
 
-    final mockEvent2 = EventEntity(
-      eventID: '102',
-      name: 'Kahve Festivali',
-      info: 'Kahve tadımı.',
-      hobbies: const ['Kahve'],
-      creator: mockCreator,
-      capacity: 50,
-      participants: const [],
-      startTime: DateTime.now().add(const Duration(days: 5)),
-      endTime: DateTime.now().add(const Duration(days: 5, hours: 3)),
-      location: mockLocation,
-      attributes: mockAttributes,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
+    List<EventEntity> savedEvents;
+    if (savedEventIds != null && savedEventIds.isNotEmpty) {
+      savedEvents = await eventRepository.getEventsByIds(
+        savedEventIds,
+      );
+    } else {
+      savedEvents = [];
+    }
+
+    if (!mounted) return;
 
     setState(() {
-      _currentEvents = [mockEvent1];
-      _consideredEvents = [mockEvent2];
+      if (user != null) {
+        _username = user.username;
+        _fullName = user.username;
+        _bio = user.bio ?? '';
+        _school = user.organization ?? '';
+        _avatarUrl = user.profileImageUrl ?? '';
+      }
+
+      _pinnedPosts = pinnedPosts;
+      _currentEvents = enrolledEvents;
+      _consideredEvents = savedEvents;
       _isLoadingEvents = false;
     });
   }
@@ -165,7 +185,7 @@ class _ProfilePageState extends State<ProfilePage> {
             },
             children: [
               // TAB 1: Grid (Fotoğraflar)
-              const ProfileGridTab(),
+              ProfileGridTab(pinnedPosts: _pinnedPosts),
 
               // TAB 2: Events (Etkinlikler)
               ProfileEventsTab(
@@ -189,6 +209,9 @@ class _ProfilePageState extends State<ProfilePage> {
     final primaryColor = theme.colorScheme.primary;
     final secondaryColor = theme.colorScheme.secondary;
     final onSurface = theme.colorScheme.onSurface;
+
+    final isCurrentUser =
+        widget.profileUserID == getIt<SessionService>().currentUser?.userID;
 
     return Padding(
       padding: EdgeInsets.only(left: 16.w, right: 16.w, top: 30, bottom: 20.h),
@@ -319,53 +342,56 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ],
           ),
-          SizedBox(height: 12.h),
-          Row(
-            children: [
-              Expanded(
-                child: LoginButton(
-                  label: _isFollowing
-                      ? "takip ediyorsun"
-                      : (_isPrivateAccount ? "istek gönder" : "takip et"),
-                  onPress: _toggleFollow,
-                  height: 32.h,
-                  width: 361,
-                  borderRadius: 20.r,
-                  borderWidth: 1.5,
-                  backgroundColor: _isFollowing
-                      ? theme.colorScheme.surface
-                      : primaryColor,
-                  textColor: _isFollowing
-                      ? primaryColor
-                      : theme.colorScheme.surface,
-                  borderColor: primaryColor,
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              if (_isFollowing) ...[
-                SizedBox(width: 16.w),
-                Container(
-                  height: 32.h,
-                  width: 78.w,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(16.r),
+
+          if (!isCurrentUser) ...[
+            SizedBox(height: 12.h),
+            Row(
+              children: [
+                Expanded(
+                  child: LoginButton(
+                    label: _isFollowing
+                        ? "takip ediyorsun"
+                        : (_isPrivateAccount ? "istek gönder" : "takip et"),
+                    onPress: _toggleFollow,
+                    height: 32.h,
+                    width: 361,
+                    borderRadius: 20.r,
+                    borderWidth: 1.5,
+                    backgroundColor: _isFollowing
+                        ? theme.colorScheme.surface
+                        : primaryColor,
+                    textColor: _isFollowing
+                        ? primaryColor
+                        : theme.colorScheme.surface,
+                    borderColor: primaryColor,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w600,
                   ),
-                  child: IconButton(
-                    icon: Center(
-                      child: Icon(
-                        Icons.campaign_outlined,
-                        color: onSurface,
-                        size: 18.sp,
-                      ),
+                ),
+                if (_isFollowing) ...[
+                  SizedBox(width: 16.w),
+                  Container(
+                    height: 32.h,
+                    width: 78.w,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(16.r),
                     ),
-                    onPressed: () {},
+                    child: IconButton(
+                      icon: Center(
+                        child: Icon(
+                          Icons.campaign_outlined,
+                          color: onSurface,
+                          size: 18.sp,
+                        ),
+                      ),
+                      onPressed: () {},
+                    ),
                   ),
-                ),
+                ],
               ],
-            ],
-          ),
+            ),
+          ],
           SizedBox(height: 12.h),
           _buildFollowedBySection(context),
         ],

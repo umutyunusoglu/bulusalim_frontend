@@ -3,6 +3,7 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/utils/nav_parser.dart';
 import 'package:bulusalim/domain/services/remote_config_service.dart';
+import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/screens/chat/chat_page.dart';
 import 'package:bulusalim/screens/home/home_page.dart';
 import 'package:bulusalim/screens/map/map_page.dart';
@@ -30,7 +31,9 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
     'search_page': const SearchPage(),
     'home_page': const HomePage(),
     'chat_page': const ChatPage(),
-    'profile_page': const ProfilePage(),
+    'profile_page': ProfilePage(
+      profileUserID: getIt<SessionService>().currentUser!.userID,
+    ),
   };
 
   final Map<String, IconData> _allIcons = {

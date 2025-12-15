@@ -10,6 +10,7 @@ abstract class EventRepository {
   Future<void> updateEvent(EventEntity event);
   Future<void> deleteEvent(Identifier eventId);
   Future<EventEntity?> getEvent(Identifier eventId);
+  Future<List<EventEntity>> getEventsByIds(List<Identifier> eventIds);
 
   /// Messages Subcollection
   Future<void> addMessage(Identifier eventId, EventMessagesEntity message);

@@ -242,4 +242,24 @@ class EventRepositoryImpl implements EventRepository {
   ) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<List<EventEntity>> getEventsByIds(List<Identifier> eventIds) {
+    try {
+      return _firestore
+          .collection('events')
+          .where('eventID', whereIn: eventIds)
+          .get()
+          .then(
+            (snapshot) => snapshot.docs
+                .map(
+                  (doc) => EventModel.fromFirestore(doc.data()).toEntity(),
+                )
+                .toList(),
+          );
+    } on Exception catch (e) {
+      _logger.error('Failed to get events by IDs: $e');
+      rethrow;
+    }
+  }
 }
