@@ -1,5 +1,6 @@
 enum EventStatusEnum {
   upcoming._('upcoming'),
+  saved._('saved'),
   ongoing._('ongoing'),
   completed._('completed'),
   cancelled._('cancelled');
@@ -20,6 +21,8 @@ enum EventStatusEnum {
         return completed;
       case 'cancelled':
         return cancelled;
+      case 'saved':
+        return saved;
       default:
         throw ArgumentError('Unknown event status: $value');
     }

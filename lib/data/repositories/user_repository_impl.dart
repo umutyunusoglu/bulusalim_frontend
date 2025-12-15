@@ -1,12 +1,15 @@
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
+import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/event/event_model.dart';
+import 'package:bulusalim/data/models/user/pinned_post_model.dart';
 import 'package:bulusalim/data/models/user/user_event_model.dart';
 import 'package:bulusalim/data/models/user/user_hobby_model.dart';
 import 'package:bulusalim/data/models/user/user_model.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/friend_entity.dart';
 import 'package:bulusalim/domain/entities/user/index.dart';
+import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart';
 import 'package:bulusalim/domain/entities/user/user_event_entity.dart';
 import 'package:bulusalim/domain/entities/user/user_hobby_entity.dart';
 import 'package:bulusalim/domain/repositories/user_repository.dart';
@@ -206,7 +209,7 @@ class UserRepositoryImpl implements UserRepository {
     final snapshot = await _firestore
         .collection('users')
         .doc(userID)
-        .collection('events')
+        .collection('eventHistory')
         .get();
 
     final events = snapshot.docs
@@ -391,5 +394,52 @@ class UserRepositoryImpl implements UserRepository {
     );
 
     return users;
+  }
+
+  @override
+  Future<List<PinnedPostEntity>> getPinnedPosts(Identifier userID) async {
+    _logger.info('Getting pinned posts for user: $userID');
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('pinnedPosts')
+        .get();
+
+    final pinnedPosts = snapshot.docs.map(
+      (doc) {
+        final model = PinnedPostModel.fromFirestore(doc.data());
+        return model.toEntity();
+      },
+    ).toList();
+    return pinnedPosts;
+  }
+
+  @override
+  Future<List<UserEventEntity>?> getUserEventHistoryFiltered(
+    Identifier userID,
+    List<EventStatusEnum> statuses,
+  ) {
+    final statusStrings = statuses.map((e) => e.toString()).toList();
+
+    _logger.info(
+      'Getting filtered events for user: $userID with statuses: $statusStrings',
+    );
+
+    return _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('eventHistory')
+        .where('status', whereIn: statusStrings)
+        .get()
+        .then((snapshot) {
+          final events = snapshot.docs
+              .map((doc) => UserEventModel.fromFirestore(doc.data()).toEntity())
+              .toList();
+
+          _logger.info(
+            'Found filtered events for user: $userID, events: $events',
+          );
+          return events;
+        });
   }
 }

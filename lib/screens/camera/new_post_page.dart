@@ -8,6 +8,7 @@ import 'package:bulusalim/domain/repositories/post_repository.dart';
 import 'package:bulusalim/domain/services/auth_service.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/domain/usecases/upload_post_usecase.dart';
+import 'package:bulusalim/screens/bottomnav_screen.dart';
 import 'package:bulusalim/screens/home/home_content_page.dart';
 import 'package:bulusalim/screens/home/home_page.dart';
 import 'package:flutter/material.dart';
@@ -362,14 +363,12 @@ class _NewPostPageState extends State<NewPostPage> {
       _captionController.text.trim(),
     );
     if (!mounted) return;
-    await Navigator.pushAndRemoveUntil(
-      context,
 
-      MaterialPageRoute<void>(
-        builder: (context) => const HomePage(),
-      ), // Buraya kendi ana sayfa widget ismini yaz
-      (Route<dynamic> route) =>
-          false, // false: Geriye dönük tüm sayfaları sil demektir
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const BottomNavScreen(),
+      ),
     );
   }
 }
