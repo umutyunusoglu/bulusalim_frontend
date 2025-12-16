@@ -25,8 +25,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _navigateToCamera() {
-    Navigator.push(
-      context,
+    Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(builder: (context) => const CameraSplashScreen()),
     );
   }
