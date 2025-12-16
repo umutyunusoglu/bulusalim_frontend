@@ -33,9 +33,9 @@ class PinnedPostModel extends Model<PinnedPostEntity> {
       caption: doc['caption'] as String,
 
       geolocation: Geolocation.fromMap(
-        doc['geolocation'] as Map<String, dynamic>,
+        doc['location'] as Map<String, dynamic>,
       ),
-      imageUrls: List<String>.from(doc['imageUrls'] as List<String>),
+      imageUrls: List<String>.from(doc['imageUrls'] as List<dynamic>),
       participants: (doc['participants'] as List<dynamic>)
           .map((e) => PostParticipantEntity.fromMap(e as Map<String, dynamic>))
           .toList(),
