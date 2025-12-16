@@ -1,12 +1,10 @@
 import 'dart:ui';
+import 'package:bulusalim/app_router.dart';
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/constants/theme/app_theme.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/firebase_options.dart';
-import 'package:bulusalim/screens/login/login_screen.dart';
-import 'package:bulusalim/screens/register_screen.dart';
-import 'package:bulusalim/screens/sign_in_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -73,42 +71,38 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(
-      designSize: const Size(393, 852),
+      designSize: const Size(393, 852), // Senin tasarım ölçülerin
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
         return GestureDetector(
           onTap: () {
-            // Klavyeyi kapatma işlemi
+            // Klavyeyi kapatma işlemi (Aynen korundu)
             final currentFocus = FocusScope.of(context);
             if (!currentFocus.hasPrimaryFocus &&
                 currentFocus.focusedChild != null) {
               FocusManager.instance.primaryFocus?.unfocus();
             }
           },
-          child: MaterialApp(
+          // MaterialApp -> MaterialApp.router
+          child: MaterialApp.router(
             debugShowCheckedModeBanner: false,
+            routerConfig: router,
+
             scrollBehavior: const MaterialScrollBehavior().copyWith(
               dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse},
             ),
             theme: AppTheme.lightTheme,
             locale: const Locale('tr'),
             title: 'Buluşalım',
-            // 2. ÖNEMLİ: Pixel Perfect için Sihirli Dokunuş Burası
+
             builder: (context, widget) {
               return MediaQuery(
-                // Kullanıcının telefonundaki yazı tipi boyutu ayarını yok sayar ve tasarımdaki oranı (1.0) zorlar.
-                data: MediaQuery.of(
-                  context,
-                ).copyWith(textScaler: const TextScaler.linear(1.0)),
+                data: MediaQuery.of(context).copyWith(
+                  textScaler: const TextScaler.linear(1.0),
+                ),
                 child: widget!,
               );
-            },
-            initialRoute: '/',
-            routes: {
-              '/': (context) => const SignInScreen(),
-              '/login': (context) => const LoginScreen(),
-              '/register': (context) => const RegisterScreen(),
             },
           ),
         );

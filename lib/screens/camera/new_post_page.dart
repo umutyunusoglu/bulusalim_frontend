@@ -1,18 +1,10 @@
 import 'dart:io';
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/configs/app_config.dart';
-import 'package:bulusalim/core/utils/types/enums/feed_type.dart';
-import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
-import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
-import 'package:bulusalim/domain/repositories/post_repository.dart';
-import 'package:bulusalim/domain/services/auth_service.dart';
-import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/domain/usecases/upload_post_usecase.dart';
-import 'package:bulusalim/screens/bottomnav_screen.dart';
-import 'package:bulusalim/screens/home/home_content_page.dart';
-import 'package:bulusalim/screens/home/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 class NewPostPage extends StatefulWidget {
   const NewPostPage({
@@ -37,7 +29,6 @@ class _NewPostPageState extends State<NewPostPage> {
   @override
   void initState() {
     super.initState();
-
     _selectedMedia = List.from(widget.takenPhotos);
   }
 
@@ -106,7 +97,8 @@ class _NewPostPageState extends State<NewPostPage> {
                       child: IconButton(
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
-                        onPressed: () => Navigator.pop(context),
+                        // YENİ: GoRouter ile kapatma
+                        onPressed: () => context.pop(),
                         icon: Icon(
                           Icons.close,
                           color: headerColor,
@@ -363,12 +355,6 @@ class _NewPostPageState extends State<NewPostPage> {
       _captionController.text.trim(),
     );
     if (!mounted) return;
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const BottomNavScreen(),
-      ),
-    );
+    context.go('/home');
   }
 }
