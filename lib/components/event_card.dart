@@ -1,5 +1,5 @@
 import 'package:bulusalim/components/countdown_timer.dart';
-import 'package:bulusalim/components/stacked_avatars.dart';
+import 'package:bulusalim/components/stacked_avatars.dart'; // AvatarInfo burada tanımlı
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/screens/home/eventcomponents/info_icon.dart';
 import 'package:bulusalim/screens/home/eventcomponents/overlay_tag_chip.dart';
@@ -19,19 +19,37 @@ class EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 1. VERİ HAZIRLIĞI
-    final dynamicAvatarUrls = participants
-        .map((user) => user.profileImageUrl)
+
+    // Entity'den gelen 'userID' alanını doğru şekilde alıyoruz.
+    final List<AvatarInfo> dynamicAvatars = participants
+        .map(
+          (user) => AvatarInfo(
+            userId: user.userID,
+            imageUrl: user.profileImageUrl,
+          ),
+        )
         .toList();
 
-    const staticAvatarUrls = <String>[
-      'https://picsum.photos/seed/avatar1/100/100',
-      'https://picsum.photos/seed/avatar2/100/100',
-      'https://picsum.photos/seed/avatar3/100/100',
+    // Statik veriler (Test amaçlı, ID'leri boş)
+    final List<AvatarInfo> staticAvatars = [
+      AvatarInfo(
+        userId: '',
+        imageUrl: 'https://picsum.photos/seed/avatar1/100/100',
+      ),
+      AvatarInfo(
+        userId: '',
+        imageUrl: 'https://picsum.photos/seed/avatar2/100/100',
+      ),
+      AvatarInfo(
+        userId: '',
+        imageUrl: 'https://picsum.photos/seed/avatar3/100/100',
+      ),
     ];
 
-    final participantAvatarUrls = dynamicAvatarUrls.isNotEmpty
-        ? dynamicAvatarUrls
-        : staticAvatarUrls;
+    // Veri varsa onu kullan, yoksa statik veriyi kullan
+    final List<AvatarInfo> participantAvatars = dynamicAvatars.isNotEmpty
+        ? dynamicAvatars
+        : staticAvatars;
 
     const staticBackgroundImageUrl =
         'https://picsum.photos/seed/tracking/800/600';
@@ -44,7 +62,6 @@ class EventCard extends StatelessWidget {
       child: Container(
         height: 180.h,
         margin: EdgeInsets.symmetric(vertical: 8.h),
-        // ClipRRect ile yuvarlak köşe
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16.r),
           child: Stack(
@@ -52,7 +69,7 @@ class EventCard extends StatelessWidget {
               // KATMAN 1: Resim
               _buildBackgroundImage(staticBackgroundImageUrl),
 
-              // KATMAN 2: Gradient Overlay (Yazı okunurluğu için)
+              // KATMAN 2: Gradient Overlay
               _buildGradientOverlay(),
 
               // KATMAN 3: Sağ Üst İkonlar
@@ -72,7 +89,7 @@ class EventCard extends StatelessWidget {
                     // Üst Kısım
                     _buildTopInfoSection(
                       context,
-                      participantAvatarUrls,
+                      participantAvatars, // AvatarInfo listesi gönderiliyor
                       staticLocationName,
                     ),
 
@@ -130,13 +147,14 @@ class EventCard extends StatelessWidget {
 
   Widget _buildTopInfoSection(
     BuildContext context,
-    List<String> avatarUrls,
+    List<AvatarInfo> avatarData,
     String locationName,
   ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        StackedAvatars(avatarUrls: avatarUrls),
+        // StackedAvatars'a düzeltilmiş listeyi veriyoruz
+        StackedAvatars(avatarDataList: avatarData),
         SizedBox(width: 8.w),
         Expanded(child: _buildTitleSection(context, locationName)),
       ],
@@ -210,7 +228,6 @@ class EventCard extends StatelessWidget {
     );
   }
 
-  /// Sağ alttaki Bilgi Çubuğu (Info Bar).
   Widget _buildInfoBar(BuildContext context, double distanceInKm) {
     final participantRatio = '${event.participants.length}/${event.capacity}';
 
@@ -234,21 +251,18 @@ class EventCard extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Mesafe
           InfoIconText(
             icon: Icons.map_outlined,
             child: Text('${distanceInKm.toInt()} km', style: infoTextStyle),
           ),
           SizedBox(width: 6.w),
 
-          // Katılımcı Oranı
           InfoIconText(
             icon: Icons.people_outline,
             child: Text(participantRatio, style: infoTextStyle),
           ),
           SizedBox(width: 6.w),
 
-          // Geri Sayım Sayacı
           InfoIconText(
             icon: Icons.access_time,
             child: CountdownTimer(

@@ -6,6 +6,7 @@ import 'package:bulusalim/domain/services/remote_config_service.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/screens/chat/chat_page.dart';
 import 'package:bulusalim/screens/home/home_page.dart';
+import 'package:bulusalim/screens/home/home_wrapper.dart';
 import 'package:bulusalim/screens/map/map_page.dart';
 import 'package:bulusalim/screens/profile/profile_page.dart';
 import 'package:bulusalim/screens/search/search_page.dart';
@@ -29,7 +30,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
   final Map<String, Widget> _allPages = {
     'map_page': const MapPage(),
     'search_page': const SearchPage(),
-    'home_page': const HomePage(),
+    'home_page': const HomeWrapper(),
     'chat_page': const ChatPage(),
     'profile_page': ProfilePage(
       profileUserID: getIt<SessionService>().currentUser!.userID,
@@ -66,7 +67,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
       );
 
       // HomePage'i bul ve başlangıç indexi yap, yoksa 0
-      var homeIndex = result.pages.indexWhere((page) => page is HomePage);
+      var homeIndex = result.pages.indexWhere((page) => page is HomeWrapper);
       if (homeIndex == -1) homeIndex = 0;
 
       if (mounted) {
