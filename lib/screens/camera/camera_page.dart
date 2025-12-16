@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
-import 'package:bulusalim/screens/bottomnav_screen.dart';
 import 'package:bulusalim/screens/camera/new_post_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart'; // YENİ: GoRouter eklendi
 import 'package:image_picker/image_picker.dart';
 
 class CameraPage extends StatefulWidget {
@@ -56,6 +56,8 @@ class _CameraPageState extends State<CameraPage> {
       return;
     }
 
+    // NewPostPage veri (dosya listesi) istediği için burayı standart push ile bırakıyoruz.
+    // GoRouter ile dosya taşımak için ekstra router ayarı gerekir, bu yöntem daha pratiktir.
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -148,12 +150,19 @@ class _CameraPageState extends State<CameraPage> {
                             size: 28.sp,
                           ),
                           onPressed: () {
+                            // ESKİ KOD (HATA VEREN):
+                            /*
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => const BottomNavScreen(),
                               ),
                             );
+                            */
+
+                            // YENİ KOD:
+                            // Kamera sayfasını kapatıp geldiğimiz yere (Home) dönüyoruz.
+                            context.pop();
                           },
                         ),
                       ),
@@ -276,8 +285,7 @@ class _CameraPageState extends State<CameraPage> {
                                       shape: BoxShape.circle,
                                     ),
                                     child: Icon(
-                                      Icons
-                                          .remove, // Delete yerine eksi daha temiz durabilir
+                                      Icons.remove,
                                       color: Colors.white,
                                       size: 16.sp,
                                     ),
@@ -296,7 +304,8 @@ class _CameraPageState extends State<CameraPage> {
                           child: SizedBox(
                             height: 50.h,
                             child: OutlinedButton(
-                              onPressed: () => Navigator.pop(context),
+                              // YENİ: Etkinliğe dön (Geri çık)
+                              onPressed: () => context.pop(),
                               style: OutlinedButton.styleFrom(
                                 side: BorderSide(
                                   color: primaryColor,
