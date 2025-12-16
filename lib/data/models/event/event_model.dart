@@ -46,7 +46,7 @@ class EventModel extends Model<EventEntity> {
   @override
   factory EventModel.fromFirestore(Map<String, dynamic> doc) {
     final attributesMap = doc['attributes'] as Map<String, dynamic>;
-    final location = doc['location'] as GeoPoint;
+    final location = doc['location'] as Map<String, dynamic>;
 
     late final EventParticipantEntity creator;
     late final List<EventParticipantEntity> participants;
@@ -90,8 +90,8 @@ class EventModel extends Model<EventEntity> {
       startTime: (doc['startTime'] as Timestamp).toDate(),
       endTime: (doc['endTime'] as Timestamp).toDate(),
       location: Geolocation.fromMap({
-        'latitude': location.latitude,
-        'longitude': location.longitude,
+        'latitude': location['latitude'],
+        'longitude': location['longitude'],
       }),
       attributes: EventAttributes(
         price: (attributesMap['price'] as num?)?.toDouble() ?? 0.0,
