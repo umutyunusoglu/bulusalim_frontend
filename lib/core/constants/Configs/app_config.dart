@@ -6,7 +6,7 @@ class AppConfig {
   static final host = kIsWeb
       ? 'localhost'
       : Platform.isAndroid
-      ? '10.0.2.2'
+      ? 'localhost'
       : 'localhost';
 
   static const maxUserPhotos = 3;
