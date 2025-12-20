@@ -30,11 +30,20 @@ Future<void> main() async {
 
     print(AppConfig.host);
     // Emülatör ayarları
-    FirebaseFirestore.instance.useFirestoreEmulator(AppConfig.host, 8080);
-    await FirebaseAuth.instance.useAuthEmulator(AppConfig.host, 9099);
+    FirebaseFirestore.instance.useFirestoreEmulator(
+      AppConfig.host,
+      8080,
+      automaticHostMapping: false,  
+    );
+    await FirebaseAuth.instance.useAuthEmulator(
+      AppConfig.host,
+      9099,
+      automaticHostMapping: false,
+    );
     await FirebaseStorage.instance.useStorageEmulator(
       AppConfig.host,
       9199,
+      automaticHostMapping: false,
     );
 
     final authInstance = FirebaseAuth.instance;
