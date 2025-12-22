@@ -44,10 +44,11 @@ class PinnedPostModel extends Model<PinnedPostEntity> {
       safeGeolocation = Geolocation(latitude: 0, longitude: 0);
     }
 
-    // 2. Participants Güvenli Çeviri
-    List<PostParticipantEntity> safeParticipants = [];
-    if (doc['participants'] != null && doc['participants'] is List) {
-      safeParticipants = (doc['participants'] as List)
+      geolocation: Geolocation.fromMap(
+        doc['location'] as Map<String, dynamic>,
+      ),
+      imageUrls: List<String>.from(doc['imageUrls'] as List<dynamic>),
+      participants: (doc['participants'] as List<dynamic>)
           .map((e) => PostParticipantEntity.fromMap(e as Map<String, dynamic>))
           .toList();
     }

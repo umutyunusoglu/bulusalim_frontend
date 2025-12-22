@@ -47,23 +47,7 @@ class EventModel extends Model<EventEntity> {
   @override
   factory EventModel.fromFirestore(Map<String, dynamic> doc) {
     final attributesMap = doc['attributes'] as Map<String, dynamic>;
-
-    // -------------------------------------------------------------
-    // DÜZELTME 1: GeoPoint vs Map Kontrolü
-    // -------------------------------------------------------------
-    final rawLocation = doc['location'];
-    double lat = 0.0;
-    double lng = 0.0;
-
-    if (rawLocation is GeoPoint) {
-      // Eğer Firestore'dan GeoPoint nesnesi gelirse
-      lat = rawLocation.latitude;
-      lng = rawLocation.longitude;
-    } else if (rawLocation is Map) {
-      // Eğer Firestore'dan Map (JSON) gelirse
-      lat = (rawLocation['latitude'] as num?)?.toDouble() ?? 0.0;
-      lng = (rawLocation['longitude'] as num?)?.toDouble() ?? 0.0;
-    }
+    final location = doc['location'] as Map<String, dynamic>;
 
     late final EventParticipantEntity creator;
     late final List<EventParticipantEntity> participants;
@@ -129,8 +113,8 @@ class EventModel extends Model<EventEntity> {
       startTime: (doc['startTime'] as Timestamp).toDate(),
       endTime: (doc['endTime'] as Timestamp).toDate(),
       location: Geolocation.fromMap({
-        'latitude': lat,
-        'longitude': lng,
+        'latitude': location['latitude'],
+        'longitude': location['longitude'],
       }),
       attributes: EventAttributes(
         price: (attributesMap['price'] as num?)?.toDouble() ?? 0.0,
