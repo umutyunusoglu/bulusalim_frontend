@@ -6,6 +6,7 @@ import 'package:bulusalim/screens/home/post%20components/emoji_chip.dart';
 import 'package:bulusalim/screens/home/post%20components/small_stacked_avatars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 class PostCard extends StatefulWidget {
   const PostCard({
@@ -28,6 +29,15 @@ class _PostCardState extends State<PostCard> {
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  // Profil Yönlendirme Fonksiyonu
+  void _navigateToProfile() {
+    final userId = widget.user?.userID;
+    // Eğer kullanıcı ID'si varsa profil sayfasına git
+    if (userId != null && userId.isNotEmpty) {
+      context.push('/home/profile/$userId');
+    }
   }
 
   @override
@@ -60,7 +70,7 @@ class _PostCardState extends State<PostCard> {
 
     return Center(
       child: Container(
-        width: 361.w, // Fixed Width
+        width: 361.w,
         margin: EdgeInsets.only(bottom: 24.h, top: 12.h),
         color: Colors.transparent,
         child: Column(
@@ -119,24 +129,36 @@ class _PostCardState extends State<PostCard> {
 
     return Row(
       children: [
-        CircleAvatar(
-          radius: 20.r,
-          backgroundImage: NetworkImage(avatarUrl),
+        // Avatar hala tıklanabilir kalsın (Genelde beklenir)
+        GestureDetector(
+          onTap: _navigateToProfile,
+          child: CircleAvatar(
+            radius: 20.r,
+            backgroundImage: NetworkImage(avatarUrl),
+          ),
         ),
         SizedBox(width: 12.w),
+
+        // İsim ve Konum Alanı
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                username,
-                style: const TextStyle(
-                  fontFamily: 'Urbanist',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Color(0xFF1A1A1A),
+              // 1. SADECE İSİM TIKLANABİLİR
+              GestureDetector(
+                onTap: _navigateToProfile,
+                child: Text(
+                  username,
+                  style: const TextStyle(
+                    fontFamily: 'Urbanist',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Color(0xFF1A1A1A),
+                  ),
                 ),
               ),
+
+              // 2. KONUM ARTIK TIKLANAMAZ (Normal Text)
               Text(
                 location,
                 maxLines: 1,
@@ -150,6 +172,7 @@ class _PostCardState extends State<PostCard> {
             ],
           ),
         ),
+
         IconButton(
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
@@ -278,13 +301,12 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  // 3. Footer Widget (Corrected)
+  // 3. Footer Widget
   Widget _buildFooter(
     BuildContext context, {
     required String caption,
     required List<String> tags,
   }) {
-    // Style for the countdown timer
     final timeStyle = const TextStyle(
       fontFamily: 'Urbanist',
       fontSize: 12,
@@ -316,7 +338,7 @@ class _PostCardState extends State<PostCard> {
                 SizedBox(width: 16.w),
                 // Corrected CountdownTimer placement
                 CountdownTimer(
-                  targetTime: widget.post.createdAt!,
+                  targetTime: widget.post.createdAt ?? DateTime.now(),
                   style: timeStyle,
                 ),
               ],
