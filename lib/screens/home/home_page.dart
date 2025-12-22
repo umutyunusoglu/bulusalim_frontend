@@ -1,10 +1,10 @@
 import 'package:bulusalim/components/custom_tab_bar.dart';
 import 'package:bulusalim/components/header.dart';
 import 'package:bulusalim/core/utils/types/enums/feed_type.dart';
-import 'package:bulusalim/screens/camera/splash_screen.dart';
 import 'package:bulusalim/screens/home/home_content_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart'; // YENİ IMPORT
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -25,9 +25,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _navigateToCamera() {
-    Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute(builder: (context) => const CameraSplashScreen()),
-    );
+    context.push('/camera');
   }
 
   @override
