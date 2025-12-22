@@ -2,9 +2,9 @@ import 'package:bulusalim/components/login_button.dart';
 import 'package:bulusalim/components/skip_button.dart';
 import 'package:bulusalim/components/text_input.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
-import 'package:bulusalim/screens/bottomnav_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -13,7 +13,6 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // TEMA BAĞLANTISI
     final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary; // Turuncu
 
     return GestureDetector(
       onTap: () {
@@ -24,11 +23,9 @@ class LoginScreen extends StatelessWidget {
         }
       },
       child: Scaffold(
-        // Arka plan rengi temadan gelir (Genelde Beyaz)
         backgroundColor: theme.scaffoldBackgroundColor,
         body: SafeArea(
           child: SingleChildScrollView(
-            // Taşma riskine karşı scroll eklendi
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 20.w),
               child: Column(
@@ -39,8 +36,6 @@ class LoginScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Logo (Sola yaslı değilse Spacer ile itebiliriz ama görselde sağda skip var)
-                      // Mevcut koda sadık kalarak, logonun konumunu koruyoruz.
                       const Spacer(),
 
                       Image.asset(
@@ -52,15 +47,9 @@ class LoginScreen extends StatelessWidget {
 
                       SkipButton(
                         onTap: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const BottomNavScreen(),
-                            ),
-                          );
+                          context.go('/home');
                         },
                         text: 'skip',
-                        // Renk otomatik olarak AppTheme.tertiary (#004B75) alır
                       ),
                     ],
                   ),
@@ -75,7 +64,7 @@ class LoginScreen extends StatelessWidget {
                         fontFamily: 'Urbanist',
                         fontWeight: FontWeight.bold,
                         fontSize: 16.sp,
-                        color: Colors.black, // Başlıklar net Siyah
+                        color: Colors.black,
                       ),
                     ),
                   ),
@@ -116,7 +105,7 @@ class LoginScreen extends StatelessWidget {
                         fontFamily: 'Urbanist',
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w500,
-                        color: Colors.grey.shade600, // Daha yumuşak gri
+                        color: Colors.grey.shade600,
                       ),
                     ),
                   ),
@@ -124,18 +113,16 @@ class LoginScreen extends StatelessWidget {
                   SizedBox(height: 30.h),
 
                   // --- GÖNDER BUTONU ---
-                  // LoginButton veya CustomButton kullanabilirsin.
-                  // Burada LoginButton'a renkleri manuel geçerek özelleştiriyoruz.
                   LoginButton(
                     label: 'Gönder',
                     onPress: () {
-                      // Navigator.pushNamed(context, '/sign_in'); // Akışa göre değişir
+                      // Login başarılı olursa da aynı şekilde:
+                      // context.go('/home');
                     },
                     height: 50.h,
                     borderWidth: 0,
                     borderRadius: 40,
                     width: double.infinity,
-                    // DİNAMİK RENKLER:
                     backgroundColor: AppColors.secondaryColor,
                     textColor: Colors.white,
                     borderColor: Colors.transparent,
