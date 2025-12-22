@@ -1,4 +1,5 @@
 import 'package:bulusalim/core/constants/configs/app_config.dart';
+import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart'; // EKLENDİ
 import 'package:bulusalim/core/utils/types/enums/restriction_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
@@ -51,33 +52,55 @@ class EventModel extends Model<EventEntity> {
     late final EventParticipantEntity creator;
     late final List<EventParticipantEntity> participants;
 
-    if (kDebugMode) {
-      creator =
-          EventParticipantEntity.fromMap(
-            doc['creator'] as Map<String, dynamic>,
-          ).copyWith(
-            profileImageUrl: (doc['creator']['profileImageUrl'] as String)
-                .replaceAll(
-                  'localhost',
-                  AppConfig.host,
-                ),
-          );
+    // -------------------------------------------------------------
+    // DÜZELTME 2: Creator & Participants (Eksik alanlar eklendi)
+    // -------------------------------------------------------------
 
-      participants =
-          (doc['participants'] as List?)
-              ?.map(
-                (p) => EventParticipantEntity.fromMap(p as Map<String, dynamic>)
-                    .copyWith(
-                      profileImageUrl: (p['profileImageUrl'] as String)
-                          .replaceAll(
-                            'localhost',
-                            AppConfig.host,
-                          ),
-                    ),
-              )
-              .toList() ??
-          [];
+    // Creator verisini güvenli bir şekilde çekiyoruz
+    final creatorMap = doc['creator'] as Map<String, dynamic>?;
+
+    if (creatorMap != null) {
+      // Önce normal şekilde map'ten oluşturuyoruz
+      var tempCreator = EventParticipantEntity.fromMap(creatorMap);
+
+      // Debug modundaysak localhost ayarını yapıyoruz
+      if (kDebugMode) {
+        tempCreator = tempCreator.copyWith(
+          profileImageUrl: tempCreator.profileImageUrl.replaceAll(
+            'localhost',
+            AppConfig.host,
+          ),
+        );
+      }
+      creator = tempCreator;
+    } else {
+      // FALLBACK: Eğer creator verisi bozuksa, zorunlu alanları (role, eventScore) dolduruyoruz.
+      creator = const EventParticipantEntity(
+        userID: 'unknown',
+        username: 'Unknown',
+        profileImageUrl: '',
+        role: EventRoleEnum.participant, // Zorunlu alan
+        eventScore: 0.0, // Zorunlu alan
+      );
     }
+
+    // Participants listesini güvenli çekiyoruz
+    participants =
+        (doc['participants'] as List?)?.map((p) {
+          final pMap = p as Map<String, dynamic>;
+          var participant = EventParticipantEntity.fromMap(pMap);
+
+          if (kDebugMode) {
+            participant = participant.copyWith(
+              profileImageUrl: participant.profileImageUrl.replaceAll(
+                'localhost',
+                AppConfig.host,
+              ),
+            );
+          }
+          return participant;
+        }).toList() ??
+        [];
 
     return EventModel(
       eventId: doc['eventID'] as String,
