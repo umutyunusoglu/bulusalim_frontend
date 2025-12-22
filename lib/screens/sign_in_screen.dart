@@ -50,7 +50,6 @@ class SignInScreen extends StatelessWidget {
           /// 3. Ana İçerik
           SizedBox.expand(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 SizedBox(height: 130.h),
 

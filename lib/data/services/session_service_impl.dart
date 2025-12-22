@@ -72,8 +72,8 @@ class SessionServiceImpl implements SessionService {
 
                   _refreshCurrentEventState(realTimeEvents);
                 },
-                onError: (error) {
-                  print("Event Stream Hatası: $error");
+                onError: (Object error) {
+                  _logger.error('Event Stream Hatası: $error');
                 },
               );
         }

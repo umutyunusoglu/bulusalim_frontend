@@ -1,16 +1,9 @@
-import 'dart:math';
-
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/components/login_button.dart';
-import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart';
 import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
-import 'package:bulusalim/core/utils/types/enums/restriction_enum.dart';
-import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
-import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
 import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart';
-import 'package:bulusalim/domain/entities/user/user_event_entity.dart';
 import 'package:bulusalim/domain/repositories/event_repository.dart';
 import 'package:bulusalim/domain/repositories/user_repository.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
@@ -50,7 +43,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String _bio = '';
   String _school = '';
   String _avatarUrl = '';
-  List<String> _badges = [];
+  final List<String> _badges = [];
   int numberOfFollowers = 0;
   int numberOfFollowing = 0;
   int numberOfEvents = 0;
@@ -70,10 +63,7 @@ class _ProfilePageState extends State<ProfilePage> {
     super.dispose();
   }
 
-  // --- MOCK VERİ ÇEKME ---
   Future<void> _fetchProfileData() async {
-    await Future.delayed(const Duration(seconds: 1));
-
     if (!mounted) return;
 
     final userRepository = getIt<UserRepository>();
@@ -86,8 +76,8 @@ class _ProfilePageState extends State<ProfilePage> {
     final userEventsEnrolled = await userRepository.getUserEventHistory(
       widget.profileUserID,
     );
-    final List<Identifier> enrolledEventIds = [];
-    final List<Identifier> savedEventIds = [];
+    final enrolledEventIds = <Identifier>[];
+    final savedEventIds = <Identifier>[];
 
     for (final event in userEventsEnrolled) {
       switch (event.status) {
@@ -104,7 +94,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     List<EventEntity> enrolledEvents;
-    if (enrolledEventIds != null && enrolledEventIds.isNotEmpty) {
+    if (enrolledEventIds.isNotEmpty) {
       enrolledEvents = await eventRepository.getEventsByIds(
         enrolledEventIds,
       );
@@ -113,7 +103,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     List<EventEntity> savedEvents;
-    if (savedEventIds != null && savedEventIds.isNotEmpty) {
+    if (savedEventIds.isNotEmpty) {
       savedEvents = await eventRepository.getEventsByIds(
         savedEventIds,
       );
@@ -128,8 +118,8 @@ class _ProfilePageState extends State<ProfilePage> {
         _username = user.username;
         _fullName = user.username;
         _bio = user.bio ?? '';
-        _school = user.organization ?? '';
-        _avatarUrl = user.profileImageUrl ?? '';
+        _school = user.organization;
+        _avatarUrl = user.profileImageUrl;
       }
 
       _pinnedPosts = pinnedPosts;
@@ -295,12 +285,12 @@ class _ProfilePageState extends State<ProfilePage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const ProfileStatItem(count: "47", label: "Etkinlik"),
+                          const ProfileStatItem(count: '47', label: 'Etkinlik'),
                           ProfileStatItem(
-                            count: _isFollowing ? "139" : "138",
-                            label: "Takipçi",
+                            count: _isFollowing ? '139' : '138',
+                            label: 'Takipçi',
                           ),
-                          const ProfileStatItem(count: "125", label: "Takip"),
+                          const ProfileStatItem(count: '125', label: 'Takip'),
                         ],
                       ),
                     ),
@@ -350,8 +340,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 Expanded(
                   child: LoginButton(
                     label: _isFollowing
-                        ? "takip ediyorsun"
-                        : (_isPrivateAccount ? "istek gönder" : "takip et"),
+                        ? 'takip ediyorsun'
+                        : (_isPrivateAccount ? 'istek gönder' : 'takip et'),
                     onPress: _toggleFollow,
                     height: 32.h,
                     width: 361,
@@ -428,15 +418,15 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 children: const [
                   TextSpan(
-                    text: "durucetin, yarkinyoruk",
+                    text: 'durucetin, yarkinyoruk',
                     style: TextStyle(fontWeight: FontWeight.w400),
                   ),
-                  TextSpan(text: " ve "),
+                  TextSpan(text: ' ve '),
                   TextSpan(
-                    text: "4 diğer kişi",
+                    text: '4 diğer kişi',
                     style: TextStyle(fontWeight: FontWeight.w400),
                   ),
-                  TextSpan(text: " tarafından takip ediliyor."),
+                  TextSpan(text: ' tarafından takip ediliyor.'),
                 ],
               ),
             ),
@@ -449,9 +439,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
 // --- YARDIMCI COMPONENTLER ---
 class ProfileStatItem extends StatelessWidget {
+  const ProfileStatItem({required this.count, required this.label, super.key});
   final String count;
   final String label;
-  const ProfileStatItem({super.key, required this.count, required this.label});
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -486,9 +476,8 @@ class ProfileStatItem extends StatelessWidget {
 }
 
 class SectionHeaderDelegate extends SliverPersistentHeaderDelegate {
-  final Widget child;
-
   SectionHeaderDelegate({required this.child});
+  final Widget child;
 
   @override
   double get minExtent => 80.h;

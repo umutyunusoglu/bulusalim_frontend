@@ -11,10 +11,10 @@ class CountdownTimer extends StatefulWidget {
   final TextStyle? style;
 
   @override
-  _CountdownTimerState createState() => _CountdownTimerState();
+  CountdownTimerState createState() => CountdownTimerState();
 }
 
-class _CountdownTimerState extends State<CountdownTimer> {
+class CountdownTimerState extends State<CountdownTimer> {
   Timer? _timer;
   String _countdownText = '';
 
@@ -47,20 +47,20 @@ class _CountdownTimerState extends State<CountdownTimer> {
 
     // Negatif süre kontrolü (Örn: Etkinlik başladıysa)
     if (difference.isNegative) {
-      return "Başladı";
+      return 'Başladı';
     }
 
     final days = difference.inDays;
     final hours = difference.inHours % 24;
     final minutes = difference.inMinutes % 60;
 
-    List<String> parts = [];
-    if (days > 0) parts.add("$days g.");
-    if (hours > 0) parts.add("$hours sa.");
+    final parts = <String>[];
+    if (days > 0) parts.add('$days g.');
+    if (hours > 0) parts.add('$hours sa.');
     // Sadece dakikalar kaldığında gösterim
-    if (days == 0 && minutes > 0) parts.add("$minutes dk.");
+    if (days == 0 && minutes > 0) parts.add('$minutes dk.');
 
-    if (parts.isEmpty) return "Başlıyor";
+    if (parts.isEmpty) return 'Başlıyor';
 
     return parts.join(' ');
   }

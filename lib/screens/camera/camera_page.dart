@@ -26,9 +26,8 @@ class _CameraPageState extends State<CameraPage> {
     }
 
     try {
-      final XFile? photo = await _picker.pickImage(
+      final photo = await _picker.pickImage(
         source: ImageSource.camera,
-        preferredCameraDevice: CameraDevice.rear,
         imageQuality: 80,
       );
 
@@ -37,7 +36,7 @@ class _CameraPageState extends State<CameraPage> {
           _takenPhotos.add(File(photo.path));
         });
       }
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('Kamera hatası: $e');
     }
   }
@@ -60,7 +59,7 @@ class _CameraPageState extends State<CameraPage> {
     // GoRouter ile dosya taşımak için ekstra router ayarı gerekir, bu yöntem daha pratiktir.
     Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<NewPostPage>(
         builder: (context) => NewPostPage(takenPhotos: _takenPhotos),
       ),
     );
@@ -88,7 +87,7 @@ class _CameraPageState extends State<CameraPage> {
                     fit: StackFit.expand,
                     children: [
                       // A) Arka Plan / Önizleme Placeholder
-                      Container(
+                      ColoredBox(
                         color: const Color(0xFF1A1A1A), // Koyu Gri
                         child: _takenPhotos.isNotEmpty
                             ? Image.file(
@@ -131,7 +130,6 @@ class _CameraPageState extends State<CameraPage> {
                             decoration: BoxDecoration(
                               border: Border.all(
                                 color: Colors.white.withOpacity(0.3),
-                                width: 1,
                               ),
                               borderRadius: BorderRadius.circular(16.r),
                             ),
@@ -233,7 +231,6 @@ class _CameraPageState extends State<CameraPage> {
             // 2. ALT ALAN: GALERİ + AKSİYON BUTONLARI
             // ----------------------------------------------------------
             Expanded(
-              flex: 1,
               child: Container(
                 color: Colors.black,
                 padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -246,7 +243,7 @@ class _CameraPageState extends State<CameraPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(3, (index) {
-                        final File? imageFile = index < _takenPhotos.length
+                        final imageFile = index < _takenPhotos.length
                             ? _takenPhotos[index]
                             : null;
 
@@ -262,7 +259,6 @@ class _CameraPageState extends State<CameraPage> {
                                 borderRadius: BorderRadius.circular(12.r),
                                 border: Border.all(
                                   color: Colors.grey.shade800,
-                                  width: 1,
                                 ),
                                 image: imageFile != null
                                     ? DecorationImage(
@@ -307,7 +303,7 @@ class _CameraPageState extends State<CameraPage> {
                               // YENİ: Etkinliğe dön (Geri çık)
                               onPressed: () => context.pop(),
                               style: OutlinedButton.styleFrom(
-                                side: BorderSide(
+                                side: const BorderSide(
                                   color: primaryColor,
                                   width: 1.5,
                                 ),

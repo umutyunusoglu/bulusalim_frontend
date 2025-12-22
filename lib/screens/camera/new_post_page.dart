@@ -81,9 +81,8 @@ class _NewPostPageState extends State<NewPostPage> {
                   alignment: Alignment.center,
                   children: [
                     Align(
-                      alignment: Alignment.center,
                       child: Text(
-                        "Yeni Gönderi",
+                        'Yeni Gönderi',
                         style: TextStyle(
                           fontFamily: 'Urbanist',
                           fontWeight: FontWeight.bold,
@@ -174,7 +173,7 @@ class _NewPostPageState extends State<NewPostPage> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(color: Colors.black, width: 1),
+                  border: Border.all(),
                 ),
                 child: Stack(
                   children: [
@@ -190,7 +189,7 @@ class _NewPostPageState extends State<NewPostPage> {
                       ),
                       decoration: InputDecoration(
                         filled: false,
-                        hintText: "Açıklama yaz.",
+                        hintText: 'Açıklama yaz.',
                         hintStyle: TextStyle(
                           color: Colors.grey.shade500,
                           fontSize: 14.sp,
@@ -200,14 +199,14 @@ class _NewPostPageState extends State<NewPostPage> {
                         focusedBorder: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         contentPadding: EdgeInsets.zero,
-                        counterText: "",
+                        counterText: '',
                       ),
                     ),
                     Align(
                       alignment: Alignment.bottomRight,
                       child: ValueListenableBuilder(
                         valueListenable: _captionController,
-                        builder: (context, TextEditingValue value, __) {
+                        builder: (context, TextEditingValue value, _) {
                           return Text(
                             '${value.text.length}/+${AppConfig.maxPostCaptionLength}',
                             style: TextStyle(
@@ -228,9 +227,9 @@ class _NewPostPageState extends State<NewPostPage> {
               // --- 5. SWITCHLER ---
               _buildSwitchOption(
                 context,
-                title: "Katılımcıları göster.",
+                title: 'Katılımcıları göster.',
                 subtitle:
-                    "Bunu kabul ederek katıldığın etkinlikte bulunan diğer katılımcılar paylaşımında yer alacak ve diğer kullanıcılar tarafından görüntülenebilecek.",
+                    'Bunu kabul ederek katıldığın etkinlikte bulunan diğer katılımcılar paylaşımında yer alacak ve diğer kullanıcılar tarafından görüntülenebilecek.',
                 value: _showParticipants,
                 onChanged: (val) => setState(() => _showParticipants = val),
                 activeColor: actionColor,
@@ -269,7 +268,7 @@ class _NewPostPageState extends State<NewPostPage> {
                     ),
                   ),
                   child: Text(
-                    "paylaş",
+                    'paylaş',
                     style: TextStyle(
                       fontFamily: 'Urbanist',
                       fontSize: 18.sp,
@@ -333,7 +332,7 @@ class _NewPostPageState extends State<NewPostPage> {
             child: Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: Colors.white,
+              activeThumbColor: Colors.white,
               activeTrackColor: activeColor,
               inactiveThumbColor: Colors.white,
               inactiveTrackColor: Colors.grey.shade300,
