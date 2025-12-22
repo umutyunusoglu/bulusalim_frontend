@@ -1,22 +1,24 @@
-import 'package:bulusalim/components/custom_tab_bar.dart';
-import 'package:bulusalim/components/header.dart';
+import 'dart:typed_data';
+
+import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/domain/repositories/post_repository.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get_it/get_it.dart';
+import 'package:flutter/services.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
 
   @override
-  State<MapPage> createState() => _HomePageState();
+  State<MapPage> createState() => _MapPageState();
 }
 
-class _HomePageState extends State<MapPage> {
+class _MapPageState extends State<MapPage> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   final List<String> _tabs = ['Senlik', 'Arkadaşların'];
+  late MapboxMap mapboxMap;
+  PointAnnotationManager? pointAnnotationManager;
 
   @override
   void dispose() {
@@ -25,131 +27,57 @@ class _HomePageState extends State<MapPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w),
-          child: Column(
-            children: [
-              /// Üst başlık
-              Header(
-                title: Image.asset('assets/bulusalim.png', height: 40.h),
-                trailing: Icon(
-                  Icons.notifications_none_outlined,
-                  color: Theme.of(context).colorScheme.secondary,
-                  size: 25.sp,
-                ),
-              ),
+  _onMapCreated(MapboxMap mapboxMap) async {
+    final logger = getIt<LoggingService>();
+    this.mapboxMap = mapboxMap;
 
-              SizedBox(height: 20.h),
-
-              /// Sekme Bar
-              CustomTabBar(
-                currentIndex: _currentPage,
-                tabs: _tabs,
-                onTabSelected: (index) {
-                  _pageController.animateToPage(
-                    index,
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
-                  setState(() => _currentPage = index);
-                },
-              ),
-
-              SizedBox(height: 10.h),
-
-              /// Sayfa içeriği
-              Expanded(
-                child: PageView(
-                  controller: _pageController,
-                  onPageChanged: (index) {
-                    setState(() => _currentPage = index);
-                  },
-                  children: const [
-                    SenlikPage(),
-                    ArkadaslarinPage(),
-                  ],
-                ),
-              ),
-
-              /// Alt sayfa göstergesi
-              /*SizedBox(height: 10.h),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(_tabs.length, (index) {
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    margin: EdgeInsets.symmetric(horizontal: 5.w),
-                    height: 6.h,
-                    width: _currentPage == index ? 20.w : 6.w,
-                    decoration: BoxDecoration(
-                      color: _currentPage == index
-                          ? kBlueColor
-                          : Colors.grey.shade400,
-                      borderRadius: BorderRadius.circular(10.r),
-                    ),
-                  );
-                }),
-              ),*/
-            ],
-          ),
-        ),
+    await mapboxMap.gestures.updateSettings(
+      GesturesSettings(
+        scrollEnabled: true,
+        rotateEnabled: true,
+        pitchEnabled: false,
       ),
     );
-  }
-}
 
-/// Şimdilik placeholder sayfalar
-class SenlikPage extends StatelessWidget {
-  const SenlikPage({super.key});
+    pointAnnotationManager = await mapboxMap.annotations
+        .createPointAnnotationManager();
 
-  @override
-  Widget build(BuildContext context) {
-    final postRepository = GetIt.instance<PostRepository>();
-    final logger = GetIt.instance<LoggingService>();
+    // Load the image from assets
 
-    return FutureBuilder(
-      future: postRepository.getAllPosts(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    final bytes = await rootBundle.load('assets/map/location.png');
+    logger.debug('Image loaded with ${bytes.lengthInBytes} bytes');
+    final imageData = bytes.buffer.asUint8List();
 
-        if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        }
+    // Create a PointAnnotationOptions
 
-        final posts = snapshot.data ?? [];
+    final pointAnnotationOptions = PointAnnotationOptions(
+      geometry: Point(
+        coordinates: Position(40.985496058, 29.035333192),
+      ), // Example coordinates
 
-        if (posts.isEmpty || posts[0].imageUrls!.isEmpty) {
-          return const Center(child: Text('No posts available'));
-        }
+      image: imageData,
 
-        final postPhotoUrl = posts[0].imageUrls!.first;
-        logger.debug(postPhotoUrl);
-
-        return Center(
-          child: Image.network(
-            postPhotoUrl,
-            fit: BoxFit.cover,
-          ),
-        );
-      },
+      iconSize: 1,
     );
-  }
-}
 
-class ArkadaslarinPage extends StatelessWidget {
-  const ArkadaslarinPage({super.key});
+    // Add the annotation to the map
+
+    await pointAnnotationManager?.create(pointAnnotationOptions);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        '👫 Arkadaşların Sayfası',
-        style: TextStyle(fontSize: 16),
+    final camera = CameraOptions(
+      center: Point(coordinates: Position(40.985496058, 29.035333192)),
+      zoom: 5,
+      bearing: 0,
+      pitch: 0,
+    );
+    return Scaffold(
+      body: MapWidget(
+        cameraOptions: camera,
+        onMapCreated: _onMapCreated,
+        styleUri: MapboxStyles.MAPBOX_STREETS,
       ),
     );
   }
