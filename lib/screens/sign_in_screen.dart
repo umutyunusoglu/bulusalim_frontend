@@ -1,6 +1,7 @@
 import 'package:bulusalim/components/login_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart'; // YENİ: GoRouter eklendi
 
 class SignInScreen extends StatelessWidget {
   const SignInScreen({super.key});
@@ -79,7 +80,8 @@ class SignInScreen extends StatelessWidget {
                 LoginButton(
                   label: 'Hesap Oluştur',
                   onPress: () {
-                    Navigator.pushNamed(context, '/login');
+                    // YENİ: Kayıt Ol sayfasına git
+                    context.push('/register');
                   },
                   height: 50.h,
                   borderWidth: 2,
@@ -93,7 +95,8 @@ class SignInScreen extends StatelessWidget {
                 LoginButton(
                   label: 'Giriş Yap',
                   onPress: () {
-                    Navigator.pushNamed(context, '/explore');
+                    // YENİ: Giriş Yap sayfasına git
+                    context.push('/login');
                   },
                   height: 50.h,
                   borderWidth: 2,
