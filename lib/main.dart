@@ -1,4 +1,5 @@
 import 'dart:ui';
+
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/constants/theme/app_theme.dart';
@@ -14,13 +15,21 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart'
+    show MapboxOptions;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await dotenv.load();
+
+  final mapBoxAccessToken = dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
+  print('Mapbox Access Token: $mapBoxAccessToken');
+  MapboxOptions.setAccessToken(mapBoxAccessToken);
 
   if (kDebugMode) {
     await FirebaseAppCheck.instance.activate(
@@ -33,7 +42,7 @@ Future<void> main() async {
     FirebaseFirestore.instance.useFirestoreEmulator(
       AppConfig.host,
       8080,
-      automaticHostMapping: false,  
+      automaticHostMapping: false,
     );
     await FirebaseAuth.instance.useAuthEmulator(
       AppConfig.host,
