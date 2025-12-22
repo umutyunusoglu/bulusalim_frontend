@@ -1,8 +1,11 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
+import 'package:bulusalim/components/stacked_avatars.dart'; // <-- 1. BU EKLENDİ (AvatarInfo için)
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/scaffold_with_navbar.dart';
 import 'package:bulusalim/screens/camera/camera_page.dart';
 import 'package:bulusalim/screens/chat/chat_page.dart';
+import 'package:bulusalim/screens/chat/event_settings_page.dart'; // <-- 2. BU EKLENDİ (Ayarlar Sayfası)
+import 'package:bulusalim/screens/chat/my_events_page.dart';
 import 'package:bulusalim/screens/home/home_page.dart';
 import 'package:bulusalim/screens/login/login_screen.dart';
 import 'package:bulusalim/screens/map/map_page.dart';
@@ -23,7 +26,7 @@ final GlobalKey<NavigatorState> _shellNavigatorKey =
 final router = GoRouter(
   navigatorKey: _rootNavigatorKey,
 
-  // Uygulama artık '/' rotasından (yani SignInScreen'den) başlar.
+  // Uygulama '/' rotasından (SignInScreen) başlar.
   initialLocation: '/',
 
   routes: [
@@ -35,7 +38,7 @@ final router = GoRouter(
         return ScaffoldWithNavbar(navigationShell: navigationShell);
       },
       branches: [
-        // 1. SIRA: MAP (Harita) - En Solda
+        // 1. SIRA: MAP (Harita)
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -55,14 +58,13 @@ final router = GoRouter(
           ],
         ),
 
-        // 3. SIRA: HOME (Ana Sayfa) - Ortada
+        // 3. SIRA: HOME (Ana Sayfa)
         StatefulShellBranch(
           routes: [
             GoRoute(
               path: '/home',
               builder: (context, state) => const HomePage(),
               routes: [
-                // Home içinden Profile gidilince Navbar KALSIN
                 GoRoute(
                   path: 'profile/:userId',
                   builder: (context, state) {
@@ -75,18 +77,77 @@ final router = GoRouter(
           ],
         ),
 
-        // 4. SIRA: CHAT (Sohbet)
+        // 4. SIRA: CHAT (Etkinliklerim/Sohbet)
         StatefulShellBranch(
           routes: [
+            // 1. ANA EKRAN: LİSTE (MyEventsPage)
             GoRoute(
               path: '/chat',
-              builder: (context, state) => const ChatPage(),
+              builder: (context, state) => const MyEventsPage(),
+
+              // 2. ALT EKRAN: SOHBET ODASI (ChatPage)
+              routes: [
+                GoRoute(
+                  path: 'room/:eventID', // URL: /chat/room/123
+                  builder: (context, state) {
+                    final eventID = state.pathParameters['eventID']!;
+                    final extra = state.extra as Map<String, dynamic>?;
+
+                    // --- AVATAR LISTESINI GÜVENLİ ÇEKME ---
+                    List<AvatarInfo> avatarList = [];
+                    if (extra != null && extra['avatars'] != null) {
+                      avatarList = (extra['avatars'] as List<dynamic>)
+                          .map((e) => e as AvatarInfo)
+                          .toList();
+                    }
+                    // --------------------------------------
+
+                    return ChatPage(
+                      eventID: eventID,
+                      chatTitle: (extra?['title'] as String?) ?? 'Sohbet',
+                      participantAvatars: avatarList, // LİSTE BURADA
+                      location: (extra?['location'] as String?) ?? '',
+                      participantStatus:
+                          (extra?['participants'] as String?) ?? '',
+                      remainingTime: (extra?['time'] as String?) ?? '',
+                    );
+                  },
+                  // 3. ALT EKRAN: AYARLAR (EventSettingsPage)
+                  routes: [
+                    GoRoute(
+                      path: 'settings', // URL: /chat/room/123/settings
+                      builder: (context, state) {
+                        final eventID = state.pathParameters['eventID']!;
+                        final extra = state.extra as Map<String, dynamic>?;
+
+                        // Ayarlar sayfası için de aynı avatar listesini çekiyoruz
+                        List<AvatarInfo> avatarList = [];
+                        if (extra != null && extra['avatars'] != null) {
+                          avatarList = (extra['avatars'] as List<dynamic>)
+                              .map((e) => e as AvatarInfo)
+                              .toList();
+                        }
+
+                        return EventSettingsPage(
+                          eventID: eventID,
+                          chatTitle: (extra?['title'] as String?) ?? 'Ayarlar',
+                          participantAvatars: avatarList,
+                          location: (extra?['location'] as String?) ?? '',
+                          participantStatus:
+                              (extra?['participants'] as String?) ?? '',
+                          remainingTime: (extra?['time'] as String?) ?? '',
+                          isCreator: true, // İleride gerçek veri ile değişecek
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ],
             ),
           ],
         ),
 
-        // 5. SIRA: PROFİL (Kendi Profilin) - En Sağda
-        // ----------------------------------------------------------
+        // 5. SIRA: PROFİL (Kendi Profilin)
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -94,7 +155,6 @@ final router = GoRouter(
               builder: (context, state) {
                 final sessionService = getIt<SessionService>();
                 final myUserId = sessionService.currentUser?.userID;
-                // Eğer ID varsa o ID ile sayfayı aç, yoksa boş string gönder (veya login'e at)
                 return ProfilePage(profileUserID: myUserId ?? '');
               },
             ),
@@ -110,7 +170,7 @@ final router = GoRouter(
     // 1. AÇILIŞ EKRANI (SignIn)
     GoRoute(
       path: '/',
-      parentNavigatorKey: _rootNavigatorKey, // Navbar'ın üstüne çıkar
+      parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const SignInScreen(),
     ),
 
@@ -128,7 +188,7 @@ final router = GoRouter(
       builder: (context, state) => const RegisterScreen(),
     ),
 
-    // 4. KAMERA (Dump)
+    // 4. KAMERA
     GoRoute(
       path: '/camera',
       parentNavigatorKey: _rootNavigatorKey,

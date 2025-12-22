@@ -1,4 +1,5 @@
 import 'package:bulusalim/core/constants/configs/app_config.dart';
+import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart'; // EKLENDİ
 import 'package:bulusalim/core/utils/types/enums/restriction_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
@@ -46,38 +47,76 @@ class EventModel extends Model<EventEntity> {
   @override
   factory EventModel.fromFirestore(Map<String, dynamic> doc) {
     final attributesMap = doc['attributes'] as Map<String, dynamic>;
-    final location = doc['location'] as GeoPoint;
+
+    // -------------------------------------------------------------
+    // DÜZELTME 1: GeoPoint vs Map Kontrolü
+    // -------------------------------------------------------------
+    final rawLocation = doc['location'];
+    double lat = 0.0;
+    double lng = 0.0;
+
+    if (rawLocation is GeoPoint) {
+      // Eğer Firestore'dan GeoPoint nesnesi gelirse
+      lat = rawLocation.latitude;
+      lng = rawLocation.longitude;
+    } else if (rawLocation is Map) {
+      // Eğer Firestore'dan Map (JSON) gelirse
+      lat = (rawLocation['latitude'] as num?)?.toDouble() ?? 0.0;
+      lng = (rawLocation['longitude'] as num?)?.toDouble() ?? 0.0;
+    }
 
     late final EventParticipantEntity creator;
     late final List<EventParticipantEntity> participants;
 
-    if (kDebugMode) {
-      creator =
-          EventParticipantEntity.fromMap(
-            doc['creator'] as Map<String, dynamic>,
-          ).copyWith(
-            profileImageUrl: (doc['creator']['profileImageUrl'] as String)
-                .replaceAll(
-                  'localhost',
-                  AppConfig.host,
-                ),
-          );
+    // -------------------------------------------------------------
+    // DÜZELTME 2: Creator & Participants (Eksik alanlar eklendi)
+    // -------------------------------------------------------------
 
-      participants =
-          (doc['participants'] as List?)
-              ?.map(
-                (p) => EventParticipantEntity.fromMap(p as Map<String, dynamic>)
-                    .copyWith(
-                      profileImageUrl: (p['profileImageUrl'] as String)
-                          .replaceAll(
-                            'localhost',
-                            AppConfig.host,
-                          ),
-                    ),
-              )
-              .toList() ??
-          [];
+    // Creator verisini güvenli bir şekilde çekiyoruz
+    final creatorMap = doc['creator'] as Map<String, dynamic>?;
+
+    if (creatorMap != null) {
+      // Önce normal şekilde map'ten oluşturuyoruz
+      var tempCreator = EventParticipantEntity.fromMap(creatorMap);
+
+      // Debug modundaysak localhost ayarını yapıyoruz
+      if (kDebugMode) {
+        tempCreator = tempCreator.copyWith(
+          profileImageUrl: tempCreator.profileImageUrl.replaceAll(
+            'localhost',
+            AppConfig.host,
+          ),
+        );
+      }
+      creator = tempCreator;
+    } else {
+      // FALLBACK: Eğer creator verisi bozuksa, zorunlu alanları (role, eventScore) dolduruyoruz.
+      creator = const EventParticipantEntity(
+        userID: 'unknown',
+        username: 'Unknown',
+        profileImageUrl: '',
+        role: EventRoleEnum.participant, // Zorunlu alan
+        eventScore: 0.0, // Zorunlu alan
+      );
     }
+
+    // Participants listesini güvenli çekiyoruz
+    participants =
+        (doc['participants'] as List?)?.map((p) {
+          final pMap = p as Map<String, dynamic>;
+          var participant = EventParticipantEntity.fromMap(pMap);
+
+          if (kDebugMode) {
+            participant = participant.copyWith(
+              profileImageUrl: participant.profileImageUrl.replaceAll(
+                'localhost',
+                AppConfig.host,
+              ),
+            );
+          }
+          return participant;
+        }).toList() ??
+        [];
 
     return EventModel(
       eventId: doc['eventID'] as String,
@@ -90,8 +129,8 @@ class EventModel extends Model<EventEntity> {
       startTime: (doc['startTime'] as Timestamp).toDate(),
       endTime: (doc['endTime'] as Timestamp).toDate(),
       location: Geolocation.fromMap({
-        'latitude': location.latitude,
-        'longitude': location.longitude,
+        'latitude': lat,
+        'longitude': lng,
       }),
       attributes: EventAttributes(
         price: (attributesMap['price'] as num?)?.toDouble() ?? 0.0,
