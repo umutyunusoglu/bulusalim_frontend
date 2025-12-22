@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-
-import 'package:bulusalim/screens/profile/profile_page.dart';
+import 'package:go_router/go_router.dart';
 
 class AvatarInfo {
   final String userId;
@@ -69,18 +68,8 @@ class StackedAvatars extends StatelessWidget {
               // Tıklama ve Navigasyon İşlemi
               child: GestureDetector(
                 onTap: () {
-                  // Eğer ID geçerliyse (boş değilse) profil sayfasına git
                   if (currentUser.userId.isNotEmpty) {
-                    print("Gidilen Profil ID: ${currentUser.userId}");
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ProfilePage(
-                          // BURASI KRİTİK: Tıklanan kişinin ID'sini sayfaya yolluyoruz
-                          profileUserID: currentUser.userId,
-                        ),
-                      ),
-                    );
+                    context.push('/home/profile/${currentUser.userId}');
                   }
                 },
                 child: Container(
