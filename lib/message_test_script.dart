@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_catches_without_on_clauses, document_ignores, avoid_print, lines_longer_than_80_chars
+
 import 'dart:async';
 import 'dart:math';
 
@@ -16,12 +18,12 @@ import 'package:flutter/material.dart';
 // Botların kuracağı cümleler
 const List<String> _botMessages = [
   "Web'den selamlar!",
-  "ChatRepository test ediliyor.",
-  "Hız testi 1-2-3.",
-  "Chrome üzerinden bağlanıyorum.",
-  "Event çok iyiymiş.",
-  "Herkes burada mı?",
-  "Veriler akıyor...",
+  'ChatRepository test ediliyor.',
+  'Hız testi 1-2-3.',
+  'Chrome üzerinden bağlanıyorum.',
+  'Event çok iyiymiş.',
+  'Herkes burada mı?',
+  'Veriler akıyor...',
 ];
 
 void main() async {
@@ -53,7 +55,7 @@ void main() async {
   runApp(const BotApp());
 
   // Arayüz açıldıktan sonra saldırıyı başlat
-  _startAttack(eventID);
+  await _startAttack(eventID);
 }
 
 class BotApp extends StatelessWidget {
@@ -61,7 +63,7 @@ class BotApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         backgroundColor: Colors.black,
@@ -69,23 +71,23 @@ class BotApp extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.android, color: Colors.green, size: 64),
-              const SizedBox(height: 20),
-              const Text(
-                "BOT ÇALIŞIYOR",
+              Icon(Icons.android, color: Colors.green, size: 64),
+              SizedBox(height: 20),
+              Text(
+                'BOT ÇALIŞIYOR',
                 style: TextStyle(
                   color: Colors.green,
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 10),
-              const Text(
-                "Terminalden logları izle...",
+              SizedBox(height: 10),
+              Text(
+                'Terminalden logları izle...',
                 style: TextStyle(color: Colors.grey),
               ),
-              const SizedBox(height: 30),
-              const CircularProgressIndicator(color: Colors.green),
+              SizedBox(height: 30),
+              CircularProgressIndicator(color: Colors.green),
             ],
           ),
         ),
@@ -143,7 +145,7 @@ Future<void> _startAttack(String eventID) async {
 
       // Saat bilgisi
       final time =
-          "${DateTime.now().hour}:${DateTime.now().minute}:${DateTime.now().second}";
+          '${DateTime.now().hour}:${DateTime.now().minute}:${DateTime.now().second}';
       print('[$time] 📤 Mesaj Atıldı ($senderId): $content');
     } catch (e) {
       print('❌ Hata oluştu: $e');

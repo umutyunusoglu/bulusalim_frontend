@@ -15,7 +15,6 @@ class CameraSplashScreen extends StatelessWidget {
             // 1. KATMAN: İçerik (Metinler ve Görsel)
             Column(
               mainAxisAlignment: MainAxisAlignment.end,
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
                   'Arkadaşının ',
@@ -69,7 +68,7 @@ class CameraSplashScreen extends StatelessWidget {
                   // Butona basılınca Kamera Ekranına git
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<CameraPage>(
                       builder: (context) => const CameraPage(),
                     ),
                   );

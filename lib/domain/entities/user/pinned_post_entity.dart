@@ -25,7 +25,7 @@ class PinnedPostEntity with EquatableMixin {
     return PinnedPostEntity(
       postID: postID ?? this.postID,
       caption: caption ?? this.caption,
-      location: geolocation ?? this.location,
+      location: geolocation ?? location,
       imageUrls: imageUrls ?? this.imageUrls,
       participants: participants ?? this.participants,
       emoteCounts: emoteCounts ?? this.emoteCounts,

@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:flutter/material.dart';
@@ -15,8 +13,6 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState extends State<MapPage> {
   final PageController _pageController = PageController();
-  int _currentPage = 0;
-  final List<String> _tabs = ['Senlik', 'Arkadaşların'];
   late MapboxMap mapboxMap;
   PointAnnotationManager? pointAnnotationManager;
 
@@ -26,8 +22,7 @@ class _MapPageState extends State<MapPage> {
     super.dispose();
   }
 
-  @override
-  _onMapCreated(MapboxMap mapboxMap) async {
+  Future<void> _onMapCreated(MapboxMap mapboxMap) async {
     final logger = getIt<LoggingService>();
     this.mapboxMap = mapboxMap;
 

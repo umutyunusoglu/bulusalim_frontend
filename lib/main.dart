@@ -26,7 +26,7 @@ Future<void> main() async {
   await dotenv.load();
 
   final mapBoxAccessToken = dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
-  print('Mapbox Access Token: $mapBoxAccessToken');
+
   MapboxOptions.setAccessToken(mapBoxAccessToken);
 
   if (kDebugMode) {
@@ -117,7 +117,7 @@ class MainApp extends StatelessWidget {
             builder: (context, widget) {
               return MediaQuery(
                 data: MediaQuery.of(context).copyWith(
-                  textScaler: const TextScaler.linear(1.0),
+                  textScaler: TextScaler.noScaling,
                 ),
                 child: widget!,
               );

@@ -1,7 +1,6 @@
 import 'package:bulusalim/core/utils/types/enums/gender_enum.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
-import 'package:bulusalim/domain/entities/user/user_event_entity.dart';
 import 'package:equatable/equatable.dart';
 
 class UserEntity extends Equatable {

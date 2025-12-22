@@ -59,7 +59,7 @@ class _HomeContentPageState extends State<HomeContentPage> {
           _isLoadingNext = false;
         });
       }
-    } on Exception catch (e) {
+    } on Exception {
       // Hata yönetimi (Loglama vs.)
       if (mounted) setState(() => _isInitialLoad = false);
     }
@@ -81,7 +81,7 @@ class _HomeContentPageState extends State<HomeContentPage> {
         // eğer bu ID zaten mevcut listemizde (_feedItems) varsa, onu filtrele.
         final uniqueNewItems = newItems.where((newItem) {
           // any: "listede bu şartı sağlayan herhangi biri var mı?"
-          bool isAlreadyInList = _feedItems.any(
+          final isAlreadyInList = _feedItems.any(
             (existingItem) => existingItem.id == newItem.id,
           );
           return !isAlreadyInList; // Listede YOKSA al, varsa alma.

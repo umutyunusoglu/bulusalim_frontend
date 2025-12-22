@@ -1,4 +1,3 @@
-import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/domain/datasources/event_card_photos_datasource.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -6,12 +5,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class EventCardPhotosDatasourceImpl implements EventCardPhotosDatasource {
   EventCardPhotosDatasourceImpl({
     required FirebaseFirestore firestore,
-    required LoggingService logger,
-  }) : _firestore = firestore,
-       _logger = logger;
+  }) : _firestore = firestore;
 
   final FirebaseFirestore _firestore;
-  final LoggingService _logger;
 
   @override
   Future<Map<HobbyEntity, List<String>>> getAllEventCardPhotos() async {

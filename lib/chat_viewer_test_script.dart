@@ -25,7 +25,7 @@ void main() async {
       FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
       await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
       await FirebaseStorage.instance.useStorageEmulator('localhost', 9199);
-    } catch (e) {
+    } on Exception catch (e) {
       print('Emülatör bağlantı uyarısı: $e');
     }
 
@@ -79,7 +79,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final eventRepo = getIt<EventRepository>();
     final event = await eventRepo.getEvent(widget.eventID);
     setState(() {
-      _eventTitle = event?.name ?? "Bilinmeyen Event";
+      _eventTitle = event?.name ?? 'Bilinmeyen Event';
     });
   }
 
@@ -87,7 +87,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     if (widget.eventID.isEmpty) {
       return const Scaffold(
-        body: Center(child: Text("❌ Event ID girilmedi!")),
+        body: Center(child: Text('❌ Event ID girilmedi!')),
       );
     }
 
@@ -97,22 +97,22 @@ class _ChatScreenState extends State<ChatScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _eventTitle ?? "Yükleniyor...",
+              _eventTitle ?? 'Yükleniyor...',
               style: const TextStyle(fontSize: 16),
             ),
             Text(
-              "ID: ${widget.eventID}",
+              'ID: ${widget.eventID}',
               style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],
         ),
         backgroundColor: Colors.black,
-        actions: [
+        actions: const [
           Center(
             child: Padding(
-              padding: const EdgeInsets.only(right: 16.0),
+              padding: EdgeInsets.only(right: 16),
               child: Text(
-                "Canlı İzleme Modu 🔴",
+                'Canlı İzleme Modu 🔴',
                 style: TextStyle(
                   color: Colors.redAccent,
                   fontWeight: FontWeight.bold,
@@ -139,7 +139,7 @@ class _ChatScreenState extends State<ChatScreen> {
           if (messages.isEmpty) {
             return const Center(
               child: Text(
-                "Henüz mesaj yok.\nSimülasyon scriptini çalıştır!",
+                'Henüz mesaj yok.\nSimülasyon scriptini çalıştır!',
                 textAlign: TextAlign.center,
               ),
             );
@@ -193,7 +193,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
         ),
         subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4.0),
+          padding: const EdgeInsets.only(top: 4),
           child: Text(
             msg.content,
             style: const TextStyle(fontSize: 15, color: Colors.white),

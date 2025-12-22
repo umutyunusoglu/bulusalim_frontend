@@ -37,9 +37,9 @@ class CustomTabBar extends StatelessWidget {
             safeIndex * tabWidth + (tabWidth - indicatorWidth) / 2;
 
         // Gölge ve Çubuk Yükseklik Ayarları
-        final double indicatorHeight = 4.h; // Mavi çubuğun kalınlığı
-        final double gradientSpread = 8.h; // Gölgenin aşağı yayılma mesafesi
-        final double totalStackHeight = indicatorHeight + gradientSpread;
+        final indicatorHeight = 4.h; // Mavi çubuğun kalınlığı
+        final gradientSpread = 8.h; // Gölgenin aşağı yayılma mesafesi
+        final totalStackHeight = indicatorHeight + gradientSpread;
 
         return Column(
           children: [

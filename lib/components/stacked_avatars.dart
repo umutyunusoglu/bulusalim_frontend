@@ -3,38 +3,36 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
 class AvatarInfo {
-  final String userId;
-  final String imageUrl;
-
   AvatarInfo({
     required this.userId,
     required this.imageUrl,
   });
+  final String userId;
+  final String imageUrl;
 }
 
 class StackedAvatars extends StatelessWidget {
-  final List<AvatarInfo> avatarDataList;
-
   const StackedAvatars({
-    Key? key,
     required this.avatarDataList,
-  }) : super(key: key);
+    super.key,
+  });
+  final List<AvatarInfo> avatarDataList;
 
   @override
   Widget build(BuildContext context) {
     if (avatarDataList.isEmpty) return const SizedBox.shrink();
 
     // 1. Boyut Ayarları
-    final double firstAvatarSize = 42.r;
-    final double otherAvatarSize = 33.r;
-    final double overlap = 14.r;
+    final firstAvatarSize = 42.r;
+    final otherAvatarSize = 33.r;
+    final overlap = 14.r;
 
     // İlk 3 kişiyi alıyoruz
     final items = avatarDataList.take(3).toList();
-    final int count = items.length;
+    final count = items.length;
 
     // 2. Toplam Genişlik Hesabı
-    double totalWidth = firstAvatarSize;
+    var totalWidth = firstAvatarSize;
     if (count > 1) {
       totalWidth += (count - 1) * (otherAvatarSize - overlap);
     }
@@ -72,7 +70,7 @@ class StackedAvatars extends StatelessWidget {
                     context.push('/home/profile/${currentUser.userId}');
                   }
                 },
-                child: Container(
+                child: SizedBox(
                   width: currentSize,
                   height: currentSize,
                   child: ClipOval(
@@ -80,7 +78,7 @@ class StackedAvatars extends StatelessWidget {
                       currentUser.imageUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
-                        return Container(
+                        return ColoredBox(
                           color: Colors.grey.shade300,
                           child: Icon(
                             Icons.person,

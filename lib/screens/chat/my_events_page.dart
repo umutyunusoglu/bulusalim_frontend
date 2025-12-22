@@ -31,7 +31,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
               .map((doc) {
                 try {
                   return EventModel.fromFirestore(doc.data()).toEntity();
-                } catch (e) {
+                } on Exception {
                   return null;
                 }
               })
@@ -39,19 +39,18 @@ class _MyEventsPageState extends State<MyEventsPage> {
               .toList();
 
           // Filtrele: Sadece benimle ilgili olanlar
-          final myEvents = allEvents.where((event) {
-            final isCreator = event.creator.userID == currentUserId;
-            final isParticipant = event.participants.any(
-              (p) => p.userID == currentUserId,
-            );
-            return isCreator || isParticipant;
-          }).toList();
-
-          myEvents.sort((a, b) {
-            int scoreA = _calculateSortScore(a);
-            int scoreB = _calculateSortScore(b);
-            return scoreB.compareTo(scoreA);
-          });
+          final myEvents =
+              allEvents.where((event) {
+                final isCreator = event.creator.userID == currentUserId;
+                final isParticipant = event.participants.any(
+                  (p) => p.userID == currentUserId,
+                );
+                return isCreator || isParticipant;
+              }).toList()..sort((a, b) {
+                final scoreA = _calculateSortScore(a);
+                final scoreB = _calculateSortScore(b);
+                return scoreB.compareTo(scoreA);
+              });
 
           return myEvents;
         });
@@ -70,7 +69,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
         return 2;
       }
       return 1;
-    } catch (e) {
+    } on Exception {
       return 0;
     }
   }
@@ -96,14 +95,14 @@ class _MyEventsPageState extends State<MyEventsPage> {
           Row(
             children: [
               _buildFilterChip(
-                "onaylı",
+                'onaylı',
                 const Color(0xFFFF5722),
                 showApproved,
                 (val) {
                   setState(() => showApproved = val);
                 },
               ),
-              _buildFilterChip("beklenen", Colors.blueGrey, showPending, (val) {
+              _buildFilterChip('beklenen', Colors.blueGrey, showPending, (val) {
                 setState(() => showPending = val);
               }),
               SizedBox(width: 16.w),
@@ -149,7 +148,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
                   ),
                   SizedBox(height: 16.h),
                   Text(
-                    "Gösterilecek etkinlik yok.",
+                    'Gösterilecek etkinlik yok.',
                     style: TextStyle(
                       fontFamily: 'Urbanist',
                       fontSize: 16.sp,
@@ -229,15 +228,15 @@ class _MyEventsPageState extends State<MyEventsPage> {
 
     String timeText;
     if (diff.isNegative) {
-      timeText = "Bitti";
+      timeText = 'Bitti';
     } else if (diff.inDays > 0) {
-      timeText = "${diff.inDays} gün";
+      timeText = '${diff.inDays} gün';
     } else {
-      timeText = "${diff.inHours} sa";
+      timeText = '${diff.inHours} sa';
     }
 
     // Statik Konum (Modeline eklediğinde burayı güncelle)
-    const locationName = "Moda, Kadıköy";
+    const locationName = 'Moda, Kadıköy';
 
     return Container(
       padding: EdgeInsets.symmetric(vertical: 4.h),
@@ -306,7 +305,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
                         color: Colors.black54,
                       ),
                       Text(
-                        " 2.5 km ",
+                        ' 2.5 km ',
                         style: TextStyle(
                           fontSize: 10.sp,
                           color: Colors.black54,
@@ -321,7 +320,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
                         color: Colors.black54,
                       ),
                       Text(
-                        " ${event.participants.length}/${event.capacity} ",
+                        ' ${event.participants.length}/${event.capacity} ',
                         style: TextStyle(
                           fontSize: 10.sp,
                           color: Colors.black54,
@@ -336,7 +335,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
                         color: Colors.black54,
                       ),
                       Text(
-                        " $timeText ",
+                        ' $timeText ',
                         style: TextStyle(
                           fontSize: 10.sp,
                           color: Colors.black54,
@@ -363,7 +362,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
                           'image': event.creator.profileImageUrl,
                           'location': locationName,
                           'participants':
-                              "${event.participants.length}/${event.capacity}",
+                              '${event.participants.length}/${event.capacity}',
                           'time': timeText,
                         },
                       );
