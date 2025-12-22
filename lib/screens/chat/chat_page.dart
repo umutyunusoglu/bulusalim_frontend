@@ -1,22 +1,14 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/components/stacked_avatars.dart'; // <-- StackedAvatars EKLENDİ
-import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/entities/chat/message_entity.dart';
 import 'package:bulusalim/domain/repositories/chat_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 class ChatPage extends StatefulWidget {
-  final String eventID;
-  final String chatTitle;
-  final List<AvatarInfo> participantAvatars;
-  final String location;
-  final String participantStatus;
-  final String remainingTime;
-
   const ChatPage({
     required this.eventID,
     required this.chatTitle,
@@ -26,6 +18,13 @@ class ChatPage extends StatefulWidget {
     required this.remainingTime,
     super.key,
   });
+
+  final String eventID;
+  final String chatTitle;
+  final List<AvatarInfo> participantAvatars;
+  final String location;
+  final String participantStatus;
+  final String remainingTime;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -71,7 +70,7 @@ class _ChatPageState extends State<ChatPage> {
       createdAt: DateTime.now(),
     );
 
-    _chatRepository.sendMessage(widget.eventID as Identifier, message).then((
+    _chatRepository.sendMessage(widget.eventID, message).then((
       _,
     ) {
       _messageController.clear();
@@ -103,7 +102,7 @@ class _ChatPageState extends State<ChatPage> {
             Expanded(
               child: StreamBuilder<List<MessageEntity>>(
                 stream: _chatRepository.getChatMessagesStream(
-                  widget.eventID as Identifier,
+                  widget.eventID,
                 ),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -115,7 +114,7 @@ class _ChatPageState extends State<ChatPage> {
                   if (messages.isEmpty) {
                     return Center(
                       child: Text(
-                        "Sohbeti başlat...",
+                        'Sohbeti başlat...',
                         style: TextStyle(
                           color: Colors.grey,
                           fontSize: 14.sp,
@@ -213,7 +212,7 @@ class _ChatPageState extends State<ChatPage> {
                     SizedBox(width: 2.w),
                     Expanded(
                       child: Text(
-                        "${widget.location} • ${widget.participantStatus} • ${widget.remainingTime}",
+                        '${widget.location} • ${widget.participantStatus} • ${widget.remainingTime}',
                         style: TextStyle(
                           fontFamily: 'Urbanist',
                           fontSize: 11.sp,
@@ -371,7 +370,7 @@ class _ChatPageState extends State<ChatPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        "kullanici",
+                        'kullanici',
                         style: TextStyle(
                           color: Colors.grey,
                           fontSize: 10.sp,

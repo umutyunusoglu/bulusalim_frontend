@@ -19,7 +19,7 @@ class EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 1. VERİ HAZIRLIĞI
-    final List<AvatarInfo> dynamicAvatars = participants
+    final dynamicAvatars = participants
         .map(
           (user) => AvatarInfo(
             userId: user.userID,
@@ -28,7 +28,7 @@ class EventCard extends StatelessWidget {
         )
         .toList();
 
-    final List<AvatarInfo> staticAvatars = [
+    final staticAvatars = <AvatarInfo>[
       AvatarInfo(
         userId: '',
         imageUrl: 'https://picsum.photos/seed/avatar1/100/100',
@@ -43,13 +43,13 @@ class EventCard extends StatelessWidget {
       ),
     ];
 
-    final List<AvatarInfo> participantAvatars = dynamicAvatars.isNotEmpty
+    final participantAvatars = dynamicAvatars.isNotEmpty
         ? dynamicAvatars
         : staticAvatars;
 
     const staticBackgroundImageUrl =
         'https://picsum.photos/seed/tracking/800/600';
-    const String staticLocationName = 'İnegöl, Bolu';
+    const staticLocationName = 'İnegöl, Bolu';
     const double staticDistanceInKm = 225;
 
     // 2. ARAYÜZ (UI) YAPISI

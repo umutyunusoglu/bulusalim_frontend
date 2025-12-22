@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 
 class LoginButton extends StatelessWidget {
   const LoginButton({
-    super.key,
     required this.label,
     required this.onPress,
     required this.height,
     required this.width,
     required this.borderRadius,
     required this.borderWidth,
+    super.key,
 
     this.backgroundColor,
     this.textColor,

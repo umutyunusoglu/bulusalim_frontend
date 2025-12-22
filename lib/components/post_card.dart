@@ -307,7 +307,7 @@ class _PostCardState extends State<PostCard> {
     required String caption,
     required List<String> tags,
   }) {
-    final timeStyle = const TextStyle(
+    const timeStyle = TextStyle(
       fontFamily: 'Urbanist',
       fontSize: 12,
       color: Color(0xFF8E8E93),

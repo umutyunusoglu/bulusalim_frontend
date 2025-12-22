@@ -85,6 +85,13 @@ class PostParticipantEntity extends Equatable {
     required this.username,
     required this.profileImageUrl,
   });
+  factory PostParticipantEntity.fromMap(Map<String, dynamic> map) {
+    return PostParticipantEntity(
+      userID: map['userID'] as Identifier,
+      username: map['username'] as String,
+      profileImageUrl: map['profileImageUrl'] as String,
+    );
+  }
 
   PostParticipantEntity copyWith({
     Identifier? userID,
@@ -98,13 +105,6 @@ class PostParticipantEntity extends Equatable {
     );
   }
 
-  factory PostParticipantEntity.fromMap(Map<String, dynamic> map) {
-    return PostParticipantEntity(
-      userID: map['userID'] as Identifier,
-      username: map['username'] as String,
-      profileImageUrl: map['profileImageUrl'] as String,
-    );
-  }
   Map<String, dynamic> toMap() {
     return {
       'userID': userID,

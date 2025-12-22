@@ -20,8 +20,6 @@ import 'package:go_router/go_router.dart';
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 // 2. Shell Yönlendirici (Navbar içindeki sekmeler için)
-final GlobalKey<NavigatorState> _shellNavigatorKey =
-    GlobalKey<NavigatorState>();
 
 final router = GoRouter(
   navigatorKey: _rootNavigatorKey,
@@ -94,7 +92,7 @@ final router = GoRouter(
                     final extra = state.extra as Map<String, dynamic>?;
 
                     // --- AVATAR LISTESINI GÜVENLİ ÇEKME ---
-                    List<AvatarInfo> avatarList = [];
+                    var avatarList = <AvatarInfo>[];
                     if (extra != null && extra['avatars'] != null) {
                       avatarList = (extra['avatars'] as List<dynamic>)
                           .map((e) => e as AvatarInfo)
@@ -120,8 +118,7 @@ final router = GoRouter(
                         final eventID = state.pathParameters['eventID']!;
                         final extra = state.extra as Map<String, dynamic>?;
 
-                        // Ayarlar sayfası için de aynı avatar listesini çekiyoruz
-                        List<AvatarInfo> avatarList = [];
+                        var avatarList = <AvatarInfo>[];
                         if (extra != null && extra['avatars'] != null) {
                           avatarList = (extra['avatars'] as List<dynamic>)
                               .map((e) => e as AvatarInfo)
@@ -136,7 +133,6 @@ final router = GoRouter(
                           participantStatus:
                               (extra?['participants'] as String?) ?? '',
                           remainingTime: (extra?['time'] as String?) ?? '',
-                          isCreator: true, // İleride gerçek veri ile değişecek
                         );
                       },
                     ),

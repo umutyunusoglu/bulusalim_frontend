@@ -1,4 +1,3 @@
-import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
 import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -19,14 +18,11 @@ class ProfileGridTab extends StatelessWidget {
         crossAxisCount: 2, // 2 Sütun
         crossAxisSpacing: 16.w, // Yatay boşluk
         mainAxisSpacing: 16.h, // Dikey boşluk
-        childAspectRatio: 1, // Kare (173x173 için)
       ),
       itemCount: pinnedPosts.length,
       itemBuilder: (context, index) {
         // İkon Mantığı: 0. eleman Access Time, diğerleri Push Pin
-        final IconData iconData = index == 0
-            ? Icons.access_time_filled
-            : Icons.push_pin;
+        final iconData = index == 0 ? Icons.access_time_filled : Icons.push_pin;
 
         return Stack(
           fit: StackFit.expand,

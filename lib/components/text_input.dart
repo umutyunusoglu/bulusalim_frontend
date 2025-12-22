@@ -46,7 +46,6 @@ class TextInput extends StatelessWidget {
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         if (title != null) ...[
           Text(
@@ -95,7 +94,7 @@ class TextInput extends StatelessWidget {
             // --- BORDER AYARLARI ---
 
             // 1. Normal Durum (Enabled): Çizgi YOK, sadece dolgu ve radius var.
-            enabledBorder: getBorder(isVisible: false),
+            enabledBorder: getBorder(),
 
             // 2. Odaklanma (Focus): Temanın renginde çizgi VAR.
             focusedBorder: getBorder(

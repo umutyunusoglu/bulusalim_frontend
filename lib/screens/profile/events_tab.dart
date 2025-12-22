@@ -4,16 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ProfileEventsTab extends StatelessWidget {
-  final List<EventEntity> currentEvents;
-  final List<EventEntity> consideredEvents;
-  final bool isLoading;
-
   const ProfileEventsTab({
-    super.key,
     required this.currentEvents,
     required this.consideredEvents,
     this.isLoading = false,
+    super.key,
   });
+  final List<EventEntity> currentEvents;
+  final List<EventEntity> consideredEvents;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +29,7 @@ class ProfileEventsTab extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: _buildSectionHeader(
               context,
-              "Güncel Etkinlik",
+              'Güncel Etkinlik',
               isActive: true,
             ),
           ),
@@ -45,14 +44,14 @@ class ProfileEventsTab extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: 16.w),
               child: _buildEmptyState(
                 context,
-                "Henüz güncel bir etkinliğin yok.",
+                'Henüz güncel bir etkinliğin yok.',
               ),
             )
           else
             ...currentEvents.map(
               (event) => EventCard(
                 event: event,
-                participants: event.participants ?? [],
+                participants: event.participants,
               ),
             ),
 
@@ -63,7 +62,7 @@ class ProfileEventsTab extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: _buildSectionHeader(
               context,
-              "Düşünülen Etkinlikler",
+              'Düşünülen Etkinlikler',
               isActive: false,
             ),
           ),
@@ -78,14 +77,14 @@ class ProfileEventsTab extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: 16.w),
               child: _buildEmptyState(
                 context,
-                "Henüz kaydettiğin bir etkinlik yok.",
+                'Henüz kaydettiğin bir etkinlik yok.',
               ),
             )
           else
             ...consideredEvents.map(
               (event) => EventCard(
                 event: event,
-                participants: event.participants ?? [],
+                participants: event.participants,
               ),
             ),
 

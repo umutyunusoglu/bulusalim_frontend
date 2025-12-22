@@ -4,16 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
 class EventSettingsPage extends StatefulWidget {
-  final String eventID;
-  final String chatTitle;
-  final List<AvatarInfo> participantAvatars;
-  final String location;
-  final String participantStatus;
-  final String remainingTime;
-  final bool isCreator;
-
   const EventSettingsPage({
-    super.key,
     required this.eventID,
     required this.chatTitle,
     required this.participantAvatars,
@@ -21,7 +12,16 @@ class EventSettingsPage extends StatefulWidget {
     required this.participantStatus,
     required this.remainingTime,
     this.isCreator = true,
+    super.key,
   });
+
+  final String eventID;
+  final String chatTitle;
+  final List<AvatarInfo> participantAvatars;
+  final String location;
+  final String participantStatus;
+  final String remainingTime;
+  final bool isCreator;
 
   @override
   State<EventSettingsPage> createState() => _EventSettingsPageState();
@@ -50,7 +50,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                   children: [
                     Center(
                       child: Text(
-                        "Etkinlik Ayarları",
+                        'Etkinlik Ayarları',
                         style: TextStyle(
                           fontFamily: 'Urbanist',
                           fontWeight: FontWeight.bold,
@@ -63,7 +63,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
 
                     // Etkinlik Konumu
                     _buildInfoRow(
-                      "Etkinlik Konumu",
+                      'Etkinlik Konumu',
                       widget.location,
                       icon: Icons.location_on_outlined,
                     ),
@@ -71,8 +71,8 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
 
                     // Etkinlik Zamanı
                     _buildInfoRow(
-                      "Etkinlik Zamanı",
-                      "15.30 - 18.30",
+                      'Etkinlik Zamanı',
+                      '15.30 - 18.30',
                       icon: Icons.access_time,
                       isTime: true,
                     ),
@@ -80,8 +80,8 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
 
                     // Etkinliği Kilitle
                     _buildSwitchRow(
-                      "Etkinliği Kilitle",
-                      "Etkinliğin diğer kullanıcıların karşısına çıkmasını engellersin.",
+                      'Etkinliği Kilitle',
+                      'Etkinliğin diğer kullanıcıların karşısına çıkmasını engellersin.',
                       isLocked,
                       (val) => setState(() => isLocked = val),
                     ),
@@ -89,19 +89,19 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
 
                     // Katılımcı Seçenekleri
                     _buildActionRow(
-                      "Katılımcı Seçenekleri",
+                      'Katılımcı Seçenekleri',
                       subtitle:
-                          "Etkinliğin hangi kullanıcıların karşısına çıkacağını düzenlersin.",
+                          'Etkinliğin hangi kullanıcıların karşısına çıkacağını düzenlersin.',
                     ),
                     _buildDivider(),
 
                     // Etkinliği Bildir
-                    _buildActionRow("Etkinliği Bildir"),
+                    _buildActionRow('Etkinliği Bildir'),
                     _buildDivider(),
 
                     // Etkinlikten Ayrıl
                     _buildActionRow(
-                      "Etkinlikten Ayrıl",
+                      'Etkinlikten Ayrıl',
                       textColor: const Color(0xFFFF5722),
                     ),
                     _buildDivider(),
@@ -109,7 +109,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                     // Etkinliği İptal Et
                     if (widget.isCreator)
                       _buildActionRow(
-                        "Etkinliği İptal Et",
+                        'Etkinliği İptal Et',
                         textColor: const Color(0xFFFF5722),
                       ),
                   ],
@@ -174,7 +174,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                     SizedBox(width: 2.w),
                     Expanded(
                       child: Text(
-                        "${widget.location} • ${widget.participantStatus} • ${widget.remainingTime}",
+                        '${widget.location} • ${widget.participantStatus} • ${widget.remainingTime}',
                         style: TextStyle(
                           fontFamily: 'Urbanist',
                           fontSize: 11.sp,
@@ -212,8 +212,8 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
               fontFamily: 'Urbanist',
               fontSize: 16.sp, // 16px
               fontWeight: FontWeight.w500, // Medium (500)
-              height: 1.0, // Line Height %100
-              letterSpacing: 0.0, // Letter Spacing 0
+              height: 1, // Line Height %100
+              letterSpacing: 0, // Letter Spacing 0
               color: Colors.black87,
             ),
           ),
@@ -267,8 +267,8 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                     fontFamily: 'Urbanist',
                     fontSize: 16.sp, // 16px
                     fontWeight: FontWeight.w500, // Medium
-                    height: 1.0, // %100
-                    letterSpacing: 0.0,
+                    height: 1, // %100
+                    letterSpacing: 0,
                     color: Colors.black87,
                   ),
                 ),
@@ -287,7 +287,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
           Switch.adaptive(
             value: value,
             onChanged: onChanged,
-            activeColor: const Color(0xFFFF5722),
+            activeThumbColor: const Color(0xFFFF5722),
           ),
         ],
       ),
@@ -310,8 +310,8 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                 fontSize: 16.sp, // 16px
                 // Eğer özel renk (kırmızı) varsa da w500, yoksa da w500
                 fontWeight: FontWeight.w500,
-                height: 1.0, // %100
-                letterSpacing: 0.0,
+                height: 1, // %100
+                letterSpacing: 0,
                 color: textColor ?? Colors.black87,
               ),
             ),
