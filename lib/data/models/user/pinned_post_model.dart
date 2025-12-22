@@ -8,7 +8,7 @@ class PinnedPostModel extends Model<PinnedPostEntity> {
   PinnedPostModel({
     required this.postID,
     required this.caption,
-    required this.geolocation,
+    required this.location,
     required this.imageUrls,
     required this.participants,
     required this.emoteCounts,
@@ -19,7 +19,7 @@ class PinnedPostModel extends Model<PinnedPostEntity> {
     return PinnedPostModel(
       postID: entity.postID,
       caption: entity.caption,
-      geolocation: entity.geolocation,
+      location: entity.location,
       imageUrls: entity.imageUrls,
       participants: entity.participants,
       emoteCounts: entity.emoteCounts,
@@ -28,45 +28,27 @@ class PinnedPostModel extends Model<PinnedPostEntity> {
   }
 
   factory PinnedPostModel.fromFirestore(Map<String, dynamic> doc) {
-    // 1. Geolocation Güvenli Çeviri
-    Geolocation safeGeolocation;
-    final rawGeo = doc['geolocation'];
+    final geolocation = doc['location'] as GeoPoint;
+    final location = Geolocation(
+      latitude: geolocation.latitude,
+      longitude: geolocation.longitude,
+    );
 
-    if (rawGeo is Map<String, dynamic>) {
-      safeGeolocation = Geolocation.fromMap(rawGeo);
-    } else if (rawGeo is GeoPoint) {
-      safeGeolocation = Geolocation(
-        latitude: rawGeo.latitude,
-        longitude: rawGeo.longitude,
-      );
-    } else {
-      // DÜZELTME 1: 'const' kaldırıldı. Geolocation sınıfı const desteklemiyor olabilir.
-      safeGeolocation = Geolocation(latitude: 0, longitude: 0);
-    }
+    final participants = (doc['participants'] as List<dynamic>)
+        .map((e) => PostParticipantEntity.fromMap(e as Map<String, dynamic>))
+        .toList();
 
-      geolocation: Geolocation.fromMap(
-        doc['location'] as Map<String, dynamic>,
-      ),
-      imageUrls: List<String>.from(doc['imageUrls'] as List<dynamic>),
-      participants: (doc['participants'] as List<dynamic>)
-          .map((e) => PostParticipantEntity.fromMap(e as Map<String, dynamic>))
-          .toList();
-    }
-
-    // 3. EmoteCounts Güvenli Çeviri
-    Map<String, int> safeEmoteCounts = {};
-    if (doc['emoteCounts'] != null && doc['emoteCounts'] is Map) {
-      // DÜZELTME 2: 'as Map' eklendi ve güvenli dönüşüm sağlandı.
-      safeEmoteCounts = Map<String, int>.from(doc['emoteCounts'] as Map);
-    }
+    final emoteCounts = (doc['emoteCounts'] as Map<String, dynamic>).map(
+      (key, value) => MapEntry(key, (value as num).toInt()),
+    );
 
     return PinnedPostModel(
       postID: doc['postID'] as String? ?? '',
       caption: doc['caption'] as String? ?? '',
-      geolocation: safeGeolocation,
+      location: location,
       imageUrls: (doc['imageUrls'] as List?)?.cast<String>().toList() ?? [],
-      participants: safeParticipants,
-      emoteCounts: safeEmoteCounts,
+      participants: participants,
+      emoteCounts: emoteCounts,
       createdAt: (doc['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
@@ -76,7 +58,7 @@ class PinnedPostModel extends Model<PinnedPostEntity> {
     return PinnedPostEntity(
       postID: postID,
       caption: caption,
-      geolocation: geolocation,
+      location: location,
       imageUrls: imageUrls,
       participants: participants,
       emoteCounts: emoteCounts,
@@ -89,7 +71,7 @@ class PinnedPostModel extends Model<PinnedPostEntity> {
     return {
       'postID': postID,
       'caption': caption,
-      'geolocation': geolocation.toMap(),
+      'geolocation': location.toMap(),
       'imageUrls': imageUrls,
       'participants': participants.map((e) => e.toMap()).toList(),
       'emoteCounts': emoteCounts,
@@ -99,7 +81,7 @@ class PinnedPostModel extends Model<PinnedPostEntity> {
 
   final String postID;
   final String caption;
-  final Geolocation geolocation;
+  final Geolocation location;
   final List<String> imageUrls;
   final List<PostParticipantEntity> participants;
   final Map<String, int> emoteCounts;
