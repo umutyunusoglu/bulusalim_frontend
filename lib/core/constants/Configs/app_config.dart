@@ -20,6 +20,9 @@ class AppConfig {
   static const int feedBatchSize = 40;
   static const int feedIDListSize = 1000;
   static const int feedFetchThreshold = 20;
+  static const int feedWarmupTurns = 5;
 
   static const int maxPostCaptionLength = 50;
+
+  static const String hiveBoxName = 'app_data_box';
 }
