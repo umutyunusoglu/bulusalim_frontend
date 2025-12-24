@@ -1,9 +1,9 @@
 import 'dart:ui';
-
 import 'package:bulusalim/app_router.dart';
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/constants/theme/app_theme.dart';
+import 'package:bulusalim/domain/repositories/feed_repository.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -79,6 +79,9 @@ Future<void> main() async {
 
   final sessionService = getIt<SessionService>();
   await sessionService.init();
+
+  final feedRepository = getIt<FeedRepository>();
+  await feedRepository.warmup();
 
   runApp(const ProviderScope(child: MainApp()));
 }

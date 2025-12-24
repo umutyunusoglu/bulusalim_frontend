@@ -254,4 +254,28 @@ class FeedRepositoryImpl implements FeedRepository {
 
     return entity;
   }
+
+  @override
+  Future<void> warmup() async {
+    var turns = AppConfig.feedWarmupTurns;
+    final batch = await fetchNextFeedBatch(null);
+    _logger.info('FeedRepository warmup completed with ${batch.length} items.');
+
+    turns = turns - 1;
+
+    for (var i = 0; i < turns; i++) {
+      if (batch.isNotEmpty) {
+        final lastItem = batch.last;
+        final nextBatch = await fetchNextFeedBatch(lastItem);
+        _logger.info(
+          'Warmup turn ${i + 1}: fetched ${nextBatch.length} items.',
+        );
+        if (nextBatch.isEmpty) {
+          break;
+        }
+      } else {
+        break;
+      }
+    }
+  }
 }
