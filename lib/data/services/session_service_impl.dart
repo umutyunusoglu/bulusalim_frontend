@@ -43,14 +43,11 @@ class SessionServiceImpl implements SessionService {
   @override
   EventEntity? get currentEvent => _eventNotifier.value;
 
-  // --- INIT (KRİTİK BÖLÜM) ---
   @override
   Future<void> init() async {
-    // Auth dinleyicisi
     _authSubscription = _authService.onAuthStateChanged.listen((
       userID,
     ) async {
-      // 1. Önce eski etkinlik dinleyicisini kapat (Memory Leak önlemi)
       await _eventsSubscription?.cancel();
       _eventsSubscription = null;
 
@@ -58,12 +55,10 @@ class SessionServiceImpl implements SessionService {
         _userNotifier.value = null;
         _eventNotifier.value = null;
       } else {
-        // 2. Kullanıcı Giriş Yaptı: Önce temel bilgileri çek
         final userEntity = await _userRepository.getUser(userID);
         if (userEntity != null) {
           _userNotifier.value = userEntity;
 
-          // 3. VE ŞİMDİ CANLI YAYINA BAĞLAN (Active Events Stream)
           _eventsSubscription = _userRepository
               .watchActiveEvents(userID)
               .listen(
