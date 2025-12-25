@@ -46,6 +46,7 @@ class EventModel extends Model<EventEntity> {
   @override
   factory EventModel.fromFirestore(Map<String, dynamic> doc) {
     final attributesMap = doc['attributes'] as Map<String, dynamic>;
+
     final geolocation = doc['location'] as GeoPoint;
     final location = Geolocation(
       latitude: geolocation.latitude,

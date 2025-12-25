@@ -41,7 +41,7 @@ class UserRepositoryImpl implements UserRepository {
       final historySnapshot = await _firestore
           .collection('users')
           .doc(uid)
-          .collection('eventHistory')
+          .collection('eventLog')
           .where('status', whereIn: ['upcoming', 'ongoing'])
           .orderBy('date')
           .get();
@@ -202,14 +202,14 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Future<List<UserEventEntity>> getUserEventHistory(
+  Future<List<UserEventEntity>> getUserEventLog(
     Identifier userID,
   ) async {
     _logger.info('Getting events for user: $userID');
     final snapshot = await _firestore
         .collection('users')
         .doc(userID)
-        .collection('eventHistory')
+        .collection('eventLog')
         .get();
 
     final events = snapshot.docs
@@ -227,7 +227,7 @@ class UserRepositoryImpl implements UserRepository {
     return _firestore
         .collection('users')
         .doc(userID)
-        .collection('eventHistory')
+        .collection('eventLog')
         .where('status', whereIn: ['upcoming', 'ongoing']) // Sadece aktifler
         .orderBy('date')
         .snapshots()
@@ -415,7 +415,7 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Future<List<UserEventEntity>?> getUserEventHistoryFiltered(
+  Future<List<UserEventEntity>?> getUserEventLogFiltered(
     Identifier userID,
     List<EventStatusEnum> statuses,
   ) {
@@ -428,7 +428,7 @@ class UserRepositoryImpl implements UserRepository {
     return _firestore
         .collection('users')
         .doc(userID)
-        .collection('eventHistory')
+        .collection('eventLog')
         .where('status', whereIn: statusStrings)
         .get()
         .then((snapshot) {

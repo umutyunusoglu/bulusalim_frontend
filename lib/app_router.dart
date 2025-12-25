@@ -108,6 +108,7 @@ final router = GoRouter(
                       participantStatus:
                           (extra?['participants'] as String?) ?? '',
                       remainingTime: (extra?['time'] as String?) ?? '',
+                      creatorID: (extra?['creatorID'] as String?) ?? '',
                     );
                   },
                   // 3. ALT EKRAN: AYARLAR (EventSettingsPage)
@@ -125,6 +126,7 @@ final router = GoRouter(
                               .toList();
                         }
 
+                        var creatorID = extra?['creatorID'] as String? ?? '';
                         return EventSettingsPage(
                           eventID: eventID,
                           chatTitle: (extra?['title'] as String?) ?? 'Ayarlar',
@@ -133,6 +135,7 @@ final router = GoRouter(
                           participantStatus:
                               (extra?['participants'] as String?) ?? '',
                           remainingTime: (extra?['time'] as String?) ?? '',
+                          creatorID: (extra?['creatorID'] as String?) ?? '',
                         );
                       },
                     ),
