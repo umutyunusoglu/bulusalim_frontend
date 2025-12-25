@@ -90,6 +90,10 @@ class _ProfilePageState extends State<ProfilePage> {
           numberOfEvents += 1;
         case EventStatusEnum.cancelled:
           break;
+        case EventStatusEnum.pending:
+          break;
+        case EventStatusEnum.declined:
+          break;
       }
     }
 

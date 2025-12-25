@@ -1,3 +1,4 @@
+import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -75,7 +76,7 @@ class StackedAvatars extends StatelessWidget {
                   height: currentSize,
                   child: ClipOval(
                     child: Image.network(
-                      currentUser.imageUrl,
+                      fixEmulatorUrl(currentUser.imageUrl),
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return ColoredBox(

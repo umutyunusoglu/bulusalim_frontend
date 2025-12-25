@@ -1,4 +1,6 @@
 enum EventStatusEnum {
+  pending._('pending'),
+  declined._('declined'),
   upcoming._('upcoming'),
   saved._('saved'),
   ongoing._('ongoing'),
@@ -13,6 +15,10 @@ enum EventStatusEnum {
 
   static EventStatusEnum fromString(String value) {
     switch (value) {
+      case 'pending':
+        return pending;
+      case 'declined':
+        return declined;
       case 'upcoming':
         return upcoming;
       case 'ongoing':
