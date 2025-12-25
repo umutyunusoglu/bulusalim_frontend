@@ -17,6 +17,7 @@ class EventSettingsPage extends StatefulWidget {
     required this.location,
     required this.participantStatus,
     required this.remainingTime,
+    required this.creatorID,
     super.key,
   });
 
@@ -26,6 +27,7 @@ class EventSettingsPage extends StatefulWidget {
   final String location;
   final String participantStatus;
   final String remainingTime;
+  final String creatorID;
 
   @override
   State<EventSettingsPage> createState() => _EventSettingsPageState();
@@ -71,7 +73,11 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
   Widget build(BuildContext context) {
     final sessionService = getIt<SessionService>();
     final currentUser = sessionService.currentUser;
-    final isCreator = true;
+    final isCreator =
+        currentUser != null && currentUser.userID == widget.creatorID;
+    _logger.debug(
+      "MyId : ${currentUser?.userID}, CreatorId: ${widget.creatorID}",
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
