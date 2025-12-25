@@ -1,8 +1,8 @@
 enum EventStatusEnum {
-  pending._('pending'),
-  declined._('declined'),
-  upcoming._('upcoming'),
   saved._('saved'),
+  pending._('pending'),
+  rejected._('rejected'),
+  upcoming._('upcoming'),
   ongoing._('ongoing'),
   completed._('completed'),
   cancelled._('cancelled');
@@ -17,8 +17,8 @@ enum EventStatusEnum {
     switch (value) {
       case 'pending':
         return pending;
-      case 'declined':
-        return declined;
+      case 'rejected':
+        return rejected;
       case 'upcoming':
         return upcoming;
       case 'ongoing':
