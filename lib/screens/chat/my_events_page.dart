@@ -1,3 +1,4 @@
+import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
 import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart';
 import 'package:bulusalim/data/models/event/event_model.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
@@ -21,38 +22,27 @@ class _MyEventsPageState extends State<MyEventsPage> {
   bool showPending = false;
 
   /// 1. VERİ AKIŞI (STREAM)
+  /// TODO: Repository move
   Stream<List<EventEntity>> get _myEventsStream {
     return FirebaseFirestore.instance
-        .collection('events')
+        .collection('users')
+        .doc(currentUserId) // Doğrudan kullanıcının klasörü
+        .collection('eventHistory') // Onun özel listesi
+        .where(
+          'status',
+          whereIn: [
+            'upcoming',
+            'ongoing',
+            'pending',
+          ],
+        )
         .orderBy('createdAt', descending: true)
-        .snapshots()
+        .snapshots() // Stream burada
         .map((snapshot) {
-          final allEvents = snapshot.docs
-              .map((doc) {
-                try {
-                  return EventModel.fromFirestore(doc.data()).toEntity();
-                } on Exception {
-                  return null;
-                }
-              })
-              .whereType<EventEntity>()
-              .toList();
-
-          // Filtrele: Sadece benimle ilgili olanlar
-          final myEvents =
-              allEvents.where((event) {
-                final isCreator = event.creator.userID == currentUserId;
-                final isParticipant = event.participants.any(
-                  (p) => p.userID == currentUserId,
-                );
-                return isCreator || isParticipant;
-              }).toList()..sort((a, b) {
-                final scoreA = _calculateSortScore(a);
-                final scoreB = _calculateSortScore(b);
-                return scoreB.compareTo(scoreA);
-              });
-
-          return myEvents;
+          return snapshot.docs.map((doc) {
+            // Modeli çevir
+            return EventModel.fromFirestore(doc.data()).toEntity();
+          }).toList();
         });
   }
 
@@ -248,7 +238,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
             borderRadius: BorderRadius.circular(50.r),
             child: Image.network(
               (event.creator.profileImageUrl.isNotEmpty)
-                  ? event.creator.profileImageUrl
+                  ? fixEmulatorUrl(event.creator.profileImageUrl)
                   : 'https://picsum.photos/200',
               width: 56.w,
               height: 56.w,
