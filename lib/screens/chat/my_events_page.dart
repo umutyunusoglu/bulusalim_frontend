@@ -1,6 +1,14 @@
+import 'package:bulusalim/application/providers/get_it_init.dart';
+import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
+import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart';
+import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
 import 'package:bulusalim/data/models/event/event_model.dart';
+import 'package:bulusalim/data/models/user/user_event_model.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
+import 'package:bulusalim/domain/entities/user/user_event_entity.dart';
+import 'package:bulusalim/domain/repositories/event_repository.dart';
+import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -15,46 +23,61 @@ class MyEventsPage extends StatefulWidget {
 }
 
 class _MyEventsPageState extends State<MyEventsPage> {
-  final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
-
+  final String currentUserId = getIt<SessionService>().currentUser!.userID;
+  late final Stream<List<UserEventEntity>> _eventsStream;
   bool showApproved = false;
   bool showPending = false;
 
-  /// 1. VERİ AKIŞI (STREAM)
-  Stream<List<EventEntity>> get _myEventsStream {
-    return FirebaseFirestore.instance
-        .collection('events')
-        .orderBy('createdAt', descending: true)
+  @override
+  void initState() {
+    super.initState();
+    final LoggingService logger = getIt<LoggingService>();
+
+    // 1. ID'yi kontrol et
+    logger.debug("DEBUG: Sorgu yapılan User ID: $currentUserId");
+
+    final query = FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUserId)
+        .collection('eventLog')
+        .where('status', whereIn: ['upcoming', 'ongoing', 'pending']);
+
+    // 2. Stream'i manuel dinle ve hatayı gör
+    _eventsStream = query
         .snapshots()
         .map((snapshot) {
-          final allEvents = snapshot.docs
-              .map((doc) {
-                try {
-                  return EventModel.fromFirestore(doc.data()).toEntity();
-                } on Exception {
-                  return null;
-                }
-              })
-              .whereType<EventEntity>()
-              .toList();
+          logger.debug(
+            "DEBUG: Snapshot geldi. Doküman sayısı: ${snapshot.docs.length}",
+          );
 
-          // Filtrele: Sadece benimle ilgili olanlar
-          final myEvents =
-              allEvents.where((event) {
-                final isCreator = event.creator.userID == currentUserId;
-                final isParticipant = event.participants.any(
-                  (p) => p.userID == currentUserId,
-                );
-                return isCreator || isParticipant;
-              }).toList()..sort((a, b) {
-                final scoreA = _calculateSortScore(a);
-                final scoreB = _calculateSortScore(b);
-                return scoreB.compareTo(scoreA);
-              });
+          // Eğer 0 ise filtreleri kaldırıp dene veya koleksiyon adını kontrol et.
+          if (snapshot.docs.isEmpty) {
+            logger.debug(
+              "DEBUG: Veri yok! İndeks eksik olabilir veya status değerleri uyuşmuyor.",
+            );
+          }
 
-          return myEvents;
+          return snapshot.docs.map((doc) {
+            try {
+              // Model dönüşümünde hata olup olmadığını kontrol et
+              logger.debug("DEBUG: Dönüştürülen data: ${doc.data()}");
+              return UserEventModel.fromFirestore(doc.data()).toEntity();
+            } catch (e) {
+              logger.debug("DEBUG: Model Parse Hatası: $e");
+              rethrow;
+            }
+          }).toList();
+        })
+        .handleError((error) {
+          // BURASI ÇOK ÖNEMLİ: İndeks hatası buraya düşer
+          logger.debug(
+            "DEBUG: Stream Hatası (Muhtemel İndeks Eksikliği): $error",
+          );
+          return []; // Hata durumunda boş liste dön
         });
   }
+
+  /// 1. VERİ AKIŞI (STREAM)
 
   /// 2. SIRALAMA PUANI HESAPLAMA
   int _calculateSortScore(EventEntity event) {
@@ -64,10 +87,12 @@ class _MyEventsPageState extends State<MyEventsPage> {
       final me = event.participants.firstWhere(
         (p) => p.userID == currentUserId,
       );
+
       if (me.role == EventRoleEnum.organizer ||
           me.role == EventRoleEnum.participant) {
         return 2;
       }
+
       return 1;
     } on Exception {
       return 0;
@@ -110,33 +135,18 @@ class _MyEventsPageState extends State<MyEventsPage> {
           ),
         ],
       ),
-      body: StreamBuilder<List<EventEntity>>(
-        stream: _myEventsStream,
+      // 1. KATMAN: Kullanıcının katıldığı etkinlik ID'lerini dinliyoruz
+      body: StreamBuilder<List<UserEventEntity>>(
+        stream: _eventsStream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final events = snapshot.data ?? [];
+          final userEvents = snapshot.data ?? [];
 
-          // DEĞİŞİKLİK 2: Filtre Mantığı Güncellendi
-          // Eğer ikisi de seçili DEĞİLSE (!false && !false) -> HEPSİNİ GÖSTER
-          final visibleEvents = events.where((event) {
-            // Hiçbir filtre seçili değilse hepsini göster
-            if (!showApproved && !showPending) return true;
-
-            final score = _calculateSortScore(event);
-
-            // Eğer "Onaylı" seçiliyse, puanı 2 ve 3 olanları göster
-            if (showApproved && score >= 2) return true;
-
-            // Eğer "Beklenen" seçiliyse, puanı 1 olanları göster
-            if (showPending && score == 1) return true;
-
-            return false;
-          }).toList();
-
-          if (visibleEvents.isEmpty) {
+          // Eğer kullanıcının hiç etkinliği yoksa boşuna DB'ye gitme
+          if (userEvents.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -148,7 +158,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
                   ),
                   SizedBox(height: 16.h),
                   Text(
-                    'Gösterilecek etkinlik yok.',
+                    'Henüz bir etkinliğin yok.',
                     style: TextStyle(
                       fontFamily: 'Urbanist',
                       fontSize: 16.sp,
@@ -160,13 +170,68 @@ class _MyEventsPageState extends State<MyEventsPage> {
             );
           }
 
-          return ListView.separated(
-            padding: EdgeInsets.all(16.w),
-            itemCount: visibleEvents.length,
-            separatorBuilder: (c, i) =>
-                Divider(color: Colors.grey.shade100, height: 24.h),
-            itemBuilder: (context, index) {
-              return _buildEventControlCard(visibleEvents[index]);
+          final eventRepository = getIt<EventRepository>();
+
+          return FutureBuilder<List<EventEntity>>(
+            future: eventRepository.getEventsByIds(
+              userEvents.map((e) => e.eventId).toList(),
+            ),
+            builder: (context, eventSnapshot) {
+              if (eventSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final events = eventSnapshot.data ?? [];
+
+              // Filtreleme Mantığı
+              final visibleEvents = events.where((event) {
+                // Hiçbir filtre seçili değilse hepsini göster
+                if (!showApproved && !showPending) return true;
+
+                final score = _calculateSortScore(event);
+
+                // Eğer "Onaylı" seçiliyse, puanı 2 ve 3 olanları göster
+                if (showApproved && score >= 2) return true;
+
+                // Eğer "Beklenen" seçiliyse, puanı 1 olanları göster
+                if (showPending && score == 1) return true;
+
+                return false;
+              }).toList();
+
+              if (visibleEvents.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.event_note,
+                        size: 64.sp,
+                        color: Colors.grey.shade300,
+                      ),
+                      SizedBox(height: 16.h),
+                      Text(
+                        'Filtreye uygun etkinlik yok.',
+                        style: TextStyle(
+                          fontFamily: 'Urbanist',
+                          fontSize: 16.sp,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.separated(
+                padding: EdgeInsets.all(16.w),
+                itemCount: visibleEvents.length,
+                separatorBuilder: (c, i) =>
+                    Divider(color: Colors.grey.shade100, height: 24.h),
+                itemBuilder: (context, index) {
+                  return _buildEventControlCard(visibleEvents[index]);
+                },
+              );
             },
           );
         },
@@ -228,7 +293,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
 
     String timeText;
     if (diff.isNegative) {
-      timeText = 'Bitti';
+      timeText = 'Başladı';
     } else if (diff.inDays > 0) {
       timeText = '${diff.inDays} gün';
     } else {
@@ -248,7 +313,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
             borderRadius: BorderRadius.circular(50.r),
             child: Image.network(
               (event.creator.profileImageUrl.isNotEmpty)
-                  ? event.creator.profileImageUrl
+                  ? fixEmulatorUrl(event.creator.profileImageUrl)
                   : 'https://picsum.photos/200',
               width: 56.w,
               height: 56.w,
@@ -364,6 +429,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
                           'participants':
                               '${event.participants.length}/${event.capacity}',
                           'time': timeText,
+                          'creatorID': event.creator.userID,
                         },
                       );
                     },
