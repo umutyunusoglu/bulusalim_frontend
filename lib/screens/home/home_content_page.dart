@@ -144,7 +144,7 @@ class _HomeContentPageState extends State<HomeContentPage> {
 
           if (index == _feedItems.length) {
             return const Padding(
-              padding: EdgeInsets.all(16),
+              padding: EdgeInsets.only(top: 36),
               child: Center(child: CircularProgressIndicator.adaptive()),
             );
           }

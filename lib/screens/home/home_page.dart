@@ -4,7 +4,7 @@ import 'package:bulusalim/core/utils/types/enums/feed_type.dart';
 import 'package:bulusalim/screens/home/home_content_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart'; // YENİ IMPORT
+import 'package:go_router/go_router.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,8 +15,12 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final PageController _pageController = PageController();
+
+  // Hangi sekmenin seçili olduğunu tutan değişken (0: Senlik, 1: Arkadaşların, 2: Okul)
   int _currentPage = 0;
-  final List<String> _tabs = ['Senlik', 'Arkadaşların'];
+
+  // Sekme İsimleri
+  final List<String> _tabs = ['Senlik', 'Arkadaşların', 'Okul'];
 
   @override
   void dispose() {
@@ -30,64 +34,61 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // TEMA BAĞLANTISI
     final theme = Theme.of(context);
-    final iconColor = theme.colorScheme.secondary;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Stack(
           children: [
-            // KATMAN 1: ANA İÇERİK
+            // KATMAN 1: ANA İÇERİK (Header + Sayfalar)
             Column(
               children: [
-                /// Üst Başlık (Header)
+                // --- HEADER ve TAB BAR BİRLEŞİMİ ---
                 Header(
-                  title: Image.asset(
-                    'assets/bulusalim.png',
-                    height: 40.h,
+                  // Header'ın orta kısmına CustomTabBar'ı gönderiyoruz
+                  middleWidget: CustomTabBar(
+                    currentIndex: _currentPage, // Şu anki sayfa no
+                    tabs: _tabs, // İsim listesi
+                    onTabSelected: (index) {
+                      // Tab'a tıklanınca:
+                      setState(() => _currentPage = index); // Rengi güncelle
+                      _pageController.animateToPage(
+                        // Sayfayı kaydır
+                        index,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    },
                   ),
-                  trailing: Icon(
-                    Icons.notifications_none_outlined,
-                    color: iconColor,
-                    size: 28.sp,
-                  ),
+                  // trailing: null, // İstersen sağdaki ikonu buradan değiştirebilirsin
                 ),
 
-                /// Sekme Bar (TabBar)
-                CustomTabBar(
-                  currentIndex: _currentPage,
-                  tabs: _tabs,
-                  onTabSelected: (index) {
-                    setState(() => _currentPage = index);
-                    _pageController.animateToPage(
-                      index,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  },
-                ),
-
-                SizedBox(height: 5.h),
-
-                /// Sayfa İçeriği (PageView)
+                SizedBox(height: 10.h), // Header ile İçerik arası boşluk
                 Expanded(
                   child: PageView(
                     controller: _pageController,
                     onPageChanged: (index) {
+                      // Sayfa elle kaydırılınca tab rengini güncelle
                       setState(() => _currentPage = index);
                     },
                     children: const [
-                      SenlikPage(),
-                      ArkadaslarinPage(),
+                      // 1. Sayfa: Senlik
+                      HomeContentPage(feedType: FeedType.forYou),
+
+                      // 2. Sayfa: Arkadaşların
+                      HomeContentPage(feedType: FeedType.friendsOnly),
+
+                      // 3. Sayfa: Okul (Şimdilik boş bir text koydum)
+                      Center(child: Text("Okul Akışı Yakında...")),
+                      //HomeContentPage(feedType: FeedType.forYou),
                     ],
                   ),
                 ),
               ],
             ),
 
-            // KATMAN 2: FOTOĞRAF ÇEKME BUTONU (Custom FAB)
+            // KATMAN 2: KAMERA BUTONU (Sağ Alt)
             Positioned(
               right: 16.w,
               bottom: 14.h,
@@ -110,25 +111,5 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
-  }
-}
-
-// "Senlik" Akışı
-class SenlikPage extends StatelessWidget {
-  const SenlikPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const HomeContentPage(feedType: FeedType.forYou);
-  }
-}
-
-// "Arkadaşların" Akışı
-class ArkadaslarinPage extends StatelessWidget {
-  const ArkadaslarinPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const HomeContentPage(feedType: FeedType.friendsOnly);
   }
 }
