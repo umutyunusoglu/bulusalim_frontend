@@ -14,114 +14,127 @@ class AvatarInfo {
 class StackedAvatars extends StatelessWidget {
   const StackedAvatars({
     required this.avatarDataList,
+    this.size = 50,
     super.key,
   });
+
   final List<AvatarInfo> avatarDataList;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     if (avatarDataList.isEmpty) return const SizedBox.shrink();
 
-    // 1. Boyut Ayarları
-    final firstAvatarSize = 42.r;
-    final otherAvatarSize = 33.r;
-    final overlap = 14.r;
+    // 1. Ayarlar
+    final double avatarSize = size.w;
+    final double overlap = (size * 0.5).w;
 
     // İlk 3 kişiyi alıyoruz
     final items = avatarDataList.take(3).toList();
     final count = items.length;
 
     // 2. Toplam Genişlik Hesabı
-    var totalWidth = firstAvatarSize;
+    // İlk avatarın tam boyutu + diğerlerinin görünen kısmı (boyut - overlap)
+    double totalWidth = avatarSize;
     if (count > 1) {
-      totalWidth += (count - 1) * (otherAvatarSize - overlap);
+      totalWidth += (count - 1) * (avatarSize - overlap);
     }
 
     return SizedBox(
-      height: firstAvatarSize,
+      height: avatarSize,
       width: totalWidth,
       child: Stack(
         clipBehavior: Clip.none,
-        alignment: Alignment.bottomLeft,
-        children: List.generate(
-          count,
-          (index) {
-            final isFirst = index == 0;
-            final currentSize = isFirst ? firstAvatarSize : otherAvatarSize;
+        children:
+            List.generate(
+                  count,
+                  (index) {
+                    final currentUser = items[index];
 
-            // O anki kullanıcının verisi (ID + Foto)
-            final currentUser = items[index];
+                    // Sol pozisyon: Her eleman (Boyut - Overlap) kadar sağa kayar
+                    double leftPos = index * (avatarSize - overlap);
 
-            // Sol pozisyonu hesapla
-            double leftPos = 0;
-            if (index > 0) {
-              leftPos =
-                  (firstAvatarSize - overlap) +
-                  ((index - 1) * (otherAvatarSize - overlap));
-            }
-
-            return Positioned(
-              left: leftPos,
-              bottom: 0,
-              // Tıklama ve Navigasyon İşlemi
-              child: GestureDetector(
-                onTap: () {
-                  if (currentUser.userId.isNotEmpty) {
-                    context.push('/home/profile/${currentUser.userId}');
-                  }
-                },
-                child: SizedBox(
-                  width: currentSize,
-                  height: currentSize,
-                  child: ClipOval(
-                    child: Image.network(
-                      currentUser.imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return ColoredBox(
-                          color: Colors.grey.shade300,
-                          child: Icon(
-                            Icons.person,
-                            color: Colors.grey,
-                            size: currentSize / 2,
+                    return Positioned(
+                      left: leftPos,
+                      top: 0,
+                      bottom: 0,
+                      child: GestureDetector(
+                        onTap: () {
+                          if (currentUser.userId.isNotEmpty) {
+                            context.push('/home/profile/${currentUser.userId}');
+                          }
+                        },
+                        child: Container(
+                          width: avatarSize,
+                          height: avatarSize,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        ).reversed.toList(),
+                          child: ClipOval(
+                            child: Image.network(
+                              currentUser.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return ColoredBox(
+                                  color: Colors.grey.shade300,
+                                  child: Icon(
+                                    Icons.person,
+                                    color: Colors.grey,
+                                    size: avatarSize / 2,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                )
+                // reversed: Listeyi ters çeviriyoruz ki ilk eleman (index 0)
+                // yığının en üstünde (en sağda veya en solda çizim sırasına göre) görünsün.
+                // Bu haliyle: Index 0 EN ÜSTTE durur.
+                .reversed
+                .toList(),
       ),
     );
   }
-} // import 'package:flutter/material.dart';
+}
+// import 'package:flutter/material.dart';
 // import 'package:flutter_screenutil/flutter_screenutil.dart';
+// import 'package:go_router/go_router.dart';
+
+// class AvatarInfo {
+//   AvatarInfo({
+//     required this.userId,
+//     required this.imageUrl,
+//   });
+//   final String userId;
+//   final String imageUrl;
+// }
 
 // class StackedAvatars extends StatelessWidget {
-//   final List<String> avatarUrls;
-
 //   const StackedAvatars({
-//     Key? key,
-//     required this.avatarUrls,
-//   }) : super(key: key);
+//     required this.avatarDataList,
+//     super.key,
+//   });
+//   final List<AvatarInfo> avatarDataList;
 
 //   @override
 //   Widget build(BuildContext context) {
-//     if (avatarUrls.isEmpty) return const SizedBox.shrink();
+//     if (avatarDataList.isEmpty) return const SizedBox.shrink();
 
 //     // 1. Boyut Ayarları
-//     final double firstAvatarSize = 42.r;
-//     final double otherAvatarSize = 33.r;
-//     final double overlap = 14.r;
+//     final firstAvatarSize = 42.r;
+//     final otherAvatarSize = 33.r;
+//     final overlap = 14.r;
 
-//     final items = avatarUrls.take(3).toList();
-//     final int count = items.length;
+//     // İlk 3 kişiyi alıyoruz
+//     final items = avatarDataList.take(3).toList();
+//     final count = items.length;
 
 //     // 2. Toplam Genişlik Hesabı
-//     double totalWidth = firstAvatarSize;
+//     var totalWidth = firstAvatarSize;
 //     if (count > 1) {
 //       totalWidth += (count - 1) * (otherAvatarSize - overlap);
 //     }
@@ -138,6 +151,9 @@ class StackedAvatars extends StatelessWidget {
 //             final isFirst = index == 0;
 //             final currentSize = isFirst ? firstAvatarSize : otherAvatarSize;
 
+//             // O anki kullanıcının verisi (ID + Foto)
+//             final currentUser = items[index];
+
 //             // Sol pozisyonu hesapla
 //             double leftPos = 0;
 //             if (index > 0) {
@@ -149,14 +165,32 @@ class StackedAvatars extends StatelessWidget {
 //             return Positioned(
 //               left: leftPos,
 //               bottom: 0,
-//               child: SizedBox(
-//                 width: currentSize,
-//                 height: currentSize,
-//                 child: CircleAvatar(
-//                   radius: currentSize / 2,
-//                   backgroundColor: Colors.grey.shade300,
-//                   backgroundImage: NetworkImage(items[index]),
-//                   onBackgroundImageError: (_, __) {},
+//               // Tıklama ve Navigasyon İşlemi
+//               child: GestureDetector(
+//                 onTap: () {
+//                   if (currentUser.userId.isNotEmpty) {
+//                     context.push('/home/profile/${currentUser.userId}');
+//                   }
+//                 },
+//                 child: SizedBox(
+//                   width: currentSize,
+//                   height: currentSize,
+//                   child: ClipOval(
+//                     child: Image.network(
+//                       currentUser.imageUrl,
+//                       fit: BoxFit.cover,
+//                       errorBuilder: (context, error, stackTrace) {
+//                         return ColoredBox(
+//                           color: Colors.grey.shade300,
+//                           child: Icon(
+//                             Icons.person,
+//                             color: Colors.grey,
+//                             size: currentSize / 2,
+//                           ),
+//                         );
+//                       },
+//                     ),
+//                   ),
 //                 ),
 //               ),
 //             );

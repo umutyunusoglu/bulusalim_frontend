@@ -1,75 +1,67 @@
+import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class Header extends StatelessWidget {
   const Header({
     super.key,
-    this.title,
     this.trailing,
-    this.padding,
+    this.middleWidget,
   });
 
-  final Widget? title; // Ortadaki logo veya başlık
-  final Widget? trailing; // Sağdaki ikon (örneğin bildirim)
-  final EdgeInsetsGeometry? padding;
+  final Widget? trailing;
+  final Widget? middleWidget;
 
   @override
   Widget build(BuildContext context) {
-    // TEMA BAĞLANTISI
-    final theme = Theme.of(context);
+    final iconColor = AppColors.secondaryColor;
 
-    final iconColor = theme.colorScheme.secondary;
-
-    return Padding(
-      padding:
-          padding ??
-          EdgeInsets.symmetric(
-            horizontal: 20.w,
-            vertical: 15.h,
-          ),
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(vertical: 12.h),
+      margin: EdgeInsets.symmetric(horizontal: 16.w),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          SizedBox(width: 30.w),
-
-          // Ortada logo veya başlık
-          Expanded(
-            child: Center(
-              child:
-                  title ??
-                  Image.asset(
-                    'assets/bulusalim.png',
-                    height: 40.h,
-                    // Opsiyonel: Dark modda logonun rengi değişmesi gerekiyorsa
-                    // color: theme.brightness == Brightness.dark ? Colors.white : null,
-                  ),
+          // 1. LOGO
+          SizedBox(
+            width: 30.w,
+            height: 30.w,
+            child: Image.asset(
+              'assets/logo.png',
+              fit: BoxFit.contain,
             ),
           ),
 
-          // Sağdaki ikon
+          // 2. BOŞLUK
+          SizedBox(width: 33.w),
+          SizedBox(
+            width: 236.w,
+            height: 45.h,
+            child: Center(
+              child: middleWidget ?? const SizedBox(),
+            ),
+          ),
+
+          // 4. BOŞLUK
+          SizedBox(width: 38.w),
+
+          // 5. BİLDİRİM İKONU
           trailing ??
-              Icon(
-                Icons.notifications_none_outlined,
-                color: iconColor,
-                size: 28.sp,
+              SizedBox(
+                width: 24.sp,
+                height: 24.sp,
+                child: InkWell(
+                  onTap: () {},
+                  child: Icon(
+                    Icons.notifications_none_outlined,
+                    color: iconColor,
+                    size: 24.sp,
+                  ),
+                ),
               ),
         ],
       ),
     );
   }
 }
-
-/*
-// 🔝 Üst Bar
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Image.asset('assets/bulusalim.png'),
-                  SizedBox(width: 110.sp),
-                  Icon(
-                    Icons.notifications_none,
-                    size: 25.sp,
-                    color: kBlueColor,
-                  ),
-                ],
-              ),*/
