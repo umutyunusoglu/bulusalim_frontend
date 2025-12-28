@@ -40,7 +40,7 @@ class EventInfoChip extends StatelessWidget {
             style: TextStyle(
               fontFamily: 'SF Pro Display',
               fontSize: 12.sp,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w400,
               color: AppColors.infoBadgeText,
             ),
           ),
@@ -58,7 +58,7 @@ class EventInfoChip extends StatelessWidget {
             style: TextStyle(
               fontFamily: 'SF Pro Display',
               fontSize: 12.sp,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w400,
               color: AppColors.infoBadgeText,
             ),
           ),
