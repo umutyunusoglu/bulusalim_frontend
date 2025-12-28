@@ -4,15 +4,11 @@ import 'dart:async';
 
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
-// Domain Entities
 import 'package:bulusalim/domain/entities/user/user_entity.dart';
-// Domain Repositories
 import 'package:bulusalim/domain/repositories/user_repository.dart';
 import 'package:bulusalim/domain/services/auth_service.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:flutter/foundation.dart';
-
-// Interface
 
 class SessionServiceImpl implements SessionService {
   SessionServiceImpl({
@@ -22,120 +18,111 @@ class SessionServiceImpl implements SessionService {
   }) : _authService = authService,
        _userRepository = userRepository,
        _logger = logger;
-  final AuthService _authService; // ID ve Stream sağlar
-  final UserRepository _userRepository; // Detaylı veriyi sağlar
+
+  final AuthService _authService;
+  final UserRepository _userRepository;
   final LoggingService _logger;
 
-  // State
+  // --- STATE HOLDERS (Notifiers) ---
   final ValueNotifier<UserEntity?> _userNotifier = ValueNotifier(null);
-  final ValueNotifier<EventEntity?> _eventNotifier = ValueNotifier(null);
+  // Interface List<EventEntity> istiyor, bu yüzden tipi düzelttik:
+  final ValueNotifier<List<EventEntity>?> _eventsNotifier = ValueNotifier(null);
 
-  StreamSubscription<List<EventEntity>>? _eventsSubscription;
+  // --- STREAM SUBSCRIPTIONS ---
   StreamSubscription<String?>? _authSubscription;
+  StreamSubscription<List<EventEntity>>? _eventsSubscription;
 
-  // --- GETTERS ---
+  // --- GETTERS (Interface Implementation) ---
   @override
   ValueListenable<UserEntity?> get userListenable => _userNotifier;
+
   @override
-  ValueListenable<EventEntity?> get eventListenable => _eventNotifier;
+  ValueListenable<List<EventEntity>?> get ongoingEventsListenable =>
+      _eventsNotifier;
+
   @override
   UserEntity? get currentUser => _userNotifier.value;
-  @override
-  EventEntity? get currentEvent => _eventNotifier.value;
 
+  @override
+  List<EventEntity>? get ongoingEvents => _eventsNotifier.value;
+
+  // --- INIT ---
   @override
   Future<void> init() async {
-    _authSubscription = _authService.onAuthStateChanged.listen((
-      userID,
-    ) async {
-      await _eventsSubscription?.cancel();
-      _eventsSubscription = null;
+    // Auth durumunu dinlemeye başla (Login/Logout)
+    _authSubscription = _authService.onAuthStateChanged.listen(
+      _onAuthStateChanged,
+    );
+  }
 
-      if (userID == null) {
-        _userNotifier.value = null;
-        _eventNotifier.value = null;
-      } else {
-        final userEntity = await _userRepository.getUser(userID);
+  // --- LOGIC ---
+  Future<void> _onAuthStateChanged(String? userId) async {
+    // 1. Önceki event dinleyicisini temizle (Kullanıcı değiştiyse eskisini dinlemeyi bırakmalıyız)
+    await _eventsSubscription?.cancel();
+    _eventsSubscription = null;
+
+    if (userId == null) {
+      // CASE: LOGOUT
+      _logger.info('SessionService: Kullanıcı çıkış yaptı.');
+      _userNotifier.value = null;
+      _eventsNotifier.value = null;
+    } else {
+      // CASE: LOGIN
+      _logger.info(
+        'SessionService: Kullanıcı giriş yaptı. Veriler getiriliyor...',
+      );
+
+      try {
+        // 2. Kullanıcı verisini bir kere fetch et (Veya burayı da stream yapabilirsin)
+        final userEntity = await _userRepository.getUser(userId);
+
         if (userEntity != null) {
           _userNotifier.value = userEntity;
 
+          // 3. Kullanıcının aktif eventlerini dinlemeye başla (Realtime Updates)
           _eventsSubscription = _userRepository
-              .watchActiveEvents(userID)
+              .watchOngoingEvents(userId)
               .listen(
-                (realTimeEvents) {
-                  _updateUserEvents(realTimeEvents);
-
-                  _refreshCurrentEventState(realTimeEvents);
+                (events) {
+                  // Event listesi her güncellendiğinde UI'ı haberdar et
+                  _eventsNotifier.value = events;
                 },
-                onError: (Object error) {
-                  _logger.error('Event Stream Hatası: $error');
+                onError: (error) {
+                  _logger.error('SessionService: Event Stream Hatası - $error');
+                  // Hata durumunda event listesini boşaltmak isteyebilirsin:
+                  _eventsNotifier.value = [];
                 },
               );
+        } else {
+          _logger.warn(
+            'SessionService: Auth ID var ama User DB kaydı bulunamadı.',
+          );
         }
-      }
-    });
-  }
-
-  void _updateUserEvents(List<EventEntity> newEvents) {
-    final currentUser = _userNotifier.value;
-    if (currentUser != null) {
-      _userNotifier.value = currentUser.copyWith(
-        activeEvents: newEvents,
-      );
-    }
-  }
-
-  void _refreshCurrentEventState(List<EventEntity> events) {
-    try {
-      _logger.debug("Events: $events");
-      final ongoingEvents = <EventEntity>[];
-      for (var e in events) {
-        if (e.currentUserStatus == 'ongoing') {
-          ongoingEvents.add(e);
-        }
-      }
-      //TODO: Birden fazla ongoing event durumu nasıl yönetilecek?
-      if (ongoingEvents.isEmpty) {
-        _eventNotifier.value = null;
-        return;
-      }
-      final ongoingEvent = ongoingEvents.first;
-      _eventNotifier.value = events.first;
-
-      _logger.debug("Ongoing Event: $ongoingEvent");
-
-      _eventNotifier.value = ongoingEvent;
-    } on Exception catch (e) {
-      _logger.error('Error refreshing current event state: $e');
-      if (events.isNotEmpty) {
-        _eventNotifier.value = events.first;
-      } else {
-        _eventNotifier.value = null;
+      } catch (e) {
+        _logger.error('SessionService: Kullanıcı verisi çekilirken hata - $e');
       }
     }
+    _logger.info(
+      'SessionService: Kullanıcı verisi yüklendi. Aktif event sayısı: ${_eventsNotifier.value?.length ?? 0}',
+    );
   }
 
-  // --- SETTERS ---
+  // --- SETTERS (State Manipulation) ---
   @override
   void updateUser(UserEntity? user) {
+    // Sadece veri değiştiyse güncelle
     if (_userNotifier.value != user) {
+      _logger.info('SessionService: Kullanıcı verisi manuel güncellendi.');
       _userNotifier.value = user;
     }
   }
 
-  @override
-  void selectEvent(EventEntity? event) {
-    if (_eventNotifier.value != event) {
-      _eventNotifier.value = event;
-    }
-  }
-
+  // --- DISPOSE ---
   @override
   void dispose() {
     _authSubscription?.cancel();
     _eventsSubscription?.cancel();
     _userNotifier.dispose();
-
-    _eventNotifier.dispose();
+    _eventsNotifier.dispose();
   }
 }

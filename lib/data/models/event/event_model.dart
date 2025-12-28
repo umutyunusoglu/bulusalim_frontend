@@ -125,7 +125,10 @@ class EventModel extends Model<EventEntity> {
       'participants': participantsMaps, // Artık burada saklamıyoruz
       'startTime': startTime,
       'endTime': endTime,
-      'location': location.toMap(),
+      'location': GeoPoint(
+        location.latitude,
+        location.longitude,
+      ),
       'attributes': attributes.toMap(),
       'createdAt': createdAt,
       'updatedAt': updatedAt,

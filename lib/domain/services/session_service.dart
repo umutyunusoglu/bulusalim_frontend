@@ -7,19 +7,16 @@ abstract class SessionService {
   /// Kullanıcı durumu değiştiğinde (Giriş/Çıkış/Güncelleme) tetiklenir
   ValueListenable<UserEntity?> get userListenable;
 
-  /// Seçili event değiştiğinde tetiklenir
-  ValueListenable<EventEntity?> get eventListenable;
+  /// Etkinlikler durumu değiştiğinde (Güncelleme) tetiklenir
+  ValueListenable<List<EventEntity>?> get ongoingEventsListenable;
 
   /// Anlık değerlere senkron erişim (Snapshots)
   UserEntity? get currentUser;
-  EventEntity? get currentEvent;
+  List<EventEntity>? get ongoingEvents;
 
   // --- YAZMA (WRITE - State güncellemeleri) ---
   /// Kullanıcı verisi manuel güncellenirse (Örn: Profil düzenleme sonrası)
   void updateUser(UserEntity? user);
-
-  /// Uygulama içinde bir event seçildiğinde veya temizlendiğinde
-  void selectEvent(EventEntity? event);
 
   // --- YAŞAM DÖNGÜSÜ ---
   /// Servisi başlatır ve Auth dinleyicisini kurar
