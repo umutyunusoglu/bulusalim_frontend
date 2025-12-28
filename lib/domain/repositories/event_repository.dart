@@ -7,7 +7,7 @@ import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
 abstract class EventRepository {
   ///CRUD operations for Event entity
   Future<void> createEvent(EventEntity event);
-  Future<void> updateEvent(EventEntity event);
+  Future<void> updateEvent(String eventId, Map<String, dynamic> changes);
   Future<void> deleteEvent(Identifier eventId);
   Future<EventEntity?> getEvent(Identifier eventId);
   Future<List<EventEntity>> getEventsByIds(List<Identifier> eventIds);
@@ -27,14 +27,24 @@ abstract class EventRepository {
     EventParticipantEntity participant,
   );
 
+  Future<void> requestJoin(
+    Identifier eventId,
+    EventParticipantEntity participant,
+  );
+  Future<void> acceptParticipant(
+    Identifier eventId,
+    Identifier userId,
+  );
+  Future<void> rejectOrCancelRequest(
+    Identifier eventId,
+    Identifier userId,
+  );
+
   Future<void> updateParticipant(
     Identifier eventId,
     EventParticipantEntity participant,
   );
-  Future<void> removeParticipant(
-    Identifier eventId,
-    Identifier userId,
-  );
+  Future<void> removeParticipant(Identifier eventId, Identifier userId);
 
   /// === Query & Search ===
 
