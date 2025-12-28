@@ -27,8 +27,8 @@ class StackedAvatars extends StatelessWidget {
     if (avatarDataList.isEmpty) return const SizedBox.shrink();
 
     // 1. Ayarlar
-    final double avatarSize = size.w;
-    final double overlap = (size * 0.5).w;
+    final avatarSize = size.w;
+    final overlap = (size * 0.5).w;
 
     // İlk 3 kişiyi alıyoruz
     final items = avatarDataList.take(3).toList();
@@ -36,7 +36,7 @@ class StackedAvatars extends StatelessWidget {
 
     // 2. Toplam Genişlik Hesabı
     // İlk avatarın tam boyutu + diğerlerinin görünen kısmı (boyut - overlap)
-    double totalWidth = avatarSize;
+    var totalWidth = avatarSize;
     if (count > 1) {
       totalWidth += (count - 1) * (avatarSize - overlap);
     }
@@ -53,7 +53,7 @@ class StackedAvatars extends StatelessWidget {
                     final currentUser = items[index];
 
                     // Sol pozisyon: Her eleman (Boyut - Overlap) kadar sağa kayar
-                    double leftPos = index * (avatarSize - overlap);
+                    var leftPos = index * (avatarSize - overlap);
 
                     return Positioned(
                       left: leftPos,

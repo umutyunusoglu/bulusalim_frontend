@@ -47,7 +47,8 @@ abstract class UserRepository {
     List<EventStatusEnum> statuses,
   );
 
-  Stream<List<EventEntity>> watchActiveEvents(String userID);
+  Stream<List<EventEntity>> watchActiveEvents(Identifier userID);
+  Stream<List<EventEntity>> watchOngoingEvents(Identifier userID);
 
   Future<void> deleteEvent(
     Identifier userID,
