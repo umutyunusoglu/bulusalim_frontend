@@ -3,6 +3,7 @@ import 'package:bulusalim/components/bottomsheetoption.dart';
 import 'package:bulusalim/components/eventcardbackgroundpainter.dart';
 import 'package:bulusalim/components/stacked_avatars.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/screens/home/eventcomponents/event_info_chip.dart';

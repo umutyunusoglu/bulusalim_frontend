@@ -120,7 +120,7 @@ class PostModel extends Model<PostEntity> {
       participants: participants,
       emoteCounts: (doc['emoteCounts'] as Map<String, dynamic>).map(
         (key, value) => MapEntry(
-          EmoteEnum.values[int.parse(key)],
+          EmoteEnum.fromString(key),
           value as int,
         ),
       ),
@@ -151,40 +151,17 @@ class PostModel extends Model<PostEntity> {
 
   @override
   Map<String, dynamic> toFirestore() {
-    final imageUrlsFirestore = imageUrls
-        ?.map(
-          (url) => url.replaceAll(
-            AppConfig.host,
-            'localhost',
-          ),
-        )
-        .toList();
-
-    final creatorMap = creator.toMap();
-    creatorMap['profileImageUrl'] = creator.profileImageUrl.replaceAll(
-      AppConfig.host,
-      'localhost',
-    );
-
-    final participantsMaps = participants.map((participant) {
-      final participantMap = participant.toMap();
-      participantMap['profileImageUrl'] = participant.profileImageUrl
-          .replaceAll(
-            AppConfig.host,
-            'localhost',
-          );
-      return participantMap;
-    }).toList();
-
     return {
       'postID': postID,
-      'creator': creatorMap,
+      'creator': creator.toMap(),
       'eventID': eventID,
       'caption': caption,
       'location': location?.toMap(),
       'hobbies': hobbies.map((hobby) => hobby.name).toList(),
-      'imageUrls': imageUrlsFirestore,
-      'participants': participantsMaps,
+      'imageUrls': imageUrls,
+      'participants': participants
+          .map((participant) => participant.toMap())
+          .toList(),
       'emoteCounts': emoteCounts.map(
         (key, value) => MapEntry(key.index.toString(), value),
       ),

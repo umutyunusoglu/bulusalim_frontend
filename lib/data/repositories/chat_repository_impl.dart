@@ -29,6 +29,9 @@ class ChatRepositoryImpl implements ChatRepository {
         .map((snapshot) {
           return snapshot.docs.map((doc) {
             final data = doc.data();
+            if (doc.metadata.hasPendingWrites && data['createdAt'] == null) {
+              data['createdAt'] = Timestamp.now();
+            }
             final messageModel = MessageModel.fromFirestore(
               data,
             );

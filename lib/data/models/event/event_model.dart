@@ -1,5 +1,4 @@
 import 'package:bulusalim/core/constants/configs/app_config.dart';
-// EKLENDİ
 import 'package:bulusalim/core/utils/types/enums/restriction_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
@@ -15,6 +14,7 @@ class EventModel extends Model<EventEntity> {
     required this.hobbies,
     required this.creator,
     required this.capacity,
+    required this.participantCount,
     required this.participants,
     required this.startTime,
     required this.endTime,
@@ -22,6 +22,7 @@ class EventModel extends Model<EventEntity> {
     required this.attributes,
     required this.createdAt,
     required this.updatedAt,
+    required this.isLocked,
   });
 
   @override
@@ -33,6 +34,7 @@ class EventModel extends Model<EventEntity> {
       hobbies: entity.hobbies,
       creator: entity.creator,
       capacity: entity.capacity,
+      participantCount: entity.participantCount,
       participants: entity.participants,
       startTime: entity.startTime,
       endTime: entity.endTime,
@@ -40,12 +42,14 @@ class EventModel extends Model<EventEntity> {
       attributes: entity.attributes,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
+      isLocked: entity.isLocked,
     );
   }
 
   @override
   factory EventModel.fromFirestore(Map<String, dynamic> doc) {
     final attributesMap = doc['attributes'] as Map<String, dynamic>;
+
     final geolocation = doc['location'] as GeoPoint;
     final location = Geolocation(
       latitude: geolocation.latitude,
@@ -56,11 +60,18 @@ class EventModel extends Model<EventEntity> {
       doc['creator'] as Map<String, dynamic>,
     );
 
-    final participants = (doc['participants'] as List<dynamic>)
-        .map(
-          (e) => EventParticipantEntity.fromMap(e as Map<String, dynamic>),
-        )
-        .toList();
+    final participants =
+        (doc['participants'] as List<dynamic>?)
+            ?.map(
+              (e) => EventParticipantEntity.fromMap(e as Map<String, dynamic>),
+            )
+            .toList() ??
+        <EventParticipantEntity>[]; // Eğer null ise boş liste
+
+    // Count null ise ve liste doluysa, listenin uzunluğunu alabiliriz fallback olarak
+    final pCount =
+        (doc['participantCount'] as int?) ??
+        (participants.isNotEmpty ? participants.length : 1);
 
     return EventModel(
       eventId: doc['eventID'] as String,
@@ -69,6 +80,8 @@ class EventModel extends Model<EventEntity> {
       hobbies: (doc['hobbies'] as List?)?.cast<String>().toList() ?? [],
       creator: creator,
       capacity: doc['capacity'] as int,
+      // Eğer DB'de count alanı yoksa (eski veri) en az 1 (creator) varsay.
+      participantCount: pCount,
       participants: participants,
       startTime: (doc['startTime'] as Timestamp).toDate(),
       endTime: (doc['endTime'] as Timestamp).toDate(),
@@ -85,30 +98,22 @@ class EventModel extends Model<EventEntity> {
       ),
       createdAt: (doc['createdAt'] as Timestamp).toDate(),
       updatedAt: (doc['updatedAt'] as Timestamp).toDate(),
+      isLocked: (doc['isLocked'] as bool?) ?? false,
     );
   }
 
   @override
   Map<String, dynamic> toFirestore() {
-    final participantsMaps = participants
-        .map(
-          (p) => p
-              .copyWith(
-                profileImageUrl: p.profileImageUrl.replaceAll(
-                  AppConfig.host,
-                  'localhost',
-                ),
-              )
-              .toMap(),
-        )
-        .toList();
-
     final creatorMap = creator.toMap();
     creatorMap['profileImageUrl'] = creator.profileImageUrl.replaceAll(
       AppConfig.host,
       'localhost',
     );
 
+    // NOT: 'participants' listesini buraya EKLEMİYORUZ.
+    // Onlar subcollection'da yaşayacak.
+
+    final participantsMaps = participants.map((p) => p.toMap()).toList();
     return {
       'eventID': eventId,
       'name': name,
@@ -116,13 +121,15 @@ class EventModel extends Model<EventEntity> {
       'hobbies': hobbies,
       'creator': creatorMap,
       'capacity': capacity,
-      'participants': participantsMaps,
+      'participantCount': participantCount, // Sadece sayıyı yazıyoruz
+      'participants': participantsMaps, // Artık burada saklamıyoruz
       'startTime': startTime,
       'endTime': endTime,
       'location': location.toMap(),
       'attributes': attributes.toMap(),
       'createdAt': createdAt,
       'updatedAt': updatedAt,
+      'isLocked': isLocked,
     };
   }
 
@@ -135,6 +142,7 @@ class EventModel extends Model<EventEntity> {
       hobbies: hobbies,
       creator: creator,
       capacity: capacity,
+      participantCount: participantCount,
       participants: participants,
       startTime: startTime,
       endTime: endTime,
@@ -142,6 +150,7 @@ class EventModel extends Model<EventEntity> {
       attributes: attributes,
       createdAt: createdAt,
       updatedAt: updatedAt,
+      isLocked: isLocked,
     );
   }
 
@@ -151,6 +160,7 @@ class EventModel extends Model<EventEntity> {
   final List<String> hobbies;
   final EventParticipantEntity creator;
   final int capacity;
+  final int participantCount;
   final List<EventParticipantEntity> participants;
   final DateTime startTime;
   final DateTime endTime;
@@ -158,4 +168,5 @@ class EventModel extends Model<EventEntity> {
   final EventAttributes attributes;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool isLocked;
 }
