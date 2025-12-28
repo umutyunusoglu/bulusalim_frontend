@@ -6,7 +6,6 @@ import 'package:bulusalim/data/models/model.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/user_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 
 class UserModel extends Model<UserEntity> {
   UserModel({
@@ -51,17 +50,6 @@ class UserModel extends Model<UserEntity> {
   }
 
   static Future<UserModel> fromFirestore(Map<String, dynamic> doc) async {
-    // 1. Güvenli profil resmi okuma (null kontrolü eklendi)
-    late final String profileImageUrl;
-    if (kDebugMode) {
-      profileImageUrl = (doc['profileImageUrl'] as String? ?? '').replaceAll(
-        'localhost',
-        AppConfig.host,
-      );
-    } else {
-      profileImageUrl = doc['profileImageUrl'] as String? ?? '';
-    }
-
     final birthDate = (doc['birthDate'] as Timestamp? ?? Timestamp.now())
         .toDate();
     final createdAt = (doc['createdAt'] as Timestamp? ?? Timestamp.now())
@@ -87,7 +75,7 @@ class UserModel extends Model<UserEntity> {
       birthDate: birthDate,
       gender: gender,
       organization: doc['organization'] as String? ?? '',
-      profileImageUrl: profileImageUrl,
+      profileImageUrl: doc['profileImageUrl'] as String? ?? '',
       bio: doc['bio'] as String?,
       permissions: userPermissionsFromFirestore(
         doc['permissions'] as Map<String, dynamic>? ?? {},
