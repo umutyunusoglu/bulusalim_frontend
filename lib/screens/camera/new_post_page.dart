@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/configs/app_config.dart';
+import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
 import 'package:bulusalim/domain/usecases/upload_post_usecase.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -44,7 +45,7 @@ class _NewPostPageState extends State<NewPostPage> {
       return Image.file(media, fit: fit);
     } else {
       return Image.network(
-        media as String,
+        fixEmulatorUrl(media as String),
         fit: fit,
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;

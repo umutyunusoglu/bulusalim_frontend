@@ -73,7 +73,7 @@ class StackedAvatars extends StatelessWidget {
                           ),
                           child: ClipOval(
                             child: Image.network(
-                              currentUser.imageUrl,
+                              fixEmulatorUrl(currentUser.imageUrl),
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
                                 return ColoredBox(
