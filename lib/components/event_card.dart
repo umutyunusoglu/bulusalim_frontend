@@ -1,11 +1,12 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/components/countdown_timer.dart';
+import 'package:bulusalim/components/eventcardbackgroundpainter.dart';
 import 'package:bulusalim/components/stacked_avatars.dart';
+import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
-import 'package:bulusalim/screens/home/eventcomponents/info_icon.dart';
-import 'package:bulusalim/screens/home/eventcomponents/overlay_tag_chip.dart';
+import 'package:bulusalim/screens/home/eventcomponents/event_info_chip.dart';
+import 'package:bulusalim/screens/home/eventcomponents/event_location_chip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -22,291 +23,238 @@ class EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final _logger = getIt<LoggingService>();
-    // 1. VERİ HAZIRLIĞI
-    final dynamicAvatars = participants
-        .map(
-          (user) => AvatarInfo(
-            userId: user.userID,
-            imageUrl: user.profileImageUrl,
-          ),
-        )
-        .toList();
-    _logger.debug("Dynamic avatars count: ${dynamicAvatars[0].imageUrl}");
-    final staticAvatars = <AvatarInfo>[
-      AvatarInfo(
-        userId: '',
-        imageUrl: 'https://picsum.photos/seed/avatar1/100/100',
-      ),
-      AvatarInfo(
-        userId: '',
-        imageUrl: 'https://picsum.photos/seed/avatar2/100/100',
-      ),
-      AvatarInfo(
-        userId: '',
-        imageUrl: 'https://picsum.photos/seed/avatar3/100/100',
-      ),
-    ];
 
-    final participantAvatars = dynamicAvatars.isNotEmpty
-        ? dynamicAvatars
-        : staticAvatars;
+    // --- Veri Hazırlığı ---
+    final displayAvatars = participants.isNotEmpty
+        ? participants
+              .map(
+                (user) => AvatarInfo(
+                  userId: user.userID,
+                  imageUrl: user.profileImageUrl,
+                ),
+              )
+              .toList()
+        : <AvatarInfo>[
+            AvatarInfo(
+              userId: '1',
+              imageUrl: 'https://picsum.photos/seed/1/100',
+            ),
+            AvatarInfo(
+              userId: '2',
+              imageUrl: 'https://picsum.photos/seed/2/100',
+            ),
+            AvatarInfo(
+              userId: '3',
+              imageUrl: 'https://picsum.photos/seed/3/100',
+            ),
+          ];
 
-    const staticBackgroundImageUrl =
-        'https://picsum.photos/seed/tracking/800/600';
     const staticLocationName = 'İnegöl, Bolu';
-    const double staticDistanceInKm = 225;
 
-    // 2. ARAYÜZ (UI) YAPISI
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
-      child: Container(
-        height: 180.h,
-        margin: EdgeInsets.symmetric(vertical: 8.h),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16.r),
-          child: Stack(
-            children: [
-              // KATMAN 1: Resim
-              _buildBackgroundImage(staticBackgroundImageUrl),
+      padding: EdgeInsets.only(
+        left: 16.w,
+        right: 16.w,
+        bottom: 12.h,
+        top: 25.h,
+      ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.topCenter,
+        children: [
+          // --- KART GÖVDESİ + PAINTER (GÖLGE DAHİL) ---
+          CustomPaint(
+            painter: EventCardBackgroundPainter(
+              backgroundColor: AppColors.cardBackgroundColor,
+              bumpRadius: 25.w,
+              bumpOffset: 24.h,
+            ),
+            child: Container(
+              height: 204.h,
+              width: double.infinity,
+              padding: EdgeInsets.zero,
+              child: Stack(
+                children: [
+                  // 1. ÜST SATIR (BAŞLIK + İKONLAR) - TEK ROW
+                  Positioned(
+                    top: 30.h,
+                    left: 0,
+                    right: 0,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 1. SOLDAN 70 BOŞLUK
+                        SizedBox(width: 70.w),
 
-              // KATMAN 2: Gradient Overlay
-              _buildGradientOverlay(),
+                        // 2. YAZI (221px)
+                        SizedBox(
+                          width: 221.w,
+                          child: Text(
+                            event.name.isNotEmpty
+                                ? event.name
+                                : "Bizimle beraber tracking yapmak ister misiniz???",
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Display',
+                              fontWeight: FontWeight.w500,
+                              fontSize: 16.sp,
+                              height: 1.1,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
 
-              // KATMAN 3: Sağ Üst İkonlar
-              Positioned(
-                top: 16.h,
-                right: 16.w,
-                child: _buildIconSection(context),
-              ),
+                        // 3. YAZI SONRASI 7 BOŞLUK
+                        SizedBox(width: 7.w),
 
-              // KATMAN 4: İçerik
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: 4.h),
-                    // Üst Kısım
-                    _buildTopInfoSection(
-                      context,
-                      participantAvatars,
-                      staticLocationName,
+                        // 4. KAYDET İKONU (24px)
+                        SizedBox(
+                          width: 24.w,
+                          height: 24.w,
+                          child: InkWell(
+                            onTap: () {},
+                            child: Icon(
+                              Icons.bookmark_border,
+                              color: Colors.black54,
+                              size: 19.sp, // İstenilen Boyut
+                            ),
+                          ),
+                        ),
+
+                        // 5. İKONLAR ARASI 8 BOŞLUK
+                        SizedBox(width: 8.w),
+
+                        // 6. AYARLAR İKONU (19px)
+                        SizedBox(
+                          width: 19.w,
+                          height: 19.w, // Hizalama bozulmasın diye kare kutu
+                          child: InkWell(
+                            onTap: () {},
+                            child: Icon(
+                              Icons.more_vert,
+                              color: Colors.black54,
+                              size: 19.sp,
+                            ),
+                          ),
+                        ),
+
+                        // 7. EN SAĞDAKİ 12 BOŞLUK
+                        SizedBox(width: 12.w),
+                      ],
                     ),
+                  ),
 
-                    const Spacer(),
+                  // 2. Sol Alt Kısım (CHIPS)
+                  Positioned(
+                    bottom: 12.h,
+                    left: 12.w,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // LOKASYON ÇİPİ
+                        const EventLocationChip(
+                          locationName: 'İnegöl, Bolu',
+                        ),
 
-                    // Alt Kısım
-                    _buildBottomRow(context, staticDistanceInKm),
-                  ],
+                        SizedBox(height: 4.h),
+
+                        // INFO ÇİPİ
+                        EventInfoChip(
+                          startTime: event.startTime,
+                          participantCount: event.participants.length,
+                          capacity: event.capacity,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // 3. SAĞ ALT (KATIL BUTONU)
+                  Positioned(
+                    bottom: 12.h,
+                    right: 13.w,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          _logger.info("Katıl: ${event.id}");
+                        },
+                        borderRadius: BorderRadius.circular(20.r),
+                        child: Container(
+                          width: 72.w,
+                          height: 36.h,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryColor,
+                            borderRadius: BorderRadius.circular(20.r),
+                            // BUTON GÖLGESİ
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x26000000),
+                                offset: Offset(0, 4),
+                                blurRadius: 4,
+                                spreadRadius: 0,
+                              ),
+                            ],
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            "katıl",
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Display',
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // --- YÜZEN IKON ---
+          Positioned(
+            top: -24.h,
+            child: SizedBox(
+              width: 50.w,
+              height: 50.w,
+              child: Center(
+                child: Image.network(
+                  "https://cdn-icons-png.flaticon.com/512/2553/2553644.png",
+                  width: 24.w,
+                  height: 24.w,
+                  errorBuilder: (c, e, s) =>
+                      Icon(Icons.hiking, color: Colors.brown, size: 24.sp),
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // --- YARDIMCI WIDGETLAR ---
-
-  Widget _buildBackgroundImage(String imageUrl) {
-    return Positioned.fill(
-      child: Image.network(
-        fixEmulatorUrl(imageUrl),
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return const Center(
-            child: CircularProgressIndicator(color: Colors.white),
-          );
-        },
-        errorBuilder: (context, error, stackTrace) =>
-            Container(color: Colors.grey.shade800),
-      ),
-    );
-  }
-
-  Widget _buildGradientOverlay() {
-    return Positioned.fill(
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.black.withOpacity(0.6),
-              Colors.transparent,
-              Colors.black.withOpacity(0.7),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            stops: const [0.0, 0.4, 1.0],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopInfoSection(
-    BuildContext context,
-    List<AvatarInfo> avatarData,
-    String locationName,
-  ) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        StackedAvatars(avatarDataList: avatarData),
-        SizedBox(width: 8.w),
-        Expanded(child: _buildTitleSection(context, locationName)),
-      ],
-    );
-  }
-
-  Widget _buildBottomRow(BuildContext context, double distanceInKm) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        _buildTagColumn(context),
-        const Spacer(),
-        // 1. DÜZELTME: Sıkışma durumunda esnemesine izin veriyoruz.
-        Flexible(
-          child: _buildInfoBar(context, distanceInKm),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildIconSection(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: 24.w,
-          height: 24.w,
-          child: IconButton(
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            icon: Icon(Icons.bookmark_border, color: Colors.white, size: 24.sp),
-            onPressed: () {},
-          ),
-        ),
-        SizedBox(width: 8.w),
-        SizedBox(
-          width: 24.w,
-          height: 24.w,
-          child: IconButton(
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            icon: Icon(Icons.more_vert, color: Colors.white, size: 24.sp),
-            onPressed: () {},
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTitleSection(BuildContext context, String locationName) {
-    final theme = Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          event.name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.textTheme.headlineSmall?.copyWith(
-            fontFamily: 'Urbanist',
-            color: Colors.white,
-            fontWeight: FontWeight.w500,
-            fontSize: 16.sp,
-          ),
-        ),
-        Text(
-          locationName,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.textTheme.bodyLarge?.copyWith(
-            fontFamily: 'Urbanist',
-            color: Colors.white70,
-            fontSize: 12.sp,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInfoBar(BuildContext context, double distanceInKm) {
-    final participantRatio = '${event.participants.length}/${event.capacity}';
-
-    final infoTextStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
-      fontFamily: 'Urbanist',
-      color: Colors.white,
-      fontSize: 10.sp, // Boyut sabit kalıyor
-      fontWeight: FontWeight.w600,
-    );
-
-    return Container(
-      margin: EdgeInsets.only(bottom: 6.h),
-      padding: EdgeInsets.symmetric(
-        horizontal: 10.w,
-        vertical: 6.h,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(30.r),
-      ),
-      // 2. DÜZELTME: İçerik sığmazsa kaydırılsın (Scroll).
-      // Böylece ne boyut küçülür, ne de hata verir.
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            InfoIconText(
-              icon: Icons.map_outlined,
-              child: Text('${distanceInKm.toInt()} km', style: infoTextStyle),
             ),
-            SizedBox(width: 6.w),
+          ),
 
-            InfoIconText(
-              icon: Icons.people_outline,
-              child: Text(participantRatio, style: infoTextStyle),
-            ),
-            SizedBox(width: 6.w),
-
-            InfoIconText(
-              icon: Icons.access_time,
-              child: CountdownTimer(
-                targetTime: event.startTime,
-                style: infoTextStyle,
+          // --- AVATAR GRUBU ---
+          Positioned(
+            top: 80.h,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: StackedAvatars(
+                avatarDataList: displayAvatars,
               ),
             ),
-            SizedBox(width: 6.w),
-
-            const InfoIconText(
-              icon: Icons.lock_clock,
-              child: SizedBox.shrink(),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildTagColumn(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: event.hobbies
-          .take(2)
-          .map(
-            (tag) => OverlayTagChip(
-              label: tag,
-              icon: tag.toLowerCase().contains('sohbet')
-                  ? Icons.chat_bubble_outline
-                  : Icons.directions_walk,
-            ),
-          )
-          .toList(),
-    );
+  String _formatEventDate(DateTime date) {
+    const days = ['Pzt', 'Sal', 'Çar', 'Per', 'Cuma', 'Cmt', 'Paz'];
+    final weekDayName = days[date.weekday - 1];
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return "$weekDayName $hour.$minute";
   }
 }

@@ -4,16 +4,11 @@ import 'package:flutter/material.dart';
 
 abstract class AppColors {
   // --- LIGHT THEME ---
-  static const Color primaryColor = Color(0xFFFE6348); // Turuncu (Action)
-  static const Color secondaryColor = Color(
-    0xFF5B7A98,
-  ); // Steel Blue (Nav Çubuğu)
-
-  // YENİ EKLENEN: Koyu Mavi (#004B75) -> Skip Button & Tab Yazısı
-  static const Color tertiaryColor = Color(0xFF004B75);
+  static const Color primaryColor = Color(0xFFFE6348); // Turuncu (Action/Katıl)
+  static const Color secondaryColor = Color(0xFF5B7A98); // Steel Blue
+  static const Color tertiaryColor = Color(0xFF004B75); // Koyu Mavi
 
   static const Color backgroundColor = Color(0xFFFAFAFA);
-
   static const Color onPrimaryColor = Colors.white;
   static const Color onSecondaryColor = Colors.white;
   static const Color onBackgroundColor = Color(0xFF1A1A1A);
@@ -21,16 +16,20 @@ abstract class AppColors {
   static const Color inputFillColor = Color(0xFFF2F2F7);
   static const Color iconColor = Color(0xFF1A1A1A);
 
+  // --- EVENT CARD COLORS (YENİ EKLENENLER) ---
+  static const Color cardBackgroundColor = Color(0xFFF2F2F7);
+
+  // Lokasyon Chip Renkleri
+  static const Color locationBadgeBackground = Color(0xFFC0D0E0);
+  static const Color locationBadgeText = Color(0xFF2A4E6C);
+
+  // Info (Kişi/Saat) Chip Renkleri
+  static const Color infoBadgeBackground = Color(0xFFE5E5EA);
+  static const Color infoBadgeText = Colors.black;
   // --- DARK THEME ---
   static const Color darkPrimaryColor = Color(0xFFFE6348);
   static const Color darkSecondaryColor = Color(0xFF5B7A98);
-
-  // Dark modda koyu mavi (#004B75) siyah zemin üstünde okunmayabilir.
-  // Bu yüzden dark mod için tertiary rengi biraz açabiliriz veya beyaz yapabiliriz.
-  // Ama şimdilik yapıyı bozmamak için aynısını veya okunur bir tonu verelim:
-  static const Color darkTertiaryColor = Color(
-    0xFF8BA6BF,
-  ); // Okunurluk için açıldı
+  static const Color darkTertiaryColor = Color(0xFF8BA6BF);
 
   static const Color darkBackgroundColor = Color(0xFF1A1A1A);
   static const Color darkSurfaceColor = Color(0xFF2C2C2E);
