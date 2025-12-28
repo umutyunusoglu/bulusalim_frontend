@@ -1,7 +1,10 @@
-import 'package:bulusalim/components/bottomsheetoption.dart';
+import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/components/countdown_timer.dart';
+import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
 import 'package:bulusalim/core/utils/types/enums/emote_enum.dart';
 import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
+import 'package:bulusalim/domain/repositories/post_repository.dart';
+import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/screens/home/post%20components/content_tag_chip.dart';
 import 'package:bulusalim/screens/home/post%20components/emoji_chip.dart';
 import 'package:bulusalim/screens/home/post%20components/small_stacked_avatars.dart';
@@ -26,16 +29,178 @@ class _PostCardState extends State<PostCard> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
+  // --- STATE DEĞİŞKENLERİ ---
+  // Sayılar değişeceği için bunları state'te tutuyoruz
+  late int _likeCount;
+  late int _clapCount;
+  late int _eggCount;
+
+  // Kullanıcının seçim durumları
+  bool _isLikedByMe = false;
+  bool _isClappedByMe = false;
+  bool _isEggedByMe = false;
+
+  // Servisler
+  late final PostRepository _postRepository;
+  late final SessionService _sessionService;
+  late final String _myUserId;
+
+  @override
+  void initState() {
+    super.initState();
+    _postRepository = getIt<PostRepository>();
+    _sessionService = getIt<SessionService>();
+    _myUserId = _sessionService.currentUser?.userID ?? '';
+
+    // 1. Sayıları PostEntity'den başlat
+    _likeCount = widget.post.emoteCounts[EmoteEnum.heart] ?? 0;
+    _clapCount = widget.post.emoteCounts[EmoteEnum.clap] ?? 0;
+    _eggCount = widget.post.emoteCounts[EmoteEnum.egg] ?? 0;
+
+    // 2. Kullanıcı daha önce beğenmiş mi kontrol et
+    _checkExistingEmotes();
+  }
+
+  /// Kullanıcının bu post'a attığı eski reaksiyonları kontrol eder
+  Future<void> _checkExistingEmotes() async {
+    if (_myUserId.isEmpty) return;
+
+    // Performans notu: İdealde bu bilgi PostEntity içinde 'myReaction: ["heart"]' gibi gelmelidir.
+    // Şimdilik ayrı sorgularla yapıyoruz:
+
+    final results = await Future.wait([
+      _postRepository.isUserEmotedPost(
+        widget.post.id,
+        _myUserId,
+        EmoteEnum.heart,
+      ),
+      _postRepository.isUserEmotedPost(
+        widget.post.id,
+        _myUserId,
+        EmoteEnum.clap,
+      ),
+      _postRepository.isUserEmotedPost(
+        widget.post.id,
+        _myUserId,
+        EmoteEnum.egg,
+      ),
+    ]);
+
+    if (mounted) {
+      setState(() {
+        _isLikedByMe = results[0];
+        _isClappedByMe = results[1];
+        _isEggedByMe = results[2];
+      });
+    }
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
   }
 
-  // Profil Yönlendirme Fonksiyonu
+  // --- LOGIC: TIKLAMA YÖNETİMİ ---
+  Future<void> _handleEmoteTap(EmoteEnum emote) async {
+    if (_myUserId.isEmpty) return; // Login olmamışsa işlem yapma
+
+    // Hangi değişkenleri değiştireceğimizi belirleyelim
+    bool isSelectedCurrent;
+
+    // Geçici değişkenler (Rollback için)
+    int previousCount;
+    bool previousState;
+
+    switch (emote) {
+      case EmoteEnum.heart:
+        isSelectedCurrent = _isLikedByMe;
+        previousCount = _likeCount;
+        previousState = _isLikedByMe;
+        break;
+      case EmoteEnum.clap:
+        isSelectedCurrent = _isClappedByMe;
+        previousCount = _clapCount;
+        previousState = _isClappedByMe;
+        break;
+      case EmoteEnum.egg:
+        isSelectedCurrent = _isEggedByMe;
+        previousCount = _eggCount;
+        previousState = _isEggedByMe;
+        break;
+    }
+
+    // 1. Optimistic Update (Ekranı hemen güncelle)
+    setState(() {
+      if (emote == EmoteEnum.heart) {
+        if (_isLikedByMe) {
+          _likeCount--;
+          _isLikedByMe = false;
+        } else {
+          _likeCount++;
+          _isLikedByMe = true;
+        }
+      } else if (emote == EmoteEnum.clap) {
+        if (_isClappedByMe) {
+          _clapCount--;
+          _isClappedByMe = false;
+        } else {
+          _clapCount++;
+          _isClappedByMe = true;
+        }
+      } else if (emote == EmoteEnum.egg) {
+        if (_isEggedByMe) {
+          _eggCount--;
+          _isEggedByMe = false;
+        } else {
+          _eggCount++;
+          _isEggedByMe = true;
+        }
+      }
+    });
+
+    // 2. API İsteği
+    try {
+      if (isSelectedCurrent) {
+        // Zaten seçiliydi, kaldırmak istiyor
+        await _postRepository.removeEmoteFromPost(
+          widget.post.id,
+          _myUserId,
+          emote,
+        );
+      } else {
+        // Seçili değildi, eklemek istiyor
+        await _postRepository.addEmoteToPost(
+          widget.post.id,
+          _myUserId,
+          emote,
+        );
+      }
+    } catch (e) {
+      // 3. Hata olursa geri al (Rollback)
+      if (mounted) {
+        setState(() {
+          if (emote == EmoteEnum.heart) {
+            _likeCount = previousCount;
+            _isLikedByMe = previousState;
+          } else if (emote == EmoteEnum.clap) {
+            _clapCount = previousCount;
+            _isClappedByMe = previousState;
+          } else if (emote == EmoteEnum.egg) {
+            _eggCount = previousCount;
+            _isEggedByMe = previousState;
+          }
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("İşlem başarısız: $e")),
+        );
+      }
+    }
+  }
+
   void _navigateToProfile() {
     final userId = widget.user?.userID;
-    // Eğer kullanıcı ID'si varsa profil sayfasına git
     if (userId != null && userId.isNotEmpty) {
       context.push('/home/profile/$userId');
     }
@@ -48,18 +213,14 @@ class _PostCardState extends State<PostCard> {
     final mediaUrls = widget.post.imageUrls ?? [];
     final tags = widget.post.hobbies.map((h) => h.name).toList();
 
-    final likeCount = widget.post.emoteCounts[EmoteEnum.heart] ?? 0;
-    final clapCount = widget.post.emoteCounts[EmoteEnum.clap] ?? 0;
-    final eggCount = widget.post.emoteCounts[EmoteEnum.egg] ?? 0;
-
     final username = widget.user?.username ?? 'Buluşalım Kullanıcısı';
     final userAvatarUrl =
         widget.user?.profileImageUrl ??
         'https://picsum.photos/seed/avatar_default/100/100';
 
-    // Static Data
+    // Static Data (Örnek)
     const staticLocationName = 'Blackfish Cafe, Kızılay, Çankaya';
-    final staticLikedByAvatars = widget.post.participants
+    final participantAvatars = widget.post.participants
         .take(3)
         .map((p) => p.profileImageUrl)
         .toList();
@@ -91,10 +252,7 @@ class _PostCardState extends State<PostCard> {
             _buildContent(
               context,
               mediaUrls: effectiveMediaUrls,
-              likeCount: likeCount,
-              clapCount: clapCount,
-              eggCount: eggCount,
-              likedByAvatars: staticLikedByAvatars,
+              likedByAvatars: participantAvatars,
             ),
 
             // Page Indicator
@@ -119,7 +277,7 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  // 1. Header Widget
+  // --- HEADER WIDGET ---
   Widget _buildHeader(
     BuildContext context, {
     required String avatarUrl,
@@ -127,25 +285,20 @@ class _PostCardState extends State<PostCard> {
     required String location,
   }) {
     final theme = Theme.of(context);
-
     return Row(
       children: [
-        // Avatar hala tıklanabilir kalsın (Genelde beklenir)
         GestureDetector(
           onTap: _navigateToProfile,
           child: CircleAvatar(
             radius: 20.r,
-            backgroundImage: NetworkImage(avatarUrl),
+            backgroundImage: NetworkImage(fixEmulatorUrl(avatarUrl)),
           ),
         ),
         SizedBox(width: 12.w),
-
-        // İsim ve Konum Alanı
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. SADECE İSİM TIKLANABİLİR
               GestureDetector(
                 onTap: _navigateToProfile,
                 child: Text(
@@ -158,8 +311,6 @@ class _PostCardState extends State<PostCard> {
                   ),
                 ),
               ),
-
-              // 2. KONUM ARTIK TIKLANAMAZ (Normal Text)
               Text(
                 location,
                 maxLines: 1,
@@ -173,7 +324,6 @@ class _PostCardState extends State<PostCard> {
             ],
           ),
         ),
-
         IconButton(
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
@@ -218,15 +368,13 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  // 2. Content Widget
+  // --- CONTENT WIDGET ---
   Widget _buildContent(
     BuildContext context, {
     required List<String> mediaUrls,
-    required int likeCount,
-    required int clapCount,
-    required int eggCount,
     required List<String> likedByAvatars,
   }) {
+    // Burada likeCount vb. parametreleri kaldırdım çünkü artık state'ten okuyacağız
     return Stack(
       children: [
         ClipRRect(
@@ -244,7 +392,7 @@ class _PostCardState extends State<PostCard> {
               },
               itemBuilder: (context, index) {
                 return Image.network(
-                  mediaUrls[index],
+                  fixEmulatorUrl(mediaUrls[index]),
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) =>
                       Container(color: Colors.grey.shade200),
@@ -261,9 +409,6 @@ class _PostCardState extends State<PostCard> {
           right: 12.w,
           child: _buildInteractionsOverlay(
             context,
-            likeCount: likeCount,
-            clapCount: clapCount,
-            eggCount: eggCount,
             likedByAvatars: likedByAvatars,
           ),
         ),
@@ -271,12 +416,9 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  // 2a. Interaction Overlay Widget
+  // --- INTERACTION OVERLAY (GÜNCELLENDİ) ---
   Widget _buildInteractionsOverlay(
     BuildContext context, {
-    required int likeCount,
-    required int clapCount,
-    required int eggCount,
     required List<String> likedByAvatars,
   }) {
     return Container(
@@ -284,23 +426,35 @@ class _PostCardState extends State<PostCard> {
       padding: EdgeInsets.symmetric(horizontal: 0.w),
       child: Row(
         children: [
+          // KALP
           EmojiChip(
             icon: Icons.favorite,
-            text: '$likeCount',
+            text: '$_likeCount', // State değişkeni
             color: Colors.red,
+            isSelected: _isLikedByMe, // State değişkeni
+            onTap: () => _handleEmoteTap(EmoteEnum.heart), // Logic bağlantısı
           ),
           SizedBox(width: 12.w),
+
+          // ALKIŞ/CHAT
           EmojiChip(
             icon: Icons.chat_rounded,
-            text: '$clapCount',
+            text: '$_clapCount', // State değişkeni
             color: Colors.amber,
+            isSelected: _isClappedByMe, // State değişkeni
+            onTap: () => _handleEmoteTap(EmoteEnum.clap),
           ),
           SizedBox(width: 12.w),
+
+          // YUMURTA
           EmojiChip(
             icon: Icons.egg,
-            text: '$eggCount',
+            text: '$_eggCount', // State değişkeni
             color: Colors.white,
+            isSelected: _isEggedByMe, // State değişkeni
+            onTap: () => _handleEmoteTap(EmoteEnum.egg),
           ),
+
           const Spacer(),
           SmallStackedAvatars(
             avatarUrls: likedByAvatars,
@@ -312,10 +466,9 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  // 2b. Page Indicator Widget
+  // --- PAGE INDICATOR ---
   Widget _buildPageIndicator(int pageCount) {
     final activeColor = Theme.of(context).colorScheme.secondary;
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
@@ -336,7 +489,7 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  // 3. Footer Widget
+  // --- FOOTER ---
   Widget _buildFooter(
     BuildContext context, {
     required String caption,
@@ -353,7 +506,6 @@ class _PostCardState extends State<PostCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row containing Caption and Timer
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 12.w),
             child: Row(
@@ -371,7 +523,6 @@ class _PostCardState extends State<PostCard> {
                   ),
                 ),
                 SizedBox(width: 16.w),
-                // Corrected CountdownTimer placement
                 CountdownTimer(
                   targetTime: widget.post.createdAt ?? DateTime.now(),
                   style: timeStyle,
@@ -380,8 +531,6 @@ class _PostCardState extends State<PostCard> {
             ),
           ),
           SizedBox(height: 8.h),
-
-          // Tags Row
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 12.w),
             child: Row(
