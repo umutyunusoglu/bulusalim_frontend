@@ -6,7 +6,6 @@ import 'package:bulusalim/data/models/model.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/user_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 
 class UserModel extends Model<UserEntity> {
   UserModel({

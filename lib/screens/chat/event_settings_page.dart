@@ -3,6 +3,7 @@ import 'package:bulusalim/components/stacked_avatars.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
+import 'package:bulusalim/domain/repositories/event_repository.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -36,6 +37,9 @@ class EventSettingsPage extends StatefulWidget {
 class _EventSettingsPageState extends State<EventSettingsPage> {
   bool isLocked = false;
   final LoggingService _logger = getIt<LoggingService>();
+  final SessionService sessionService = getIt<SessionService>();
+  final EventRepository eventRepository = getIt<EventRepository>();
+
   void _onLocationTap() {
     // TODO: Haritada konumu aç
     _logger.debug("Konuma tıklandı");
@@ -53,7 +57,17 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
 
   void _onLeaveEventTap() {
     // TODO: Etkinlikten ayrılma servis isteği
+
     _logger.debug("Etkinlikten ayrıl tıklandı");
+
+    final event = widget.eventID;
+    final currentUser = sessionService.currentUser;
+    if (currentUser != null) {
+      eventRepository.removeParticipant(event, currentUser.userID);
+    }
+
+    // go back to messages using go_router
+    context.pop();
   }
 
   void _onCancelEventTap() {
@@ -71,7 +85,6 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final sessionService = getIt<SessionService>();
     final currentUser = sessionService.currentUser;
     final isCreator =
         currentUser != null && currentUser.userID == widget.creatorID;
