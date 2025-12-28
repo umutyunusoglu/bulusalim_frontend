@@ -38,11 +38,11 @@ abstract class UserRepository {
     Identifier userID,
     UserEventEntity event,
   );
-  Future<List<UserEventEntity>> getUserEventHistory(
+  Future<List<UserEventEntity>> getUserEventLog(
     Identifier userID,
   );
 
-  Future<List<UserEventEntity>?> getUserEventHistoryFiltered(
+  Future<List<UserEventEntity>?> getUserEventLogFiltered(
     Identifier userID,
     List<EventStatusEnum> statuses,
   );

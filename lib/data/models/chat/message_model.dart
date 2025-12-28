@@ -11,6 +11,7 @@ class MessageModel implements Model<MessageEntity> {
   factory MessageModel.fromFirestore(
     Map<String, dynamic> firestoreData,
   ) {
+    if (firestoreData['createdAt'] == null) {}
     return MessageModel(
       content: firestoreData['content'] as String,
       senderID: firestoreData['senderID'] as String,

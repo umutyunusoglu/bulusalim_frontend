@@ -1,4 +1,5 @@
 import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart';
+import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
 import 'package:bulusalim/core/utils/types/enums/feed_entity_type_enum.dart';
 import 'package:bulusalim/core/utils/types/enums/restriction_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
@@ -20,6 +21,8 @@ class EventEntity extends FeedEntity with EquatableMixin {
     required this.attributes,
     required this.createdAt,
     required this.updatedAt,
+    required this.participantCount,
+    required this.isLocked,
     this.info,
     this.currentUserStatus,
     this.currentUserRole,
@@ -41,6 +44,8 @@ class EventEntity extends FeedEntity with EquatableMixin {
     DateTime? updatedAt,
     String? myStatus,
     String? myRole,
+    int? participantCount,
+    bool? isLocked,
   }) {
     return EventEntity(
       eventID: eventID ?? this.eventID,
@@ -58,11 +63,14 @@ class EventEntity extends FeedEntity with EquatableMixin {
       updatedAt: updatedAt ?? this.updatedAt,
       currentUserStatus: myStatus ?? currentUserStatus,
       currentUserRole: myRole ?? currentUserRole,
+      participantCount: participantCount ?? this.participantCount,
+      isLocked: isLocked ?? this.isLocked,
     );
   }
 
   final String? currentUserStatus;
   final String? currentUserRole;
+  final int participantCount;
 
   final String eventID;
   final String name;
@@ -77,6 +85,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
   final EventAttributes attributes;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool isLocked;
 
   @override
   List<Object?> get props => [eventID];
@@ -120,6 +129,7 @@ class EventAttributes extends Equatable {
 class EventParticipantEntity extends Equatable {
   const EventParticipantEntity({
     required this.userID,
+    required this.status,
     required this.username,
     required this.profileImageUrl,
     required this.role,
@@ -128,6 +138,7 @@ class EventParticipantEntity extends Equatable {
   factory EventParticipantEntity.fromMap(Map<String, dynamic> map) {
     return EventParticipantEntity(
       userID: map['userID'] as Identifier,
+      status: EventStatusEnum.fromString(map['status'] as String),
       username: map['username'] as String,
       profileImageUrl: map['profileImageUrl'] as String,
       role: EventRoleEnum.fromString(map['role'] as String),
@@ -138,12 +149,14 @@ class EventParticipantEntity extends Equatable {
   EventParticipantEntity copyWith({
     Identifier? userID,
     String? username,
+    EventStatusEnum? status,
     String? profileImageUrl,
     EventRoleEnum? role,
     double? eventScore,
   }) {
     return EventParticipantEntity(
       userID: userID ?? this.userID,
+      status: status ?? this.status,
       username: username ?? this.username,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       role: role ?? this.role,
@@ -154,6 +167,7 @@ class EventParticipantEntity extends Equatable {
   Map<String, dynamic> toMap() {
     return {
       'userID': userID,
+      'status': status.toString(),
       'username': username,
       'profileImageUrl': profileImageUrl,
       'role': role.index,
@@ -165,6 +179,7 @@ class EventParticipantEntity extends Equatable {
   List<Object?> get props => [userID, role, eventScore];
 
   final Identifier userID;
+  final EventStatusEnum status;
   final String username;
   final String profileImageUrl;
   final EventRoleEnum role;

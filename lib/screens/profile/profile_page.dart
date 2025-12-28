@@ -26,36 +26,29 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  // --- DURUM YÖNETİMİ ---
-  int _selectedTabIndex = 0;
-  final PageController _pageController = PageController();
+  int numberOfEvents = 0;
+  int numberOfFollowers = 0;
+  int numberOfFollowing = 0;
 
+  String _avatarUrl = '';
+  final List<String> _badges = [];
+  String _bio = '';
+  List<EventEntity> _consideredEvents = [];
   // --- VERİLER ---
   List<EventEntity> _currentEvents = [];
-  List<EventEntity> _consideredEvents = [];
-  List<PinnedPostEntity> _pinnedPosts = [];
 
+  String _fullName = '';
+  bool _isFollowing = false;
   bool _isLoadingEvents = true;
+  final bool _isPrivateAccount = false;
+  final PageController _pageController = PageController();
+  List<PinnedPostEntity> _pinnedPosts = [];
+  String _school = '';
+  // --- DURUM YÖNETİMİ ---
+  int _selectedTabIndex = 0;
 
   // --- MOCK PROFİL BİLGİLERİ ---
   String _username = '';
-  String _fullName = '';
-  String _bio = '';
-  String _school = '';
-  String _avatarUrl = '';
-  final List<String> _badges = [];
-  int numberOfFollowers = 0;
-  int numberOfFollowing = 0;
-  int numberOfEvents = 0;
-
-  final bool _isPrivateAccount = false;
-  bool _isFollowing = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchProfileData();
-  }
 
   @override
   void dispose() {
@@ -63,70 +56,100 @@ class _ProfilePageState extends State<ProfilePage> {
     super.dispose();
   }
 
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfileData();
+  }
+
   Future<void> _fetchProfileData() async {
     if (!mounted) return;
 
-    final userRepository = getIt<UserRepository>();
-    final eventRepository = getIt<EventRepository>();
-    final user = await userRepository.getUser(widget.profileUserID);
-    final pinnedPosts = await userRepository.getPinnedPosts(
-      widget.profileUserID,
-    );
+    debugPrint("--- FETCH BAŞLADI: ${widget.profileUserID} ---");
 
-    final userEventsEnrolled = await userRepository.getUserEventHistory(
-      widget.profileUserID,
-    );
-    final enrolledEventIds = <Identifier>[];
-    final savedEventIds = <Identifier>[];
+    try {
+      // 1. ADIM: Servisleri çağırma
+      debugPrint("1. GetIt servisleri alınıyor...");
+      final userRepository = getIt<UserRepository>();
+      final eventRepository = getIt<EventRepository>();
+      debugPrint("1. Servisler başarıyla alındı.");
 
-    for (final event in userEventsEnrolled) {
-      switch (event.status) {
-        case EventStatusEnum.upcoming:
-        case EventStatusEnum.ongoing:
-          enrolledEventIds.add(event.eventId);
-        case EventStatusEnum.saved:
-          savedEventIds.add(event.eventId);
-        case EventStatusEnum.completed:
-          numberOfEvents += 1;
-        case EventStatusEnum.cancelled:
-          break;
-      }
-    }
-
-    List<EventEntity> enrolledEvents;
-    if (enrolledEventIds.isNotEmpty) {
-      enrolledEvents = await eventRepository.getEventsByIds(
-        enrolledEventIds,
+      // 2. ADIM: User verisini çekme
+      debugPrint("2. getUser çağrılıyor...");
+      final user = await userRepository.getUser(widget.profileUserID);
+      debugPrint(
+        "2. User verisi geldi: ${user?.username ?? 'USER NULL GELDİ'}",
       );
-    } else {
-      enrolledEvents = [];
-    }
 
-    List<EventEntity> savedEvents;
-    if (savedEventIds.isNotEmpty) {
-      savedEvents = await eventRepository.getEventsByIds(
-        savedEventIds,
+      // 3. ADIM: Pinned Postları çekme
+      debugPrint("3. Pinned posts çekiliyor...");
+      final pinnedPosts = await userRepository.getPinnedPosts(
+        widget.profileUserID,
       );
-    } else {
-      savedEvents = [];
-    }
 
-    if (!mounted) return;
+      // 4. ADIM: Event Loglarını çekme
+      debugPrint("4. Event logları çekiliyor...");
+      final userEventsEnrolled = await userRepository.getUserEventLog(
+        widget.profileUserID,
+      );
 
-    setState(() {
-      if (user != null) {
-        _username = user.username;
-        _fullName = user.username;
-        _bio = user.bio ?? '';
-        _school = user.organization;
-        _avatarUrl = user.profileImageUrl;
+      // --- BURADAN SONRASI SENİN MEVCUT MANTIK KODLARIN ---
+      final enrolledEventIds = <Identifier>[];
+      final savedEventIds = <Identifier>[];
+
+      for (final event in userEventsEnrolled) {
+        // ... switch case kodların aynen kalacak ...
+        switch (event.status) {
+          case EventStatusEnum.upcoming:
+            enrolledEventIds.add(event.eventId);
+          case EventStatusEnum.ongoing:
+            enrolledEventIds.add(event.eventId);
+          case EventStatusEnum.saved:
+            savedEventIds.add(event.eventId);
+          case EventStatusEnum.completed:
+            numberOfEvents += 1;
+          default:
+            break;
+        }
       }
 
-      _pinnedPosts = pinnedPosts;
-      _currentEvents = enrolledEvents;
-      _consideredEvents = savedEvents;
-      _isLoadingEvents = false;
-    });
+      List<EventEntity> enrolledEvents = [];
+      if (enrolledEventIds.isNotEmpty) {
+        enrolledEvents = await eventRepository.getEventsByIds(enrolledEventIds);
+      }
+
+      List<EventEntity> savedEvents = [];
+      if (savedEventIds.isNotEmpty) {
+        savedEvents = await eventRepository.getEventsByIds(savedEventIds);
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        if (user != null) {
+          _username = user.username;
+          _fullName = user.username;
+          _bio = user.bio ?? '';
+          _school = user.organization;
+          // URL boş gelse bile boş string atıyoruz, null hatası almamak için
+          _avatarUrl = user.profileImageUrl ?? '';
+        }
+
+        _pinnedPosts = pinnedPosts;
+        _currentEvents = enrolledEvents;
+        _consideredEvents = savedEvents;
+        _isLoadingEvents = false;
+      });
+    } catch (e, stackTrace) {
+      // HATA BURAYA DÜŞECEK
+
+      // Kullanıcı sonsuza kadar loading'de kalmasın diye:
+      if (mounted) {
+        setState(() {
+          _isLoadingEvents = false;
+        });
+      }
+    }
   }
 
   void _toggleFollow() {
@@ -139,57 +162,6 @@ class _ProfilePageState extends State<ProfilePage> {
       index,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: theme.colorScheme.surface,
-        body: NestedScrollView(
-          headerSliverBuilder: (context, innerBoxIsScrolled) {
-            return [
-              // 1. HEADER
-              SliverToBoxAdapter(child: _buildProfileHeader(context)),
-
-              // 2. TAB BAR (Sticky)
-              SliverPersistentHeader(
-                delegate: SectionHeaderDelegate(
-                  child: ProfileTabBar(
-                    currentIndex: _selectedTabIndex,
-                    onTabSelected: _onTabSelected,
-                  ),
-                ),
-                pinned: true,
-              ),
-            ];
-          },
-          // 3. İÇERİK (Modüler Yapı)
-          body: PageView(
-            controller: _pageController,
-            onPageChanged: (index) {
-              setState(() => _selectedTabIndex = index);
-            },
-            children: [
-              // TAB 1: Grid (Fotoğraflar)
-              ProfileGridTab(pinnedPosts: _pinnedPosts),
-
-              // TAB 2: Events (Etkinlikler)
-              ProfileEventsTab(
-                currentEvents: _currentEvents,
-                consideredEvents: _consideredEvents,
-                isLoading: _isLoadingEvents,
-              ),
-
-              // TAB 3: Dump (Kilitli)
-              const ProfileDumpTab(),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -435,13 +407,74 @@ class _ProfilePageState extends State<ProfilePage> {
       ],
     );
   }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoadingEvents) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(), // Dönen yükleme çubuğu
+        ),
+      );
+    }
+
+    final theme = Theme.of(context);
+
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: theme.colorScheme.surface,
+        body: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return [
+              // 1. HEADER
+              SliverToBoxAdapter(child: _buildProfileHeader(context)),
+
+              // 2. TAB BAR (Sticky)
+              SliverPersistentHeader(
+                delegate: SectionHeaderDelegate(
+                  child: ProfileTabBar(
+                    currentIndex: _selectedTabIndex,
+                    onTabSelected: _onTabSelected,
+                  ),
+                ),
+                pinned: true,
+              ),
+            ];
+          },
+          // 3. İÇERİK (Modüler Yapı)
+          body: PageView(
+            controller: _pageController,
+            onPageChanged: (index) {
+              setState(() => _selectedTabIndex = index);
+            },
+            children: [
+              // TAB 1: Grid (Fotoğraflar)
+              ProfileGridTab(pinnedPosts: _pinnedPosts),
+
+              // TAB 2: Events (Etkinlikler)
+              ProfileEventsTab(
+                currentEvents: _currentEvents,
+                consideredEvents: _consideredEvents,
+                isLoading: _isLoadingEvents,
+              ),
+
+              // TAB 3: Dump (Kilitli)
+              const ProfileDumpTab(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // --- YARDIMCI COMPONENTLER ---
 class ProfileStatItem extends StatelessWidget {
   const ProfileStatItem({required this.count, required this.label, super.key});
+
   final String count;
   final String label;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -477,13 +510,17 @@ class ProfileStatItem extends StatelessWidget {
 
 class SectionHeaderDelegate extends SliverPersistentHeaderDelegate {
   SectionHeaderDelegate({required this.child});
+
   final Widget child;
+
+  @override
+  double get maxExtent => 80.h;
 
   @override
   double get minExtent => 80.h;
 
   @override
-  double get maxExtent => 80.h;
+  bool shouldRebuild(SectionHeaderDelegate oldDelegate) => true;
 
   @override
   Widget build(
@@ -505,7 +542,4 @@ class SectionHeaderDelegate extends SliverPersistentHeaderDelegate {
       ),
     );
   }
-
-  @override
-  bool shouldRebuild(SectionHeaderDelegate oldDelegate) => true;
 }

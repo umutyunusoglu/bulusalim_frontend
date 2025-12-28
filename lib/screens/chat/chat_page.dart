@@ -2,6 +2,7 @@ import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/components/stacked_avatars.dart'; // <-- StackedAvatars EKLENDİ
 import 'package:bulusalim/domain/entities/chat/message_entity.dart';
 import 'package:bulusalim/domain/repositories/chat_repository.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -11,6 +12,7 @@ import 'package:intl/intl.dart';
 class ChatPage extends StatefulWidget {
   const ChatPage({
     required this.eventID,
+    required this.creatorID,
     required this.chatTitle,
     required this.participantAvatars,
     required this.location,
@@ -20,6 +22,7 @@ class ChatPage extends StatefulWidget {
   });
 
   final String eventID;
+  final String creatorID;
   final String chatTitle;
   final List<AvatarInfo> participantAvatars;
   final String location;
@@ -60,7 +63,7 @@ class _ChatPageState extends State<ChatPage> {
     super.dispose();
   }
 
-  void _sendMessage() {
+  Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
 
@@ -70,7 +73,7 @@ class _ChatPageState extends State<ChatPage> {
       createdAt: DateTime.now(),
     );
 
-    _chatRepository.sendMessage(widget.eventID, message).then((
+    await _chatRepository.sendMessage(widget.eventID, message).then((
       _,
     ) {
       _messageController.clear();
@@ -244,6 +247,7 @@ class _ChatPageState extends State<ChatPage> {
                   'location': widget.location,
                   'participants': widget.participantStatus,
                   'time': widget.remainingTime,
+                  'creatorID': widget.creatorID,
                 },
               );
             },
@@ -428,7 +432,9 @@ class _ChatPageState extends State<ChatPage> {
               child: _isComposing
                   ? GestureDetector(
                       key: const ValueKey('send'),
-                      onTap: _sendMessage,
+                      onTap: () async {
+                        await _sendMessage();
+                      },
                       child: Padding(
                         padding: EdgeInsets.all(8.w),
                         child: CircleAvatar(

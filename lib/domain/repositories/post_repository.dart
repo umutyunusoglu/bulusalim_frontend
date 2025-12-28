@@ -19,23 +19,20 @@ abstract class PostRepository {
     double radiusInKm,
   );
 
-  Future<List<PostEntity>> fetchNextBatchOfPosts(
-    PostEntity? lastPost,
-    int batchSize,
-  );
-
-  Future<List<PostEntity>> fetchPreviousBatchOfPosts(
-    PostEntity firstPost,
-    int batchSize,
-  );
-
   Future<void> addEmoteToPost(
     Identifier postId,
+    Identifier userId,
     EmoteEnum emote,
   );
 
   Future<void> removeEmoteFromPost(
     Identifier postId,
+    Identifier userId,
+    EmoteEnum emote,
+  );
+  Future<bool> isUserEmotedPost(
+    Identifier postId,
+    Identifier userId,
     EmoteEnum emote,
   );
 }
