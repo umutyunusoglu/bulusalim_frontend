@@ -18,7 +18,6 @@ class Header extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(vertical: 12.h),
       margin: EdgeInsets.symmetric(horizontal: 16.w),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
