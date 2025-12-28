@@ -1,4 +1,5 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
+import 'package:bulusalim/components/bottomsheetoption.dart';
 import 'package:bulusalim/components/eventcardbackgroundpainter.dart';
 import 'package:bulusalim/components/stacked_avatars.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
@@ -8,6 +9,7 @@ import 'package:bulusalim/screens/home/eventcomponents/event_info_chip.dart';
 import 'package:bulusalim/screens/home/eventcomponents/event_location_chip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 class EventCard extends StatelessWidget {
   const EventCard({
@@ -125,12 +127,49 @@ class EventCard extends StatelessWidget {
                         // 5. İKONLAR ARASI 8 BOŞLUK
                         SizedBox(width: 8.w),
 
-                        // 6. AYARLAR İKONU (19px)
+                        // 6. AYARLAR İKONU
                         SizedBox(
                           width: 19.w,
-                          height: 19.w, // Hizalama bozulmasın diye kare kutu
+                          height: 19.w,
                           child: InkWell(
-                            onTap: () {},
+                            onTap: () {
+                              showModalBottomSheet(
+                                context: context,
+                                useRootNavigator: true,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (context) => CustomActionBottomSheet(
+                                  height: 201.h,
+                                  options: [
+                                    BottomSheetOption(
+                                      icon: Icons.person_off_outlined,
+                                      text: "Buluşma Sahibini Takibi Bırak",
+                                      onTap: () {
+                                        _logger.info("Takip bırakıldı");
+                                        context.pop();
+                                      },
+                                    ),
+                                    BottomSheetOption(
+                                      icon: Icons.share_outlined,
+                                      text: "Paylaş",
+                                      onTap: () {
+                                        _logger.info("Paylaşıldı");
+                                        context.pop();
+                                      },
+                                    ),
+                                    BottomSheetOption(
+                                      icon: Icons.report_gmailerrorred_outlined,
+                                      text: "Şikayet Et",
+                                      isDestructive: true, // KIRMIZI YAPAR
+                                      onTap: () {
+                                        _logger.info("Şikayet edildi");
+                                        context.pop();
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
                             child: Icon(
                               Icons.more_vert,
                               color: Colors.black54,
