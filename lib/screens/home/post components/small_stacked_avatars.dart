@@ -1,3 +1,4 @@
+import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
 import 'package:flutter/material.dart';
 
 class SmallStackedAvatars extends StatelessWidget {
@@ -44,7 +45,7 @@ class SmallStackedAvatars extends StatelessWidget {
                   width: borderWidth,
                 ),
                 image: DecorationImage(
-                  image: NetworkImage(items[index]),
+                  image: NetworkImage(fixEmulatorUrl(items[index])),
                   fit: BoxFit.cover,
                 ),
                 color: Colors.grey.shade300,

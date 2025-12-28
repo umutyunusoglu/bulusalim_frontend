@@ -55,7 +55,7 @@ Future<void> main() async {
 
     final authInstance = FirebaseAuth.instance;
 
-    const testUserId = 'user1@example.com';
+    const testUserId = 'user1@test.com';
 
     if (testUserId == 'A') {
       if (authInstance.currentUser != null) {
@@ -66,7 +66,7 @@ Future<void> main() async {
     } else {
       await authInstance.signInWithEmailAndPassword(
         email: testUserId,
-        password: '123456',
+        password: 'password123',
       );
     }
 

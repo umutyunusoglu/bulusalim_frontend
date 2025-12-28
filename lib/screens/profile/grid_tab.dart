@@ -1,3 +1,4 @@
+import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
 import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -33,7 +34,7 @@ class ProfileGridTab extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16.r),
                 image: DecorationImage(
                   image: NetworkImage(
-                    pinnedPosts[index].imageUrls.first,
+                    fixEmulatorUrl(pinnedPosts[index].imageUrls.first),
                   ),
                   fit: BoxFit.cover,
                 ),

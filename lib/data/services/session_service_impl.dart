@@ -87,12 +87,26 @@ class SessionServiceImpl implements SessionService {
 
   void _refreshCurrentEventState(List<EventEntity> events) {
     try {
-      final ongoingEvent = events.firstWhere(
-        (e) => e.currentUserStatus == 'ongoing',
-      );
+      _logger.debug("Events: $events");
+      final ongoingEvents = <EventEntity>[];
+      for (var e in events) {
+        if (e.currentUserStatus == 'ongoing') {
+          ongoingEvents.add(e);
+        }
+      }
+      //TODO: Birden fazla ongoing event durumu nasıl yönetilecek?
+      if (ongoingEvents.isEmpty) {
+        _eventNotifier.value = null;
+        return;
+      }
+      final ongoingEvent = ongoingEvents.first;
+      _eventNotifier.value = events.first;
+
+      _logger.debug("Ongoing Event: $ongoingEvent");
 
       _eventNotifier.value = ongoingEvent;
-    } on Exception {
+    } on Exception catch (e) {
+      _logger.error('Error refreshing current event state: $e');
       if (events.isNotEmpty) {
         _eventNotifier.value = events.first;
       } else {

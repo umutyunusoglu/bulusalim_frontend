@@ -1,3 +1,4 @@
+import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -46,7 +47,7 @@ class ProfilePhoto extends StatelessWidget {
           ),
           child: ClipOval(
             child: Image.network(
-              profileImageUrl,
+              fixEmulatorUrl(profileImageUrl),
               fit: BoxFit.cover,
               width: photoSize,
               height: photoSize,
@@ -130,7 +131,7 @@ class ProfilePhoto extends StatelessWidget {
       child: isActive && imageUrl != null
           ? ClipOval(
               child: Image.network(
-                imageUrl,
+                fixEmulatorUrl(imageUrl),
                 fit: BoxFit.cover,
                 errorBuilder: (c, e, s) => const SizedBox(),
               ),

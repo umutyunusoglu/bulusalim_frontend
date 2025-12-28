@@ -1,7 +1,14 @@
+import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/components/stacked_avatars.dart';
+import 'package:bulusalim/core/utils/logging/logging_service.dart';
+import 'package:bulusalim/core/utils/types/types.dart';
+import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
+import 'package:bulusalim/domain/repositories/event_repository.dart';
+import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logger/logger.dart';
 
 class EventSettingsPage extends StatefulWidget {
   const EventSettingsPage({
@@ -11,17 +18,17 @@ class EventSettingsPage extends StatefulWidget {
     required this.location,
     required this.participantStatus,
     required this.remainingTime,
-    this.isCreator = true,
+    required this.creatorID,
     super.key,
   });
 
-  final String eventID;
+  final Identifier eventID;
   final String chatTitle;
   final List<AvatarInfo> participantAvatars;
   final String location;
   final String participantStatus;
   final String remainingTime;
-  final bool isCreator;
+  final String creatorID;
 
   @override
   State<EventSettingsPage> createState() => _EventSettingsPageState();
@@ -29,9 +36,62 @@ class EventSettingsPage extends StatefulWidget {
 
 class _EventSettingsPageState extends State<EventSettingsPage> {
   bool isLocked = false;
+  final LoggingService _logger = getIt<LoggingService>();
+  final SessionService sessionService = getIt<SessionService>();
+  final EventRepository eventRepository = getIt<EventRepository>();
+
+  void _onLocationTap() {
+    // TODO: Haritada konumu aç
+    _logger.debug("Konuma tıklandı");
+  }
+
+  void _onManageParticipantsTap() {
+    // TODO: Katılımcı yönetimi sayfasına git
+    _logger.debug("Katılımcı yönetimine tıklandı");
+  }
+
+  void _onReportTap() {
+    // TODO: Şikayet dialogunu aç
+    _logger.debug("Bildir tıklandı");
+  }
+
+  void _onLeaveEventTap() {
+    // TODO: Etkinlikten ayrılma servis isteği
+
+    _logger.debug("Etkinlikten ayrıl tıklandı");
+
+    final event = widget.eventID;
+    final currentUser = sessionService.currentUser;
+    if (currentUser != null) {
+      eventRepository.removeParticipant(event, currentUser.userID);
+    }
+
+    // go back to messages using go_router
+    context.pop();
+  }
+
+  void _onCancelEventTap() {
+    // TODO: Etkinliği iptal etme servis isteği
+    _logger.debug("Etkinliği iptal et tıklandı");
+  }
+
+  void _onLockEventChanged(bool value) {
+    // TODO: API isteği at
+    setState(() {
+      isLocked = value;
+    });
+    debugPrint("Etkinlik kilit durumu: $value");
+  }
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = sessionService.currentUser;
+    final isCreator =
+        currentUser != null && currentUser.userID == widget.creatorID;
+    _logger.debug(
+      "MyId : ${currentUser?.userID}, CreatorId: ${widget.creatorID}",
+    );
+
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
       body: SafeArea(
@@ -79,38 +139,44 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                     SizedBox(height: 30.h),
 
                     // Etkinliği Kilitle
-                    _buildSwitchRow(
-                      'Etkinliği Kilitle',
-                      'Etkinliğin diğer kullanıcıların karşısına çıkmasını engellersin.',
-                      isLocked,
-                      (val) => setState(() => isLocked = val),
-                    ),
-                    _buildDivider(),
+                    if (isCreator)
+                      _buildSwitchRow(
+                        'Etkinliği Kilitle',
+                        'Etkinliğin diğer kullanıcıların karşısına çıkmasını engellersin.',
+                        isLocked,
+                        (val) => setState(() => isLocked = val),
+                      ),
+                    if (isCreator) _buildDivider(),
 
                     // Katılımcı Seçenekleri
-                    _buildActionRow(
-                      'Katılımcı Seçenekleri',
-                      subtitle:
-                          'Etkinliğin hangi kullanıcıların karşısına çıkacağını düzenlersin.',
-                    ),
+                    if (isCreator)
+                      _buildActionRow(
+                        'Katılımcı Seçenekleri',
+                        subtitle:
+                            'Etkinliğin hangi kullanıcıların karşısına çıkacağını düzenlersin.',
+                        onTap: _onManageParticipantsTap,
+                      ),
                     _buildDivider(),
 
                     // Etkinliği Bildir
-                    _buildActionRow('Etkinliği Bildir'),
+                    _buildActionRow('Etkinliği Bildir', onTap: _onReportTap),
                     _buildDivider(),
 
                     // Etkinlikten Ayrıl
-                    _buildActionRow(
-                      'Etkinlikten Ayrıl',
-                      textColor: const Color(0xFFFF5722),
-                    ),
+                    if (!isCreator)
+                      _buildActionRow(
+                        'Etkinlikten Ayrıl',
+                        textColor: const Color(0xFFFF5722),
+                        onTap: _onLeaveEventTap,
+                      ),
                     _buildDivider(),
 
                     // Etkinliği İptal Et
-                    if (widget.isCreator)
+                    if (isCreator)
                       _buildActionRow(
                         'Etkinliği İptal Et',
                         textColor: const Color(0xFFFF5722),
+                        onTap: _onCancelEventTap,
                       ),
                   ],
                 ),
@@ -294,10 +360,14 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     );
   }
 
-  // GÜNCELLENDİ: Font özellikleri uygulandı
-  Widget _buildActionRow(String title, {String? subtitle, Color? textColor}) {
+  Widget _buildActionRow(
+    String title, {
+    String? subtitle,
+    Color? textColor,
+    VoidCallback? onTap,
+  }) {
     return InkWell(
-      onTap: () {},
+      onTap: onTap,
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: 16.h),
         child: Column(
