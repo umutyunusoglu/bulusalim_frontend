@@ -35,6 +35,7 @@ class PostModel extends Model<PostEntity> {
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
       location: entity.location,
+
       hobbies: entity.hobbies,
       imageUrls: entity.imageUrls,
       participants: entity.participants,
@@ -156,7 +157,10 @@ class PostModel extends Model<PostEntity> {
       'creator': creator.toMap(),
       'eventID': eventID,
       'caption': caption,
-      'location': location?.toMap(),
+      'location': GeoPoint(
+        location?.latitude ?? 0.0,
+        location?.longitude ?? 0.0,
+      ),
       'hobbies': hobbies.map((hobby) => hobby.name).toList(),
       'imageUrls': imageUrls,
       'participants': participants

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
+import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
 import 'package:bulusalim/domain/repositories/post_repository.dart';
@@ -24,6 +25,7 @@ class UploadPost {
   final SessionService _sessionService;
 
   Future<PostEntity> call(
+    EventEntity currentEvent,
     List<File> files,
     bool showParticipants,
     bool addToDump,
@@ -49,8 +51,6 @@ class UploadPost {
       username: currentUser.username,
       profileImageUrl: currentUser.profileImageUrl,
     );
-
-    final currentEvent = _sessionService.currentEvent!;
 
     final post = PostEntity(
       postID: '',
