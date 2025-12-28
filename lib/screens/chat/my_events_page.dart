@@ -2,15 +2,13 @@ import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart';
-import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
-import 'package:bulusalim/data/models/event/event_model.dart';
 import 'package:bulusalim/data/models/user/user_event_model.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/user_event_entity.dart';
 import 'package:bulusalim/domain/repositories/event_repository.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -28,10 +26,11 @@ class _MyEventsPageState extends State<MyEventsPage> {
   bool showApproved = false;
   bool showPending = false;
 
+  //
   @override
   void initState() {
     super.initState();
-    final LoggingService logger = getIt<LoggingService>();
+    final logger = getIt<LoggingService>();
 
     // 1. ID'yi kontrol et
     logger.debug("DEBUG: Sorgu yapılan User ID: $currentUserId");
@@ -84,9 +83,11 @@ class _MyEventsPageState extends State<MyEventsPage> {
     if (event.creator.userID == currentUserId) return 3;
 
     try {
-      final me = event.participants.firstWhere(
+      final me = event.participants.firstWhereOrNull(
         (p) => p.userID == currentUserId,
       );
+
+      if (me == null) return 0;
 
       if (me.role == EventRoleEnum.organizer ||
           me.role == EventRoleEnum.participant) {
@@ -176,6 +177,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
             future: eventRepository.getEventsByIds(
               userEvents.map((e) => e.eventId).toList(),
             ),
+
             builder: (context, eventSnapshot) {
               if (eventSnapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -185,6 +187,8 @@ class _MyEventsPageState extends State<MyEventsPage> {
 
               // Filtreleme Mantığı
               final visibleEvents = events.where((event) {
+                if (event == null) return false;
+
                 // Hiçbir filtre seçili değilse hepsini göster
                 if (!showApproved && !showPending) return true;
 
