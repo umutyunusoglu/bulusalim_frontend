@@ -1,4 +1,5 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
+import 'package:bulusalim/components/bottomsheetoption.dart';
 import 'package:bulusalim/components/countdown_timer.dart';
 import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
 import 'package:bulusalim/core/utils/types/enums/emote_enum.dart';
@@ -327,8 +328,42 @@ class _PostCardState extends State<PostCard> {
         IconButton(
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
-          icon: Icon(Icons.share_outlined, color: theme.colorScheme.secondary),
-          onPressed: () {},
+          icon: Icon(Icons.more_vert, color: theme.colorScheme.secondary),
+          onPressed: () {
+            showModalBottomSheet(
+              context: context,
+              useRootNavigator: true,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (context) => CustomActionBottomSheet(
+                height: 201.h,
+                options: [
+                  BottomSheetOption(
+                    icon: Icons.person_off_outlined,
+                    text: "Buluşma Sahibini Takibi Bırak",
+                    onTap: () {
+                      context.pop();
+                    },
+                  ),
+                  BottomSheetOption(
+                    icon: Icons.share_outlined,
+                    text: "Paylaş",
+                    onTap: () {
+                      context.pop();
+                    },
+                  ),
+                  BottomSheetOption(
+                    icon: Icons.report_gmailerrorred_outlined,
+                    text: "Şikayet Et",
+                    isDestructive: true,
+                    onTap: () {
+                      context.pop();
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       ],
     );
