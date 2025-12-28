@@ -21,6 +21,8 @@ class EventEntity extends FeedEntity with EquatableMixin {
     required this.attributes,
     required this.createdAt,
     required this.updatedAt,
+    required this.participantCount,
+    required this.isLocked,
     this.info,
     this.currentUserStatus,
     this.currentUserRole,
@@ -42,6 +44,8 @@ class EventEntity extends FeedEntity with EquatableMixin {
     DateTime? updatedAt,
     String? myStatus,
     String? myRole,
+    int? participantCount,
+    bool? isLocked,
   }) {
     return EventEntity(
       eventID: eventID ?? this.eventID,
@@ -59,11 +63,14 @@ class EventEntity extends FeedEntity with EquatableMixin {
       updatedAt: updatedAt ?? this.updatedAt,
       currentUserStatus: myStatus ?? currentUserStatus,
       currentUserRole: myRole ?? currentUserRole,
+      participantCount: participantCount ?? this.participantCount,
+      isLocked: isLocked ?? this.isLocked,
     );
   }
 
   final String? currentUserStatus;
   final String? currentUserRole;
+  final int participantCount;
 
   final String eventID;
   final String name;
@@ -78,6 +85,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
   final EventAttributes attributes;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool isLocked;
 
   @override
   List<Object?> get props => [eventID];
@@ -141,13 +149,14 @@ class EventParticipantEntity extends Equatable {
   EventParticipantEntity copyWith({
     Identifier? userID,
     String? username,
+    EventStatusEnum? status,
     String? profileImageUrl,
     EventRoleEnum? role,
     double? eventScore,
   }) {
     return EventParticipantEntity(
       userID: userID ?? this.userID,
-      status: status,
+      status: status ?? this.status,
       username: username ?? this.username,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       role: role ?? this.role,

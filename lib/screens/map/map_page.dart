@@ -68,6 +68,7 @@ class _MapPageState extends State<MapPage> {
       bearing: 0,
       pitch: 0,
     );
+
     return Scaffold(
       body: MapWidget(
         cameraOptions: camera,
