@@ -126,7 +126,6 @@ final router = GoRouter(
                               .toList();
                         }
 
-                        var creatorID = extra?['creatorID'] as String? ?? '';
                         return EventSettingsPage(
                           eventID: eventID,
                           chatTitle: (extra?['title'] as String?) ?? 'Ayarlar',
