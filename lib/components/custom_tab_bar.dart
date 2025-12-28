@@ -37,7 +37,7 @@ class CustomTabBar extends StatelessWidget {
                   tabs[index],
                   style: TextStyle(
                     fontFamily: 'SF Pro Display',
-                    fontSize: 17.sp,
+                    fontSize: 16.sp,
                     fontWeight: FontWeight.w700,
                     // Renk: Seçiliyse Koyu Mavi, Değilse Gri
                     color: isSelected

@@ -13,7 +13,7 @@ class ScaffoldWithNavbar extends StatelessWidget {
   void _goBranch(int index) {
     navigationShell.goBranch(
       index,
-      // Kullanıcı zaten olduğu sekmeye tekrar tıklarsa, o sekmeyi en başa sar (Örn: Feed'in en tepesine çık)
+      // Kullanıcı zaten olduğu sekmeye tekrar tıklarsa, o sekmeyi en başa sar
       initialLocation: index == navigationShell.currentIndex,
     );
   }
@@ -27,13 +27,13 @@ class ScaffoldWithNavbar extends StatelessWidget {
       body: navigationShell,
 
       bottomNavigationBar: Container(
-        // Senin tasarımındaki o ince üst çizgi detayı
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           border: Border(
-            top: BorderSide(
-              color: theme.dividerColor.withOpacity(0.1),
-              width: 1,
-            ),
+            //barın üstündeki ince çizgi
+            // top: BorderSide(
+            //   color: theme.dividerColor.withOpacity(0.1),
+            //   width: 1,
+            // ),
           ),
         ),
         child: BottomNavigationBar(
@@ -57,7 +57,7 @@ class ScaffoldWithNavbar extends StatelessWidget {
               label: 'Map',
             ),
 
-            // 2. Search (Arama) - İstersen buraya 'Icons.search' yerine elindeki SVG'yi de koyabilirsin
+            // 2. Search (Arama)
             BottomNavigationBarItem(
               icon: Icon(Icons.search, size: 25),
               label: 'Search',
