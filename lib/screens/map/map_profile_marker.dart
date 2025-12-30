@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -107,7 +108,7 @@ class _MapProfileMarkerState extends State<MapProfileMarker> {
                 radius: innerRadius,
                 backgroundColor: _selectedColorPair
                     .inner, // Resim yüklenene kadar görünen renk
-                backgroundImage: NetworkImage(widget.imageUrl),
+                backgroundImage: NetworkImage(fixEmulatorUrl(widget.imageUrl)),
                 onBackgroundImageError: (_, __) => debugPrint('Avatar Error'),
               ),
             ),
