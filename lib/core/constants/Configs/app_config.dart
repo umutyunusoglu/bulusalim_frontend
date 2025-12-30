@@ -15,7 +15,7 @@ class AppConfig {
 
   static const int feedCacheSizeLimit = 10000;
   static const Duration postCacheTTL = Duration(minutes: 2);
-  static const Duration feedCacheTTL = Duration(minutes: 2);
+  static const Duration feedCacheTTL = Duration(minutes: 5);
 
   static const int feedBatchSize = 40;
   static const int feedIDListSize = 1000;
