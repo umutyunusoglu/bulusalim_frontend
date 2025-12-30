@@ -22,10 +22,29 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart'
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+  try {
+    // Önce zaten var mı diye kontrol et
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } else {
+      debugPrint("Firebase zaten başlatılmış (isEmpty kontrolü).");
+    }
+  } on FirebaseException catch (e) {
+    if (e.code == 'duplicate-app') {
+      // Eğer "duplicate-app" hatası alırsak, Firebase zaten native tarafta başlamış demektir.
+      // Bu hatayı görmezden gelip devam ediyoruz.
+      debugPrint(
+        "Firebase zaten native tarafta başlatılmış, işlem devam ediyor.",
+      );
+    } else {
+      // Başka bir hata varsa fırlat
+      rethrow;
+    }
+  } catch (e) {
+    // Beklenmedik diğer hatalar için
+    debugPrint("Firebase başlatma hatası (Generic): $e");
   }
   await dotenv.load();
 
