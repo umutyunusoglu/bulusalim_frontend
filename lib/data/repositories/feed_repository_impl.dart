@@ -5,7 +5,8 @@ import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/event/event_model.dart';
 import 'package:bulusalim/data/models/post/post_model.dart';
-import 'package:bulusalim/data/repositories/in_memory_cache.dart';
+import 'package:bulusalim/domain/services/global_content_cache.dart';
+import 'package:bulusalim/domain/services/in_memory_cache.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/feed/feed_entity.dart';
 import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
@@ -16,8 +17,10 @@ class FeedRepositoryImpl implements FeedRepository {
   FeedRepositoryImpl({
     required FirebaseFirestore firestore,
     required LoggingService logger,
+    required GlobalContentCache cache,
   }) : _firestore = firestore,
-       _logger = logger;
+       _logger = logger,
+       cache = cache;
 
   final int batchSize = AppConfig.feedBatchSize;
 
@@ -27,10 +30,34 @@ class FeedRepositoryImpl implements FeedRepository {
   Set<Identifier> _fetchedIdsSet = {};
   final int _maxFetchedIdsLength = AppConfig.feedIDListSize;
 
-  final cache = InMemoryCache<FeedEntity>(
-    cacheSizeLimit: AppConfig.feedCacheSizeLimit,
-    ttl: AppConfig.feedCacheTTL,
-  );
+  final GlobalContentCache cache;
+
+  // For debugging purposes
+  @override
+  Future<List<FeedEntity>> fetchAllFeedItems() async {
+    final batch = <FeedEntity>[];
+
+    final snapshot = await _firestore
+        .collection('feed')
+        .orderBy('createdAt', descending: true)
+        .get();
+
+    final docs = snapshot.docs;
+
+    for (final doc in docs) {
+      final entity = _entityFromDoc(doc);
+      batch.add(entity);
+
+      final id = (entity is PostEntity)
+          ? entity.postID
+          : (entity as EventEntity).eventID;
+      _fetchedIds.add(id);
+      _fetchedIdsSet.add(id);
+      cache.cacheEntity(entity);
+    }
+
+    return batch;
+  }
 
   @override
   Future<List<FeedEntity>> fetchNextFeedBatch(
@@ -58,7 +85,7 @@ class FeedRepositoryImpl implements FeedRepository {
             : (entity as EventEntity).eventID;
         _fetchedIds.add(id);
         _fetchedIdsSet.add(id);
-        cache.set(id, entity);
+        cache.cacheEntity(entity);
       }
       return batch;
     }
@@ -76,7 +103,7 @@ class FeedRepositoryImpl implements FeedRepository {
 
       for (var i = startIndex; i < endIndex; i++) {
         final id = _fetchedIds[i];
-        final cachedEntity = cache.get(id);
+        final cachedEntity = cache.getEntity(id);
         // If found in cache add to batch
         if (cachedEntity != null) {
           batch.add(cachedEntity);
@@ -103,7 +130,7 @@ class FeedRepositoryImpl implements FeedRepository {
         final id = (entity is PostEntity)
             ? entity.postID
             : (entity as EventEntity).eventID;
-        cache.set(id, entity);
+        cache.cacheEntity(entity);
       }
     }
 
@@ -131,7 +158,7 @@ class FeedRepositoryImpl implements FeedRepository {
             : (entity as EventEntity).eventID;
         _fetchedIds.add(id);
         _fetchedIdsSet.add(id);
-        cache.set(id, entity);
+        cache.cacheEntity(entity);
       }
     }
 
@@ -162,7 +189,7 @@ class FeedRepositoryImpl implements FeedRepository {
 
       for (var i = startIndex; i < endIndex; i++) {
         final id = _fetchedIds[i];
-        final cachedEntity = cache.get(id);
+        final cachedEntity = cache.getEntity(id);
         // If found in cache add to batch
         if (cachedEntity != null) {
           batch.add(cachedEntity);
@@ -186,7 +213,7 @@ class FeedRepositoryImpl implements FeedRepository {
         final id = (entity is PostEntity)
             ? entity.postID
             : (entity as EventEntity).eventID;
-        cache.set(id, entity);
+        cache.cacheEntity(entity);
       }
     }
 
@@ -216,7 +243,7 @@ class FeedRepositoryImpl implements FeedRepository {
             : (entity as EventEntity).eventID;
         newIds.add(id);
 
-        cache.set(id, entity);
+        cache.cacheEntity(entity);
       }
       batch.insertAll(0, newEntities);
       _fetchedIds.insertAll(0, newIds);
