@@ -300,6 +300,7 @@ class _MapPageState extends State<MapPage> {
             onTapListener: _onMapBackgroundClick,
             onCameraChangeListener: _onCameraChangeListener,
           ),
+
           AnimatedPositioned(
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeInOut,

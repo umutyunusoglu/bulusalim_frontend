@@ -22,7 +22,11 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart'
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
   await dotenv.load();
 
   final mapBoxAccessToken = dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
