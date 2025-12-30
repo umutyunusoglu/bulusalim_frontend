@@ -1,10 +1,10 @@
 import 'package:bulusalim/core/constants/configs/app_config.dart';
-import 'package:bulusalim/core/utils/types/enums/restriction_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/model.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dart_geohash/dart_geohash.dart';
 
 class EventModel extends Model<EventEntity> {
   EventModel({
@@ -19,10 +19,10 @@ class EventModel extends Model<EventEntity> {
     required this.startTime,
     required this.endTime,
     required this.location,
-    required this.attributes,
     required this.createdAt,
     required this.updatedAt,
     required this.isLocked,
+    required this.geohash,
   });
 
   @override
@@ -39,21 +39,26 @@ class EventModel extends Model<EventEntity> {
       startTime: entity.startTime,
       endTime: entity.endTime,
       location: entity.location,
-      attributes: entity.attributes,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
       isLocked: entity.isLocked,
+      geohash: entity.geohash,
     );
   }
 
   @override
   factory EventModel.fromFirestore(Map<String, dynamic> doc) {
-    final attributesMap = doc['attributes'] as Map<String, dynamic>;
-
     final geolocation = doc['location'] as GeoPoint;
     final location = Geolocation(
       latitude: geolocation.latitude,
       longitude: geolocation.longitude,
+    );
+
+    final geohasher = GeoHasher();
+    final geohash = geohasher.encode(
+      location.longitude,
+      location.latitude,
+      precision: 7,
     );
 
     final creator = EventParticipantEntity.fromMap(
@@ -86,19 +91,11 @@ class EventModel extends Model<EventEntity> {
       startTime: (doc['startTime'] as Timestamp).toDate(),
       endTime: (doc['endTime'] as Timestamp).toDate(),
       location: location,
-      attributes: EventAttributes(
-        price: (attributesMap['price'] as num?)?.toDouble() ?? 0.0,
-        smoking: attributesMap['smoking'] != null
-            ? RestrictionEnum.values[attributesMap['smoking'] as int]
-            : RestrictionEnum.allowed,
-        alcohol: attributesMap['alcohol'] != null
-            ? RestrictionEnum.values[attributesMap['alcohol'] as int]
-            : RestrictionEnum.allowed,
-        isPublic: (attributesMap['isPublic'] as bool?) ?? true,
-      ),
+
       createdAt: (doc['createdAt'] as Timestamp).toDate(),
       updatedAt: (doc['updatedAt'] as Timestamp).toDate(),
       isLocked: (doc['isLocked'] as bool?) ?? false,
+      geohash: geohash,
     );
   }
 
@@ -129,10 +126,10 @@ class EventModel extends Model<EventEntity> {
         location.latitude,
         location.longitude,
       ),
-      'attributes': attributes.toMap(),
       'createdAt': createdAt,
       'updatedAt': updatedAt,
       'isLocked': isLocked,
+      'geohash': geohash,
     };
   }
 
@@ -150,10 +147,10 @@ class EventModel extends Model<EventEntity> {
       startTime: startTime,
       endTime: endTime,
       location: location,
-      attributes: attributes,
       createdAt: createdAt,
       updatedAt: updatedAt,
       isLocked: isLocked,
+      geohash: geohash,
     );
   }
 
@@ -168,8 +165,8 @@ class EventModel extends Model<EventEntity> {
   final DateTime startTime;
   final DateTime endTime;
   final Geolocation location;
-  final EventAttributes attributes;
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isLocked;
+  final String geohash;
 }
