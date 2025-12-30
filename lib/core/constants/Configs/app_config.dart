@@ -13,7 +13,7 @@ class AppConfig {
 
   final remoteConfigDebugPath = 'assets/remote_config_defaults.json';
 
-  static const int feedCacheSizeLimit = 100;
+  static const int feedCacheSizeLimit = 10000;
   static const Duration postCacheTTL = Duration(minutes: 2);
   static const Duration feedCacheTTL = Duration(minutes: 2);
 

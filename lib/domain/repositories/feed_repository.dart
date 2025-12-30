@@ -1,6 +1,8 @@
 import 'package:bulusalim/domain/entities/feed/feed_entity.dart';
 
 abstract class FeedRepository {
+  Future<List<FeedEntity>> fetchAllFeedItems();
+
   Future<List<FeedEntity>> fetchNextFeedBatch(
     FeedEntity? referenceFeedItem,
   );

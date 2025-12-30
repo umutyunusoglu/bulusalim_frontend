@@ -18,11 +18,11 @@ class EventEntity extends FeedEntity with EquatableMixin {
     required this.startTime,
     required this.endTime,
     required this.location,
-    required this.attributes,
     required this.createdAt,
     required this.updatedAt,
     required this.participantCount,
     required this.isLocked,
+    required this.geohash,
     this.info,
     this.currentUserStatus,
     this.currentUserRole,
@@ -39,13 +39,13 @@ class EventEntity extends FeedEntity with EquatableMixin {
     DateTime? startTime,
     DateTime? endTime,
     Geolocation? location,
-    EventAttributes? attributes,
     DateTime? createdAt,
     DateTime? updatedAt,
     String? myStatus,
     String? myRole,
     int? participantCount,
     bool? isLocked,
+    String? geohash,
   }) {
     return EventEntity(
       eventID: eventID ?? this.eventID,
@@ -58,20 +58,19 @@ class EventEntity extends FeedEntity with EquatableMixin {
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       location: location ?? this.location,
-      attributes: attributes ?? this.attributes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       currentUserStatus: myStatus ?? currentUserStatus,
       currentUserRole: myRole ?? currentUserRole,
       participantCount: participantCount ?? this.participantCount,
       isLocked: isLocked ?? this.isLocked,
+      geohash: geohash ?? this.geohash,
     );
   }
 
   final String? currentUserStatus;
   final String? currentUserRole;
   final int participantCount;
-
   final String eventID;
   final String name;
   final String? info;
@@ -82,48 +81,13 @@ class EventEntity extends FeedEntity with EquatableMixin {
   final DateTime startTime;
   final DateTime endTime;
   final Geolocation location;
-  final EventAttributes attributes;
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isLocked;
+  final String geohash;
 
   @override
   List<Object?> get props => [eventID];
-}
-
-class EventAttributes extends Equatable {
-  const EventAttributes({
-    required this.price,
-    required this.smoking,
-    required this.alcohol,
-    required this.isPublic,
-  });
-
-  factory EventAttributes.fromMap(Map<String, dynamic> map) {
-    return EventAttributes(
-      price: (map['price'] as num).toDouble(),
-      smoking: RestrictionEnum.values[map['smoking'] as int],
-      alcohol: RestrictionEnum.values[map['alcohol'] as int],
-      isPublic: map['isPublic'] as bool,
-    );
-  }
-
-  @override
-  List<Object?> get props => [price, smoking, alcohol, isPublic];
-
-  Map<String, dynamic> toMap() {
-    return {
-      'price': price,
-      'smoking': smoking.index,
-      'alcohol': alcohol.index,
-      'isPublic': isPublic,
-    };
-  }
-
-  final double price;
-  final RestrictionEnum smoking;
-  final RestrictionEnum alcohol;
-  final bool isPublic;
 }
 
 class EventParticipantEntity extends Equatable {
