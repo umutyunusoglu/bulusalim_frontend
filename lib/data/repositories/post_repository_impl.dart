@@ -4,7 +4,7 @@ import 'package:bulusalim/core/utils/types/geolocation/distance.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/post/post_model.dart';
-import 'package:bulusalim/data/repositories/in_memory_cache.dart';
+import 'package:bulusalim/domain/services/in_memory_cache.dart';
 import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
 import 'package:bulusalim/domain/repositories/post_repository.dart';
