@@ -42,7 +42,9 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isLoadingEvents = true;
   final bool _isPrivateAccount = false;
   final PageController _pageController = PageController();
+
   List<PinnedPostEntity> _pinnedPosts = [];
+
   String _school = '';
   // --- DURUM YÖNETİMİ ---
   int _selectedTabIndex = 0;

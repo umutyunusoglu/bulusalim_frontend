@@ -284,7 +284,7 @@ class _MapPageState extends State<MapPage> {
     // ... (Aynı kalacak)
     // Sadece build metodu senin kodundaki gibi.
     final camera = CameraOptions(
-      center: Point(coordinates: Position(28.9795, 41.0151)),
+      center: Point(coordinates: Position(29.0254, 40.9819)),
       zoom: 17, // Biraz daha zoom out başlatabilirsin
       bearing: 0,
       pitch: 0,
