@@ -11,6 +11,7 @@ class UserModel extends Model<UserEntity> {
   UserModel({
     required this.userID,
     required this.username,
+    required this.searchName,
     required this.email,
     required this.birthDate,
     required this.gender,
@@ -33,6 +34,7 @@ class UserModel extends Model<UserEntity> {
       userID: entity.userID,
       email: entity.email,
       username: entity.username,
+      searchName: entity.username.toLowerCase(),
       birthDate: entity.birthDate,
       gender: entity.gender,
       organization: entity.organization,
@@ -72,6 +74,8 @@ class UserModel extends Model<UserEntity> {
       userID: doc['userID'] as String,
       email: doc['email'] as String? ?? '',
       username: doc['username'] as String? ?? 'Bilinmeyen Kullanıcı',
+      searchName: (doc['username'] as String? ?? 'Bilinmeyen Kullanıcı')
+          .toLowerCase(),
       birthDate: birthDate,
       gender: gender,
       organization: doc['organization'] as String? ?? '',
@@ -153,6 +157,7 @@ class UserModel extends Model<UserEntity> {
   final Identifier userID;
   final String email;
   final String username;
+  final String searchName;
   final DateTime birthDate;
   final GenderEnum gender;
   final String organization;

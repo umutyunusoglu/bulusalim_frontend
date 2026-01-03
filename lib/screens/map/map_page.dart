@@ -291,8 +291,8 @@ class _MapPageState extends State<MapPage> {
   @override
   Widget build(BuildContext context) {
     final camera = CameraOptions(
-      center: Point(coordinates: Position(28.9795, 41.0151)),
-      zoom: 17,
+      center: Point(coordinates: Position(29.0254, 40.9819)),
+      zoom: 17, // Biraz daha zoom out başlatabilirsin
       bearing: 0,
       pitch: 0,
     );
