@@ -2,10 +2,12 @@ import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/components/bottomsheetoption.dart';
 import 'package:bulusalim/components/eventcardbackgroundpainter.dart';
 import 'package:bulusalim/components/stacked_avatars.dart';
+import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
+import 'package:bulusalim/domain/services/remote_config_service.dart';
 import 'package:bulusalim/screens/home/eventcomponents/event_info_chip.dart';
 import 'package:bulusalim/screens/home/eventcomponents/event_location_chip.dart';
 import 'package:flutter/material.dart';
@@ -25,7 +27,8 @@ class EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final _logger = getIt<LoggingService>();
-
+    final remoteConfigService = getIt<RemoteConfigService>();
+    final categories = AppConfig.categories;
     // --- Veri Hazırlığı ---
     final displayAvatars = participants.isNotEmpty
         ? participants
@@ -193,8 +196,8 @@ class EventCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // LOKASYON ÇİPİ
-                        const EventLocationChip(
-                          locationName: 'İnegöl, Bolu',
+                        EventLocationChip(
+                          locationName: event.address,
                         ),
 
                         SizedBox(height: 4.h),
@@ -202,7 +205,7 @@ class EventCard extends StatelessWidget {
                         // INFO ÇİPİ
                         EventInfoChip(
                           startTime: event.startTime,
-                          participantCount: event.participants.length,
+                          participantCount: event.participantCount,
                           capacity: event.capacity,
                         ),
                       ],
@@ -262,13 +265,7 @@ class EventCard extends StatelessWidget {
               width: 50.w,
               height: 50.w,
               child: Center(
-                child: Image.network(
-                  "https://cdn-icons-png.flaticon.com/512/2553/2553644.png",
-                  width: 24.w,
-                  height: 24.w,
-                  errorBuilder: (c, e, s) =>
-                      Icon(Icons.hiking, color: Colors.brown, size: 24.sp),
-                ),
+                child: Text(categories[event.hobbies[0]] ?? ''),
               ),
             ),
           ),
