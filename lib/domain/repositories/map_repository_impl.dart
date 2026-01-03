@@ -53,7 +53,7 @@ class MapRepositoryImpl implements MapRepository {
     int precision = 7,
   }) async {
     // 1. Koordinat hesaplamaları (Refactor edilmiş güvenli hali)
-    final expandedBounds = _expandBounds(bounds as CoordinateBounds, 1);
+    final expandedBounds = _expandBounds(bounds as CoordinateBounds, 0.5);
     final searchPrecision = _calculateSearchPrecision(expandedBounds);
 
     // 2. Bölgeleri Hesapla
@@ -228,31 +228,6 @@ class MapRepositoryImpl implements MapRepository {
       currentLat += latStep;
     }
     return hashes.toList();
-  }
-
-  // Mevcut fetchEventsInBounds metodunuzun içinde veya sonunda:
-  // List<EventEntity> events = ... (veriyi çektiniz)
-
-  Map<String, dynamic> convertEventsToGeoJson(List<EventEntity> events) {
-    return {
-      "type": "FeatureCollection",
-      "features": events.map((event) {
-        return {
-          "type": "Feature",
-          "id": event.id, // Click handling için kritik
-          "geometry": {
-            "type": "Point",
-            "coordinates": [event.location.longitude, event.location.latitude],
-          },
-          "properties": {
-            "id": event.id,
-            "iconName": event.id, // Style Image ID ile eşleşecek
-            "category":
-                event.hobbies.firstOrNull ?? "default", // Filtreleme için
-          },
-        };
-      }).toList(),
-    };
   }
 
   bool _isLocationInBounds(dynamic location, CoordinateBounds bounds) {

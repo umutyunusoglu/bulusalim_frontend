@@ -44,6 +44,13 @@ class InMemoryCache<T> {
   void clear() {
     _cache.clear();
   }
+
+  List<T> get values {
+    final now = DateTime.now();
+    // Süresi dolanları temizleyerek sadece geçerli olanları döndür
+    _cache.removeWhere((_, entry) => now.difference(entry.timestamp) > ttl);
+    return _cache.values.map((e) => e.value).toList();
+  }
 }
 
 class CacheEntry<T> {
