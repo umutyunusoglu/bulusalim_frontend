@@ -220,7 +220,7 @@ class _PostCardState extends State<PostCard> {
         'https://picsum.photos/seed/avatar_default/100/100';
 
     // Static Data (Örnek)
-    const staticLocationName = 'Blackfish Cafe, Kızılay, Çankaya';
+    final staticLocationName = widget.post.address ?? 'Konum Bilgisi Yok';
     final participantAvatars = widget.post.participants
         .take(3)
         .map((p) => p.profileImageUrl)
@@ -542,9 +542,7 @@ class _PostCardState extends State<PostCard> {
                       padding: EdgeInsets.only(right: 8.w),
                       child: ContentTagChip(
                         label: tagLabel,
-                        icon: tagLabel.toLowerCase().contains('kahve')
-                            ? Icons.coffee_outlined
-                            : Icons.chat_bubble_outline,
+                        icon: Icons.tag,
                       ),
                     ),
                   )

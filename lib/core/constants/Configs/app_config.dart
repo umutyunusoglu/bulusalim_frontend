@@ -1,13 +1,46 @@
 import 'dart:io';
 
+import 'package:bulusalim/application/providers/get_it_init.dart';
+import 'package:bulusalim/domain/services/remote_config_service.dart';
 import 'package:flutter/foundation.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+
+final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
 
 class AppConfig {
-  static final host = kIsWeb
-      ? 'localhost'
-      : Platform.isAndroid
-      ? '10.0.2.2'
-      : 'localhost';
+  // Bu metodu main.dart dosyasında runApp'ten önce çağıracağız
+  static Future<void> init() async {
+    if (kIsWeb) {
+      host = '127.0.0.1';
+    } else if (Platform.isAndroid) {
+      final deviceInfo = DeviceInfoPlugin();
+      final androidInfo = await deviceInfo.androidInfo;
+      isPhysicalDevice = androidInfo.isPhysicalDevice;
+      debugPrint('Android isPhysicalDevice: $isPhysicalDevice');
+      if (androidInfo.isPhysicalDevice) {
+        host = '127.0.0.1'; //
+      } else {
+        host = '10.0.2.2';
+      }
+    } else if (Platform.isIOS) {
+      host = '127.0.0.1';
+    } else {
+      // Diğer durumlar
+      host = '127.0.0.1';
+    }
+
+    final RemoteConfigService remoteConfigService =
+        getIt<RemoteConfigService>();
+    categories = await remoteConfigService.getValue<Map>('categories').then((
+      value,
+    ) {
+      return Map<String, String>.from(value);
+    });
+  }
+
+  static late String host;
+  static late Map<String, String> categories;
+  static bool isPhysicalDevice = false;
 
   static const maxUserPhotos = 3;
 
