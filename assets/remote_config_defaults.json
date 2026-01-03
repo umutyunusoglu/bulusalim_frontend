@@ -1,3 +1,35 @@
 {
-  "navbar_order": "{\"map_page\":0,\"search_page\":1,\"home_page\":2,\"chat_page:\":3,\"profile_page\":4}"
+  "navbar_order": "{\"map_page\":0,\"search_page\":1,\"home_page\":2,\"chat_page:\":3,\"profile_page\":4}",
+  "map_filters": {
+    "Sohbet": "💬",
+    "Tanışma": "👋",
+    "Kahve": "☕",
+    "Yemek": "🍔",
+    "Tatlı": "🍰",
+    "İçmece": "🍺",
+    "Parti": "🎉️",
+    "Karaoke": "🎤",
+    "Film": "🎬",
+    "Müzik": "🎸",
+    "Masa Oyunları": "🎲",
+    "Oyun": "🎮",
+    "Dans": "💃",
+    "Tiyatro": "🎭",
+    "Doğum Günü": "🎂",
+    "Bowling": "🎳",
+    "Gym": "🏋️",
+    "Futbol": "⚽",
+    "Basketbol": "🏀",
+    "Tenis": "🎾",
+    "Voleybol": "🏐",
+    "Koşu": "🏃",
+    "Yürüyüş": "🚶",
+    "Yoga": "🧘",
+    "Ders Çalışma": "📖",
+    "Workshop": "🛠️",
+    "Seminer": "🎤",
+    "Topluluk Etkinliği": "🙌",
+    "Kitap Okuma": "📚",
+    "Diğer": "✨"
+  }
 }
