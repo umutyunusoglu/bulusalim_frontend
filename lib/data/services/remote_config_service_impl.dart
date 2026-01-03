@@ -25,6 +25,7 @@ class RemoteConfigServiceImpl implements RemoteConfigService {
     // 3. ÖNEMLİ DÜZELTME:
     // Firebase Remote Config sadece String, int, bool, double kabul eder.
     // Eğer değer bir Map veya List ise, onu tekrar String'e (json.encode) çevirmeliyiz.
+
     final defaults = rawDefaults.map((key, value) {
       if (value is Map || value is List) {
         return MapEntry(key, json.encode(value));
