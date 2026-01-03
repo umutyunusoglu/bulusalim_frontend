@@ -23,6 +23,7 @@ class PostModel extends Model<PostEntity> {
     required this.showParticipants,
     required this.includeInDump,
     this.location,
+    this.address,
     this.imageUrls,
   });
 
@@ -35,7 +36,7 @@ class PostModel extends Model<PostEntity> {
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
       location: entity.location,
-
+      address: entity.address,
       hobbies: entity.hobbies,
       imageUrls: entity.imageUrls,
       participants: entity.participants,
@@ -114,6 +115,7 @@ class PostModel extends Model<PostEntity> {
       createdAt: (doc['createdAt'] as Timestamp).toDate(),
       updatedAt: (doc['updatedAt'] as Timestamp).toDate(),
       location: location,
+      address: doc['address'] as String?,
       hobbies: (doc['hobbies'] as List<dynamic>)
           .map((hobby) => HobbyEntity.fromString(hobby as String))
           .toList(),
@@ -141,6 +143,7 @@ class PostModel extends Model<PostEntity> {
       createdAt: createdAt,
       updatedAt: updatedAt,
       location: location,
+      address: address,
       hobbies: hobbies,
       imageUrls: imageUrls,
       participants: participants,
@@ -161,6 +164,7 @@ class PostModel extends Model<PostEntity> {
         location?.latitude ?? 0.0,
         location?.longitude ?? 0.0,
       ),
+      'address': address,
       'hobbies': hobbies.map((hobby) => hobby.name).toList(),
       'imageUrls': imageUrls,
       'participants': participants
@@ -184,6 +188,7 @@ class PostModel extends Model<PostEntity> {
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final Geolocation? location;
+  final String? address;
   final bool showParticipants;
   final bool includeInDump;
   final List<HobbyEntity> hobbies;

@@ -20,6 +20,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
     required this.location,
     required this.createdAt,
     required this.updatedAt,
+    required this.address,
     required this.participantCount,
     required this.isLocked,
     required this.geohash,
@@ -39,6 +40,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
     DateTime? startTime,
     DateTime? endTime,
     Geolocation? location,
+    String? address,
     DateTime? createdAt,
     DateTime? updatedAt,
     String? myStatus,
@@ -58,6 +60,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       location: location ?? this.location,
+      address: address ?? this.address,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       currentUserStatus: myStatus ?? currentUserStatus,
@@ -81,6 +84,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
   final DateTime startTime;
   final DateTime endTime;
   final Geolocation location;
+  final String address;
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isLocked;

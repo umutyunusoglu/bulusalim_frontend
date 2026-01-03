@@ -10,6 +10,7 @@ class EventModel extends Model<EventEntity> {
   EventModel({
     required this.eventId,
     required this.name,
+    required this.searchName,
     required this.info,
     required this.hobbies,
     required this.creator,
@@ -19,6 +20,7 @@ class EventModel extends Model<EventEntity> {
     required this.startTime,
     required this.endTime,
     required this.location,
+    required this.address,
     required this.createdAt,
     required this.updatedAt,
     required this.isLocked,
@@ -30,6 +32,7 @@ class EventModel extends Model<EventEntity> {
     return EventModel(
       eventId: entity.eventID,
       name: entity.name,
+      searchName: entity.name.toLowerCase(),
       info: entity.info,
       hobbies: entity.hobbies,
       creator: entity.creator,
@@ -39,6 +42,7 @@ class EventModel extends Model<EventEntity> {
       startTime: entity.startTime,
       endTime: entity.endTime,
       location: entity.location,
+      address: entity.address,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
       isLocked: entity.isLocked,
@@ -81,6 +85,7 @@ class EventModel extends Model<EventEntity> {
     return EventModel(
       eventId: doc['eventID'] as String,
       name: doc['name'] as String,
+      searchName: (doc['name'] as String).toLowerCase(),
       info: doc['info'] as String?,
       hobbies: (doc['hobbies'] as List?)?.cast<String>().toList() ?? [],
       creator: creator,
@@ -91,7 +96,7 @@ class EventModel extends Model<EventEntity> {
       startTime: (doc['startTime'] as Timestamp).toDate(),
       endTime: (doc['endTime'] as Timestamp).toDate(),
       location: location,
-
+      address: doc['address'] as String,
       createdAt: (doc['createdAt'] as Timestamp).toDate(),
       updatedAt: (doc['updatedAt'] as Timestamp).toDate(),
       isLocked: (doc['isLocked'] as bool?) ?? false,
@@ -114,6 +119,7 @@ class EventModel extends Model<EventEntity> {
     return {
       'eventID': eventId,
       'name': name,
+      'searchName': searchName,
       'info': info,
       'hobbies': hobbies,
       'creator': creatorMap,
@@ -126,6 +132,7 @@ class EventModel extends Model<EventEntity> {
         location.latitude,
         location.longitude,
       ),
+      'address': address,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
       'isLocked': isLocked,
@@ -147,6 +154,7 @@ class EventModel extends Model<EventEntity> {
       startTime: startTime,
       endTime: endTime,
       location: location,
+      address: address,
       createdAt: createdAt,
       updatedAt: updatedAt,
       isLocked: isLocked,
@@ -156,6 +164,7 @@ class EventModel extends Model<EventEntity> {
 
   final Identifier eventId;
   final String name;
+  final String? searchName;
   final String? info;
   final List<String> hobbies;
   final EventParticipantEntity creator;
@@ -165,6 +174,7 @@ class EventModel extends Model<EventEntity> {
   final DateTime startTime;
   final DateTime endTime;
   final Geolocation location;
+  final String address;
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isLocked;

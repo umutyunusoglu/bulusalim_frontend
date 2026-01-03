@@ -21,7 +21,6 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart'
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   try {
     // Önce zaten var mı diye kontrol et
     if (Firebase.apps.isEmpty) {
@@ -29,14 +28,14 @@ Future<void> main() async {
         options: DefaultFirebaseOptions.currentPlatform,
       );
     } else {
-      debugPrint("Firebase zaten başlatılmış (isEmpty kontrolü).");
+      debugPrint('Firebase zaten başlatılmış (isEmpty kontrolü).');
     }
   } on FirebaseException catch (e) {
     if (e.code == 'duplicate-app') {
       // Eğer "duplicate-app" hatası alırsak, Firebase zaten native tarafta başlamış demektir.
       // Bu hatayı görmezden gelip devam ediyoruz.
       debugPrint(
-        "Firebase zaten native tarafta başlatılmış, işlem devam ediyor.",
+        'Firebase zaten native tarafta başlatılmış, işlem devam ediyor.',
       );
     } else {
       // Başka bir hata varsa fırlat
@@ -44,13 +43,16 @@ Future<void> main() async {
     }
   } catch (e) {
     // Beklenmedik diğer hatalar için
-    debugPrint("Firebase başlatma hatası (Generic): $e");
+    debugPrint('Firebase başlatma hatası (Generic): $e');
   }
   await dotenv.load();
 
   final mapBoxAccessToken = dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
 
   MapboxOptions.setAccessToken(mapBoxAccessToken);
+  await getItSetup();
+
+  await AppConfig.init();
 
   if (kDebugMode) {
     await FirebaseAppCheck.instance.activate(
@@ -78,7 +80,7 @@ Future<void> main() async {
 
     final authInstance = FirebaseAuth.instance;
 
-    const testUserId = 'user1@test.com';
+    const testUserId = 'emre_cetin@test.com';
 
     if (testUserId == 'A') {
       if (authInstance.currentUser != null) {
@@ -97,8 +99,6 @@ Future<void> main() async {
   } else {
     await FirebaseAppCheck.instance.activate();
   }
-
-  await getItSetup();
 
   final sessionService = getIt<SessionService>();
   await sessionService.init();
