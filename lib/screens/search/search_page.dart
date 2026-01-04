@@ -47,7 +47,7 @@ class _SearchPageState extends State<SearchPage> {
 
     // DİKKAT: Veritabanında 'search_name' veya 'name' alanının küçük harfli hali olmalı.
     // Case sensitivity sorununu aşmak için query'yi küçültüyoruz.
-    String searchTerm = query.toLowerCase();
+    final searchTerm = query.toLowerCase();
 
     try {
       final userRef = FirebaseFirestore.instance.collection('users');
@@ -75,7 +75,7 @@ class _SearchPageState extends State<SearchPage> {
         });
       }
     } catch (e) {
-      debugPrint("Arama Hatası: $e");
+      debugPrint('Arama Hatası: $e');
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -84,13 +84,13 @@ class _SearchPageState extends State<SearchPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Debug Search"),
+        title: const Text('Debug Search'),
       ),
       body: Column(
         children: [
           // 1. Arama Çubuğu
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16),
             child: TextField(
               controller: _searchController,
               onChanged: _onSearchChanged,
@@ -125,7 +125,7 @@ class _SearchPageState extends State<SearchPage> {
                     const Padding(
                       padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
                       child: Text(
-                        "KULLANICILAR",
+                        'KULLANICILAR',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.grey,
@@ -133,14 +133,14 @@ class _SearchPageState extends State<SearchPage> {
                       ),
                     ),
                     ..._userResults.map((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
+                      final data = doc.data()! as Map<String, dynamic>;
                       return ListTile(
                         leading: const CircleAvatar(child: Icon(Icons.person)),
                         title: Text(
                           data['search_name'] as String? ?? 'İsimsiz',
                         ),
                         subtitle: Text(doc.id), // Debug için ID görmek iyidir
-                        onTap: () => debugPrint("Tıklandı: User ${doc.id}"),
+                        onTap: () => debugPrint('Tıklandı: User ${doc.id}'),
                       );
                     }),
                   ],
@@ -150,7 +150,7 @@ class _SearchPageState extends State<SearchPage> {
                     const Padding(
                       padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
                       child: Text(
-                        "ETKİNLİKLER",
+                        'ETKİNLİKLER',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.grey,
@@ -158,13 +158,13 @@ class _SearchPageState extends State<SearchPage> {
                       ),
                     ),
                     ..._eventResults.map((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
+                      final data = doc.data()! as Map<String, dynamic>;
                       return ListTile(
                         leading: const Icon(Icons.event, color: Colors.purple),
                         title: Text(
                           data['search_name'] as String? ?? 'Adsız Etkinlik',
                         ),
-                        onTap: () => debugPrint("Tıklandı: Event ${doc.id}"),
+                        onTap: () => debugPrint('Tıklandı: Event ${doc.id}'),
                       );
                     }),
                   ],
@@ -174,8 +174,8 @@ class _SearchPageState extends State<SearchPage> {
                       _eventResults.isEmpty &&
                       _searchController.text.isNotEmpty)
                     const Padding(
-                      padding: EdgeInsets.all(20.0),
-                      child: Center(child: Text("Sonuç bulunamadı.")),
+                      padding: EdgeInsets.all(20),
+                      child: Center(child: Text('Sonuç bulunamadı.')),
                     ),
                 ],
               ),

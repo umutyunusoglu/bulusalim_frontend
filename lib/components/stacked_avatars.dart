@@ -53,7 +53,7 @@ class StackedAvatars extends StatelessWidget {
                     final currentUser = items[index];
 
                     // Sol pozisyon: Her eleman (Boyut - Overlap) kadar sağa kayar
-                    var leftPos = index * (avatarSize - overlap);
+                    final leftPos = index * (avatarSize - overlap);
 
                     return Positioned(
                       left: leftPos,

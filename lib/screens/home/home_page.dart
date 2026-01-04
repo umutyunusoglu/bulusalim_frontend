@@ -80,7 +80,7 @@ class _HomePageState extends State<HomePage> {
                       HomeContentPage(feedType: FeedType.friendsOnly),
 
                       // 3. Sayfa: Okul (Şimdilik boş bir text koydum)
-                      Center(child: Text("Okul Akışı Yakında...")),
+                      Center(child: Text('Okul Akışı Yakında...')),
                       //HomeContentPage(feedType: FeedType.forYou),
                     ],
                   ),

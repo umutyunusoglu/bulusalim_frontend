@@ -99,7 +99,7 @@ class _HomeContentPageState extends State<HomeContentPage> {
           setState(() => _hasMoreData = false);
         }
       }
-    } catch (e) {
+    } on Exception {
       // Hata yönetimi
     } finally {
       if (mounted) setState(() => _isLoadingNext = false);
@@ -121,7 +121,7 @@ class _HomeContentPageState extends State<HomeContentPage> {
             const Text('Henüz içerik yok.'),
             ElevatedButton(
               onPressed: _fetchInitial,
-              child: const Text("Yenile"),
+              child: const Text('Yenile'),
             ),
           ],
         ),
