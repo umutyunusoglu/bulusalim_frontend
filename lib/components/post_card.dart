@@ -4,6 +4,7 @@ import 'package:bulusalim/components/countdown_timer.dart';
 import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
 import 'package:bulusalim/core/utils/types/enums/emote_enum.dart';
 import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
+import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:bulusalim/domain/repositories/post_repository.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/screens/home/post%20components/content_tag_chip.dart';
@@ -20,7 +21,7 @@ class PostCard extends StatefulWidget {
     super.key,
   });
   final PostEntity post;
-  final PostParticipantEntity? user;
+  final CompactUserEntity? user;
 
   @override
   State<PostCard> createState() => _PostCardState();
@@ -118,17 +119,14 @@ class _PostCardState extends State<PostCard> {
         isSelectedCurrent = _isLikedByMe;
         previousCount = _likeCount;
         previousState = _isLikedByMe;
-        break;
       case EmoteEnum.clap:
         isSelectedCurrent = _isClappedByMe;
         previousCount = _clapCount;
         previousState = _isClappedByMe;
-        break;
       case EmoteEnum.egg:
         isSelectedCurrent = _isEggedByMe;
         previousCount = _eggCount;
         previousState = _isEggedByMe;
-        break;
     }
 
     // 1. Optimistic Update (Ekranı hemen güncelle)
@@ -177,7 +175,7 @@ class _PostCardState extends State<PostCard> {
           emote,
         );
       }
-    } catch (e) {
+    } on Exception catch (e) {
       // 3. Hata olursa geri al (Rollback)
       if (mounted) {
         setState(() {
@@ -194,7 +192,7 @@ class _PostCardState extends State<PostCard> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("İşlem başarısız: $e")),
+          SnackBar(content: Text('İşlem başarısız: $e')),
         );
       }
     }
@@ -330,7 +328,7 @@ class _PostCardState extends State<PostCard> {
           constraints: const BoxConstraints(),
           icon: Icon(Icons.more_vert, color: theme.colorScheme.secondary),
           onPressed: () {
-            showModalBottomSheet(
+            showModalBottomSheet<void>(
               context: context,
               useRootNavigator: true,
               isScrollControlled: true,
@@ -340,21 +338,21 @@ class _PostCardState extends State<PostCard> {
                 options: [
                   BottomSheetOption(
                     icon: Icons.person_off_outlined,
-                    text: "Buluşma Sahibini Takibi Bırak",
+                    text: 'Buluşma Sahibini Takibi Bırak',
                     onTap: () {
                       context.pop();
                     },
                   ),
                   BottomSheetOption(
                     icon: Icons.share_outlined,
-                    text: "Paylaş",
+                    text: 'Paylaş',
                     onTap: () {
                       context.pop();
                     },
                   ),
                   BottomSheetOption(
                     icon: Icons.report_gmailerrorred_outlined,
-                    text: "Şikayet Et",
+                    text: 'Şikayet Et',
                     isDestructive: true,
                     onTap: () {
                       context.pop();

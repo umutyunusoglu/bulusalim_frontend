@@ -41,7 +41,7 @@ Future<void> main() async {
       // Başka bir hata varsa fırlat
       rethrow;
     }
-  } catch (e) {
+  } on Exception catch (e) {
     // Beklenmedik diğer hatalar için
     debugPrint('Firebase başlatma hatası (Generic): $e');
   }

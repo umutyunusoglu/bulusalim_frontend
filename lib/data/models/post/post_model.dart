@@ -6,6 +6,7 @@ import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/model.dart';
 import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
+import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
@@ -49,57 +50,25 @@ class PostModel extends Model<PostEntity> {
 
   factory PostModel.fromFirestore(Map<String, dynamic> doc) {
     late final List<String>? imageUrls;
-    late final List<PostParticipantEntity> participants;
-    late final PostParticipantEntity creator;
-    if (kDebugMode) {
-      imageUrls = (doc['imageUrls'] as List<dynamic>?)
-          ?.map(
-            (path) => (path as String).replaceAll('localhost', AppConfig.host),
-          )
-          .toList();
+    late final List<CompactUserEntity> participants;
+    late final CompactUserEntity creator;
 
-      participants = (doc['participants'] as List<dynamic>)
-          .map(
-            (participant) =>
-                PostParticipantEntity.fromMap(
-                  participant as Map<String, dynamic>,
-                ).copyWith(
-                  profileImageUrl: (participant['profileImageUrl'] as String)
-                      .replaceAll(
-                        'localhost',
-                        AppConfig.host,
-                      ),
-                ),
-          )
-          .toList();
-      creator =
-          PostParticipantEntity.fromMap(
-            doc['creator'] as Map<String, dynamic>,
-          ).copyWith(
-            profileImageUrl: (doc['creator']['profileImageUrl'] as String)
-                .replaceAll(
-                  'localhost',
-                  AppConfig.host,
-                ),
-          );
-    } else {
-      imageUrls = (doc['imageUrls'] as List<dynamic>?)
-          ?.map(
-            (path) => path as String,
-          )
-          .toList();
-      participants = (doc['participants'] as List<dynamic>)
-          .map(
-            (participant) => PostParticipantEntity.fromMap(
-              participant as Map<String, dynamic>,
-            ),
-          )
-          .toList();
+    imageUrls = (doc['imageUrls'] as List<dynamic>?)
+        ?.map((path) => path as String)
+        .toList();
 
-      creator = PostParticipantEntity.fromMap(
-        doc['creator'] as Map<String, dynamic>,
-      );
-    }
+    participants = (doc['participants'] as List<dynamic>)
+        .map(
+          (participant) => CompactUserEntity.fromMap(
+            participant as Map<String, dynamic>,
+          ),
+        )
+        .toList();
+    final creatorMap = doc['creator'] as Map<String, dynamic>;
+
+    creator = CompactUserEntity.fromMap(
+      creatorMap,
+    );
 
     final geolocation = doc['location'] as GeoPoint;
     final location = Geolocation(
@@ -182,7 +151,7 @@ class PostModel extends Model<PostEntity> {
   }
 
   final Identifier postID;
-  final PostParticipantEntity creator;
+  final CompactUserEntity creator;
   final Identifier eventID;
   final String caption;
   final DateTime? createdAt;
@@ -193,7 +162,7 @@ class PostModel extends Model<PostEntity> {
   final bool includeInDump;
   final List<HobbyEntity> hobbies;
   final List<String>? imageUrls;
-  final List<PostParticipantEntity> participants;
+  final List<CompactUserEntity> participants;
   final Map<EmoteEnum, int> emoteCounts;
   final FeedEntityTypeEnum feedType = FeedEntityTypeEnum.post;
 }

@@ -73,9 +73,9 @@ class _MapPageState extends State<MapPage> {
     if (pointAnnotationManager != null) {
       try {
         pointAnnotationManager!.deleteAll();
-      } catch (e) {
+      } on Exception catch (e) {
         // Sayfa kapanırken oluşan hataları yutabiliriz
-        debugPrint("Annotation cleanup error: $e");
+        debugPrint('Annotation cleanup error: $e');
       }
     }
 
@@ -110,7 +110,7 @@ class _MapPageState extends State<MapPage> {
             .toList();
 
         // 1. Local State Temizliği
-        for (var entry in markersToRemoveEntries) {
+        for (final entry in markersToRemoveEntries) {
           _loadedEventIds.remove(entry.value.id);
           _markerEventMap.remove(entry.key);
         }
@@ -128,8 +128,8 @@ class _MapPageState extends State<MapPage> {
             await pointAnnotationManager!.delete(annotation);
           }
         }
-      } catch (e) {
-        _logger.warn("Marker silme hatası: $e");
+      } on Exception catch (e) {
+        _logger.warn('Marker silme hatası: $e');
       }
     }
 
@@ -177,7 +177,7 @@ class _MapPageState extends State<MapPage> {
           ),
           image: customMarkerIcon,
           iconSize: 0.6,
-          textSize: 10.0,
+          textSize: 10,
           textOffset: [0.0, 2.0],
           textColor: Colors.black.value,
         ),
@@ -185,10 +185,10 @@ class _MapPageState extends State<MapPage> {
 
       // Başarılı, map'e kaydet
       _markerEventMap[annotation.id] = event;
-    } catch (e) {
+    } on Exception {
       // Hata olursa kilidi aç ki sonra tekrar denenebilsin
       _loadedEventIds.remove(event.id);
-      _logger.error("Marker ekleme hatası: $e");
+      _logger.error('Marker ekleme hatası: $e');
     }
   }
 
@@ -293,7 +293,7 @@ class _MapPageState extends State<MapPage> {
       }
 
       return bytes;
-    } catch (e) {
+    } on Exception {
       // Resim yüklenemezse null dön
       return null;
     }
@@ -318,7 +318,10 @@ class _MapPageState extends State<MapPage> {
         'visibility',
         'none',
       );
-    } catch (_) {}
+      // ignore: empty_catches
+    } on Exception {
+      _logger.warn('POI label gizleme hatası');
+    }
 
     pointAnnotationManager = await mapboxMap.annotations
         .createPointAnnotationManager();
@@ -397,7 +400,7 @@ class _MapPageState extends State<MapPage> {
             }).toList();
 
       await _updateMarkers(filteredEvents);
-    } catch (e) {
+    } on Exception catch (e) {
       _logger.error('Error fetching visible events: $e');
     }
   }
