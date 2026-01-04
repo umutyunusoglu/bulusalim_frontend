@@ -23,7 +23,7 @@ String fixEmulatorUrl(String url) {
       // Emülatörün bilgisayarı görmesi için standart IP.
       return url.replaceFirst('localhost', '10.0.2.2');
     }
-  } catch (e) {
+  } on Exception {
     return url;
   }
 }
