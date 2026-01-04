@@ -5,6 +5,8 @@ import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/event/event_model.dart';
 import 'package:bulusalim/data/models/post/post_model.dart';
+import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
+import 'package:bulusalim/domain/repositories/event_repository.dart';
 import 'package:bulusalim/domain/services/global_content_cache.dart';
 import 'package:bulusalim/domain/services/in_memory_cache.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
@@ -18,9 +20,13 @@ class FeedRepositoryImpl implements FeedRepository {
     required FirebaseFirestore firestore,
     required LoggingService logger,
     required GlobalContentCache cache,
+    required EventRepository eventRepository,
   }) : _firestore = firestore,
        _logger = logger,
-       cache = cache;
+       _cache = cache,
+       _eventRepository = eventRepository;
+
+  final EventRepository _eventRepository;
 
   final int batchSize = AppConfig.feedBatchSize;
 
@@ -30,7 +36,7 @@ class FeedRepositoryImpl implements FeedRepository {
   Set<Identifier> _fetchedIdsSet = {};
   final int _maxFetchedIdsLength = AppConfig.feedIDListSize;
 
-  final GlobalContentCache cache;
+  final GlobalContentCache _cache;
 
   // For debugging purposes
   @override
@@ -45,7 +51,7 @@ class FeedRepositoryImpl implements FeedRepository {
     final docs = snapshot.docs;
 
     for (final doc in docs) {
-      final entity = _entityFromDoc(doc);
+      final entity = await _entityFromDoc(doc);
       batch.add(entity);
 
       final id = (entity is PostEntity)
@@ -53,7 +59,7 @@ class FeedRepositoryImpl implements FeedRepository {
           : (entity as EventEntity).eventID;
       _fetchedIds.add(id);
       _fetchedIdsSet.add(id);
-      cache.cacheEntity(entity);
+      _cache.cacheEntity(entity);
     }
 
     return batch;
@@ -77,7 +83,7 @@ class FeedRepositoryImpl implements FeedRepository {
 
       final docs = snapshot.docs;
       for (final doc in docs) {
-        final entity = _entityFromDoc(doc);
+        final entity = await _entityFromDoc(doc);
         batch.add(entity);
 
         final id = (entity is PostEntity)
@@ -85,7 +91,7 @@ class FeedRepositoryImpl implements FeedRepository {
             : (entity as EventEntity).eventID;
         _fetchedIds.add(id);
         _fetchedIdsSet.add(id);
-        cache.cacheEntity(entity);
+        _cache.cacheEntity(entity);
       }
       return batch;
     }
@@ -103,7 +109,7 @@ class FeedRepositoryImpl implements FeedRepository {
 
       for (var i = startIndex; i < endIndex; i++) {
         final id = _fetchedIds[i];
-        final cachedEntity = cache.getEntity(id);
+        final cachedEntity = _cache.getEntity(id);
         // If found in cache add to batch
         if (cachedEntity != null) {
           batch.add(cachedEntity);
@@ -123,14 +129,14 @@ class FeedRepositoryImpl implements FeedRepository {
 
       final docs = snapshot.docs;
       for (final doc in docs) {
-        final entity = _entityFromDoc(doc);
+        final entity = await _entityFromDoc(doc);
 
         batch.add(entity);
 
         final id = (entity is PostEntity)
             ? entity.postID
             : (entity as EventEntity).eventID;
-        cache.cacheEntity(entity);
+        _cache.cacheEntity(entity);
       }
     }
 
@@ -150,7 +156,7 @@ class FeedRepositoryImpl implements FeedRepository {
 
       final docs = snapshot.docs;
       for (final doc in docs) {
-        final entity = _entityFromDoc(doc);
+        final entity = await _entityFromDoc(doc);
         batch.add(entity);
 
         final id = (entity is PostEntity)
@@ -158,7 +164,7 @@ class FeedRepositoryImpl implements FeedRepository {
             : (entity as EventEntity).eventID;
         _fetchedIds.add(id);
         _fetchedIdsSet.add(id);
-        cache.cacheEntity(entity);
+        _cache.cacheEntity(entity);
       }
     }
 
@@ -189,7 +195,7 @@ class FeedRepositoryImpl implements FeedRepository {
 
       for (var i = startIndex; i < endIndex; i++) {
         final id = _fetchedIds[i];
-        final cachedEntity = cache.getEntity(id);
+        final cachedEntity = _cache.getEntity(id);
         // If found in cache add to batch
         if (cachedEntity != null) {
           batch.add(cachedEntity);
@@ -206,14 +212,14 @@ class FeedRepositoryImpl implements FeedRepository {
           .get();
       final docs = snapshot.docs;
       for (final doc in docs) {
-        final entity = _entityFromDoc(doc);
+        final entity = await _entityFromDoc(doc);
 
         batch.add(entity);
 
         final id = (entity is PostEntity)
             ? entity.postID
             : (entity as EventEntity).eventID;
-        cache.cacheEntity(entity);
+        _cache.cacheEntity(entity);
       }
     }
 
@@ -235,7 +241,7 @@ class FeedRepositoryImpl implements FeedRepository {
       final newEntities = <FeedEntity>[];
       final newIds = <Identifier>[];
       for (final doc in docs) {
-        final entity = _entityFromDoc(doc);
+        final entity = await _entityFromDoc(doc);
         newEntities.add(entity);
 
         final id = (entity is PostEntity)
@@ -243,7 +249,7 @@ class FeedRepositoryImpl implements FeedRepository {
             : (entity as EventEntity).eventID;
         newIds.add(id);
 
-        cache.cacheEntity(entity);
+        _cache.cacheEntity(entity);
       }
       batch.insertAll(0, newEntities);
       _fetchedIds.insertAll(0, newIds);
@@ -263,7 +269,7 @@ class FeedRepositoryImpl implements FeedRepository {
     return batch;
   }
 
-  FeedEntity _entityFromDoc(DocumentSnapshot doc) {
+  Future<FeedEntity> _entityFromDoc(DocumentSnapshot doc) async {
     final data = doc.data()! as Map<String, dynamic>; // Güvenli cast
     final type = data['feedType'] as String;
 
@@ -273,7 +279,7 @@ class FeedRepositoryImpl implements FeedRepository {
       entity = post.toEntity();
     } else if (type == 'event') {
       final event = EventModel.fromFirestore(data);
-      entity = event.toEntity();
+      entity = await _eventRepository.enrichEventWithDetails(event.toEntity());
     } else {
       _logger.warn('Unknown feed type: $type');
       throw Exception('Unknown feed type: $type');

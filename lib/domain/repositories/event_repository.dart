@@ -9,8 +9,12 @@ abstract class EventRepository {
   Future<void> createEvent(EventEntity event);
   Future<void> updateEvent(String eventId, Map<String, dynamic> changes);
   Future<void> deleteEvent(Identifier eventId);
-  Future<EventEntity?> getEvent(Identifier eventId);
-  Future<List<EventEntity>> getEventsByIds(List<Identifier> eventIds);
+  Future<EventEntity?> getEvent(Identifier eventId, {bool loadDetails = true});
+  Future<List<EventEntity>> getEventsByIds(
+    List<Identifier> eventIds, {
+    bool loadDetails = true,
+  });
+  Future<EventEntity> enrichEventWithDetails(EventEntity event);
 
   /// Messages Subcollection
   Future<void> addMessage(Identifier eventId, EventMessagesEntity message);
@@ -50,10 +54,6 @@ abstract class EventRepository {
 
   Future<List<EventEntity>> getAllEvents();
   Future<List<EventEntity>> searchEventsByTitle(String title);
-  Future<List<EventEntity>> getEventsByAttribute(
-    String key,
-    dynamic value,
-  );
 
   Future<List<EventEntity>> getEventsByLocation(
     Geolocation location,

@@ -27,6 +27,7 @@ extension RepositoryModule on GetIt {
         () => EventRepositoryImpl(
           firestore: this(),
           logger: this(),
+          globalCache: this(),
         ),
       )
       ..registerLazySingleton<PostRepository>(
@@ -40,6 +41,7 @@ extension RepositoryModule on GetIt {
           firestore: this(),
           logger: this(),
           cache: this(),
+          eventRepository: this(),
         ),
       )
       ..registerFactory<MapRepository>(
@@ -47,6 +49,7 @@ extension RepositoryModule on GetIt {
           firestore: this(),
           logger: this(),
           globalCache: this(),
+          eventRepository: this(),
         ),
       )
       ..registerLazySingleton<ChatRepository>(
