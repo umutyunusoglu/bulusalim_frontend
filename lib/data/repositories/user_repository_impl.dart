@@ -1,5 +1,5 @@
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
+import 'package:bulusalim/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/event/event_model.dart';
 import 'package:bulusalim/data/models/user/pinned_post_model.dart';
@@ -464,7 +464,7 @@ class UserRepositoryImpl implements UserRepository {
   @override
   Future<List<UserEventEntity>?> getUserEventLogFiltered(
     Identifier userID,
-    List<EventStatusEnum> statuses,
+    List<UserEventStatusEnum> statuses,
   ) {
     final statusStrings = statuses.map((e) => e.toString()).toList();
 
