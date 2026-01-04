@@ -1,5 +1,6 @@
 import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart';
 import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
+import 'package:bulusalim/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:bulusalim/core/utils/types/enums/feed_entity_type_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
@@ -16,6 +17,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
     required this.capacity,
     required this.participants,
     required this.requestPool,
+    required this.status,
     required this.rejectedUsers,
     required this.startTime,
     required this.endTime,
@@ -36,8 +38,10 @@ class EventEntity extends FeedEntity with EquatableMixin {
     String? name,
     String? info,
     List<String>? hobbies,
+    EventStatusEnum? status,
     EventParticipantEntity? creator,
     int? capacity,
+
     List<CompactUserEntity>? participants,
     List<CompactUserEntity>? requestPool,
     List<CompactUserEntity>? rejectedUsers,
@@ -60,6 +64,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
       hobbies: hobbies ?? this.hobbies,
       creator: creator ?? this.creator,
       capacity: capacity ?? this.capacity,
+      status: status ?? this.status,
       participants: participants ?? this.participants,
       requestPool: requestPool ?? this.requestPool,
       rejectedUsers: rejectedUsers ?? this.rejectedUsers,
@@ -84,6 +89,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
   final String name;
   final String? info;
   final List<String> hobbies;
+  final EventStatusEnum status;
   final EventParticipantEntity creator;
   final int capacity;
   final List<CompactUserEntity> participants;
@@ -105,7 +111,6 @@ class EventEntity extends FeedEntity with EquatableMixin {
 class EventParticipantEntity extends Equatable {
   const EventParticipantEntity({
     required this.userID,
-    required this.status,
     required this.username,
     required this.profileImageUrl,
     required this.role,
@@ -114,7 +119,6 @@ class EventParticipantEntity extends Equatable {
   factory EventParticipantEntity.fromMap(Map<String, dynamic> map) {
     return EventParticipantEntity(
       userID: map['userID'] as Identifier,
-      status: EventStatusEnum.fromString(map['status'] as String),
       username: map['username'] as String,
       profileImageUrl: map['profileImageUrl'] as String,
       role: EventRoleEnum.fromString(map['role'] as String),
@@ -125,14 +129,12 @@ class EventParticipantEntity extends Equatable {
   EventParticipantEntity copyWith({
     Identifier? userID,
     String? username,
-    EventStatusEnum? status,
     String? profileImageUrl,
     EventRoleEnum? role,
     double? eventScore,
   }) {
     return EventParticipantEntity(
       userID: userID ?? this.userID,
-      status: status ?? this.status,
       username: username ?? this.username,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       role: role ?? this.role,
@@ -143,7 +145,6 @@ class EventParticipantEntity extends Equatable {
   Map<String, dynamic> toMap() {
     return {
       'userID': userID,
-      'status': status.toString(),
       'username': username,
       'profileImageUrl': profileImageUrl,
       'role': role.index,
@@ -152,10 +153,9 @@ class EventParticipantEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [userID, role, eventScore];
+  List<Object?> get props => [userID];
 
   final Identifier userID;
-  final EventStatusEnum status;
   final String username;
   final String profileImageUrl;
   final EventRoleEnum role;

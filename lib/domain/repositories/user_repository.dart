@@ -1,4 +1,4 @@
-import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
+import 'package:bulusalim/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/friend_entity.dart';
@@ -44,7 +44,7 @@ abstract class UserRepository {
 
   Future<List<UserEventEntity>?> getUserEventLogFiltered(
     Identifier userID,
-    List<EventStatusEnum> statuses,
+    List<UserEventStatusEnum> statuses,
   );
 
   Stream<List<EventEntity>> watchActiveEvents(Identifier userID);
