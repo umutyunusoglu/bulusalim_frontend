@@ -54,7 +54,7 @@ class EventInfoChip extends StatelessWidget {
           ),
           SizedBox(width: 4.w),
           Text(
-            "$participantCount/$capacity",
+            '$participantCount/$capacity',
             style: TextStyle(
               fontFamily: 'SF Pro Display',
               fontSize: 12.sp,
@@ -97,6 +97,6 @@ class EventInfoChip extends StatelessWidget {
     final hour = date.hour.toString().padLeft(2, '0');
     final minute = date.minute.toString().padLeft(2, '0');
 
-    return "$day $monthName $hour.$minute";
+    return '$day $monthName $hour.$minute';
   }
 }

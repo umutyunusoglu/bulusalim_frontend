@@ -1,6 +1,6 @@
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/data/models/model.dart';
-import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
+import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -35,7 +35,7 @@ class PinnedPostModel extends Model<PinnedPostEntity> {
     );
 
     final participants = (doc['participants'] as List<dynamic>)
-        .map((e) => PostParticipantEntity.fromMap(e as Map<String, dynamic>))
+        .map((e) => CompactUserEntity.fromMap(e as Map<String, dynamic>))
         .toList();
 
     final emoteCounts = (doc['emoteCounts'] as Map<String, dynamic>).map(
@@ -83,7 +83,7 @@ class PinnedPostModel extends Model<PinnedPostEntity> {
   final String caption;
   final Geolocation location;
   final List<String> imageUrls;
-  final List<PostParticipantEntity> participants;
+  final List<CompactUserEntity> participants;
   final Map<String, int> emoteCounts;
   final DateTime createdAt;
 }

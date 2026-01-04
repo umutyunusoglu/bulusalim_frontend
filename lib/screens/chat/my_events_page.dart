@@ -1,7 +1,6 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart';
 import 'package:bulusalim/data/models/user/user_event_model.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/user_event_entity.dart';
@@ -30,10 +29,9 @@ class _MyEventsPageState extends State<MyEventsPage> {
   @override
   void initState() {
     super.initState();
-    final logger = getIt<LoggingService>();
-
-    // 1. ID'yi kontrol et
-    logger.debug("DEBUG: Sorgu yapılan User ID: $currentUserId");
+    final logger = getIt<LoggingService>()
+      // 1. ID'yi kontrol et
+      ..debug('DEBUG: Sorgu yapılan User ID: $currentUserId');
 
     final query = FirebaseFirestore.instance
         .collection('users')
@@ -46,33 +44,33 @@ class _MyEventsPageState extends State<MyEventsPage> {
         .snapshots()
         .map((snapshot) {
           logger.debug(
-            "DEBUG: Snapshot geldi. Doküman sayısı: ${snapshot.docs.length}",
+            'DEBUG: Snapshot geldi. Doküman sayısı: ${snapshot.docs.length}',
           );
 
           // Eğer 0 ise filtreleri kaldırıp dene veya koleksiyon adını kontrol et.
           if (snapshot.docs.isEmpty) {
             logger.debug(
-              "DEBUG: Veri yok! İndeks eksik olabilir veya status değerleri uyuşmuyor.",
+              'DEBUG: Veri yok! İndeks eksik olabilir veya status değerleri uyuşmuyor.',
             );
           }
 
           return snapshot.docs.map((doc) {
             try {
               // Model dönüşümünde hata olup olmadığını kontrol et
-              logger.debug("DEBUG: Dönüştürülen data: ${doc.data()}");
+              logger.debug('DEBUG: Dönüştürülen data: ${doc.data()}');
               return UserEventModel.fromFirestore(doc.data()).toEntity();
             } catch (e) {
-              logger.debug("DEBUG: Model Parse Hatası: $e");
+              logger.debug('DEBUG: Model Parse Hatası: $e');
               rethrow;
             }
           }).toList();
         })
-        .handleError((error) {
+        .handleError((Object error) {
           // BURASI ÇOK ÖNEMLİ: İndeks hatası buraya düşer
           logger.debug(
-            "DEBUG: Stream Hatası (Muhtemel İndeks Eksikliği): $error",
+            'DEBUG: Stream Hatası (Muhtemel İndeks Eksikliği): $error',
           );
-          return []; // Hata durumunda boş liste dön
+          return <UserEventEntity>[]; // Hata durumunda boş liste dön
         });
   }
 
@@ -80,6 +78,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
 
   /// 2. SIRALAMA PUANI HESAPLAMA
   int _calculateSortScore(EventEntity event) {
+    final participantIds = event.participants.map((p) => p.userID).toList();
     if (event.creator.userID == currentUserId) return 3;
 
     try {
@@ -89,8 +88,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
 
       if (me == null) return 0;
 
-      if (me.role == EventRoleEnum.organizer ||
-          me.role == EventRoleEnum.participant) {
+      if (participantIds.contains(me.userID)) {
         return 2;
       }
 
@@ -187,9 +185,6 @@ class _MyEventsPageState extends State<MyEventsPage> {
 
               // Filtreleme Mantığı
               final visibleEvents = events.where((event) {
-                if (event == null) return false;
-
-                // Hiçbir filtre seçili değilse hepsini göster
                 if (!showApproved && !showPending) return true;
 
                 final score = _calculateSortScore(event);

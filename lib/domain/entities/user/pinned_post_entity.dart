@@ -1,5 +1,6 @@
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
+import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:equatable/equatable.dart';
 
 class PinnedPostEntity with EquatableMixin {
@@ -18,7 +19,7 @@ class PinnedPostEntity with EquatableMixin {
     String? caption,
     Geolocation? geolocation,
     List<String>? imageUrls,
-    List<PostParticipantEntity>? participants,
+    List<CompactUserEntity>? participants,
     Map<String, int>? emoteCounts,
     DateTime? createdAt,
   }) {
@@ -40,7 +41,7 @@ class PinnedPostEntity with EquatableMixin {
   final String caption;
   final Geolocation location;
   final List<String> imageUrls;
-  final List<PostParticipantEntity> participants;
+  final List<CompactUserEntity> participants;
   final Map<String, int> emoteCounts;
   final DateTime createdAt;
 }

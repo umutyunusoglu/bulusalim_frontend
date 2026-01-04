@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/domain/services/remote_config_service.dart';
-import 'package:flutter/foundation.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart';
 
 final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
 
@@ -29,8 +29,7 @@ class AppConfig {
       host = '127.0.0.1';
     }
 
-    final RemoteConfigService remoteConfigService =
-        getIt<RemoteConfigService>();
+    final remoteConfigService = getIt<RemoteConfigService>();
     categories = await remoteConfigService.getValue<Map>('categories').then((
       value,
     ) {

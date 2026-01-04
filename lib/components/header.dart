@@ -14,7 +14,7 @@ class Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = AppColors.secondaryColor;
+    const iconColor = AppColors.secondaryColor;
 
     return Container(
       width: double.infinity,

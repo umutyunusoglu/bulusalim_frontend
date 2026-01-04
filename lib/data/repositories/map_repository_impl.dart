@@ -5,6 +5,8 @@ import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/data/models/event/event_model.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
+import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
+import 'package:bulusalim/domain/repositories/event_repository.dart';
 import 'package:bulusalim/domain/repositories/map_repository.dart';
 import 'package:bulusalim/domain/services/global_content_cache.dart';
 import 'package:bulusalim/domain/services/in_memory_cache.dart';
@@ -27,9 +29,13 @@ class MapRepositoryImpl implements MapRepository {
     required FirebaseFirestore firestore,
     required GlobalContentCache globalCache,
     required LoggingService logger,
+    required EventRepository eventRepository,
   }) : _firestore = firestore,
        _globalCache = globalCache,
-       _logger = logger;
+       _logger = logger,
+       _eventRepository = eventRepository;
+
+  final EventRepository _eventRepository;
 
   final FirebaseFirestore _firestore;
   final GlobalContentCache _globalCache;
@@ -73,10 +79,10 @@ class MapRepositoryImpl implements MapRepository {
       // FIX: İşleme girenleri kilitle
       _fetchLock.addAll(newRegions);
 
-      List<Future<QuerySnapshot>> futures = [];
+      final futures = <Future<QuerySnapshot>>[];
 
       // FIX: Batching - Limitli sorgular
-      for (String parentHash in newRegions) {
+      for (final parentHash in newRegions) {
         final endHash = '$parentHash~';
         futures.add(
           _firestore
@@ -97,15 +103,22 @@ class MapRepositoryImpl implements MapRepository {
           for (final doc in snap.docs) {
             try {
               final eventModel = EventModel.fromFirestore(
-                doc.data() as Map<String, dynamic>,
+                doc.data()! as Map<String, dynamic>,
               );
-              final entity = eventModel.toEntity();
+              final lightEvent = eventModel.toEntity();
+
+              // 2. Detayları çek (Code Duplication Önleniyor)
+              // Map üzerinde tıkladığında detay açılacaksa Full data çekmek mantıklı.
+              // Sadece pin gösterecekseniz `enrich` işlemini atlayabilirsiniz.
+              final fullEvent = await _eventRepository.enrichEventWithDetails(
+                lightEvent,
+              );
 
               // Global Cache (Detay sayfası için)
-              _globalCache.cacheEntity(entity);
+              _globalCache.cacheEntity(fullEvent);
               // Map Cache (Harita gösterimi için)
-              _eventCache.set(entity.id, entity);
-            } catch (e) {
+              _eventCache.set(fullEvent.id, fullEvent);
+            } on Exception catch (e) {
               _logger.error('MapRepo Parse Error: $e');
             }
           }
@@ -113,8 +126,8 @@ class MapRepositoryImpl implements MapRepository {
 
         // Başarılı olanları fetched listesine ekle
         _fetchedRegions.addAll(newRegions);
-      } catch (e) {
-        _logger.error("Fetch hatası: $e");
+      } on Exception catch (e) {
+        _logger.error('Fetch hatası: $e');
         // Hata durumunda yeniden denenebilmesi için fetched'a eklemiyoruz
       } finally {
         // FIX: İşlem bitince (başarılı/başarısız) kilidi mutlaka aç
@@ -235,20 +248,20 @@ class MapRepositoryImpl implements MapRepository {
 
   Map<String, dynamic> convertEventsToGeoJson(List<EventEntity> events) {
     return {
-      "type": "FeatureCollection",
-      "features": events.map((event) {
+      'type': 'FeatureCollection',
+      'features': events.map((event) {
         return {
-          "type": "Feature",
-          "id": event.id, // Click handling için kritik
-          "geometry": {
-            "type": "Point",
-            "coordinates": [event.location.longitude, event.location.latitude],
+          'type': 'Feature',
+          'id': event.id, // Click handling için kritik
+          'geometry': {
+            'type': 'Point',
+            'coordinates': [event.location.longitude, event.location.latitude],
           },
-          "properties": {
-            "id": event.id,
-            "iconName": event.id, // Style Image ID ile eşleşecek
-            "category":
-                event.hobbies.firstOrNull ?? "default", // Filtreleme için
+          'properties': {
+            'id': event.id,
+            'iconName': event.id, // Style Image ID ile eşleşecek
+            'category':
+                event.hobbies.firstOrNull ?? 'default', // Filtreleme için
           },
         };
       }).toList(),
@@ -267,7 +280,7 @@ class MapRepositoryImpl implements MapRepository {
         lat = (location['latitude'] as num?)?.toDouble();
         lng = (location['longitude'] as num?)?.toDouble();
       }
-    } catch (_) {}
+    } on Exception catch (_) {}
 
     if (lat == null || lng == null) return false;
 
