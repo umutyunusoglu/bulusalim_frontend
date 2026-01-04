@@ -1,13 +1,9 @@
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 
 class BottomSheetOption {
-  final IconData icon;
-  final String text;
-  final VoidCallback onTap;
-  final bool isDestructive; // Eğer true ise  kırmızı olur.
+  // Eğer true ise  kırmızı olur.
 
   BottomSheetOption({
     required this.icon,
@@ -15,6 +11,10 @@ class BottomSheetOption {
     required this.onTap,
     this.isDestructive = false,
   });
+  final IconData icon;
+  final String text;
+  final VoidCallback onTap;
+  final bool isDestructive;
 }
 
 class CustomActionBottomSheet extends StatelessWidget {
@@ -29,11 +29,11 @@ class CustomActionBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final TextStyle baseTextStyle = TextStyle(
+    final baseTextStyle = TextStyle(
       fontFamily: 'SF Pro Display',
       fontWeight: FontWeight.w400,
       fontSize: 14.sp,
-      height: 1.0,
+      height: 1,
       letterSpacing: 0,
       color: Colors.black87,
     );

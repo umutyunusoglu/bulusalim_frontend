@@ -4,9 +4,9 @@ import 'package:bulusalim/components/eventcardbackgroundpainter.dart';
 import 'package:bulusalim/components/stacked_avatars.dart';
 import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
-import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
+import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:bulusalim/domain/services/remote_config_service.dart';
 import 'package:bulusalim/screens/home/eventcomponents/event_info_chip.dart';
 import 'package:bulusalim/screens/home/eventcomponents/event_location_chip.dart';
@@ -22,12 +22,12 @@ class EventCard extends StatelessWidget {
   });
 
   final EventEntity event;
-  final List<EventParticipantEntity> participants;
+  final List<CompactUserEntity> participants;
 
   @override
   Widget build(BuildContext context) {
-    final _logger = getIt<LoggingService>();
-    final remoteConfigService = getIt<RemoteConfigService>();
+    final logger = getIt<LoggingService>();
+    getIt<RemoteConfigService>();
     final categories = AppConfig.categories;
     // --- Veri Hazırlığı ---
     final displayAvatars = participants.isNotEmpty
@@ -53,8 +53,6 @@ class EventCard extends StatelessWidget {
               imageUrl: 'https://picsum.photos/seed/3/100',
             ),
           ];
-
-    const staticLocationName = 'İnegöl, Bolu';
 
     return Padding(
       padding: EdgeInsets.only(
@@ -97,7 +95,7 @@ class EventCard extends StatelessWidget {
                           child: Text(
                             event.name.isNotEmpty
                                 ? event.name
-                                : "Bizimle beraber tracking yapmak ister misiniz???",
+                                : 'Bizimle beraber tracking yapmak ister misiniz???',
                             textAlign: TextAlign.center,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -137,7 +135,7 @@ class EventCard extends StatelessWidget {
                           height: 19.w,
                           child: InkWell(
                             onTap: () {
-                              showModalBottomSheet(
+                              showModalBottomSheet<void>(
                                 context: context,
                                 useRootNavigator: true,
                                 isScrollControlled: true,
@@ -147,26 +145,26 @@ class EventCard extends StatelessWidget {
                                   options: [
                                     BottomSheetOption(
                                       icon: Icons.person_off_outlined,
-                                      text: "Buluşma Sahibini Takibi Bırak",
+                                      text: 'Buluşma Sahibini Takibi Bırak',
                                       onTap: () {
-                                        _logger.info("Takip bırakıldı");
+                                        logger.info('Takip bırakıldı');
                                         context.pop();
                                       },
                                     ),
                                     BottomSheetOption(
                                       icon: Icons.share_outlined,
-                                      text: "Paylaş",
+                                      text: 'Paylaş',
                                       onTap: () {
-                                        _logger.info("Paylaşıldı");
+                                        logger.info('Paylaşıldı');
                                         context.pop();
                                       },
                                     ),
                                     BottomSheetOption(
                                       icon: Icons.report_gmailerrorred_outlined,
-                                      text: "Şikayet Et",
+                                      text: 'Şikayet Et',
                                       isDestructive: true, // KIRMIZI YAPAR
                                       onTap: () {
-                                        _logger.info("Şikayet edildi");
+                                        logger.info('Şikayet edildi');
                                         context.pop();
                                       },
                                     ),
@@ -220,7 +218,7 @@ class EventCard extends StatelessWidget {
                       color: Colors.transparent,
                       child: InkWell(
                         onTap: () {
-                          _logger.info("Katıl: ${event.id}");
+                          logger.info('Katıl: ${event.id}');
                         },
                         borderRadius: BorderRadius.circular(20.r),
                         child: Container(
@@ -235,13 +233,12 @@ class EventCard extends StatelessWidget {
                                 color: Color(0x26000000),
                                 offset: Offset(0, 4),
                                 blurRadius: 4,
-                                spreadRadius: 0,
                               ),
                             ],
                           ),
                           alignment: Alignment.center,
                           child: Text(
-                            "katıl",
+                            'katıl',
                             style: TextStyle(
                               fontFamily: 'SF Pro Display',
                               fontSize: 16.sp,
@@ -284,13 +281,5 @@ class EventCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _formatEventDate(DateTime date) {
-    const days = ['Pzt', 'Sal', 'Çar', 'Per', 'Cuma', 'Cmt', 'Paz'];
-    final weekDayName = days[date.weekday - 1];
-    final hour = date.hour.toString().padLeft(2, '0');
-    final minute = date.minute.toString().padLeft(2, '0');
-    return "$weekDayName $hour.$minute";
   }
 }

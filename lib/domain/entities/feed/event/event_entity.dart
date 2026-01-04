@@ -1,10 +1,10 @@
 import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart';
 import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
 import 'package:bulusalim/core/utils/types/enums/feed_entity_type_enum.dart';
-import 'package:bulusalim/core/utils/types/enums/restriction_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/entities/feed/feed_entity.dart';
+import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:equatable/equatable.dart';
 
 class EventEntity extends FeedEntity with EquatableMixin {
@@ -15,6 +15,8 @@ class EventEntity extends FeedEntity with EquatableMixin {
     required this.creator,
     required this.capacity,
     required this.participants,
+    required this.requestPool,
+    required this.rejectedUsers,
     required this.startTime,
     required this.endTime,
     required this.location,
@@ -36,7 +38,9 @@ class EventEntity extends FeedEntity with EquatableMixin {
     List<String>? hobbies,
     EventParticipantEntity? creator,
     int? capacity,
-    List<EventParticipantEntity>? participants,
+    List<CompactUserEntity>? participants,
+    List<CompactUserEntity>? requestPool,
+    List<CompactUserEntity>? rejectedUsers,
     DateTime? startTime,
     DateTime? endTime,
     Geolocation? location,
@@ -57,6 +61,8 @@ class EventEntity extends FeedEntity with EquatableMixin {
       creator: creator ?? this.creator,
       capacity: capacity ?? this.capacity,
       participants: participants ?? this.participants,
+      requestPool: requestPool ?? this.requestPool,
+      rejectedUsers: rejectedUsers ?? this.rejectedUsers,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       location: location ?? this.location,
@@ -80,7 +86,9 @@ class EventEntity extends FeedEntity with EquatableMixin {
   final List<String> hobbies;
   final EventParticipantEntity creator;
   final int capacity;
-  final List<EventParticipantEntity> participants;
+  final List<CompactUserEntity> participants;
+  final List<CompactUserEntity> requestPool;
+  final List<CompactUserEntity> rejectedUsers;
   final DateTime startTime;
   final DateTime endTime;
   final Geolocation location;

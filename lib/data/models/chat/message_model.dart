@@ -42,9 +42,7 @@ class MessageModel implements Model<MessageEntity> {
 
   @override
   Map<String, dynamic> toFirestore() {
-    final Timestamp? timestamp = createdAt != null
-        ? Timestamp.fromDate(createdAt!)
-        : null;
+    final timestamp = createdAt != null ? Timestamp.fromDate(createdAt!) : null;
     return {
       'content': content,
       'senderID': senderID,

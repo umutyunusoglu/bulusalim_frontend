@@ -1,4 +1,3 @@
-import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart';
 import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
@@ -9,19 +8,23 @@ import 'package:bulusalim/data/models/event/event_model.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_messages_entity.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
+import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:bulusalim/domain/repositories/event_repository.dart';
-import 'package:bulusalim/domain/repositories/user_repository.dart';
+import 'package:bulusalim/domain/services/global_content_cache.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EventRepositoryImpl implements EventRepository {
   EventRepositoryImpl({
     required FirebaseFirestore firestore,
     required LoggingService logger,
+    required GlobalContentCache globalCache,
   }) : _firestore = firestore,
-       _logger = logger;
+       _logger = logger,
+       _globalCache = globalCache;
 
   final FirebaseFirestore _firestore;
   final LoggingService _logger;
+  final GlobalContentCache _globalCache;
 
   // --- CRUD Operations ---
 
@@ -35,7 +38,13 @@ class EventRepositoryImpl implements EventRepository {
       final eventWithId = event.copyWith(
         eventID: eventId,
         participantCount: 1,
-        participants: [event.creator], // DÜZELTME: Creator listeye eklendi
+        participants: [
+          CompactUserEntity(
+            userID: event.creator.userID,
+            username: event.creator.username,
+            profileImageUrl: event.creator.profileImageUrl,
+          ),
+        ], // DÜZELTME: Creator listeye eklendi
       );
 
       final eventModel = EventModel.fromEntity(eventWithId);
@@ -83,31 +92,112 @@ class EventRepositoryImpl implements EventRepository {
   }
 
   @override
-  Future<EventEntity?> getEvent(Identifier eventId) async {
+  Future<EventEntity> enrichEventWithDetails(
+    EventEntity event, {
+    bool forceRefresh = false,
+  }) async {
+    // 1. CACHE KONTROLÜ
+    // Eğer zorla yenileme istenmemişse cache'e bak.
+    if (!forceRefresh) {
+      final cachedItem = _globalCache.getEntity(event.eventID);
+
+      // Cache'de veri varsa VE bu veri EventEntity türündeyse
+      if (cachedItem is EventEntity) {
+        // "Veri Tam mı?" kontrolü:
+        // Eğer katılımcı listesi doluysa VEYA katılımcı sayısı 0 ise (kimse yok demektir)
+        // veriyi tam kabul edip cache'den dönüyoruz. Firestore'a gitmiyoruz.
+        final bool isDataComplete =
+            cachedItem.participants.isNotEmpty ||
+            cachedItem.participantCount == 0;
+
+        if (isDataComplete) {
+          return cachedItem;
+        }
+      }
+    }
+
     try {
-      // 1. Ana dokümanı çek (Temel bilgiler + Count)
+      // 2. PARALEL VERİ ÇEKME (Subcollections Only)
+      // Ana dökümanı çekmiyoruz, sadece dinamik listeleri çekiyoruz.
+      final results = await Future.wait([
+        _firestore
+            .collection('events')
+            .doc(event.eventID)
+            .collection('participants')
+            .get(),
+        _firestore
+            .collection('events')
+            .doc(event.eventID)
+            .collection('requestPool')
+            .get(),
+        _firestore
+            .collection('events')
+            .doc(event.eventID)
+            .collection('rejectedUsers')
+            .get(),
+      ]);
+
+      // 3. MAPLEME İŞLEMLERİ
+      final participantsList = results[0].docs
+          .map((d) => CompactUserEntity.fromMap(d.data()))
+          .toList();
+
+      final requestPoolList = results[1].docs
+          .map((d) => CompactUserEntity.fromMap(d.data()))
+          .toList();
+
+      final rejectedUsersList = results[2].docs
+          .map((d) => CompactUserEntity.fromMap(d.data()))
+          .toList();
+
+      // 4. ENTITY BİRLEŞTİRME (Merging)
+      // Feed'den gelen ana veri (event) ile buradan gelen listeleri birleştiriyoruz.
+      final fullEvent = event.copyWith(
+        participants: participantsList,
+        requestPool: requestPoolList,
+        rejectedUsers: rejectedUsersList,
+        // Feed'deki sayı eski kalmış olabilir, listeye güvenip sayıyı güncelliyoruz.
+        participantCount: participantsList.length,
+      );
+
+      // 5. CACHE GÜNCELLEME
+      // Bir sonraki istekte tekrar çekmemek için full halini cache'e yazıyoruz.
+      _globalCache.cacheEntity(fullEvent);
+
+      return fullEvent;
+    } catch (e) {
+      _logger.error('Failed to enrich event details for ${event.eventID}: $e');
+      // Hata durumunda akışı bozmamak için elimizdeki (yarım) veriyi dönüyoruz.
+      // Kullanıcı detayları göremese de event'i görür.
+      return event;
+    }
+  }
+
+  @override
+  // loadDetails: true -> Full (3 liste dahil)
+  // loadDetails: false -> Light (Sadece ana döküman)
+  Future<EventEntity?> getEvent(
+    Identifier eventId, {
+    bool loadDetails = true,
+  }) async {
+    try {
+      // 1. Ana dokümanı çek
       final doc = await _firestore.collection('events').doc(eventId).get();
 
       if (!doc.exists) return null;
 
-      // 2. Subcollection'ı çek (Detaylı Katılımcı Listesi)
-      final participantsSnapshot = await _firestore
-          .collection('events')
-          .doc(eventId)
-          .collection('participants')
-          .get();
-
-      final participantsList = participantsSnapshot.docs
-          .map((d) => EventParticipantEntity.fromMap(d.data()))
-          .toList();
-
       final eventModel = EventModel.fromFirestore(doc.data()!);
       final eventEntity = eventModel.toEntity();
 
-      // Entity'yi tam katılımcı listesiyle birleştirip döndür
-      return eventEntity.copyWith(participants: participantsList);
+      // 2. Eğer detay istenmiyorsa direkt döndür (Light Variant)
+      if (!loadDetails) {
+        return eventEntity;
+      }
+
+      // 3. Detay isteniyorsa helper'ı kullan (Full Variant)
+      return await enrichEventWithDetails(eventEntity);
     } on Exception catch (e) {
-      _logger.error('Failed to fetch event details: $e');
+      _logger.error('Failed to fetch event: $e');
       rethrow;
     }
   }
@@ -205,12 +295,6 @@ class EventRepositoryImpl implements EventRepository {
     final batch = _firestore.batch();
 
     // 1. Statüyü 'accepted' yap
-    batch.update(userRef, {'status': 'accepted'});
-
-    // 2. Ana dökümandaki sayacı artır (Çünkü artık gerçekten katılımcı oldu)
-    batch.update(eventRef, {
-      'participantCount': FieldValue.increment(1),
-    });
 
     await batch.commit();
   }
@@ -415,29 +499,13 @@ class EventRepositoryImpl implements EventRepository {
   }
 
   @override
-  Future<List<EventEntity>> getEventsByAttribute(
-    String key,
-    dynamic value,
-  ) async {
-    try {
-      final querySnapshot = await _firestore
-          .collection('events')
-          .where('attributes.$key', isEqualTo: value)
-          .get();
-      return querySnapshot.docs
-          .map((doc) => EventModel.fromFirestore(doc.data()).toEntity())
-          .toList();
-    } on Exception catch (e) {
-      _logger.error('Failed to get events by attribute: $e');
-      rethrow;
-    }
-  }
-
-  @override
-  Future<List<EventEntity>> getEventsByIds(List<Identifier> eventIds) {
+  Future<List<EventEntity>> getEventsByIds(
+    List<Identifier> eventIds, {
+    bool loadDetails = true,
+  }) async {
     if (eventIds.isEmpty) return Future.value([]);
     try {
-      return _firestore
+      final data = await _firestore
           .collection('events')
           .where('eventID', whereIn: eventIds)
           .get()
@@ -446,6 +514,14 @@ class EventRepositoryImpl implements EventRepository {
                 .map((doc) => EventModel.fromFirestore(doc.data()).toEntity())
                 .toList(),
           );
+      if (loadDetails) {
+        final enrichedEvents = await Future.wait(
+          data.map((event) => enrichEventWithDetails(event)),
+        );
+        return enrichedEvents;
+      } else {
+        return data;
+      }
     } on Exception catch (e) {
       _logger.error('Failed to get events by IDs: $e');
       rethrow;

@@ -4,6 +4,7 @@ import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/entities/feed/feed_entity.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
+import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:bulusalim/domain/entities/user/user_entity.dart';
 import 'package:equatable/equatable.dart';
 
@@ -27,14 +28,14 @@ class PostEntity extends FeedEntity with EquatableMixin {
 
   PostEntity copyWith({
     Identifier? postID,
-    PostParticipantEntity? creator,
+    CompactUserEntity? creator,
     Identifier? eventID,
     String? caption,
     Geolocation? location,
     String? adress,
     List<HobbyEntity>? hobbies,
     List<String>? imageUrls,
-    List<PostParticipantEntity>? participants,
+    List<CompactUserEntity>? participants,
     Map<EmoteEnum, int>? emoteCounts,
     UserEntity? user,
     DateTime? createdAt,
@@ -68,7 +69,7 @@ class PostEntity extends FeedEntity with EquatableMixin {
   ];
 
   final Identifier postID;
-  final PostParticipantEntity creator;
+  final CompactUserEntity creator;
   final Identifier eventID;
   final String caption;
   final DateTime? createdAt;
@@ -79,48 +80,6 @@ class PostEntity extends FeedEntity with EquatableMixin {
   final List<String>? imageUrls;
   final bool showParticipants;
   final bool includeInDump;
-  final List<PostParticipantEntity> participants;
+  final List<CompactUserEntity> participants;
   final Map<EmoteEnum, int> emoteCounts;
-}
-
-class PostParticipantEntity extends Equatable {
-  const PostParticipantEntity({
-    required this.userID,
-    required this.username,
-    required this.profileImageUrl,
-  });
-  factory PostParticipantEntity.fromMap(Map<String, dynamic> map) {
-    return PostParticipantEntity(
-      userID: map['userID'] as Identifier,
-      username: map['username'] as String,
-      profileImageUrl: map['profileImageUrl'] as String,
-    );
-  }
-
-  PostParticipantEntity copyWith({
-    Identifier? userID,
-    String? username,
-    String? profileImageUrl,
-  }) {
-    return PostParticipantEntity(
-      userID: userID ?? this.userID,
-      username: username ?? this.username,
-      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'userID': userID,
-      'username': username,
-      'profileImageUrl': profileImageUrl,
-    };
-  }
-
-  @override
-  List<Object?> get props => [userID];
-
-  final Identifier userID;
-  final String username;
-  final String profileImageUrl;
 }
