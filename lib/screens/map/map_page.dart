@@ -1,17 +1,19 @@
 import 'dart:async';
 import 'dart:math';
 import 'dart:ui' as ui;
-
 import 'package:bulusalim/application/providers/get_it_init.dart';
+import 'package:bulusalim/components/create_event_popup.dart';
 import 'package:bulusalim/components/event_card.dart';
 import 'package:bulusalim/components/map_create_button.dart';
 import 'package:bulusalim/components/map_filter_chip.dart';
+import 'package:bulusalim/components/steps/category_selection_step.dart';
+import 'package:bulusalim/components/steps/location_selection_step.dart';
 import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/repositories/map_repository.dart';
-import 'package:flutter/foundation.dart'; // Uint8List için
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -36,6 +38,10 @@ class _MapPageState extends State<MapPage> {
   String? _selectedCategory;
   bool _isCardVisible = false;
   EventEntity? _selectedEvent;
+  bool _isCreatePopupVisible = false;
+  int _createEventStep = 0; // 0: Kategori, 1: Konum
+  String? _tempCategory;
+  String? _tempLocation;
 
   // --- MAPBOX ---
   late MapboxMap mapboxMap;
@@ -85,12 +91,10 @@ class _MapPageState extends State<MapPage> {
   // --- 1. KATEGORİ FİLTRELEME ---
   Future<void> _onCategoryChanged() async {
     if (_isDisposed) return;
-    // Kategori değişince mevcut markerları temizleyip yeniden çekmek mantıklı olabilir
-    // Ancak diffing algoritması bunu zaten halledecek.
     await _fetchVisibleEvents(forceRefresh: true);
   }
 
-  // --- 2. DIFFING ALGORİTMASI (SAFE MARKER UPDATE) ---
+  // --- 2. DIFFING ALGORİTMASI  ---
   Future<void> _updateMarkers(List<EventEntity> visibleEvents) async {
     // Guard: Sayfa kapandıysa veya manager yoksa işlem yapma
     if (_isDisposed || !mounted || pointAnnotationManager == null) return;
@@ -529,7 +533,7 @@ class _MapPageState extends State<MapPage> {
           // 3. KATMAN: ETKİNLİK KARTI (ANIMATED)
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOutBack, // Biraz daha canlı bir animasyon
+            curve: Curves.easeInOutBack,
             bottom: _isCardVisible ? 0 : -400.h,
             left: 0,
             right: 0,
@@ -541,26 +545,83 @@ class _MapPageState extends State<MapPage> {
                 : const SizedBox.shrink(),
           ),
 
-          // 4. KATMAN: ETKİNLİK OLUŞTUR BUTONU (FIXED LAYOUT)
-          Positioned(
-            bottom: 40.h,
-            right: 16.w,
-            child: SafeArea(
+          // 4. KATMAN: SİYAH OVERLAY (KARARTMA)
+          if (_isCreatePopupVisible)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () {},
+                child: Container(
+                  color: Colors.black.withOpacity(0.6),
+                ),
+              ),
+            ),
+
+          // -----------------------------------------------------------------
+          // 5. KATMAN: CREATE EVENT POPUP
+          // -----------------------------------------------------------------
+          if (_isCreatePopupVisible)
+            Positioned(
+              top: 161.h,
+              left: 16.w,
+              child: CreateEventPopup(
+                // ADIM KONTROLÜ (Step Control)
+                child: _createEventStep == 0
+                    ? CategorySelectionStep(
+                        categories: _categories,
+                        onClose: () {
+                          setState(() {
+                            _isCreatePopupVisible = false;
+                            _createEventStep = 0;
+                          });
+                        },
+                        onNext: (category) {
+                          setState(() {
+                            _tempCategory = category;
+                            _createEventStep = 1; // Konum adımına geç
+                          });
+                        },
+                      )
+                    : LocationSelectionStep(
+                        onBack: () {
+                          setState(() {
+                            _createEventStep = 0; // Geri dön
+                          });
+                        },
+                        onNext: (location) {
+                          setState(() {
+                            _tempLocation = location;
+                            debugPrint(
+                              "Kategori: $_tempCategory, Konum: $_tempLocation",
+                            );
+                            // TODO: Sonraki adıma geç
+                          });
+                        },
+                      ),
+              ),
+            ),
+
+          // "Konumu Haritadan İşaretle" çipi buraya gelecek (Sonraki adımda ekleyeceğiz)
+          // 6. KATMAN: TURUNCU BUTON
+          // Popup VEYA Event Kartı açıksa butonu gizle
+          if (!_isCreatePopupVisible && !_isCardVisible)
+            Positioned(
+              top: 688.h,
+              left: 310.w,
               child: MapCreateButton(
                 onTap: () {
-                  debugPrint('Etkinlik Oluştur Tıklandı');
-                  // Navigator.pushNamed(context, '/create_event');
+                  setState(() {
+                    _isCreatePopupVisible = true;
+                    // _isCardVisible = false; // Zaten buton gizli olacağı için buna gerek kalmaz ama güvenlik için durabilir
+                  });
                 },
               ),
             ),
-          ),
         ],
       ),
     );
   }
 }
 
-// --- YARDIMCI CLASS (Değişmedi) ---
 class MarkerColorPair {
   final Color outer;
   final Color inner;
