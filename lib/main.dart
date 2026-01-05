@@ -80,7 +80,7 @@ Future<void> main() async {
 
     final authInstance = FirebaseAuth.instance;
 
-    const testUserId = 'user1@test.com';
+    const testUserId = 'user6@test.com';
 
     if (testUserId == 'A') {
       if (authInstance.currentUser != null) {
@@ -121,7 +121,6 @@ class MainApp extends StatelessWidget {
       builder: (context, child) {
         return GestureDetector(
           onTap: () {
-            // Klavyeyi kapatma işlemi (Aynen korundu)
             final currentFocus = FocusScope.of(context);
             if (!currentFocus.hasPrimaryFocus &&
                 currentFocus.focusedChild != null) {

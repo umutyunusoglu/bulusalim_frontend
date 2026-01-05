@@ -1,9 +1,7 @@
-// lib/core/constants/theme/color_themes.dart
-
 import 'package:flutter/material.dart';
 
 abstract class AppColors {
-  // --- LIGHT THEME ---
+  // --- LIGHT THEME MAIN ---
   static const Color primaryColor = Color(0xFFFE6348); // Turuncu (Action/Katıl)
   static const Color secondaryColor = Color(0xFF5B7A98); // Steel Blue
   static const Color tertiaryColor = Color(0xFF004B75); // Koyu Mavi
@@ -11,29 +9,31 @@ abstract class AppColors {
   static const Color backgroundColor = Color(0xFFFAFAFA);
   static const Color onPrimaryColor = Colors.white;
   static const Color onSecondaryColor = Colors.white;
-  static const Color onBackgroundColor = Color(0xFF1A1A1A);
+  static const Color onBackgroundColor = Color(0xFF1A1A1A); // Ana Metin Rengi
 
-  static const Color inputFillColor = Color(0xFFF2F2F7);
+  static const Color inputFillColor = Color(0xFFF2F2F7); // Input Arka Planları
   static const Color iconColor = Color(0xFF1A1A1A);
+  static const Color dividerColor = Color(0xFFEEEEEE); // Liste ayırıcılar için
 
-  // --- EVENT CARD COLORS (YENİ EKLENENLER) ---
+  // --- POPUP & WIZARD COLORS (YENİ EKLENENLER) ---
+  // "İlerle" butonu ve seçim ekranları için
+  static const Color popupBtnBackground = Color(0xFFFFCCBC); // Pastel Turuncu
+  static const Color popupBtnText = Color(0xFFBF360C); // Koyu Turuncu
+  static const Color popupSurface = Colors.white; // Popup zemini
+
+  // --- EVENT CARD COLORS ---
   static const Color cardBackgroundColor = Color(0xFFF2F2F7);
-
-  // Lokasyon Chip Renkleri
   static const Color locationBadgeBackground = Color(0xFFC0D0E0);
   static const Color locationBadgeText = Color(0xFF2A4E6C);
-
-  // Info (Kişi/Saat) Chip Renkleri
   static const Color infoBadgeBackground = Color(0xFFE5E5EA);
   static const Color infoBadgeText = Colors.black;
+
   // --- DARK THEME ---
   static const Color darkPrimaryColor = Color(0xFFFE6348);
   static const Color darkSecondaryColor = Color(0xFF5B7A98);
   static const Color darkTertiaryColor = Color(0xFF8BA6BF);
-
   static const Color darkBackgroundColor = Color(0xFF1A1A1A);
   static const Color darkSurfaceColor = Color(0xFF2C2C2E);
-
   static const Color darkOnBackgroundColor = Color(0xFFFAFAFA);
   static const Color darkOnSecondaryColor = Colors.white;
 }
