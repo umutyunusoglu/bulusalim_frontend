@@ -7,14 +7,16 @@ import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
+import 'package:bulusalim/domain/repositories/event_repository.dart';
 import 'package:bulusalim/domain/services/remote_config_service.dart';
+import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/screens/home/eventcomponents/event_info_chip.dart';
 import 'package:bulusalim/screens/home/eventcomponents/event_location_chip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
-class EventCard extends StatelessWidget {
+class EventCard extends StatefulWidget {
   const EventCard({
     required this.event,
     required this.participants,
@@ -25,13 +27,41 @@ class EventCard extends StatelessWidget {
   final List<CompactUserEntity> participants;
 
   @override
+  State<EventCard> createState() => _EventCardState();
+}
+
+class _EventCardState extends State<EventCard> {
+  late final LoggingService logger;
+  late final EventRepository eventRepository;
+  late final SessionService sessionService;
+
+  late bool canUserJoin;
+
+  @override
+  void initState() {
+    super.initState();
+
+    logger = getIt<LoggingService>();
+    eventRepository = getIt<EventRepository>();
+    sessionService = getIt<SessionService>();
+
+    final currentUser = sessionService.currentUser!;
+
+    canUserJoin = eventRepository.canUserJoinEvent(
+      widget.event,
+      currentUser.userID,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final logger = getIt<LoggingService>();
+    final currentUser = sessionService.currentUser!;
+
     getIt<RemoteConfigService>();
     final categories = AppConfig.categories;
-    // --- Veri Hazırlığı ---
-    final displayAvatars = participants.isNotEmpty
-        ? participants
+
+    final displayAvatars = widget.participants.isNotEmpty
+        ? widget.participants
               .map(
                 (user) => AvatarInfo(
                   userId: user.userID,
@@ -65,7 +95,6 @@ class EventCard extends StatelessWidget {
         clipBehavior: Clip.none,
         alignment: Alignment.topCenter,
         children: [
-          // --- KART GÖVDESİ + PAINTER (GÖLGE DAHİL) ---
           CustomPaint(
             painter: EventCardBackgroundPainter(
               backgroundColor: AppColors.cardBackgroundColor,
@@ -75,10 +104,8 @@ class EventCard extends StatelessWidget {
             child: Container(
               height: 204.h,
               width: double.infinity,
-              padding: EdgeInsets.zero,
               child: Stack(
                 children: [
-                  // 1. ÜST SATIR (BAŞLIK + İKONLAR) - TEK ROW
                   Positioned(
                     top: 30.h,
                     left: 0,
@@ -86,21 +113,17 @@ class EventCard extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 1. SOLDAN 70 BOŞLUK
                         SizedBox(width: 70.w),
-
-                        // 2. YAZI (221px)
                         SizedBox(
                           width: 221.w,
                           child: Text(
-                            event.name.isNotEmpty
-                                ? event.name
+                            widget.event.name.isNotEmpty
+                                ? widget.event.name
                                 : 'Bizimle beraber tracking yapmak ister misiniz???',
                             textAlign: TextAlign.center,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontFamily: 'SF Pro Display',
                               fontWeight: FontWeight.w500,
                               fontSize: 16.sp,
                               height: 1.1,
@@ -108,11 +131,7 @@ class EventCard extends StatelessWidget {
                             ),
                           ),
                         ),
-
-                        // 3. YAZI SONRASI 7 BOŞLUK
                         SizedBox(width: 7.w),
-
-                        // 4. KAYDET İKONU (24px)
                         SizedBox(
                           width: 24.w,
                           height: 24.w,
@@ -121,15 +140,11 @@ class EventCard extends StatelessWidget {
                             child: Icon(
                               Icons.bookmark_border,
                               color: Colors.black54,
-                              size: 19.sp, // İstenilen Boyut
+                              size: 19.sp,
                             ),
                           ),
                         ),
-
-                        // 5. İKONLAR ARASI 8 BOŞLUK
                         SizedBox(width: 8.w),
-
-                        // 6. AYARLAR İKONU
                         SizedBox(
                           width: 19.w,
                           height: 19.w,
@@ -162,7 +177,7 @@ class EventCard extends StatelessWidget {
                                     BottomSheetOption(
                                       icon: Icons.report_gmailerrorred_outlined,
                                       text: 'Şikayet Et',
-                                      isDestructive: true, // KIRMIZI YAPAR
+                                      isDestructive: true,
                                       onTap: () {
                                         logger.info('Şikayet edildi');
                                         context.pop();
@@ -179,55 +194,71 @@ class EventCard extends StatelessWidget {
                             ),
                           ),
                         ),
-
-                        // 7. EN SAĞDAKİ 12 BOŞLUK
                         SizedBox(width: 12.w),
                       ],
                     ),
                   ),
 
-                  // 2. Sol Alt Kısım (CHIPS)
                   Positioned(
                     bottom: 12.h,
                     left: 12.w,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // LOKASYON ÇİPİ
                         EventLocationChip(
-                          locationName: event.address,
+                          locationName: widget.event.address,
                         ),
-
                         SizedBox(height: 4.h),
-
-                        // INFO ÇİPİ
                         EventInfoChip(
-                          startTime: event.startTime,
-                          participantCount: event.participantCount,
-                          capacity: event.capacity,
+                          startTime: widget.event.startTime,
+                          participantCount: widget.event.participantCount,
+                          capacity: widget.event.capacity,
                         ),
                       ],
                     ),
                   ),
 
-                  // 3. SAĞ ALT (KATIL BUTONU)
                   Positioned(
                     bottom: 12.h,
                     right: 13.w,
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        onTap: () {
-                          logger.info('Katıl: ${event.id}');
-                        },
+                        onTap: !canUserJoin
+                            ? null
+                            : () async {
+                                await eventRepository.requestJoin(
+                                  widget.event.id,
+                                  CompactUserEntity(
+                                    userID: currentUser.userID,
+                                    username: currentUser.username,
+                                    profileImageUrl:
+                                        currentUser.profileImageUrl,
+                                  ),
+                                );
+
+                                setState(() {
+                                  canUserJoin = false;
+
+                                  widget.event.requestPool.add(
+                                    CompactUserEntity(
+                                      userID: currentUser.userID,
+                                      username: currentUser.username,
+                                      profileImageUrl:
+                                          currentUser.profileImageUrl,
+                                    ),
+                                  );
+                                });
+                              },
                         borderRadius: BorderRadius.circular(20.r),
                         child: Container(
                           width: 72.w,
                           height: 36.h,
                           decoration: BoxDecoration(
-                            color: AppColors.primaryColor,
+                            color: canUserJoin
+                                ? AppColors.primaryColor
+                                : Colors.grey,
                             borderRadius: BorderRadius.circular(20.r),
-                            // BUTON GÖLGESİ
                             boxShadow: const [
                               BoxShadow(
                                 color: Color(0x26000000),
@@ -238,9 +269,8 @@ class EventCard extends StatelessWidget {
                           ),
                           alignment: Alignment.center,
                           child: Text(
-                            'katıl',
+                            canUserJoin ? 'katıl' : 'kilitli',
                             style: TextStyle(
-                              fontFamily: 'SF Pro Display',
                               fontSize: 16.sp,
                               fontWeight: FontWeight.w500,
                               color: Colors.white,
@@ -255,19 +285,19 @@ class EventCard extends StatelessWidget {
             ),
           ),
 
-          // --- YÜZEN IKON ---
           Positioned(
             top: -24.h,
             child: SizedBox(
               width: 50.w,
               height: 50.w,
               child: Center(
-                child: Text(categories[event.hobbies[0]] ?? ''),
+                child: Text(
+                  categories[widget.event.hobbies[0]] ?? '',
+                ),
               ),
             ),
           ),
 
-          // --- AVATAR GRUBU ---
           Positioned(
             top: 80.h,
             left: 0,
