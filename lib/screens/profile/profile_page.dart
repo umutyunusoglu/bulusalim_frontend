@@ -1,6 +1,6 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/components/login_button.dart';
-import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
+import 'package:bulusalim/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart';
@@ -102,13 +102,13 @@ class _ProfilePageState extends State<ProfilePage> {
       for (final event in userEventsEnrolled) {
         // ... switch case kodların aynen kalacak ...
         switch (event.status) {
-          case EventStatusEnum.upcoming:
+          case UserEventStatusEnum.upcoming:
             enrolledEventIds.add(event.eventId);
-          case EventStatusEnum.ongoing:
+          case UserEventStatusEnum.ongoing:
             enrolledEventIds.add(event.eventId);
-          case EventStatusEnum.saved:
+          case UserEventStatusEnum.saved:
             savedEventIds.add(event.eventId);
-          case EventStatusEnum.completed:
+          case UserEventStatusEnum.completed:
             numberOfEvents += 1;
           default:
             break;

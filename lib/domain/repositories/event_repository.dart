@@ -3,6 +3,7 @@ import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_messages_entity.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
+import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 
 abstract class EventRepository {
   ///CRUD operations for Event entity
@@ -26,31 +27,32 @@ abstract class EventRepository {
   Future<void> deleteMessage(Identifier eventId, Identifier messageId);
 
   /// Participants Subcollection
-  Future<void> addParticipant(
-    Identifier eventId,
-    EventParticipantEntity participant,
-  );
 
   Future<void> requestJoin(
     Identifier eventId,
-    EventParticipantEntity participant,
+    CompactUserEntity participant,
   );
   Future<void> acceptParticipant(
-    Identifier eventId,
-    Identifier userId,
+    String eventId,
+    CompactUserEntity participant,
   );
-  Future<void> rejectOrCancelRequest(
+  Future<void> rejectRequest(
     Identifier eventId,
-    Identifier userId,
+    CompactUserEntity participant,
   );
 
   Future<void> updateParticipant(
     Identifier eventId,
     EventParticipantEntity participant,
   );
-  Future<void> removeParticipant(Identifier eventId, Identifier userId);
+  Future<void> removeParticipant(Identifier eventId, CompactUserEntity user);
 
   /// === Query & Search ===
+
+  bool canUserJoinEvent(
+    EventEntity event,
+    Identifier user,
+  );
 
   Future<List<EventEntity>> getAllEvents();
   Future<List<EventEntity>> searchEventsByTitle(String title);
