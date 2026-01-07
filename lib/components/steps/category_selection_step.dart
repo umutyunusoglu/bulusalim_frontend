@@ -6,12 +6,14 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class CategorySelectionStep extends StatefulWidget {
   const CategorySelectionStep({
+    required this.initialSelectedCategory,
     required this.categories,
     required this.onClose,
     required this.onNext,
     super.key,
   });
 
+  final String? initialSelectedCategory;
   final Map<String, String> categories;
   final VoidCallback onClose;
   final ValueChanged<String> onNext;
@@ -22,6 +24,12 @@ class CategorySelectionStep extends StatefulWidget {
 
 class _CategorySelectionStepState extends State<CategorySelectionStep> {
   String? _selectedCategory;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedCategory = widget.initialSelectedCategory;
+  }
 
   @override
   Widget build(BuildContext context) {
