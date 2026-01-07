@@ -1,5 +1,6 @@
 import 'package:bulusalim/components/map_filter_chip.dart';
-import 'package:bulusalim/core/constants/theme/color_themes.dart'; // AppColors Importu
+import 'package:bulusalim/components/popup_next_button.dart';
+import 'package:bulusalim/core/constants/theme/color_themes.dart'; // AppColors
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -33,6 +34,7 @@ class _CategorySelectionStepState extends State<CategorySelectionStep> {
         Stack(
           alignment: Alignment.center,
           children: [
+            // SOL BUTON (Geri)
             Align(
               alignment: Alignment.centerLeft,
               child: GestureDetector(
@@ -44,6 +46,8 @@ class _CategorySelectionStepState extends State<CategorySelectionStep> {
                 ),
               ),
             ),
+
+            // ORTA BAŞLIK
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -54,7 +58,7 @@ class _CategorySelectionStepState extends State<CategorySelectionStep> {
                 ),
                 SizedBox(width: 4.w),
                 Text(
-                  "Buluşma Teması",
+                  'Buluşma Teması',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w500,
@@ -62,6 +66,19 @@ class _CategorySelectionStepState extends State<CategorySelectionStep> {
                   ),
                 ),
               ],
+            ),
+
+            // SAĞ BUTON (Kapatma İkonu)
+            Align(
+              alignment: Alignment.centerRight,
+              child: GestureDetector(
+                onTap: widget.onClose,
+                child: Icon(
+                  Icons.close,
+                  size: 24.sp,
+                  color: AppColors.iconColor,
+                ),
+              ),
             ),
           ],
         ),
@@ -96,32 +113,13 @@ class _CategorySelectionStepState extends State<CategorySelectionStep> {
         const Spacer(),
 
         // 3. İLERLE BUTONU
-        SizedBox(
-          width: 173.w,
-          height: 40.h,
-          child: ElevatedButton(
-            onPressed: _selectedCategory == null
-                ? null
-                : () {
-                    widget.onNext(_selectedCategory!);
-                  },
-            style: ElevatedButton.styleFrom(
-              // AppColors üzerinden renkler
-              backgroundColor: AppColors.popupBtnBackground,
-              foregroundColor: AppColors.popupBtnText,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24.r),
-              ),
-              disabledBackgroundColor: Colors.grey[200],
-              disabledForegroundColor: Colors.grey[400],
-              textStyle: theme.textTheme.labelLarge?.copyWith(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            child: const Text("İlerle"),
-          ),
+        PopupNextButton(
+          // Seçim yapılmamışsa buton pasif (null) olur
+          onPressed: _selectedCategory == null
+              ? null
+              : () {
+                  widget.onNext(_selectedCategory!);
+                },
         ),
       ],
     );
