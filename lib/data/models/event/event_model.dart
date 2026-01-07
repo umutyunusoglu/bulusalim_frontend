@@ -1,4 +1,5 @@
 import 'package:bulusalim/core/constants/configs/app_config.dart';
+import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/model.dart';
@@ -16,6 +17,7 @@ class EventModel extends Model<EventEntity> {
     required this.hobbies,
     required this.creator,
     required this.capacity,
+    required this.status,
     required this.participantCount,
     required this.participants,
     required this.requestPool,
@@ -37,6 +39,7 @@ class EventModel extends Model<EventEntity> {
       name: entity.name,
       searchName: entity.name.toLowerCase(),
       info: entity.info,
+      status: entity.status,
       hobbies: entity.hobbies,
       creator: entity.creator,
       capacity: entity.capacity,
@@ -70,7 +73,6 @@ class EventModel extends Model<EventEntity> {
       precision: 7,
     );
 
-    final creatorMap = doc['creator'] as Map<String, dynamic>;
     final creator = EventParticipantEntity.fromMap(
       doc['creator'] as Map<String, dynamic>,
     );
@@ -107,7 +109,7 @@ class EventModel extends Model<EventEntity> {
       hobbies: (doc['hobbies'] as List?)?.cast<String>().toList() ?? [],
       creator: creator,
       capacity: doc['capacity'] as int,
-      // Eğer DB'de count alanı yoksa (eski veri) en az 1 (creator) varsay.
+      status: EventStatusEnum.fromString(doc['status'] as String),
       participantCount: pCount,
       participants: participants,
       requestPool: requestPool,
@@ -140,6 +142,7 @@ class EventModel extends Model<EventEntity> {
       'hobbies': hobbies,
       'creator': creatorMap,
       'capacity': capacity,
+      'status': status.toString(),
       'participantCount': participantCount, // Sadece sayıyı yazıyoruz
       'participants': participantsMaps, // Artık burada saklamıyoruz
       'requestPool': requstPoolMaps,
@@ -168,6 +171,7 @@ class EventModel extends Model<EventEntity> {
       creator: creator,
       capacity: capacity,
       participantCount: participantCount,
+      status: status,
       participants: participants,
       requestPool: requestPool,
       rejectedUsers: rejectedUsers,
@@ -187,6 +191,7 @@ class EventModel extends Model<EventEntity> {
   final String? searchName;
   final String? info;
   final List<String> hobbies;
+  final EventStatusEnum status;
   final EventParticipantEntity creator;
   final int capacity;
   final int participantCount;
