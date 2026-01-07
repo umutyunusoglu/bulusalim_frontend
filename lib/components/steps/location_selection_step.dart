@@ -1,4 +1,5 @@
-import 'package:bulusalim/core/constants/theme/color_themes.dart'; // AppColors Import
+import 'package:bulusalim/components/popup_next_button.dart';
+import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -6,174 +7,249 @@ class LocationSelectionStep extends StatefulWidget {
   const LocationSelectionStep({
     required this.onBack,
     required this.onNext,
+    this.initialLocation,
+    this.onClose,
+    this.onHeaderTap,
     super.key,
   });
 
   final VoidCallback onBack;
   final ValueChanged<String> onNext;
+  final String? initialLocation;
+  final VoidCallback? onClose;
+  final VoidCallback? onHeaderTap;
 
   @override
   State<LocationSelectionStep> createState() => _LocationSelectionStepState();
 }
 
 class _LocationSelectionStepState extends State<LocationSelectionStep> {
-  final TextEditingController _searchController = TextEditingController();
+  late TextEditingController _searchController;
   String? _selectedLocation;
 
-  // Mock Data
   final List<String> _mockLocations = [
-    "Kült Kavaklıdere Barbaros, Tunalı Hilmi",
-    "Kuğulu Park Çankaya/Ankara",
-    "Kurtuluş Parkı, Fidanlık Çankaya",
-    "Blackfish Cafe, Kızılay",
+    'Kült Kavaklıdere Barbaros, Tunalı Hilmi Cd. No:105',
+    'Kuğulu Park Çankaya/Ankara',
+    'Kurtuluş Parkı, Fidanlık Çankaya/Ankara',
+    'Bahçelievler 7. Cadde, Ankara',
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _selectedLocation = widget.initialLocation;
+    _searchController = TextEditingController(
+      text: widget.initialLocation ?? '',
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Tema verilerine erişim
     final theme = Theme.of(context);
 
     return Column(
       children: [
-        // 1. HEADER
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: GestureDetector(
-                onTap: widget.onBack,
-                child: Icon(
-                  Icons.undo,
-                  size: 24.sp,
-                  color: AppColors.iconColor,
+        // 1. HEADER (Tıklanabilir - Picking Mode için)
+        GestureDetector(
+          onTap: widget.onHeaderTap,
+          behavior: HitTestBehavior.opaque,
+          child: _buildHeader(theme),
+        ),
+
+        SizedBox(height: 20.h),
+
+        // 2. ARAMA VE LİSTE ALANI
+        SizedBox(
+          height: 260.h,
+          child: Column(
+            children: [
+              Container(
+                height: 46.h,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontSize: 14.sp,
+                    color: AppColors.onBackgroundColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Konum ara...',
+                    hintStyle: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 14.sp,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: AppColors.secondaryColor.withOpacity(0.6),
+                      size: 22.sp,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(vertical: 12.h),
+                  ),
+                  onChanged: (val) => setState(() => _selectedLocation = val),
                 ),
               ),
-            ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.location_on_outlined,
-                  size: 24.sp,
-                  color: AppColors.iconColor,
-                ),
-                SizedBox(width: 4.w),
-                Text(
-                  "Buluşma Konumu",
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.onBackgroundColor,
+
+              SizedBox(height: 12.h),
+
+              // B. Liste Alanı (Gri Arka Planlı)
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8F9FA), // Çok açık gri zemin
+                    borderRadius: BorderRadius.circular(16.r),
+                    border: Border.all(color: Colors.grey.shade100),
+                  ),
+                  child: ListView.separated(
+                    padding: EdgeInsets.symmetric(
+                      vertical: 12.h,
+                      horizontal: 12.w,
+                    ),
+                    itemCount: _mockLocations.length,
+                    separatorBuilder: (_, __) => Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.h),
+                      child: Divider(height: 1, color: Colors.grey.shade200),
+                    ),
+                    itemBuilder: (context, index) {
+                      final location = _mockLocations[index];
+                      final isSelected = _selectedLocation == location;
+
+                      return InkWell(
+                        onTap: () {
+                          setState(() {
+                            _selectedLocation = location;
+                            _searchController.text = location;
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(8.r),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Konum İkonu (Yuvarlak arka planlı)
+                            Container(
+                              padding: EdgeInsets.all(6.w),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppColors.secondaryColor.withOpacity(0.1)
+                                    : Colors.grey.shade200,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.location_on_outlined,
+                                size: 16.sp,
+                                color: isSelected
+                                    ? AppColors.onBackgroundColor
+                                    : Colors.grey.shade600,
+                              ),
+                            ),
+                            SizedBox(width: 10.w),
+
+                            // Konum Metni
+                            Expanded(
+                              child: Padding(
+                                padding: EdgeInsets.only(
+                                  top: 2.h,
+                                ),
+                                child: Text(
+                                  location,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontSize: 13.sp,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                    color: isSelected
+                                        ? AppColors.onBackgroundColor
+                                        : AppColors.onBackgroundColor
+                                              .withOpacity(0.7),
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ),
-              ],
+              ),
+            ],
+          ),
+        ),
+
+        const Spacer(),
+
+        PopupNextButton(
+          text: 'ilerle',
+          onPressed: (_selectedLocation == null || _selectedLocation!.isEmpty)
+              ? null
+              : () => widget.onNext(_selectedLocation!),
+        ),
+
+        SizedBox(height: 12.h),
+      ],
+    );
+  }
+
+  Widget _buildHeader(ThemeData theme) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: GestureDetector(
+            onTap: widget.onBack,
+            child: Container(
+              padding: EdgeInsets.all(8.w),
+              decoration: const BoxDecoration(
+                color: Colors.transparent,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.undo, size: 22.sp, color: AppColors.iconColor),
+            ),
+          ),
+        ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.location_on_outlined,
+              size: 22.sp,
+              color: AppColors.iconColor,
+            ),
+            SizedBox(width: 6.w),
+            Text(
+              'Buluşma Konumu',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.onBackgroundColor,
+              ),
             ),
           ],
         ),
-
-        SizedBox(height: 24.h),
-
-        // 2. SEARCH BAR
-        Container(
-          height: 48.h,
-          decoration: BoxDecoration(
-            color: AppColors.inputFillColor,
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          child: TextField(
-            controller: _searchController,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontSize: 14.sp,
-              color: AppColors.onBackgroundColor,
+        Align(
+          alignment: Alignment.centerRight,
+          child: GestureDetector(
+            onTap: widget.onClose ?? () {},
+            child: Container(
+              padding: EdgeInsets.all(8.w),
+              child: Icon(Icons.close, size: 22.sp, color: AppColors.iconColor),
             ),
-            decoration: InputDecoration(
-              hintText: "Konum ara...",
-              hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                color: AppColors.secondaryColor.withOpacity(0.5),
-                fontSize: 14.sp,
-              ),
-              prefixIcon: Icon(
-                Icons.search,
-                color: Colors.grey,
-                size: 20.sp,
-              ),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(vertical: 14.h),
-            ),
-            onChanged: (val) {
-              setState(() {});
-            },
-          ),
-        ),
-
-        SizedBox(height: 16.h),
-
-        // 3. LİSTE
-        Expanded(
-          child: ListView.separated(
-            padding: EdgeInsets.zero,
-            itemCount: _mockLocations.length,
-            separatorBuilder: (_, __) => const Divider(
-              height: 1,
-              color: AppColors.dividerColor,
-            ),
-            itemBuilder: (context, index) {
-              final location = _mockLocations[index];
-              final isSelected = _selectedLocation == location;
-
-              return ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  location,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontSize: 13.sp,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    // Seçiliyse tam siyah, değilse biraz opak
-                    color: isSelected
-                        ? AppColors.onBackgroundColor
-                        : AppColors.onBackgroundColor.withOpacity(0.8),
-                  ),
-                ),
-                onTap: () {
-                  setState(() {
-                    _selectedLocation = location;
-                    _searchController.text = location;
-                  });
-                  FocusScope.of(context).unfocus();
-                },
-              );
-            },
-          ),
-        ),
-
-        SizedBox(height: 16.h),
-
-        // 4. BUTTON
-        SizedBox(
-          width: 173.w,
-          height: 40.h,
-          child: ElevatedButton(
-            onPressed: _selectedLocation == null
-                ? null
-                : () {
-                    widget.onNext(_selectedLocation!);
-                  },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.popupBtnBackground,
-              foregroundColor: AppColors.popupBtnText,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24.r),
-              ),
-              disabledBackgroundColor: Colors.grey[200],
-              disabledForegroundColor: Colors.grey[400],
-              textStyle: theme.textTheme.labelLarge?.copyWith(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            child: const Text("İlerle"),
           ),
         ),
       ],

@@ -1,4 +1,4 @@
-import 'package:bulusalim/core/constants/theme/color_themes.dart'; // AppColors Importu
+import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -17,18 +17,20 @@ class CreateEventPopup extends StatelessWidget {
       height: 447.h,
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 31.h),
       decoration: BoxDecoration(
-        color: AppColors.popupSurface,
+        color: AppColors.popupSurface, // Arka plan rengi
         borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
           BoxShadow(
-            // Gölge rengi genelde siyahtır, opacity ile yumuşatılır
             color: Colors.black.withOpacity(0.15),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: child,
+      child: Material(
+        type: MaterialType.transparency,
+        child: child,
+      ),
     );
   }
 }
