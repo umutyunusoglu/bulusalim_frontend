@@ -19,18 +19,27 @@ class MapFilterChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        height: 22.h, // Yükseklik: 22px
-        constraints: BoxConstraints(minWidth: 65.w), // Min Genişlik: 65px
-        padding: EdgeInsets.only(
-          left: 10.w,
-          right: 10.w,
-          top: 4.h, // Padding Top: 4px
-          bottom: 4.h, // Padding Bottom: 4px
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 22.h,
+        constraints: BoxConstraints(minWidth: 30.w),
+        padding: EdgeInsets.symmetric(
+          horizontal: 8.w,
+          vertical: 4.h,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.black : Colors.white,
-          borderRadius: BorderRadius.circular(20.r), // Radius: 20px
+          // Arka plan her zaman beyaz (veya isteğe göre gri)
+          color: Color(0XFFF2F2F7),
+          borderRadius: BorderRadius.circular(20.r),
+
+          // Seçiliyse 1px Siyah Border, değilse Transparent (görünmez)
+          border: isSelected
+              ? Border.all(color: Colors.black, width: 1.0)
+              : Border.all(
+                  color: Colors.transparent,
+                  width: 1.0,
+                ), // Zıplamayı önlemek için width tutuyoruz
+
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
@@ -47,7 +56,7 @@ class MapFilterChip extends StatelessWidget {
               emoji,
               style: TextStyle(
                 fontSize: 12.sp,
-                height: 1.2, // Emojilerin kesilmemesi için biraz height
+                height: 1,
               ),
             ),
             SizedBox(width: 3.w),
@@ -55,11 +64,11 @@ class MapFilterChip extends StatelessWidget {
               label,
               style: TextStyle(
                 fontFamily: 'SF Pro Display',
-                fontWeight: FontWeight.w400, // Regular
-                fontSize: 12.sp, // Size: 12px
-                height: 1.0, // Line-height: 100%
+                fontWeight: FontWeight.w400,
+                fontSize: 12.sp,
+                height: 1,
                 letterSpacing: 0,
-                color: isSelected ? Colors.white : Colors.black,
+                color: Colors.black,
               ),
             ),
           ],
