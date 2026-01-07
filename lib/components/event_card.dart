@@ -13,7 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
-class EventCard extends StatelessWidget {
+class EventCard extends StatefulWidget {
   const EventCard({
     required this.event,
     required this.participants,
@@ -26,14 +26,41 @@ class EventCard extends StatelessWidget {
   final bool showJoinButton;
 
   @override
+  State<EventCard> createState() => _EventCardState();
+}
+
+class _EventCardState extends State<EventCard> {
+  late final LoggingService logger;
+  late final EventRepository eventRepository;
+  late final SessionService sessionService;
+
+  late bool canUserJoin;
+
+  @override
+  void initState() {
+    super.initState();
+
+    logger = getIt<LoggingService>();
+    eventRepository = getIt<EventRepository>();
+    sessionService = getIt<SessionService>();
+
+    final currentUser = sessionService.currentUser!;
+
+    canUserJoin = eventRepository.canUserJoinEvent(
+      widget.event,
+      currentUser.userID,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final logger = getIt<LoggingService>();
-    // getIt<RemoteConfigService>(); // Gerekirse aktif et
+    final currentUser = sessionService.currentUser!;
+
+    getIt<RemoteConfigService>();
     final categories = AppConfig.categories;
 
-    // --- Veri Hazırlığı ---
-    final displayAvatars = participants.isNotEmpty
-        ? participants
+    final displayAvatars = widget.participants.isNotEmpty
+        ? widget.participants
               .map(
                 (user) => AvatarInfo(
                   userId: user.userID,
@@ -67,7 +94,6 @@ class EventCard extends StatelessWidget {
         clipBehavior: Clip.none,
         alignment: Alignment.topCenter,
         children: [
-          // --- KART GÖVDESİ + PAINTER (GÖLGE DAHİL) ---
           CustomPaint(
             painter: EventCardBackgroundPainter(
               backgroundColor: AppColors.cardBackgroundColor,
@@ -77,7 +103,6 @@ class EventCard extends StatelessWidget {
             child: Container(
               height: 204.h,
               width: double.infinity,
-              padding: EdgeInsets.zero,
               child: Stack(
                 children: [
                   // 1. ÜST SATIR (BAŞLIK + İKONLAR)
@@ -93,14 +118,13 @@ class EventCard extends StatelessWidget {
                         SizedBox(
                           width: 221.w,
                           child: Text(
-                            event.name.isNotEmpty
-                                ? event.name
+                            widget.event.name.isNotEmpty
+                                ? widget.event.name
                                 : 'Bizimle beraber tracking yapmak ister misiniz???',
                             textAlign: TextAlign.center,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontFamily: 'SF Pro Display',
                               fontWeight: FontWeight.w500,
                               fontSize: 16.sp,
                               height: 1.1,
@@ -190,53 +214,74 @@ class EventCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         EventLocationChip(
-                          locationName: event.address,
+                          locationName: widget.event.address,
                         ),
                         SizedBox(height: 4.h),
                         EventInfoChip(
-                          startTime: event.startTime,
-                          participantCount: event.participantCount,
-                          capacity: event.capacity,
+                          startTime: widget.event.startTime,
+                          participantCount: widget.event.participantCount,
+                          capacity: widget.event.capacity,
                         ),
                       ],
                     ),
                   ),
 
-                  // 3. SAĞ ALT (KATIL BUTONU) - SADECE İZİN VARSA GÖSTER
-                  if (showJoinButton)
-                    Positioned(
-                      bottom: 12.h,
-                      right: 13.w,
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () {
-                            logger.info('Katıl: ${event.id}');
-                          },
-                          borderRadius: BorderRadius.circular(20.r),
-                          child: Container(
-                            width: 72.w,
-                            height: 36.h,
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryColor,
-                              borderRadius: BorderRadius.circular(20.r),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Color(0x26000000),
-                                  offset: Offset(0, 4),
-                                  blurRadius: 4,
-                                ),
-                              ],
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              'katıl',
-                              style: TextStyle(
-                                fontFamily: 'SF Pro Display',
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.white,
+                  Positioned(
+                    bottom: 12.h,
+                    right: 13.w,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: !canUserJoin
+                            ? null
+                            : () async {
+                                await eventRepository.requestJoin(
+                                  widget.event.id,
+                                  CompactUserEntity(
+                                    userID: currentUser.userID,
+                                    username: currentUser.username,
+                                    profileImageUrl:
+                                        currentUser.profileImageUrl,
+                                  ),
+                                );
+
+                                setState(() {
+                                  canUserJoin = false;
+
+                                  widget.event.requestPool.add(
+                                    CompactUserEntity(
+                                      userID: currentUser.userID,
+                                      username: currentUser.username,
+                                      profileImageUrl:
+                                          currentUser.profileImageUrl,
+                                    ),
+                                  );
+                                });
+                              },
+                        borderRadius: BorderRadius.circular(20.r),
+                        child: Container(
+                          width: 72.w,
+                          height: 36.h,
+                          decoration: BoxDecoration(
+                            color: canUserJoin
+                                ? AppColors.primaryColor
+                                : Colors.grey,
+                            borderRadius: BorderRadius.circular(20.r),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x26000000),
+                                offset: Offset(0, 4),
+                                blurRadius: 4,
                               ),
+                            ],
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            canUserJoin ? 'katıl' : 'kilitli',
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white,
                             ),
                           ),
                         ),
@@ -247,7 +292,6 @@ class EventCard extends StatelessWidget {
             ),
           ),
 
-          // --- KATEGORİ IKONU ---
           Positioned(
             top: -24.h,
             child: SizedBox(
@@ -255,17 +299,12 @@ class EventCard extends StatelessWidget {
               height: 50.w,
               child: Center(
                 child: Text(
-                  categories[event.hobbies.isNotEmpty
-                          ? event.hobbies[0]
-                          : 'Genel'] ??
-                      '🎉',
-                  style: TextStyle(fontSize: 24.sp),
+                  categories[widget.event.hobbies[0]] ?? '',
                 ),
               ),
             ),
           ),
 
-          // --- AVATARLAR ---
           Positioned(
             top: 80.h,
             left: 0,

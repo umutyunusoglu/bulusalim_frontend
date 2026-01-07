@@ -3,6 +3,7 @@ import 'package:bulusalim/components/stacked_avatars.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
+import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:bulusalim/domain/repositories/event_repository.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:flutter/material.dart';
@@ -62,8 +63,13 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
 
     final event = widget.eventID;
     final currentUser = sessionService.currentUser;
+    final compactUser = CompactUserEntity(
+      userID: currentUser?.userID ?? '',
+      username: currentUser?.username ?? '',
+      profileImageUrl: currentUser?.profileImageUrl ?? '',
+    );
     if (currentUser != null) {
-      eventRepository.removeParticipant(event, currentUser.userID);
+      eventRepository.removeParticipant(event, compactUser);
     }
 
     // go back to messages using go_router
