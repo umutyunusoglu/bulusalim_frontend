@@ -55,7 +55,7 @@ class _MapProfileMarkerState extends State<MapProfileMarker> {
     // --- BOYUT HESAPLAMALARI ---
 
     // 1. DIŞ ÇERÇEVE (Outer)
-    final double outerDiameter = 40.w;
+    final outerDiameter = 40.w;
 
     // 2. İÇ FOTOĞRAF (Inner/Image)
     const rawImageSize = 24.615385;
