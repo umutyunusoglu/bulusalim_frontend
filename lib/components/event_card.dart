@@ -7,9 +7,6 @@ import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
-import 'package:bulusalim/domain/repositories/event_repository.dart';
-import 'package:bulusalim/domain/services/remote_config_service.dart';
-import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/screens/home/eventcomponents/event_info_chip.dart';
 import 'package:bulusalim/screens/home/eventcomponents/event_location_chip.dart';
 import 'package:flutter/material.dart';
@@ -20,11 +17,13 @@ class EventCard extends StatefulWidget {
   const EventCard({
     required this.event,
     required this.participants,
+    this.showJoinButton = true,
     super.key,
   });
 
   final EventEntity event;
   final List<CompactUserEntity> participants;
+  final bool showJoinButton;
 
   @override
   State<EventCard> createState() => _EventCardState();
@@ -106,6 +105,7 @@ class _EventCardState extends State<EventCard> {
               width: double.infinity,
               child: Stack(
                 children: [
+                  // 1. ÜST SATIR (BAŞLIK + İKONLAR)
                   Positioned(
                     top: 30.h,
                     left: 0,
@@ -113,7 +113,8 @@ class _EventCardState extends State<EventCard> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(width: 70.w),
+                        SizedBox(width: 70.w), // Soldan boşluk
+                        // Başlık
                         SizedBox(
                           width: 221.w,
                           child: Text(
@@ -131,7 +132,10 @@ class _EventCardState extends State<EventCard> {
                             ),
                           ),
                         ),
+
                         SizedBox(width: 7.w),
+
+                        // Kaydet İkonu
                         SizedBox(
                           width: 24.w,
                           height: 24.w,
@@ -144,7 +148,10 @@ class _EventCardState extends State<EventCard> {
                             ),
                           ),
                         ),
+
                         SizedBox(width: 8.w),
+
+                        // Ayarlar İkonu
                         SizedBox(
                           width: 19.w,
                           height: 19.w,
@@ -199,6 +206,7 @@ class _EventCardState extends State<EventCard> {
                     ),
                   ),
 
+                  // 2. SOL ALT (CHIPS)
                   Positioned(
                     bottom: 12.h,
                     left: 12.w,
@@ -279,7 +287,6 @@ class _EventCardState extends State<EventCard> {
                         ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
