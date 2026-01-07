@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 // min, max, clamp için
 
+import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/data/models/event/event_model.dart';
@@ -10,6 +12,8 @@ import 'package:bulusalim/domain/services/global_content_cache.dart';
 import 'package:bulusalim/domain/services/in_memory_cache.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_geohash/dart_geohash.dart';
+import 'package:dio/dio.dart';
+import 'package:http/http.dart' as http;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 // FIX: Magic Numbers Lookup Table'a taşındı.
@@ -261,5 +265,77 @@ class MapRepositoryImpl implements MapRepository {
     _fetchedRegions.clear();
     _fetchLock.clear();
     _eventCache.clear();
+  }
+
+  @override
+  Future<Geolocation?> getPlaceLocation(String placeId, String sessionToken) {
+    // TODO: implement getPlaceLocation
+    throw UnimplementedError();
+  }
+
+  Future<List<Place>> searchPlaces(String query, String sessionToken) async {
+    final dio = Dio(
+      BaseOptions(
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+      ),
+    );
+    final accessToken = AppConfig.mapBoxAccessTokenKey;
+    // Access token veya query boş ise direkt boş dön
+    if (accessToken == null || accessToken.isEmpty || query.isEmpty) return [];
+
+    try {
+      // 1. DÜZELTME: Uri yapısı ve query parametresi
+      final response = await dio.get(
+        'https://api.mapbox.com/search/searchbox/v1/suggest',
+        queryParameters: {
+          'q': query, // "search_text" yerine gerçek query
+          'access_token': accessToken,
+          'session_token': sessionToken,
+          'language': 'tr',
+          'limit': '5',
+          'country': 'tr',
+          'types': 'place,address,locality,neighborhood',
+          // 'proximity': 'ip', // TODO: Konum eklendiğinde burayı aktif edebilirsin
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data as Map<String, dynamic>;
+
+        // 2. DÜZELTME: Güvenli liste dönüşümü
+        final suggestions = data['suggestions'] as List?;
+
+        if (suggestions == null) return [];
+
+        final places = suggestions.map((suggestion) {
+          // suggestion dynamic olabilir, Map'e cast ediyoruz
+          final map = suggestion as Map<String, dynamic>;
+
+          final id = map['mapbox_id'] as String? ?? '';
+
+          // 3. DÜZELTME: Try-catch yerine Null check (??) kullanımı
+          final name =
+              (map['name_preferred'] as String?) ??
+              (map['name'] as String?) ??
+              '';
+
+          _logger.info('Place found: $name (ID: $id)');
+          return Place(id: id, name: name);
+        }).toList();
+
+        // 4. DÜZELTME: Listeyi return ediyoruz
+        return places;
+      } else {
+        _logger.warn(
+          'Mapbox API Error: ${response.statusCode} - ${response.data}',
+        );
+        return [];
+      }
+    } catch (e) {
+      // 5. DÜZELTME: Hatayı logluyoruz
+      _logger.warn('Error searching places on Mapbox: $e');
+      return [];
+    }
   }
 }
