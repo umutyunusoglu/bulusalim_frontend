@@ -74,9 +74,6 @@ class _MyEventsPageState extends State<MyEventsPage> {
         });
   }
 
-  /// 1. VERİ AKIŞI (STREAM)
-
-  /// 2. SIRALAMA PUANI HESAPLAMA
   int _calculateSortScore(EventEntity event) {
     final participantIds = event.participants.map((p) => p.userID).toList();
     if (event.creator.userID == currentUserId) return 3;

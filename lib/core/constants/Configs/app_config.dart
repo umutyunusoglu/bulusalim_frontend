@@ -42,6 +42,7 @@ class AppConfig {
   static bool isPhysicalDevice = false;
 
   static const maxUserPhotos = 3;
+  static const int eventCapacity = 20;
 
   final remoteConfigDebugPath = 'assets/remote_config_defaults.json';
 
