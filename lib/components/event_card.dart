@@ -7,6 +7,10 @@ import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
+import 'package:bulusalim/domain/repositories/event_repository.dart'
+    show EventRepository;
+import 'package:bulusalim/domain/services/remote_config_service.dart';
+import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/screens/home/eventcomponents/event_info_chip.dart';
 import 'package:bulusalim/screens/home/eventcomponents/event_location_chip.dart';
 import 'package:flutter/material.dart';
@@ -287,6 +291,7 @@ class _EventCardState extends State<EventCard> {
                         ),
                       ),
                     ),
+                  ),
                 ],
               ),
             ),
