@@ -4,12 +4,15 @@ import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/domain/services/remote_config_service.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
 
 class AppConfig {
   // Bu metodu main.dart dosyasında runApp'ten önce çağıracağız
   static Future<void> init() async {
+    mapBoxAccessTokenKey = dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
+
     if (kIsWeb) {
       host = '127.0.0.1';
     } else if (Platform.isAndroid) {
@@ -58,4 +61,6 @@ class AppConfig {
   static const int maxPostCaptionLength = 50;
 
   static const String hiveBoxName = 'app_data_box';
+
+  static late String mapBoxAccessTokenKey;
 }
