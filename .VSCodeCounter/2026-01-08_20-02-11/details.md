@@ -1,0 +1,165 @@
+# Details
+
+Date : 2026-01-08 20:02:11
+
+Directory d:\\Ana\\Projeler\\Bulusalim\\bulusalim_frontend\\lib
+
+Total : 150 files,  13838 codes, 952 comments, 1872 blanks, all 16662 lines
+
+[Summary](results.md) / Details / [Diff Summary](diff.md) / [Diff Details](diff-details.md)
+
+## Files
+| filename | language | code | comment | blank | total |
+| :--- | :--- | ---: | ---: | ---: | ---: |
+| [bulusalim\_frontend/lib/app\_router.dart](/bulusalim_frontend/lib/app_router.dart) | Dart | 154 | 23 | 20 | 197 |
+| [bulusalim\_frontend/lib/application/providers/firebase\_providers.dart](/bulusalim_frontend/lib/application/providers/firebase_providers.dart) | Dart | 18 | 0 | 2 | 20 |
+| [bulusalim\_frontend/lib/application/providers/get\_it\_init.dart](/bulusalim_frontend/lib/application/providers/get_it_init.dart) | Dart | 16 | 0 | 5 | 21 |
+| [bulusalim\_frontend/lib/application/providers/hive\_providers.dart](/bulusalim_frontend/lib/application/providers/hive_providers.dart) | Dart | 26 | 3 | 7 | 36 |
+| [bulusalim\_frontend/lib/application/providers/repository\_providers.dart](/bulusalim_frontend/lib/application/providers/repository_providers.dart) | Dart | 58 | 1 | 3 | 62 |
+| [bulusalim\_frontend/lib/application/providers/service\_providers.dart](/bulusalim_frontend/lib/application/providers/service_providers.dart) | Dart | 62 | 0 | 2 | 64 |
+| [bulusalim\_frontend/lib/application/providers/usecase\_providers.dart](/bulusalim_frontend/lib/application/providers/usecase_providers.dart) | Dart | 14 | 0 | 2 | 16 |
+| [bulusalim\_frontend/lib/chat\_viewer\_test\_script.dart](/bulusalim_frontend/lib/chat_viewer_test_script.dart) | Dart | 179 | 5 | 22 | 206 |
+| [bulusalim\_frontend/lib/components/bottomsheetoption.dart](/bulusalim_frontend/lib/components/bottomsheetoption.dart) | Dart | 97 | 8 | 10 | 115 |
+| [bulusalim\_frontend/lib/components/countdown\_timer.dart](/bulusalim_frontend/lib/components/countdown_timer.dart) | Dart | 68 | 2 | 16 | 86 |
+| [bulusalim\_frontend/lib/components/create\_event\_popup.dart](/bulusalim_frontend/lib/components/create_event_popup.dart) | Dart | 33 | 0 | 4 | 37 |
+| [bulusalim\_frontend/lib/components/custom\_tab\_bar.dart](/bulusalim_frontend/lib/components/custom_tab_bar.dart) | Dart | 60 | 5 | 6 | 71 |
+| [bulusalim\_frontend/lib/components/empty.dart](/bulusalim_frontend/lib/components/empty.dart) | Dart | 0 | 0 | 2 | 2 |
+| [bulusalim\_frontend/lib/components/event\_card.dart](/bulusalim_frontend/lib/components/event_card.dart) | Dart | 300 | 5 | 24 | 329 |
+| [bulusalim\_frontend/lib/components/eventcardbackgroundpainter.dart](/bulusalim_frontend/lib/components/eventcardbackgroundpainter.dart) | Dart | 43 | 9 | 13 | 65 |
+| [bulusalim\_frontend/lib/components/header.dart](/bulusalim_frontend/lib/components/header.dart) | Dart | 55 | 4 | 8 | 67 |
+| [bulusalim\_frontend/lib/components/input\_box.dart](/bulusalim_frontend/lib/components/input_box.dart) | Dart | 12 | 0 | 4 | 16 |
+| [bulusalim\_frontend/lib/components/login\_button.dart](/bulusalim_frontend/lib/components/login_button.dart) | Dart | 67 | 2 | 10 | 79 |
+| [bulusalim\_frontend/lib/components/map\_create\_button.dart](/bulusalim_frontend/lib/components/map_create_button.dart) | Dart | 32 | 0 | 4 | 36 |
+| [bulusalim\_frontend/lib/components/map\_filter\_chip.dart](/bulusalim_frontend/lib/components/map_filter_chip.dart) | Dart | 72 | 2 | 6 | 80 |
+| [bulusalim\_frontend/lib/components/popup\_next\_button.dart](/bulusalim_frontend/lib/components/popup_next_button.dart) | Dart | 41 | 2 | 4 | 47 |
+| [bulusalim\_frontend/lib/components/post\_card.dart](/bulusalim_frontend/lib/components/post_card.dart) | Dart | 480 | 33 | 43 | 556 |
+| [bulusalim\_frontend/lib/components/skip\_button.dart](/bulusalim_frontend/lib/components/skip_button.dart) | Dart | 37 | 0 | 5 | 42 |
+| [bulusalim\_frontend/lib/components/stacked\_avatars.dart](/bulusalim_frontend/lib/components/stacked_avatars.dart) | Dart | 85 | 98 | 21 | 204 |
+| [bulusalim\_frontend/lib/components/steps/category\_selection\_step.dart](/bulusalim_frontend/lib/components/steps/category_selection_step.dart) | Dart | 112 | 9 | 15 | 136 |
+| [bulusalim\_frontend/lib/components/steps/event\_name\_step.dart](/bulusalim_frontend/lib/components/steps/event_name_step.dart) | Dart | 162 | 13 | 19 | 194 |
+| [bulusalim\_frontend/lib/components/steps/event\_summary\_overlay.dart](/bulusalim_frontend/lib/components/steps/event_summary_overlay.dart) | Dart | 125 | 7 | 11 | 143 |
+| [bulusalim\_frontend/lib/components/steps/location\_selection\_step.dart](/bulusalim_frontend/lib/components/steps/location_selection_step.dart) | Dart | 364 | 9 | 31 | 404 |
+| [bulusalim\_frontend/lib/components/steps/time\_selection\_step.dart](/bulusalim_frontend/lib/components/steps/time_selection_step.dart) | Dart | 346 | 11 | 32 | 389 |
+| [bulusalim\_frontend/lib/components/steps/visibility\_selection\_step.dart](/bulusalim_frontend/lib/components/steps/visibility_selection_step.dart) | Dart | 251 | 17 | 20 | 288 |
+| [bulusalim\_frontend/lib/components/tab\_item.dart](/bulusalim_frontend/lib/components/tab_item.dart) | Dart | 40 | 0 | 5 | 45 |
+| [bulusalim\_frontend/lib/components/text\_input.dart](/bulusalim_frontend/lib/components/text_input.dart) | Dart | 97 | 10 | 17 | 124 |
+| [bulusalim\_frontend/lib/components/user\_info.dart](/bulusalim_frontend/lib/components/user_info.dart) | Dart | 65 | 6 | 13 | 84 |
+| [bulusalim\_frontend/lib/core/constants/configs/app\_config.dart](/bulusalim_frontend/lib/core/constants/configs/app_config.dart) | Dart | 51 | 2 | 14 | 67 |
+| [bulusalim\_frontend/lib/core/constants/configs/logger\_config.dart](/bulusalim_frontend/lib/core/constants/configs/logger_config.dart) | Dart | 6 | 0 | 2 | 8 |
+| [bulusalim\_frontend/lib/core/constants/static/static\_hobby\_data.dart](/bulusalim_frontend/lib/core/constants/static/static_hobby_data.dart) | Dart | 0 | 0 | 2 | 2 |
+| [bulusalim\_frontend/lib/core/constants/theme/app\_theme.dart](/bulusalim_frontend/lib/core/constants/theme/app_theme.dart) | Dart | 102 | 70 | 19 | 191 |
+| [bulusalim\_frontend/lib/core/constants/theme/color\_themes.dart](/bulusalim_frontend/lib/core/constants/theme/color_themes.dart) | Dart | 28 | 23 | 14 | 65 |
+| [bulusalim\_frontend/lib/core/constants/theme/text\_theme.dart](/bulusalim_frontend/lib/core/constants/theme/text_theme.dart) | Dart | 48 | 32 | 7 | 87 |
+| [bulusalim\_frontend/lib/core/errors/exceptions/auth\_exceptions.dart](/bulusalim_frontend/lib/core/errors/exceptions/auth_exceptions.dart) | Dart | 17 | 0 | 5 | 22 |
+| [bulusalim\_frontend/lib/core/errors/exceptions/database\_exceptions.dart](/bulusalim_frontend/lib/core/errors/exceptions/database_exceptions.dart) | Dart | 11 | 0 | 3 | 14 |
+| [bulusalim\_frontend/lib/core/errors/exceptions/file\_system\_exceptions.dart](/bulusalim_frontend/lib/core/errors/exceptions/file_system_exceptions.dart) | Dart | 14 | 0 | 5 | 19 |
+| [bulusalim\_frontend/lib/core/errors/exceptions/security\_exceptions.dart](/bulusalim_frontend/lib/core/errors/exceptions/security_exceptions.dart) | Dart | 17 | 0 | 4 | 21 |
+| [bulusalim\_frontend/lib/core/utils/debug/android\_image\_url\_fixer.dart](/bulusalim_frontend/lib/core/utils/debug/android_image_url_fixer.dart) | Dart | 17 | 8 | 5 | 30 |
+| [bulusalim\_frontend/lib/core/utils/logging/logging\_service.dart](/bulusalim_frontend/lib/core/utils/logging/logging_service.dart) | Dart | 8 | 0 | 1 | 9 |
+| [bulusalim\_frontend/lib/core/utils/logging/logging\_service\_impl.dart](/bulusalim_frontend/lib/core/utils/logging/logging_service_impl.dart) | Dart | 31 | 0 | 8 | 39 |
+| [bulusalim\_frontend/lib/core/utils/nav\_parser.dart](/bulusalim_frontend/lib/core/utils/nav_parser.dart) | Dart | 43 | 4 | 9 | 56 |
+| [bulusalim\_frontend/lib/core/utils/time\_ago.dart](/bulusalim_frontend/lib/core/utils/time_ago.dart) | Dart | 11 | 0 | 1 | 12 |
+| [bulusalim\_frontend/lib/core/utils/types/enums/emote\_enum.dart](/bulusalim_frontend/lib/core/utils/types/enums/emote_enum.dart) | Dart | 21 | 0 | 5 | 26 |
+| [bulusalim\_frontend/lib/core/utils/types/enums/event\_role\_enum.dart](/bulusalim_frontend/lib/core/utils/types/enums/event_role_enum.dart) | Dart | 18 | 0 | 5 | 23 |
+| [bulusalim\_frontend/lib/core/utils/types/enums/event\_status\_enum.dart](/bulusalim_frontend/lib/core/utils/types/enums/event_status_enum.dart) | Dart | 24 | 0 | 4 | 28 |
+| [bulusalim\_frontend/lib/core/utils/types/enums/feed\_entity\_type\_enum.dart](/bulusalim_frontend/lib/core/utils/types/enums/feed_entity_type_enum.dart) | Dart | 18 | 0 | 3 | 21 |
+| [bulusalim\_frontend/lib/core/utils/types/enums/feed\_type.dart](/bulusalim_frontend/lib/core/utils/types/enums/feed_type.dart) | Dart | 21 | 0 | 4 | 25 |
+| [bulusalim\_frontend/lib/core/utils/types/enums/gender\_enum.dart](/bulusalim_frontend/lib/core/utils/types/enums/gender_enum.dart) | Dart | 21 | 0 | 5 | 26 |
+| [bulusalim\_frontend/lib/core/utils/types/enums/lifestyle\_enums.dart](/bulusalim_frontend/lib/core/utils/types/enums/lifestyle_enums.dart) | Dart | 21 | 0 | 4 | 25 |
+| [bulusalim\_frontend/lib/core/utils/types/enums/restriction\_enum.dart](/bulusalim_frontend/lib/core/utils/types/enums/restriction_enum.dart) | Dart | 21 | 0 | 3 | 24 |
+| [bulusalim\_frontend/lib/core/utils/types/enums/user\_event\_status\_enum.dart](/bulusalim_frontend/lib/core/utils/types/enums/user_event_status_enum.dart) | Dart | 33 | 0 | 4 | 37 |
+| [bulusalim\_frontend/lib/core/utils/types/geolocation/distance.dart](/bulusalim_frontend/lib/core/utils/types/geolocation/distance.dart) | Dart | 19 | 0 | 2 | 21 |
+| [bulusalim\_frontend/lib/core/utils/types/geolocation/geolocation.dart](/bulusalim_frontend/lib/core/utils/types/geolocation/geolocation.dart) | Dart | 20 | 0 | 4 | 24 |
+| [bulusalim\_frontend/lib/core/utils/types/types.dart](/bulusalim_frontend/lib/core/utils/types/types.dart) | Dart | 1 | 0 | 1 | 2 |
+| [bulusalim\_frontend/lib/core/utils/validators/email\_validators.dart](/bulusalim_frontend/lib/core/utils/validators/email_validators.dart) | Dart | 6 | 2 | 1 | 9 |
+| [bulusalim\_frontend/lib/core/utils/validators/masks.dart](/bulusalim_frontend/lib/core/utils/validators/masks.dart) | Dart | 9 | 0 | 1 | 10 |
+| [bulusalim\_frontend/lib/data/datasources/event\_card\_photo\_datasource\_impl.dart](/bulusalim_frontend/lib/data/datasources/event_card_photo_datasource_impl.dart) | Dart | 46 | 0 | 10 | 56 |
+| [bulusalim\_frontend/lib/data/datasources/university\_datasource\_impl.dart](/bulusalim_frontend/lib/data/datasources/university_datasource_impl.dart) | Dart | 62 | 0 | 13 | 75 |
+| [bulusalim\_frontend/lib/data/models/chat/message\_model.dart](/bulusalim_frontend/lib/data/models/chat/message_model.dart) | Dart | 47 | 0 | 6 | 53 |
+| [bulusalim\_frontend/lib/data/models/event/event\_messages\_model.dart](/bulusalim_frontend/lib/data/models/event/event_messages_model.dart) | Dart | 52 | 0 | 6 | 58 |
+| [bulusalim\_frontend/lib/data/models/event/event\_model.dart](/bulusalim_frontend/lib/data/models/event/event_model.dart) | Dart | 193 | 2 | 17 | 212 |
+| [bulusalim\_frontend/lib/data/models/model.dart](/bulusalim_frontend/lib/data/models/model.dart) | Dart | 11 | 3 | 4 | 18 |
+| [bulusalim\_frontend/lib/data/models/organization/organization\_model.dart](/bulusalim_frontend/lib/data/models/organization/organization_model.dart) | Dart | 36 | 1 | 8 | 45 |
+| [bulusalim\_frontend/lib/data/models/post/post\_model.dart](/bulusalim_frontend/lib/data/models/post/post_model.dart) | Dart | 155 | 0 | 14 | 169 |
+| [bulusalim\_frontend/lib/data/models/user/friend\_model.dart](/bulusalim_frontend/lib/data/models/user/friend_model.dart) | Dart | 49 | 0 | 7 | 56 |
+| [bulusalim\_frontend/lib/data/models/user/pinned\_post\_model.dart](/bulusalim_frontend/lib/data/models/user/pinned_post_model.dart) | Dart | 80 | 0 | 10 | 90 |
+| [bulusalim\_frontend/lib/data/models/user/user\_event\_model.dart](/bulusalim_frontend/lib/data/models/user/user_event_model.dart) | Dart | 48 | 0 | 8 | 56 |
+| [bulusalim\_frontend/lib/data/models/user/user\_hobby\_model.dart](/bulusalim_frontend/lib/data/models/user/user_hobby_model.dart) | Dart | 51 | 0 | 7 | 58 |
+| [bulusalim\_frontend/lib/data/models/user/user\_model.dart](/bulusalim_frontend/lib/data/models/user/user_model.dart) | Dart | 162 | 2 | 12 | 176 |
+| [bulusalim\_frontend/lib/data/repositories/chat\_repository\_impl.dart](/bulusalim_frontend/lib/data/repositories/chat_repository_impl.dart) | Dart | 58 | 0 | 5 | 63 |
+| [bulusalim\_frontend/lib/data/repositories/event\_repository\_impl.dart](/bulusalim_frontend/lib/data/repositories/event_repository_impl.dart) | Dart | 451 | 45 | 70 | 566 |
+| [bulusalim\_frontend/lib/data/repositories/feed\_repository\_impl.dart](/bulusalim_frontend/lib/data/repositories/feed_repository_impl.dart) | Dart | 255 | 7 | 53 | 315 |
+| [bulusalim\_frontend/lib/data/repositories/global\_content\_cache\_impl.dart](/bulusalim_frontend/lib/data/repositories/global_content_cache_impl.dart) | Dart | 49 | 4 | 10 | 63 |
+| [bulusalim\_frontend/lib/data/repositories/map\_repository\_impl.dart](/bulusalim_frontend/lib/data/repositories/map_repository_impl.dart) | Dart | 360 | 41 | 81 | 482 |
+| [bulusalim\_frontend/lib/data/repositories/post\_repository\_impl.dart](/bulusalim_frontend/lib/data/repositories/post_repository_impl.dart) | Dart | 242 | 13 | 46 | 301 |
+| [bulusalim\_frontend/lib/data/repositories/user\_repository\_impl.dart](/bulusalim_frontend/lib/data/repositories/user_repository_impl.dart) | Dart | 411 | 13 | 69 | 493 |
+| [bulusalim\_frontend/lib/data/services/auth\_service\_impl.dart](/bulusalim_frontend/lib/data/services/auth_service_impl.dart) | Dart | 227 | 3 | 21 | 251 |
+| [bulusalim\_frontend/lib/data/services/file\_service\_impl.dart](/bulusalim_frontend/lib/data/services/file_service_impl.dart) | Dart | 110 | 0 | 16 | 126 |
+| [bulusalim\_frontend/lib/data/services/persistance\_service\_impl.dart](/bulusalim_frontend/lib/data/services/persistance_service_impl.dart) | Dart | 77 | 3 | 16 | 96 |
+| [bulusalim\_frontend/lib/data/services/remote\_config\_service\_impl.dart](/bulusalim_frontend/lib/data/services/remote_config_service_impl.dart) | Dart | 45 | 48 | 22 | 115 |
+| [bulusalim\_frontend/lib/data/services/session\_service\_impl.dart](/bulusalim_frontend/lib/data/services/session_service_impl.dart) | Dart | 92 | 18 | 19 | 129 |
+| [bulusalim\_frontend/lib/domain/datasources/event\_card\_photos\_datasource.dart](/bulusalim_frontend/lib/domain/datasources/event_card_photos_datasource.dart) | Dart | 7 | 0 | 2 | 9 |
+| [bulusalim\_frontend/lib/domain/datasources/university\_datasource.dart](/bulusalim_frontend/lib/domain/datasources/university_datasource.dart) | Dart | 11 | 0 | 3 | 14 |
+| [bulusalim\_frontend/lib/domain/entities/chat/message\_entity.dart](/bulusalim_frontend/lib/domain/entities/chat/message_entity.dart) | Dart | 11 | 0 | 3 | 14 |
+| [bulusalim\_frontend/lib/domain/entities/feed/event/event\_entity.dart](/bulusalim_frontend/lib/domain/entities/feed/event/event_entity.dart) | Dart | 153 | 0 | 11 | 164 |
+| [bulusalim\_frontend/lib/domain/entities/feed/event/event\_messages\_entity.dart](/bulusalim_frontend/lib/domain/entities/feed/event/event_messages_entity.dart) | Dart | 29 | 0 | 5 | 34 |
+| [bulusalim\_frontend/lib/domain/entities/feed/feed\_entity.dart](/bulusalim_frontend/lib/domain/entities/feed/feed_entity.dart) | Dart | 9 | 0 | 2 | 11 |
+| [bulusalim\_frontend/lib/domain/entities/feed/post/post\_entity.dart](/bulusalim_frontend/lib/domain/entities/feed/post/post_entity.dart) | Dart | 81 | 0 | 5 | 86 |
+| [bulusalim\_frontend/lib/domain/entities/hobby/hobby\_entity.dart](/bulusalim_frontend/lib/domain/entities/hobby/hobby_entity.dart) | Dart | 25 | 0 | 8 | 33 |
+| [bulusalim\_frontend/lib/domain/entities/hobby/hobby\_tags\_enum.dart](/bulusalim_frontend/lib/domain/entities/hobby/hobby_tags_enum.dart) | Dart | 12 | 0 | 1 | 13 |
+| [bulusalim\_frontend/lib/domain/entities/hobby/index.dart](/bulusalim_frontend/lib/domain/entities/hobby/index.dart) | Dart | 1 | 0 | 1 | 2 |
+| [bulusalim\_frontend/lib/domain/entities/organization/organization\_entity.dart](/bulusalim_frontend/lib/domain/entities/organization/organization_entity.dart) | Dart | 8 | 0 | 3 | 11 |
+| [bulusalim\_frontend/lib/domain/entities/user/compact\_user\_entity.dart](/bulusalim_frontend/lib/domain/entities/user/compact_user_entity.dart) | Dart | 39 | 0 | 6 | 45 |
+| [bulusalim\_frontend/lib/domain/entities/user/friend\_entity.dart](/bulusalim_frontend/lib/domain/entities/user/friend_entity.dart) | Dart | 31 | 0 | 6 | 37 |
+| [bulusalim\_frontend/lib/domain/entities/user/index.dart](/bulusalim_frontend/lib/domain/entities/user/index.dart) | Dart | 1 | 0 | 1 | 2 |
+| [bulusalim\_frontend/lib/domain/entities/user/pinned\_post\_entity.dart](/bulusalim_frontend/lib/domain/entities/user/pinned_post_entity.dart) | Dart | 43 | 0 | 5 | 48 |
+| [bulusalim\_frontend/lib/domain/entities/user/user\_entity.dart](/bulusalim_frontend/lib/domain/entities/user/user_entity.dart) | Dart | 115 | 0 | 10 | 125 |
+| [bulusalim\_frontend/lib/domain/entities/user/user\_event\_entity.dart](/bulusalim_frontend/lib/domain/entities/user/user_event_entity.dart) | Dart | 29 | 0 | 5 | 34 |
+| [bulusalim\_frontend/lib/domain/entities/user/user\_hobby\_entity.dart](/bulusalim_frontend/lib/domain/entities/user/user_hobby_entity.dart) | Dart | 34 | 0 | 5 | 39 |
+| [bulusalim\_frontend/lib/domain/repositories/chat\_repository.dart](/bulusalim_frontend/lib/domain/repositories/chat_repository.dart) | Dart | 6 | 0 | 2 | 8 |
+| [bulusalim\_frontend/lib/domain/repositories/event\_repository.dart](/bulusalim_frontend/lib/domain/repositories/event_repository.dart) | Dart | 58 | 4 | 10 | 72 |
+| [bulusalim\_frontend/lib/domain/repositories/feed\_repository.dart](/bulusalim_frontend/lib/domain/repositories/feed_repository.dart) | Dart | 11 | 1 | 4 | 16 |
+| [bulusalim\_frontend/lib/domain/repositories/map\_repository.dart](/bulusalim_frontend/lib/domain/repositories/map_repository.dart) | Dart | 22 | 0 | 6 | 28 |
+| [bulusalim\_frontend/lib/domain/repositories/post\_repository.dart](/bulusalim_frontend/lib/domain/repositories/post_repository.dart) | Dart | 34 | 0 | 5 | 39 |
+| [bulusalim\_frontend/lib/domain/repositories/user\_repository.dart](/bulusalim_frontend/lib/domain/repositories/user_repository.dart) | Dart | 70 | 7 | 11 | 88 |
+| [bulusalim\_frontend/lib/domain/services/auth\_service.dart](/bulusalim_frontend/lib/domain/services/auth_service.dart) | Dart | 29 | 1 | 9 | 39 |
+| [bulusalim\_frontend/lib/domain/services/file\_service.dart](/bulusalim_frontend/lib/domain/services/file_service.dart) | Dart | 27 | 0 | 10 | 37 |
+| [bulusalim\_frontend/lib/domain/services/global\_content\_cache.dart](/bulusalim_frontend/lib/domain/services/global_content_cache.dart) | Dart | 10 | 6 | 7 | 23 |
+| [bulusalim\_frontend/lib/domain/services/in\_memory\_cache.dart](/bulusalim_frontend/lib/domain/services/in_memory_cache.dart) | Dart | 45 | 2 | 15 | 62 |
+| [bulusalim\_frontend/lib/domain/services/persistance\_service.dart](/bulusalim_frontend/lib/domain/services/persistance_service.dart) | Dart | 13 | 0 | 6 | 19 |
+| [bulusalim\_frontend/lib/domain/services/remote\_config\_service.dart](/bulusalim_frontend/lib/domain/services/remote_config_service.dart) | Dart | 4 | 0 | 1 | 5 |
+| [bulusalim\_frontend/lib/domain/services/session\_service.dart](/bulusalim_frontend/lib/domain/services/session_service.dart) | Dart | 12 | 9 | 7 | 28 |
+| [bulusalim\_frontend/lib/domain/usecases/upload\_post\_usecase.dart](/bulusalim_frontend/lib/domain/usecases/upload_post_usecase.dart) | Dart | 78 | 0 | 12 | 90 |
+| [bulusalim\_frontend/lib/main.dart](/bulusalim_frontend/lib/main.dart) | Dart | 133 | 7 | 19 | 159 |
+| [bulusalim\_frontend/lib/message\_test\_script.dart](/bulusalim_frontend/lib/message_test_script.dart) | Dart | 119 | 10 | 26 | 155 |
+| [bulusalim\_frontend/lib/scaffold\_with\_navbar.dart](/bulusalim_frontend/lib/scaffold_with_navbar.dart) | Dart | 63 | 14 | 12 | 89 |
+| [bulusalim\_frontend/lib/screens/camera/camera\_page.dart](/bulusalim_frontend/lib/screens/camera/camera_page.dart) | Dart | 312 | 29 | 22 | 363 |
+| [bulusalim\_frontend/lib/screens/camera/new\_post\_page.dart](/bulusalim_frontend/lib/screens/camera/new_post_page.dart) | Dart | 329 | 8 | 29 | 366 |
+| [bulusalim\_frontend/lib/screens/camera/splash\_screen.dart](/bulusalim_frontend/lib/screens/camera/splash_screen.dart) | Dart | 76 | 4 | 4 | 84 |
+| [bulusalim\_frontend/lib/screens/chat/chat\_page.dart](/bulusalim_frontend/lib/screens/chat/chat_page.dart) | Dart | 427 | 13 | 32 | 472 |
+| [bulusalim\_frontend/lib/screens/chat/event\_settings\_page.dart](/bulusalim_frontend/lib/screens/chat/event_settings_page.dart) | Dart | 363 | 20 | 32 | 415 |
+| [bulusalim\_frontend/lib/screens/chat/my\_events\_page.dart](/bulusalim_frontend/lib/screens/chat/my_events_page.dart) | Dart | 394 | 19 | 40 | 453 |
+| [bulusalim\_frontend/lib/screens/home/eventcomponents/event\_info\_chip.dart](/bulusalim_frontend/lib/screens/home/eventcomponents/event_info_chip.dart) | Dart | 90 | 3 | 10 | 103 |
+| [bulusalim\_frontend/lib/screens/home/eventcomponents/event\_location\_chip.dart](/bulusalim_frontend/lib/screens/home/eventcomponents/event_location_chip.dart) | Dart | 47 | 0 | 4 | 51 |
+| [bulusalim\_frontend/lib/screens/home/eventcomponents/info\_icon.dart](/bulusalim_frontend/lib/screens/home/eventcomponents/info_icon.dart) | Dart | 21 | 0 | 3 | 24 |
+| [bulusalim\_frontend/lib/screens/home/eventcomponents/overlay\_tag\_chip.dart](/bulusalim_frontend/lib/screens/home/eventcomponents/overlay_tag_chip.dart) | Dart | 46 | 0 | 4 | 50 |
+| [bulusalim\_frontend/lib/screens/home/home\_content\_page.dart](/bulusalim_frontend/lib/screens/home/home_content_page.dart) | Dart | 131 | 12 | 25 | 168 |
+| [bulusalim\_frontend/lib/screens/home/home\_page.dart](/bulusalim_frontend/lib/screens/home/home_page.dart) | Dart | 88 | 14 | 14 | 116 |
+| [bulusalim\_frontend/lib/screens/home/post components/content\_tag\_chip.dart](/bulusalim_frontend/lib/screens/home/post%20components/content_tag_chip.dart) | Dart | 44 | 0 | 6 | 50 |
+| [bulusalim\_frontend/lib/screens/home/post components/emoji\_chip.dart](/bulusalim_frontend/lib/screens/home/post%20components/emoji_chip.dart) | Dart | 64 | 4 | 4 | 72 |
+| [bulusalim\_frontend/lib/screens/home/post components/small\_stacked\_avatars.dart](/bulusalim_frontend/lib/screens/home/post%20components/small_stacked_avatars.dart) | Dart | 50 | 4 | 6 | 60 |
+| [bulusalim\_frontend/lib/screens/login/login\_screen.dart](/bulusalim_frontend/lib/screens/login/login_screen.dart) | Dart | 124 | 9 | 17 | 150 |
+| [bulusalim\_frontend/lib/screens/map/map\_page.dart](/bulusalim_frontend/lib/screens/map/map_page.dart) | Dart | 793 | 39 | 97 | 929 |
+| [bulusalim\_frontend/lib/screens/map/map\_profile\_marker.dart](/bulusalim_frontend/lib/screens/map/map_profile_marker.dart) | Dart | 104 | 8 | 15 | 127 |
+| [bulusalim\_frontend/lib/screens/profile/dump\_tab.dart](/bulusalim_frontend/lib/screens/profile/dump_tab.dart) | Dart | 16 | 0 | 4 | 20 |
+| [bulusalim\_frontend/lib/screens/profile/events\_tab.dart](/bulusalim_frontend/lib/screens/profile/events_tab.dart) | Dart | 130 | 7 | 16 | 153 |
+| [bulusalim\_frontend/lib/screens/profile/grid\_tab.dart](/bulusalim_frontend/lib/screens/profile/grid_tab.dart) | Dart | 74 | 3 | 7 | 84 |
+| [bulusalim\_frontend/lib/screens/profile/profile\_feed\_page.dart](/bulusalim_frontend/lib/screens/profile/profile_feed_page.dart) | Dart | 148 | 4 | 19 | 171 |
+| [bulusalim\_frontend/lib/screens/profile/profile\_page.dart](/bulusalim_frontend/lib/screens/profile/profile_page.dart) | Dart | 476 | 21 | 51 | 548 |
+| [bulusalim\_frontend/lib/screens/profile/profile\_photo.dart](/bulusalim_frontend/lib/screens/profile/profile_photo.dart) | Dart | 124 | 5 | 14 | 143 |
+| [bulusalim\_frontend/lib/screens/profile/profile\_tab\_bar.dart](/bulusalim_frontend/lib/screens/profile/profile_tab_bar.dart) | Dart | 126 | 15 | 18 | 159 |
+| [bulusalim\_frontend/lib/screens/register\_screen.dart](/bulusalim_frontend/lib/screens/register_screen.dart) | Dart | 22 | 0 | 4 | 26 |
+| [bulusalim\_frontend/lib/screens/search/search\_page.dart](/bulusalim_frontend/lib/screens/search/search_page.dart) | Dart | 160 | 11 | 17 | 188 |
+| [bulusalim\_frontend/lib/screens/sign\_in\_screen.dart](/bulusalim_frontend/lib/screens/sign_in_screen.dart) | Dart | 89 | 11 | 13 | 113 |
+
+[Summary](results.md) / Details / [Diff Summary](diff.md) / [Diff Details](diff-details.md)
