@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/components/popup_next_button.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/domain/repositories/map_repository.dart';
 import 'package:flutter/material.dart';
@@ -17,15 +18,17 @@ class LocationSelectionStep extends StatefulWidget {
     required this.onNext,
     this.initialLocation,
     this.initialAddress,
+    this.initialDisplayAddress,
     this.onClose,
     this.onHeaderTap,
     super.key,
   });
 
   final VoidCallback onBack;
-  final Function(String, Geolocation) onNext;
+  final Function(String, String, Geolocation) onNext;
   final Geolocation? initialLocation;
   final String? initialAddress;
+  final String? initialDisplayAddress;
   final VoidCallback? onClose;
   final VoidCallback? onHeaderTap;
 
@@ -35,7 +38,8 @@ class LocationSelectionStep extends StatefulWidget {
 
 class _LocationSelectionStepState extends State<LocationSelectionStep> {
   late TextEditingController _searchController;
-  String? _selectedAdress;
+  String? _selectedAddress;
+  String? _selectedDisplayAddress;
   Geolocation? _selectedLocation;
 
   final MapRepository _mapRepository = getIt<MapRepository>();
@@ -44,16 +48,46 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
   bool _hasSearched = false;
   Timer? _debounce;
   String _sessionToken = '';
+  String _selectedPlaceId = '';
 
   @override
   void initState() {
     super.initState();
-    _selectedAdress = widget.initialAddress;
+    _selectedAddress = widget.initialAddress;
+    _selectedDisplayAddress = widget.initialDisplayAddress;
     _selectedLocation = widget.initialLocation;
     _searchController = TextEditingController(
       text: widget.initialAddress ?? '',
     );
     _sessionToken = const Uuid().v4();
+  }
+
+  @override
+  void didUpdateWidget(LocationSelectionStep oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialLocation != oldWidget.initialLocation ||
+        widget.initialAddress != oldWidget.initialAddress ||
+        widget.initialDisplayAddress != oldWidget.initialDisplayAddress) {
+      setState(() {
+        _selectedLocation = widget.initialLocation;
+        _selectedAddress = widget.initialAddress;
+        _selectedDisplayAddress = widget.initialDisplayAddress;
+
+        final newText = widget.initialAddress ?? '';
+        if (_searchController.text != newText) {
+          _searchController.text = newText;
+        }
+
+        // If location is provided directly (e.g. Map Pick), we don't need to fetch by ID
+        if (widget.initialLocation != null) {
+          _selectedPlaceId = '';
+          _places = [];
+          _hasSearched = false;
+          _isLoading = false;
+          _debounce?.cancel();
+        }
+      });
+    }
   }
 
   @override
@@ -64,7 +98,7 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
   }
 
   void _onSearchChanged(String query) {
-    setState(() => _selectedAdress = query);
+    setState(() => _selectedAddress = query);
 
     if (_debounce?.isActive ?? false) _debounce!.cancel();
 
@@ -195,18 +229,18 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
                           ),
                           itemBuilder: (context, index) {
                             final place = _places[index];
-                            final isSelected = _selectedAdress == place.name;
+                            final isSelected =
+                                _selectedAddress == place.adresss;
 
                             return InkWell(
-                              onTap: () {
+                              onTap: () async {
                                 setState(() {
-                                  _selectedAdress = place.name;
-                                  _selectedLocation = Geolocation(
-                                    latitude: 36,
-                                    longitude: 42,
-                                  );
-                                  _searchController.text = place.name;
-                                  _sessionToken = const Uuid().v4();
+                                  _selectedAddress = place.adresss;
+                                  _selectedPlaceId = place.id;
+                                  _selectedDisplayAddress =
+                                      place.displayAddress;
+
+                                  _searchController.text = place.adresss;
                                 });
                               },
                               borderRadius: BorderRadius.circular(8.r),
@@ -240,7 +274,7 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
                                         top: 2.h,
                                       ),
                                       child: Text(
-                                        place.name,
+                                        place.adresss,
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                         style: theme.textTheme.bodyMedium
@@ -273,12 +307,42 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
 
         PopupNextButton(
           text: 'ilerle',
-          onPressed:
-              (_selectedAdress == null ||
-                  _selectedAdress!.isEmpty ||
-                  _selectedLocation == null)
+          onPressed: (_selectedAddress == null || _selectedAddress!.isEmpty)
               ? null
-              : () => widget.onNext(_selectedAdress!, _selectedLocation!),
+              : () async {
+                  // 1. If we don't have a location but have a placeId (from search), fetch it.
+                  if (_selectedLocation == null &&
+                      _selectedPlaceId.isNotEmpty) {
+                    try {
+                      setState(() => _isLoading = true);
+                      _selectedLocation = await _mapRepository.getPlaceLocation(
+                        _selectedPlaceId,
+                        _sessionToken,
+                      );
+                      _sessionToken = const Uuid().v4();
+                    } catch (e) {
+                      // Handle error silently or show snackbar
+                    } finally {
+                      if (mounted) setState(() => _isLoading = false);
+                    }
+                  }
+
+                  // 2. Validate and Proceed
+                  if (_selectedLocation != null && _selectedAddress != null) {
+                    final display =
+                        _selectedDisplayAddress ?? _selectedAddress!;
+
+                    final logger = getIt<LoggingService>();
+                    logger.debug(
+                      'Seçilen konum: $_selectedAddress, Lokasyon: $_selectedLocation',
+                    );
+                    widget.onNext(
+                      _selectedAddress!,
+                      display,
+                      _selectedLocation!,
+                    );
+                  }
+                },
         ),
 
         SizedBox(height: 12.h),
