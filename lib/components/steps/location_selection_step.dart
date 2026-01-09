@@ -137,7 +137,7 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
 
     return Column(
       children: [
-        // 1. HEADER (Tıklanabilir - Picking Mode için)
+        // 1. HEADER
         GestureDetector(
           onTap: widget.onHeaderTap,
           behavior: HitTestBehavior.opaque,
@@ -151,11 +151,19 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
           height: 260.h,
           child: Column(
             children: [
+              // A. ARAMA KUTUSU
               Container(
                 height: 46.h,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12.r),
+                  // Border Rengi: Odaklanınca Mavi, Değilse Gri
+                  border: Border.all(
+                    color: _isFocused
+                        ? AppColors.secondaryColor
+                        : Colors.grey.shade200,
+                    width: _isFocused ? 1.5 : 1.0,
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.03),
@@ -164,26 +172,42 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
                     ),
                   ],
                 ),
-                child: TextField(
-                  controller: _searchController,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontSize: 14.sp,
-                    color: AppColors.onBackgroundColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Konum ara...',
-                    hintStyle: TextStyle(
-                      color: Colors.grey.shade400,
+                // ÖNEMLİ DÜZELTME: ClipRRect eklendi
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(
+                    12.r,
+                  ), // Container ile aynı radius
+                  child: TextField(
+                    controller: _searchController,
+                    focusNode: _focusNode,
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       fontSize: 14.sp,
+                      color: AppColors.onBackgroundColor,
+                      fontWeight: FontWeight.w500,
                     ),
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      color: AppColors.secondaryColor.withOpacity(0.6),
-                      size: 22.sp,
+                    cursorColor: AppColors.secondaryColor,
+                    decoration: InputDecoration(
+                      hintText: 'Konum ara...',
+                      hintStyle: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 14.sp,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search_rounded,
+                        color: _isFocused
+                            ? AppColors.secondaryColor
+                            : AppColors.secondaryColor.withOpacity(0.6),
+                        size: 22.sp,
+                      ),
+                      // TextField'ın kendi borderlarını kapattık (Container kontrol ediyor)
+                      border: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 12.h),
                     ),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 12.h),
+                    onChanged: (val) => setState(() => _selectedLocation = val),
                   ),
                   onChanged: _onSearchChanged,
                 ),
@@ -191,12 +215,12 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
 
               SizedBox(height: 12.h),
 
-              // B. Liste Alanı (Gri Arka Planlı)
+              // B. Liste Alanı
               Expanded(
                 child: Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8F9FA), // Çok açık gri zemin
+                    color: const Color(0xFFF8F9FA),
                     borderRadius: BorderRadius.circular(16.r),
                     border: Border.all(color: Colors.grey.shade100),
                   ),
