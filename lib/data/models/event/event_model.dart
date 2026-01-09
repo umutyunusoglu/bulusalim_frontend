@@ -13,6 +13,7 @@ class EventModel extends Model<EventEntity> {
     required this.eventId,
     required this.name,
     required this.searchName,
+    required this.info,
     required this.hobbies,
     required this.creator,
     required this.capacity,
@@ -24,7 +25,6 @@ class EventModel extends Model<EventEntity> {
     required this.startTime,
     required this.endTime,
     required this.location,
-    required this.displayAddress,
     required this.address,
     required this.createdAt,
     required this.updatedAt,
@@ -38,6 +38,7 @@ class EventModel extends Model<EventEntity> {
       eventId: entity.eventID,
       name: entity.name,
       searchName: entity.name.toLowerCase(),
+      info: entity.info,
       status: entity.status,
       hobbies: entity.hobbies,
       creator: entity.creator,
@@ -49,7 +50,6 @@ class EventModel extends Model<EventEntity> {
       startTime: entity.startTime,
       endTime: entity.endTime,
       location: entity.location,
-      displayAddress: entity.displayAddress,
       address: entity.address,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
@@ -105,6 +105,7 @@ class EventModel extends Model<EventEntity> {
       eventId: doc['eventID'] as String,
       name: doc['name'] as String,
       searchName: (doc['name'] as String).toLowerCase(),
+      info: doc['info'] as String?,
       hobbies: (doc['hobbies'] as List?)?.cast<String>().toList() ?? [],
       creator: creator,
       capacity: doc['capacity'] as int,
@@ -114,9 +115,8 @@ class EventModel extends Model<EventEntity> {
       requestPool: requestPool,
       rejectedUsers: rejectedUsers,
       startTime: (doc['startTime'] as Timestamp).toDate(),
-      endTime: (doc['endTime'] as Timestamp?)?.toDate(),
+      endTime: (doc['endTime'] as Timestamp).toDate(),
       location: location,
-      displayAddress: doc['displayAddress'] as String,
       address: doc['address'] as String,
       createdAt: (doc['createdAt'] as Timestamp).toDate(),
       updatedAt: (doc['updatedAt'] as Timestamp).toDate(),
@@ -138,6 +138,7 @@ class EventModel extends Model<EventEntity> {
       'eventID': eventId,
       'name': name,
       'searchName': searchName,
+      'info': info,
       'hobbies': hobbies,
       'creator': creatorMap,
       'capacity': capacity,
@@ -152,13 +153,11 @@ class EventModel extends Model<EventEntity> {
         location.latitude,
         location.longitude,
       ),
-      'displayAddress': displayAddress,
       'address': address,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
       'isLocked': isLocked,
       'geohash': geohash,
-      'feedType': 'event',
     };
   }
 
@@ -167,6 +166,7 @@ class EventModel extends Model<EventEntity> {
     return EventEntity(
       eventID: eventId,
       name: name,
+      info: info,
       hobbies: hobbies,
       creator: creator,
       capacity: capacity,
@@ -178,7 +178,6 @@ class EventModel extends Model<EventEntity> {
       startTime: startTime,
       endTime: endTime,
       location: location,
-      displayAddress: displayAddress,
       address: address,
       createdAt: createdAt,
       updatedAt: updatedAt,
@@ -190,6 +189,7 @@ class EventModel extends Model<EventEntity> {
   final Identifier eventId;
   final String name;
   final String? searchName;
+  final String? info;
   final List<String> hobbies;
   final EventStatusEnum status;
   final EventParticipantEntity creator;
@@ -199,13 +199,11 @@ class EventModel extends Model<EventEntity> {
   final List<CompactUserEntity> requestPool;
   final List<CompactUserEntity> rejectedUsers;
   final DateTime startTime;
-  final DateTime? endTime;
+  final DateTime endTime;
   final Geolocation location;
-  final String displayAddress;
   final String address;
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isLocked;
-
   final String geohash;
 }

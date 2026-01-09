@@ -16,7 +16,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:http/http.dart' as http;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart'
     show MapboxOptions;
 
@@ -107,8 +106,6 @@ Future<void> main() async {
   final feedRepository = getIt<FeedRepository>();
   await feedRepository.warmup();
 
-  final r = await http.get(Uri.parse('https://google.com'));
-  print(r.statusCode);
   runApp(const ProviderScope(child: MainApp()));
 }
 

@@ -18,12 +18,8 @@ import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart';
 import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
-import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
-import 'package:bulusalim/domain/repositories/event_repository.dart';
 import 'package:bulusalim/domain/repositories/map_repository.dart';
-import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/screens/map/map_profile_marker.dart';
-import 'package:dart_geohash/dart_geohash.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -58,15 +54,10 @@ class _MapPageState extends State<MapPage> {
 
   // --- GEÇİCİ VERİLER ---
   String? _tempCategory;
-  String? _tempAddress;
-  String? _tempDisplayAddress;
-  Geolocation? _tempLocation;
+  String? _tempLocation;
   DateTime? _tempDate;
   TimeOfDay? _tempTime;
   String? _tempEventName;
-
-  PointAnnotation? _pickingMarker;
-  Geolocation? _pickedLocation;
 
   final String _currentUserImageUrl = 'https://i.pravatar.cc/300?img=12';
 
@@ -104,15 +95,7 @@ class _MapPageState extends State<MapPage> {
 
   /// Sihirbazı kapatır ve tüm geçici durumları sıfırlar.
   void _closeWizard() {
-    _removePickingMarker();
     setState(() {
-      _tempCategory = null;
-      _tempAddress = null;
-      _tempLocation = null;
-      _tempDisplayAddress = null;
-      _tempDate = null;
-      _tempTime = null;
-      _tempEventName = null;
       _isCreatePopupVisible = false;
       _createEventStep = 0;
       _isPickingFromMap = false;
@@ -121,71 +104,13 @@ class _MapPageState extends State<MapPage> {
 
   /// Haritadaki konumu onaylar ve popup'ı yukarı taşır.
   Future<void> _confirmLocationFromMap() async {
-    final locationPlace = await _mapRepository.geocodeLocation(
-      _pickedLocation!,
-    );
-
-    if (_isPickingFromMap && _pickedLocation != null) {
+    if (_isPickingFromMap) {
+      final cam = await mapboxMap.getCameraState();
       setState(() {
-        _logger.info(
-          'Picked location: Lat ${_pickedLocation!.latitude}, Lng ${_pickedLocation!.longitude}',
-        );
-        _tempDisplayAddress = locationPlace?.displayAddress;
-        _tempAddress = locationPlace?.adresss;
-        _tempLocation = _pickedLocation;
-
+        _tempLocation =
+            '${cam.center.coordinates.lat.toStringAsFixed(5)}, ${cam.center.coordinates.lng.toStringAsFixed(5)}';
         _isPickingFromMap = false;
       });
-      await _removePickingMarker();
-    }
-  }
-
-  Future<void> _removePickingMarker() async {
-    if (_pickingMarker != null && pointAnnotationManager != null) {
-      try {
-        await pointAnnotationManager!.delete(_pickingMarker!);
-      } catch (e) {
-        _logger.warn('Error removing picking marker: $e');
-      }
-      _pickingMarker = null;
-      _pickedLocation = null;
-    }
-  }
-
-  Future<void> _handleMapPick(double lat, double lng) async {
-    if (pointAnnotationManager == null) return;
-
-    if (_pickingMarker != null) {
-      try {
-        await pointAnnotationManager!.delete(_pickingMarker!);
-      } catch (e) {
-        // ignore
-      }
-      _pickingMarker = null;
-    }
-
-    final customMarkerIcon = await _generateCustomMarkerImage(
-      _currentUserImageUrl,
-      scale: 1.5,
-    );
-    if (customMarkerIcon == null) return;
-
-    try {
-      final annotation = await pointAnnotationManager!.create(
-        PointAnnotationOptions(
-          geometry: Point(
-            coordinates: Position(lng, lat),
-          ),
-          image: customMarkerIcon,
-          iconSize: 0.6,
-        ),
-      );
-      setState(() {
-        _pickingMarker = annotation;
-        _pickedLocation = Geolocation(latitude: lat, longitude: lng);
-      });
-    } catch (e) {
-      _logger.error('Error creating picking marker: $e');
     }
   }
 
@@ -402,11 +327,7 @@ class _MapPageState extends State<MapPage> {
 
     _clickListener = pointAnnotationManager?.tapEvents(
       onTap: (PointAnnotation annotation) {
-        if (_isPickingFromMap) {
-          final pos = annotation.geometry.coordinates;
-          _handleMapPick(pos.lat.toDouble(), pos.lng.toDouble());
-          return;
-        }
+        if (_isPickingFromMap) return;
 
         final event = _markerEventMap[annotation.id];
         if (event != null && mounted) {
@@ -498,11 +419,6 @@ class _MapPageState extends State<MapPage> {
   }
 
   void _onMapBackgroundClick(MapContentGestureContext context) {
-    if (_isPickingFromMap) {
-      final pos = context.point.coordinates;
-      _handleMapPick(pos.lat.toDouble(), pos.lng.toDouble());
-      return;
-    }
     if (_isCardVisible && mounted) {
       setState(() {
         _isCardVisible = false;
@@ -605,6 +521,20 @@ class _MapPageState extends State<MapPage> {
               ),
             ),
 
+          // 5. KATMAN: ORTA MARKER (Picking Mode)
+          if (_isPickingFromMap)
+            Center(
+              child: Padding(
+                padding: EdgeInsets.only(bottom: 38.h),
+                child: IgnorePointer(
+                  child: MapProfileMarker(
+                    imageUrl: _currentUserImageUrl,
+                    onTap: () {},
+                  ),
+                ),
+              ),
+            ),
+
           // 6. KATMAN: POPUP WIZARD
           if (_isCreatePopupVisible)
             if (isSummaryStep)
@@ -612,7 +542,7 @@ class _MapPageState extends State<MapPage> {
                 child: EventSummaryOverlay(
                   previewEvent: _createPreviewEvent(),
                   onCancel: _closeWizard,
-                  onConfirm: _confirmEventCreation,
+                  onConfirm: _closeWizard,
                 ),
               )
             else
@@ -665,11 +595,9 @@ class _MapPageState extends State<MapPage> {
       // ADIM 0: KATEGORİ
       case 0:
         return CategorySelectionStep(
-          initialSelectedCategory: _tempCategory,
           categories: _categories,
           onClose: _closeWizard,
           onNext: (c) => setState(() {
-            _logCurrentState();
             _tempCategory = c;
             _createEventStep = 1;
           }),
@@ -679,17 +607,11 @@ class _MapPageState extends State<MapPage> {
       case 1:
         return LocationSelectionStep(
           initialLocation: _tempLocation,
-          initialAddress: _tempAddress,
-          initialDisplayAddress: _tempDisplayAddress,
           onHeaderTap: _confirmLocationFromMap,
           onClose: _closeWizard,
           onBack: () => setState(() => _createEventStep = 0),
-          onNext: (address, displayAddress, location) => setState(() {
-            _logCurrentState();
-
-            _tempLocation = location;
-            _tempAddress = address;
-            _tempDisplayAddress = displayAddress;
+          onNext: (l) => setState(() {
+            _tempLocation = l;
             _createEventStep = 2;
           }),
         );
@@ -700,7 +622,6 @@ class _MapPageState extends State<MapPage> {
           onBack: () => setState(() => _createEventStep = 1),
           onClose: _closeWizard,
           onNext: (d, t, u) => setState(() {
-            _logCurrentState();
             _tempDate = d;
             _tempTime = t;
             _createEventStep = 3;
@@ -713,7 +634,6 @@ class _MapPageState extends State<MapPage> {
           onBack: () => setState(() => _createEventStep = 2),
           onClose: _closeWizard,
           onNext: (v, g, h) => setState(() {
-            _logCurrentState();
             _createEventStep = 4;
           }),
         );
@@ -724,7 +644,6 @@ class _MapPageState extends State<MapPage> {
           onBack: () => setState(() => _createEventStep = 3),
           onClose: _closeWizard,
           onNext: (n) => setState(() {
-            _logCurrentState();
             _tempEventName = n;
             _createEventStep = 5;
           }),
@@ -792,123 +711,35 @@ class _MapPageState extends State<MapPage> {
       time.minute,
     );
 
-    SessionService sessionService = getIt<SessionService>();
-
-    final currentUser = sessionService.currentUser;
-
     return EventEntity(
-      eventID: '',
+      eventID: 'preview_id',
       name: _tempEventName ?? 'Başlıksız',
+      info: 'Preview',
       hobbies: [_tempCategory ?? 'Genel'],
-
-      creator: EventParticipantEntity(
-        userID: currentUser!.userID,
-        username: currentUser.username,
-        profileImageUrl: currentUser.profileImageUrl,
+      creator: const EventParticipantEntity(
+        userID: 'current_user',
+        username: 'Ben',
+        profileImageUrl: 'https://i.pravatar.cc/300?img=12',
         role: EventRoleEnum.organizer,
         eventScore: 5,
       ),
-
       status: EventStatusEnum.upcoming,
       capacity: 5,
       participantCount: 1,
-      participants: [
-        CompactUserEntity(
-          userID: currentUser.userID,
-          username: currentUser.username,
-          profileImageUrl: currentUser.profileImageUrl,
-        ),
-      ],
+      participants: [],
       requestPool: [],
       rejectedUsers: [],
       startTime: startTime,
       endTime: startTime.add(const Duration(hours: 2)),
-      location: _tempLocation ?? Geolocation(latitude: 42, longitude: 36),
-      displayAddress: _tempDisplayAddress ?? 'Preview',
-      address: _tempAddress ?? 'Preview',
+      location: Geolocation(latitude: 0, longitude: 0),
+      address: _tempLocation ?? '',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
       isLocked: false,
-      geohash: GeoHasher().encode(
-        _tempLocation?.longitude ?? 36,
-        _tempLocation?.latitude ?? 42,
-        precision: 7,
-      ),
+      geohash: 'preview',
+      currentUserRole: 'admin',
+      currentUserStatus: 'joined',
     );
-  }
-
-  void _confirmEventCreation() async {
-    final EventRepository eventRepository = getIt<EventRepository>();
-    final currentUser = getIt<SessionService>().currentUser!;
-
-    final date = _tempDate ?? DateTime.now();
-    final time = _tempTime ?? TimeOfDay.now();
-    final startTime = DateTime(
-      date.year,
-      date.month,
-      date.day,
-      time.hour,
-      time.minute,
-    );
-
-    final currentUserCompact = CompactUserEntity(
-      userID: currentUser.userID,
-      username: currentUser.username,
-      profileImageUrl: currentUser.profileImageUrl,
-    );
-    final geohash = GeoHasher().encode(
-      _tempLocation!.longitude,
-      _tempLocation!.latitude,
-      precision: 7,
-    );
-    final event = EventEntity(
-      eventID: '',
-      name: _tempEventName ?? '',
-      hobbies: _tempCategory != null ? [_tempCategory!] : ['Genel'],
-      creator: EventParticipantEntity(
-        userID: currentUser.userID,
-        username: currentUser.username,
-        profileImageUrl: currentUser.profileImageUrl,
-        role: EventRoleEnum.organizer,
-        eventScore: 0,
-      ),
-
-      capacity: AppConfig.eventCapacity,
-      participants: [currentUserCompact],
-      requestPool: [],
-      status: EventStatusEnum.upcoming,
-      rejectedUsers: [],
-      startTime: startTime,
-      endTime: null,
-      location: _tempLocation!,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-      displayAddress: _tempDisplayAddress ?? '',
-      address: _tempAddress ?? '',
-      participantCount: 1,
-      isLocked: false,
-      geohash: geohash,
-    );
-    await eventRepository.createEvent(event);
-
-    _closeWizard();
-  }
-
-  void _logCurrentState() {
-    final logString =
-        '''
---- Current MapPage State ---
-Temp Category: $_tempCategory
-Temp Address: $_tempAddress
-Temp Display Address: $_tempDisplayAddress
-Temp Location: ${_tempLocation?.latitude}, ${_tempLocation?.longitude}
-Temp Date: ${_tempDate?.toString()}
-Temp Time: $_tempTime
-Temp Event Name: $_tempEventName
-------------------------------
-    
-    ''';
-    _logger.info(logString.replaceAll(RegExp(r'\s+'), ' ').trim());
   }
 }
 

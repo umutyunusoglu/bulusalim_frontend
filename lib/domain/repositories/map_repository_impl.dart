@@ -1,12 +1,10 @@
 import 'dart:async';
-import 'dart:math'; // min, max, clamp için
+// min, max, clamp için
 
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/data/models/event/event_model.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
-import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
-import 'package:bulusalim/domain/repositories/event_repository.dart';
 import 'package:bulusalim/domain/repositories/map_repository.dart';
 import 'package:bulusalim/domain/services/global_content_cache.dart';
 import 'package:bulusalim/domain/services/in_memory_cache.dart';
@@ -29,13 +27,9 @@ class MapRepositoryImpl implements MapRepository {
     required FirebaseFirestore firestore,
     required GlobalContentCache globalCache,
     required LoggingService logger,
-    required EventRepository eventRepository,
   }) : _firestore = firestore,
        _globalCache = globalCache,
-       _logger = logger,
-       _eventRepository = eventRepository;
-
-  final EventRepository _eventRepository;
+       _logger = logger;
 
   final FirebaseFirestore _firestore;
   final GlobalContentCache _globalCache;
@@ -59,7 +53,7 @@ class MapRepositoryImpl implements MapRepository {
     int precision = 7,
   }) async {
     // 1. Koordinat hesaplamaları (Refactor edilmiş güvenli hali)
-    final expandedBounds = _expandBounds(bounds as CoordinateBounds, 1);
+    final expandedBounds = _expandBounds(bounds as CoordinateBounds, 0.5);
     final searchPrecision = _calculateSearchPrecision(expandedBounds);
 
     // 2. Bölgeleri Hesapla
@@ -79,10 +73,10 @@ class MapRepositoryImpl implements MapRepository {
       // FIX: İşleme girenleri kilitle
       _fetchLock.addAll(newRegions);
 
-      final futures = <Future<QuerySnapshot>>[];
+      List<Future<QuerySnapshot>> futures = [];
 
       // FIX: Batching - Limitli sorgular
-      for (final parentHash in newRegions) {
+      for (String parentHash in newRegions) {
         final endHash = '$parentHash~';
         futures.add(
           _firestore
@@ -103,22 +97,15 @@ class MapRepositoryImpl implements MapRepository {
           for (final doc in snap.docs) {
             try {
               final eventModel = EventModel.fromFirestore(
-                doc.data()! as Map<String, dynamic>,
+                doc.data() as Map<String, dynamic>,
               );
-              final lightEvent = eventModel.toEntity();
-
-              // 2. Detayları çek (Code Duplication Önleniyor)
-              // Map üzerinde tıkladığında detay açılacaksa Full data çekmek mantıklı.
-              // Sadece pin gösterecekseniz `enrich` işlemini atlayabilirsiniz.
-              final fullEvent = await _eventRepository.enrichEventWithDetails(
-                lightEvent,
-              );
+              final entity = eventModel.toEntity();
 
               // Global Cache (Detay sayfası için)
-              _globalCache.cacheEntity(fullEvent);
+              _globalCache.cacheEntity(entity);
               // Map Cache (Harita gösterimi için)
-              _eventCache.set(fullEvent.id, fullEvent);
-            } on Exception catch (e) {
+              _eventCache.set(entity.id, entity);
+            } catch (e) {
               _logger.error('MapRepo Parse Error: $e');
             }
           }
@@ -126,8 +113,8 @@ class MapRepositoryImpl implements MapRepository {
 
         // Başarılı olanları fetched listesine ekle
         _fetchedRegions.addAll(newRegions);
-      } on Exception catch (e) {
-        _logger.error('Fetch hatası: $e');
+      } catch (e) {
+        _logger.error("Fetch hatası: $e");
         // Hata durumunda yeniden denenebilmesi için fetched'a eklemiyoruz
       } finally {
         // FIX: İşlem bitince (başarılı/başarısız) kilidi mutlaka aç
@@ -243,31 +230,6 @@ class MapRepositoryImpl implements MapRepository {
     return hashes.toList();
   }
 
-  // Mevcut fetchEventsInBounds metodunuzun içinde veya sonunda:
-  // List<EventEntity> events = ... (veriyi çektiniz)
-
-  Map<String, dynamic> convertEventsToGeoJson(List<EventEntity> events) {
-    return {
-      'type': 'FeatureCollection',
-      'features': events.map((event) {
-        return {
-          'type': 'Feature',
-          'id': event.id, // Click handling için kritik
-          'geometry': {
-            'type': 'Point',
-            'coordinates': [event.location.longitude, event.location.latitude],
-          },
-          'properties': {
-            'id': event.id,
-            'iconName': event.id, // Style Image ID ile eşleşecek
-            'category':
-                event.hobbies.firstOrNull ?? 'default', // Filtreleme için
-          },
-        };
-      }).toList(),
-    };
-  }
-
   bool _isLocationInBounds(dynamic location, CoordinateBounds bounds) {
     double? lat;
     double? lng;
@@ -280,7 +242,7 @@ class MapRepositoryImpl implements MapRepository {
         lat = (location['latitude'] as num?)?.toDouble();
         lng = (location['longitude'] as num?)?.toDouble();
       }
-    } on Exception catch (_) {}
+    } catch (_) {}
 
     if (lat == null || lng == null) return false;
 
