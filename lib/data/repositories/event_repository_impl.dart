@@ -37,6 +37,11 @@ class EventRepositoryImpl implements EventRepository {
     try {
       final docRef = _firestore.collection('events').doc();
       final eventId = docRef.id;
+      final userEventLogRef = _firestore
+          .collection('users')
+          .doc(event.creator.userID)
+          .collection('eventLog')
+          .doc(eventId);
 
       // Creator'ı hem Subcollection'a hem de Ana Dökümana (Feed için) ekliyoruz.
       final eventWithId = event.copyWith(
@@ -63,7 +68,9 @@ class EventRepositoryImpl implements EventRepository {
         // 1. Ana Döküman (İçinde participants array var)
         ..set(docRef, eventModel.toFirestore())
         // 2. Subcollection (Yedek ve Detaylı yönetim için)
-        ..set(creatorRef, event.creator.toMap());
+        ..set(creatorRef, event.creator.toMap())
+        // 3. Kullanıcının event log'una ekleme
+        ..set(userEventLogRef, eventModel.toFirestore());
 
       await batch.commit();
       _logger.info('Event created with ID: $eventId');

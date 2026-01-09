@@ -1,7 +1,9 @@
+import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/components/event_card.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
+import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -20,7 +22,12 @@ class EventSummaryOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Özet ekranı için boş katılımcı listesi (veya kurucuyu ekleyebilirsiniz)
-    final dummyParticipants = <CompactUserEntity>[];
+    final currentUser = getIt<SessionService>().currentUser;
+    final creator = CompactUserEntity(
+      userID: currentUser!.userID,
+      username: currentUser.username,
+      profileImageUrl: currentUser.profileImageUrl,
+    );
 
     return Container(
       color: Colors.black.withOpacity(0.5), // Arka plan karartması
@@ -56,7 +63,7 @@ class EventSummaryOverlay extends StatelessWidget {
                 // Kartın içindeki tıklamaları engelle (Sadece görsel)
                 child: EventCard(
                   event: previewEvent,
-                  participants: dummyParticipants,
+                  participants: [creator],
                   showJoinButton: false, // Katıl butonu gizli
                 ),
               ),
