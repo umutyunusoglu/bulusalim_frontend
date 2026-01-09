@@ -49,7 +49,6 @@ extension RepositoryModule on GetIt {
           firestore: this(),
           logger: this(),
           globalCache: this(),
-          eventRepository: this(),
         ),
       )
       ..registerLazySingleton<ChatRepository>(
