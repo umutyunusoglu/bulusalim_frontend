@@ -218,7 +218,8 @@ class _PostCardState extends State<PostCard> {
         'https://picsum.photos/seed/avatar_default/100/100';
 
     // Static Data (Örnek)
-    final staticLocationName = widget.post.address ?? 'Konum Bilgisi Yok';
+    final staticLocationName =
+        widget.post.displayAddress ?? 'Konum Bilgisi Yok';
     final participantAvatars = widget.post.participants
         .take(3)
         .map((p) => p.profileImageUrl)

@@ -218,7 +218,7 @@ class _EventCardState extends State<EventCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         EventLocationChip(
-                          locationName: widget.event.address,
+                          locationName: widget.event.displayAddress,
                         ),
                         SizedBox(height: 4.h),
                         EventInfoChip(
@@ -230,29 +230,18 @@ class _EventCardState extends State<EventCard> {
                     ),
                   ),
 
-                  Positioned(
-                    bottom: 12.h,
-                    right: 13.w,
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: !canUserJoin
-                            ? null
-                            : () async {
-                                await eventRepository.requestJoin(
-                                  widget.event.id,
-                                  CompactUserEntity(
-                                    userID: currentUser.userID,
-                                    username: currentUser.username,
-                                    profileImageUrl:
-                                        currentUser.profileImageUrl,
-                                  ),
-                                );
-
-                                setState(() {
-                                  canUserJoin = false;
-
-                                  widget.event.requestPool.add(
+                  if (widget.showJoinButton)
+                    Positioned(
+                      bottom: 12.h,
+                      right: 13.w,
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: !canUserJoin
+                              ? null
+                              : () async {
+                                  await eventRepository.requestJoin(
+                                    widget.event.id,
                                     CompactUserEntity(
                                       userID: currentUser.userID,
                                       username: currentUser.username,
@@ -260,38 +249,50 @@ class _EventCardState extends State<EventCard> {
                                           currentUser.profileImageUrl,
                                     ),
                                   );
-                                });
-                              },
-                        borderRadius: BorderRadius.circular(20.r),
-                        child: Container(
-                          width: 72.w,
-                          height: 36.h,
-                          decoration: BoxDecoration(
-                            color: canUserJoin
-                                ? AppColors.primaryColor
-                                : Colors.grey,
-                            borderRadius: BorderRadius.circular(20.r),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x26000000),
-                                offset: Offset(0, 4),
-                                blurRadius: 4,
+
+                                  setState(() {
+                                    canUserJoin = false;
+
+                                    widget.event.requestPool.add(
+                                      CompactUserEntity(
+                                        userID: currentUser.userID,
+                                        username: currentUser.username,
+                                        profileImageUrl:
+                                            currentUser.profileImageUrl,
+                                      ),
+                                    );
+                                  });
+                                },
+                          borderRadius: BorderRadius.circular(20.r),
+                          child: Container(
+                            width: 72.w,
+                            height: 36.h,
+                            decoration: BoxDecoration(
+                              color: canUserJoin
+                                  ? AppColors.primaryColor
+                                  : Colors.grey,
+                              borderRadius: BorderRadius.circular(20.r),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x26000000),
+                                  offset: Offset(0, 4),
+                                  blurRadius: 4,
+                                ),
+                              ],
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              canUserJoin ? 'katıl' : 'kilitli',
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white,
                               ),
-                            ],
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            canUserJoin ? 'katıl' : 'kilitli',
-                            style: TextStyle(
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white,
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),

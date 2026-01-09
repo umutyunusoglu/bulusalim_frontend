@@ -24,11 +24,11 @@ class EventEntity extends FeedEntity with EquatableMixin {
     required this.location,
     required this.createdAt,
     required this.updatedAt,
+    required this.displayAddress,
     required this.address,
     required this.participantCount,
     required this.isLocked,
     required this.geohash,
-    this.info,
     this.currentUserStatus,
     this.currentUserRole,
   }) : super(feedType: FeedEntityTypeEnum.event, id: eventID);
@@ -36,7 +36,6 @@ class EventEntity extends FeedEntity with EquatableMixin {
   EventEntity copyWith({
     String? eventID,
     String? name,
-    String? info,
     List<String>? hobbies,
     EventStatusEnum? status,
     EventParticipantEntity? creator,
@@ -48,6 +47,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
     DateTime? startTime,
     DateTime? endTime,
     Geolocation? location,
+    String? displayAddress,
     String? address,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -60,7 +60,6 @@ class EventEntity extends FeedEntity with EquatableMixin {
     return EventEntity(
       eventID: eventID ?? this.eventID,
       name: name ?? this.name,
-      info: info ?? this.info,
       hobbies: hobbies ?? this.hobbies,
       creator: creator ?? this.creator,
       capacity: capacity ?? this.capacity,
@@ -71,6 +70,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       location: location ?? this.location,
+      displayAddress: displayAddress ?? this.displayAddress,
       address: address ?? this.address,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -87,7 +87,6 @@ class EventEntity extends FeedEntity with EquatableMixin {
   final int participantCount;
   final String eventID;
   final String name;
-  final String? info;
   final List<String> hobbies;
   final EventStatusEnum status;
   final EventParticipantEntity creator;
@@ -96,8 +95,9 @@ class EventEntity extends FeedEntity with EquatableMixin {
   final List<CompactUserEntity> requestPool;
   final List<CompactUserEntity> rejectedUsers;
   final DateTime startTime;
-  final DateTime endTime;
+  final DateTime? endTime;
   final Geolocation location;
+  final String displayAddress;
   final String address;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -147,7 +147,7 @@ class EventParticipantEntity extends Equatable {
       'userID': userID,
       'username': username,
       'profileImageUrl': profileImageUrl,
-      'role': role.index,
+      'role': role.toString(),
       'eventScore': eventScore,
     };
   }
