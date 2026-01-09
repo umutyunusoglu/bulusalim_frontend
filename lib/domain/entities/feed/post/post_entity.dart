@@ -22,7 +22,7 @@ class PostEntity extends FeedEntity with EquatableMixin {
     required this.createdAt,
     required this.updatedAt,
     this.location,
-    this.address,
+    this.displayAddress,
     this.imageUrls,
   }) : super(feedType: FeedEntityTypeEnum.post, id: postID);
 
@@ -32,7 +32,7 @@ class PostEntity extends FeedEntity with EquatableMixin {
     Identifier? eventID,
     String? caption,
     Geolocation? location,
-    String? adress,
+    String? displayAddress,
     List<HobbyEntity>? hobbies,
     List<String>? imageUrls,
     List<CompactUserEntity>? participants,
@@ -51,7 +51,7 @@ class PostEntity extends FeedEntity with EquatableMixin {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       location: location ?? this.location,
-      address: adress ?? this.address,
+      displayAddress: displayAddress ?? this.displayAddress,
       hobbies: hobbies ?? this.hobbies,
       imageUrls: imageUrls ?? this.imageUrls,
       participants: participants ?? this.participants,
@@ -75,7 +75,7 @@ class PostEntity extends FeedEntity with EquatableMixin {
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final Geolocation? location;
-  final String? address;
+  final String? displayAddress;
   final List<HobbyEntity> hobbies;
   final List<String>? imageUrls;
   final bool showParticipants;

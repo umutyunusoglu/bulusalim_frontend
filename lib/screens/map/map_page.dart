@@ -59,6 +59,7 @@ class _MapPageState extends State<MapPage> {
   // --- GEÇİCİ VERİLER ---
   String? _tempCategory;
   String? _tempAddress;
+  String? _tempDisplayAddress;
   Geolocation? _tempLocation;
   DateTime? _tempDate;
   TimeOfDay? _tempTime;
@@ -108,6 +109,7 @@ class _MapPageState extends State<MapPage> {
       _tempCategory = null;
       _tempAddress = null;
       _tempLocation = null;
+      _tempDisplayAddress = null;
       _tempDate = null;
       _tempTime = null;
       _tempEventName = null;
@@ -119,14 +121,19 @@ class _MapPageState extends State<MapPage> {
 
   /// Haritadaki konumu onaylar ve popup'ı yukarı taşır.
   Future<void> _confirmLocationFromMap() async {
+    final locationPlace = await _mapRepository.geocodeLocation(
+      _pickedLocation!,
+    );
+
     if (_isPickingFromMap && _pickedLocation != null) {
       setState(() {
         _logger.info(
           'Picked location: Lat ${_pickedLocation!.latitude}, Lng ${_pickedLocation!.longitude}',
         );
-        _tempAddress =
-            '${_pickedLocation!.latitude.toStringAsFixed(5)}, ${_pickedLocation!.longitude.toStringAsFixed(5)}';
+        _tempDisplayAddress = locationPlace?.displayAddress;
+        _tempAddress = locationPlace?.adresss;
         _tempLocation = _pickedLocation;
+
         _isPickingFromMap = false;
       });
       await _removePickingMarker();
@@ -605,7 +612,7 @@ class _MapPageState extends State<MapPage> {
                 child: EventSummaryOverlay(
                   previewEvent: _createPreviewEvent(),
                   onCancel: _closeWizard,
-                  onConfirm: _closeWizard,
+                  onConfirm: _confirmEventCreation,
                 ),
               )
             else
@@ -662,6 +669,7 @@ class _MapPageState extends State<MapPage> {
           categories: _categories,
           onClose: _closeWizard,
           onNext: (c) => setState(() {
+            _logCurrentState();
             _tempCategory = c;
             _createEventStep = 1;
           }),
@@ -672,15 +680,16 @@ class _MapPageState extends State<MapPage> {
         return LocationSelectionStep(
           initialLocation: _tempLocation,
           initialAddress: _tempAddress,
+          initialDisplayAddress: _tempDisplayAddress,
           onHeaderTap: _confirmLocationFromMap,
           onClose: _closeWizard,
           onBack: () => setState(() => _createEventStep = 0),
-          onNext: (adress, location) => setState(() {
-            _logger.info(
-              'Selected location: Lat ${location.latitude}, Lng ${location.longitude}',
-            );
+          onNext: (address, displayAddress, location) => setState(() {
+            _logCurrentState();
+
             _tempLocation = location;
-            _tempAddress = adress;
+            _tempAddress = address;
+            _tempDisplayAddress = displayAddress;
             _createEventStep = 2;
           }),
         );
@@ -691,6 +700,7 @@ class _MapPageState extends State<MapPage> {
           onBack: () => setState(() => _createEventStep = 1),
           onClose: _closeWizard,
           onNext: (d, t, u) => setState(() {
+            _logCurrentState();
             _tempDate = d;
             _tempTime = t;
             _createEventStep = 3;
@@ -703,6 +713,7 @@ class _MapPageState extends State<MapPage> {
           onBack: () => setState(() => _createEventStep = 2),
           onClose: _closeWizard,
           onNext: (v, g, h) => setState(() {
+            _logCurrentState();
             _createEventStep = 4;
           }),
         );
@@ -713,6 +724,7 @@ class _MapPageState extends State<MapPage> {
           onBack: () => setState(() => _createEventStep = 3),
           onClose: _closeWizard,
           onNext: (n) => setState(() {
+            _logCurrentState();
             _tempEventName = n;
             _createEventStep = 5;
           }),
@@ -781,14 +793,12 @@ class _MapPageState extends State<MapPage> {
     );
 
     SessionService sessionService = getIt<SessionService>();
-    final EventRepository eventRepository = getIt<EventRepository>();
 
     final currentUser = sessionService.currentUser;
 
     return EventEntity(
       eventID: '',
       name: _tempEventName ?? 'Başlıksız',
-      info: 'Preview',
       hobbies: [_tempCategory ?? 'Genel'],
 
       creator: EventParticipantEntity(
@@ -814,6 +824,7 @@ class _MapPageState extends State<MapPage> {
       startTime: startTime,
       endTime: startTime.add(const Duration(hours: 2)),
       location: _tempLocation ?? Geolocation(latitude: 42, longitude: 36),
+      displayAddress: _tempDisplayAddress ?? 'Preview',
       address: _tempAddress ?? 'Preview',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
@@ -824,6 +835,80 @@ class _MapPageState extends State<MapPage> {
         precision: 7,
       ),
     );
+  }
+
+  void _confirmEventCreation() async {
+    final EventRepository eventRepository = getIt<EventRepository>();
+    final currentUser = getIt<SessionService>().currentUser!;
+
+    final date = _tempDate ?? DateTime.now();
+    final time = _tempTime ?? TimeOfDay.now();
+    final startTime = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
+
+    final currentUserCompact = CompactUserEntity(
+      userID: currentUser.userID,
+      username: currentUser.username,
+      profileImageUrl: currentUser.profileImageUrl,
+    );
+    final geohash = GeoHasher().encode(
+      _tempLocation!.longitude,
+      _tempLocation!.latitude,
+      precision: 7,
+    );
+    final event = EventEntity(
+      eventID: '',
+      name: _tempEventName ?? '',
+      hobbies: _tempCategory != null ? [_tempCategory!] : ['Genel'],
+      creator: EventParticipantEntity(
+        userID: currentUser.userID,
+        username: currentUser.username,
+        profileImageUrl: currentUser.profileImageUrl,
+        role: EventRoleEnum.organizer,
+        eventScore: 0,
+      ),
+
+      capacity: AppConfig.eventCapacity,
+      participants: [currentUserCompact],
+      requestPool: [],
+      status: EventStatusEnum.upcoming,
+      rejectedUsers: [],
+      startTime: startTime,
+      endTime: null,
+      location: _tempLocation!,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      displayAddress: _tempDisplayAddress ?? '',
+      address: _tempAddress ?? '',
+      participantCount: 1,
+      isLocked: false,
+      geohash: geohash,
+    );
+    await eventRepository.createEvent(event);
+
+    _closeWizard();
+  }
+
+  void _logCurrentState() {
+    final logString =
+        '''
+--- Current MapPage State ---
+Temp Category: $_tempCategory
+Temp Address: $_tempAddress
+Temp Display Address: $_tempDisplayAddress
+Temp Location: ${_tempLocation?.latitude}, ${_tempLocation?.longitude}
+Temp Date: ${_tempDate?.toString()}
+Temp Time: $_tempTime
+Temp Event Name: $_tempEventName
+------------------------------
+    
+    ''';
+    _logger.info(logString.replaceAll(RegExp(r'\s+'), ' ').trim());
   }
 }
 
