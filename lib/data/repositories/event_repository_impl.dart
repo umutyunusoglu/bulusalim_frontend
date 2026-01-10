@@ -43,6 +43,12 @@ class EventRepositoryImpl implements EventRepository {
           .collection('eventLog')
           .doc(eventId);
 
+      final userEvent = UserEventEntity(
+        eventId: eventId,
+        role: EventRoleEnum.creator,
+        status: UserEventStatusEnum.cancelled,
+      );
+
       // Creator'ı hem Subcollection'a hem de Ana Dökümana (Feed için) ekliyoruz.
       final eventWithId = event.copyWith(
         eventID: eventId,
