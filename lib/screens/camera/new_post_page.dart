@@ -357,6 +357,7 @@ class _NewPostPageState extends State<NewPostPage> {
       _selectedMedia,
       _showParticipants,
       _addToDump,
+      false, //TODO
       _captionController.text.trim(),
     );
     if (!mounted) return;

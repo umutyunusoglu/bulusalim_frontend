@@ -4,8 +4,8 @@ import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class PinnedPostModel extends Model<PinnedPostEntity> {
-  PinnedPostModel({
+class UserPostModel extends Model<UserPostEntity> {
+  UserPostModel({
     required this.postID,
     required this.caption,
     required this.location,
@@ -13,21 +13,23 @@ class PinnedPostModel extends Model<PinnedPostEntity> {
     required this.participants,
     required this.emoteCounts,
     required this.createdAt,
+    required this.isPinned,
   });
 
-  factory PinnedPostModel.fromEntity(PinnedPostEntity entity) {
-    return PinnedPostModel(
+  factory UserPostModel.fromEntity(UserPostEntity entity) {
+    return UserPostModel(
       postID: entity.postID,
       caption: entity.caption,
       location: entity.location,
       imageUrls: entity.imageUrls,
       participants: entity.participants,
       emoteCounts: entity.emoteCounts,
+      isPinned: entity.isPinned,
       createdAt: entity.createdAt,
     );
   }
 
-  factory PinnedPostModel.fromFirestore(Map<String, dynamic> doc) {
+  factory UserPostModel.fromFirestore(Map<String, dynamic> doc) {
     final geolocation = doc['location'] as GeoPoint;
     final location = Geolocation(
       latitude: geolocation.latitude,
@@ -42,26 +44,28 @@ class PinnedPostModel extends Model<PinnedPostEntity> {
       (key, value) => MapEntry(key, (value as num).toInt()),
     );
 
-    return PinnedPostModel(
+    return UserPostModel(
       postID: doc['postID'] as String? ?? '',
       caption: doc['caption'] as String? ?? '',
       location: location,
       imageUrls: (doc['imageUrls'] as List?)?.cast<String>().toList() ?? [],
       participants: participants,
       emoteCounts: emoteCounts,
+      isPinned: doc['isPinned'] as bool? ?? false,
       createdAt: (doc['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 
   @override
-  PinnedPostEntity toEntity() {
-    return PinnedPostEntity(
+  UserPostEntity toEntity() {
+    return UserPostEntity(
       postID: postID,
       caption: caption,
       location: location,
       imageUrls: imageUrls,
       participants: participants,
       emoteCounts: emoteCounts,
+      isPinned: isPinned,
       createdAt: createdAt,
     );
   }
@@ -75,6 +79,7 @@ class PinnedPostModel extends Model<PinnedPostEntity> {
       'imageUrls': imageUrls,
       'participants': participants.map((e) => e.toMap()).toList(),
       'emoteCounts': emoteCounts,
+      'isPinned': isPinned,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -85,5 +90,6 @@ class PinnedPostModel extends Model<PinnedPostEntity> {
   final List<String> imageUrls;
   final List<CompactUserEntity> participants;
   final Map<String, int> emoteCounts;
+  final bool isPinned;
   final DateTime createdAt;
 }
