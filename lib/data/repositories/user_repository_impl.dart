@@ -1,3 +1,4 @@
+import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
@@ -444,21 +445,50 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Future<List<PinnedPostEntity>> getPinnedPosts(Identifier userID) async {
+  Future<List<UserPostEntity>> getPinnedPosts(Identifier userID) async {
     _logger.info('Getting pinned posts for user: $userID');
     final snapshot = await _firestore
         .collection('users')
         .doc(userID)
-        .collection('pinnedPosts')
+        .collection('posts')
+        .where('isPinned', isEqualTo: true)
         .get();
 
     final pinnedPosts = snapshot.docs.map(
       (doc) {
-        final model = PinnedPostModel.fromFirestore(doc.data());
+        final model = UserPostModel.fromFirestore(doc.data());
         return model.toEntity();
       },
     ).toList();
     return pinnedPosts;
+  }
+
+  Future<List<UserPostEntity>> getActivePosts(Identifier userID) async {
+    _logger.info('Getting active posts for user: $userID');
+
+    //Return posts which are created at most 1 day ago.
+
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('posts')
+        .where(
+          'createdAt',
+          isGreaterThan: Timestamp.fromDate(
+            DateTime.now().subtract(
+              const Duration(days: AppConfig.activePostDays),
+            ),
+          ),
+        )
+        .get();
+
+    final activePosts = snapshot.docs.map(
+      (doc) {
+        final model = UserPostModel.fromFirestore(doc.data());
+        return model.toEntity();
+      },
+    ).toList();
+    return activePosts;
   }
 
   @override
