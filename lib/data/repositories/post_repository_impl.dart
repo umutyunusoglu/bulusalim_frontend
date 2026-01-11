@@ -4,8 +4,10 @@ import 'package:bulusalim/core/utils/types/geolocation/distance.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/post/post_model.dart';
+import 'package:bulusalim/data/models/user/pinned_post_model.dart';
 import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
+import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart';
 import 'package:bulusalim/domain/repositories/post_repository.dart';
 import 'package:bulusalim/domain/services/in_memory_cache.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -26,9 +28,14 @@ class PostRepositoryImpl implements PostRepository {
   );
 
   @override
-  Future<void> createPost(PostEntity post) async {
+  Future<void> createPost(PostEntity post, bool isPinned) async {
     try {
       final docRef = _firestore.collection('posts').doc();
+      final userPostRef = _firestore
+          .collection('users')
+          .doc(post.creator.userID)
+          .collection('posts')
+          .doc(docRef.id);
 
       final postWithID = post.copyWith(
         postID: docRef.id,
@@ -36,7 +43,23 @@ class PostRepositoryImpl implements PostRepository {
 
       final postModel = PostModel.fromEntity(postWithID);
 
+      final userPost = UserPostEntity(
+        postID: postWithID.postID,
+        caption: postWithID.caption,
+        location: postWithID.location ?? Geolocation(latitude: 0, longitude: 0),
+        imageUrls: postWithID.imageUrls ?? [],
+        participants: postWithID.participants,
+        emoteCounts: postWithID.emoteCounts.map(
+          (key, value) => MapEntry(key.name, value),
+        ),
+        isPinned: isPinned,
+        createdAt: postWithID.createdAt ?? DateTime.now(),
+      );
+
+      final userPostModel = UserPostModel.fromEntity(userPost);
+
       await docRef.set(postModel.toFirestore());
+      await userPostRef.set(userPostModel.toFirestore());
     } catch (e) {
       _logger.error('Failed to create post: $e');
       rethrow;
