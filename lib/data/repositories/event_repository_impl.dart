@@ -43,6 +43,13 @@ class EventRepositoryImpl implements EventRepository {
           .collection('eventLog')
           .doc(eventId);
 
+      final userEvent = UserEventEntity(
+        eventId: eventId,
+        role: EventRoleEnum.creator,
+        status: UserEventStatusEnum.cancelled,
+        updatedAt: DateTime.now(),
+      );
+
       // Creator'ı hem Subcollection'a hem de Ana Dökümana (Feed için) ekliyoruz.
       final eventWithId = event.copyWith(
         eventID: eventId,
@@ -57,6 +64,7 @@ class EventRepositoryImpl implements EventRepository {
       );
 
       final eventModel = EventModel.fromEntity(eventWithId);
+      final userEventModel = UserEventModel.fromEntity(userEvent);
 
       final creatorRef = _firestore
           .collection('events')
@@ -70,7 +78,7 @@ class EventRepositoryImpl implements EventRepository {
         // 2. Subcollection (Yedek ve Detaylı yönetim için)
         ..set(creatorRef, event.creator.toMap())
         // 3. Kullanıcının event log'una ekleme
-        ..set(userEventLogRef, eventModel.toFirestore());
+        ..set(userEventLogRef, userEventModel.toFirestore());
 
       await batch.commit();
       _logger.info('Event created with ID: $eventId');
@@ -304,6 +312,7 @@ class EventRepositoryImpl implements EventRepository {
       eventId: eventId,
       role: EventRoleEnum.participant,
       status: UserEventStatusEnum.pending,
+      updatedAt: DateTime.now(),
     );
 
     final userEventModel = UserEventModel.fromEntity(userEvent);

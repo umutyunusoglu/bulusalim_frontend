@@ -43,7 +43,8 @@ class _ProfilePageState extends State<ProfilePage> {
   final bool _isPrivateAccount = false;
   final PageController _pageController = PageController();
 
-  List<PinnedPostEntity> _pinnedPosts = [];
+  List<UserPostEntity> _pinnedPosts = [];
+  List<UserPostEntity> _activePosts = [];
 
   String _school = '';
   // --- DURUM YÖNETİMİ ---
@@ -86,6 +87,11 @@ class _ProfilePageState extends State<ProfilePage> {
       // 3. ADIM: Pinned Postları çekme
       debugPrint("3. Pinned posts çekiliyor...");
       final pinnedPosts = await userRepository.getPinnedPosts(
+        widget.profileUserID,
+      );
+
+      debugPrint("3. Aktif postlar çekiliyor...");
+      final activePosts = await userRepository.getActivePosts(
         widget.profileUserID,
       );
 
@@ -134,10 +140,11 @@ class _ProfilePageState extends State<ProfilePage> {
           _bio = user.bio ?? '';
           _school = user.organization;
           // URL boş gelse bile boş string atıyoruz, null hatası almamak için
-          _avatarUrl = user.profileImageUrl ?? '';
+          _avatarUrl = user.profileImageUrl;
         }
 
         _pinnedPosts = pinnedPosts;
+        _activePosts = activePosts;
         _currentEvents = enrolledEvents;
         _consideredEvents = savedEvents;
         _isLoadingEvents = false;
@@ -451,7 +458,10 @@ class _ProfilePageState extends State<ProfilePage> {
             },
             children: [
               // TAB 1: Grid (Fotoğraflar)
-              ProfileGridTab(pinnedPosts: _pinnedPosts),
+              ProfileGridTab(
+                pinnedPosts: _pinnedPosts,
+                activePosts: _activePosts,
+              ),
 
               // TAB 2: Events (Etkinlikler)
               ProfileEventsTab(

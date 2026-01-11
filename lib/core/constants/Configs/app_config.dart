@@ -46,6 +46,7 @@ class AppConfig {
 
   static const maxUserPhotos = 3;
   static const int eventCapacity = 20;
+  static const int activePostDays = 1;
 
   final remoteConfigDebugPath = 'assets/remote_config_defaults.json';
 

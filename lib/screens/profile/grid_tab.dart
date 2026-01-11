@@ -5,16 +5,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ProfileGridTab extends StatelessWidget {
-  const ProfileGridTab({required this.pinnedPosts, super.key});
+  const ProfileGridTab({
+    required this.pinnedPosts,
+    required this.activePosts,
+    super.key,
+  });
 
-  final List<PinnedPostEntity> pinnedPosts;
+  final List<UserPostEntity> pinnedPosts;
+  final List<UserPostEntity> activePosts;
 
   void _openFeedPage(BuildContext context, int index) {
+    final allPosts = [...activePosts, ...pinnedPosts];
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ProfilePostFeedPage(
-          posts: pinnedPosts,
+          posts: allPosts,
           initialIndex: index,
         ),
       ),
@@ -23,6 +30,8 @@ class ProfileGridTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final allPosts = [...activePosts, ...pinnedPosts];
+
     return GridView.builder(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -30,10 +39,11 @@ class ProfileGridTab extends StatelessWidget {
         crossAxisSpacing: 16.w,
         mainAxisSpacing: 16.h,
       ),
-      itemCount: pinnedPosts.length,
+      itemCount: allPosts.length,
       itemBuilder: (context, index) {
-        final iconData = index == 0 ? Icons.access_time_filled : Icons.push_pin;
-        final post = pinnedPosts[index];
+        final isActive = index < activePosts.length;
+        final iconData = isActive ? Icons.access_time_filled : Icons.push_pin;
+        final post = allPosts[index];
 
         return GestureDetector(
           // TIKLAMA OLAYI BURADA
