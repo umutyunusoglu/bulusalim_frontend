@@ -9,7 +9,8 @@ class UserEventModel extends Model<UserEventEntity> {
   UserEventModel({
     required this.eventID,
     required this.role,
-    this.status = UserEventStatusEnum.upcoming,
+    required this.updatedAt,
+    required this.status,
   });
 
   @override
@@ -18,6 +19,7 @@ class UserEventModel extends Model<UserEventEntity> {
       eventID: entity.eventId,
       role: entity.role,
       status: entity.status,
+      updatedAt: entity.updatedAt,
     );
   }
 
@@ -25,9 +27,9 @@ class UserEventModel extends Model<UserEventEntity> {
   factory UserEventModel.fromFirestore(Map<String, dynamic> doc) {
     return UserEventModel(
       eventID: doc['eventID'] as Identifier,
-      role: EventRoleEnum.participant, //TODO
-
+      role: EventRoleEnum.fromString(doc['role'] as String),
       status: UserEventStatusEnum.fromString(doc['status'] as String),
+      updatedAt: (doc['updatedAt'] as Timestamp).toDate(),
     );
   }
 
@@ -37,6 +39,7 @@ class UserEventModel extends Model<UserEventEntity> {
       'eventID': eventID,
       'role': role.index,
       'status': status.toString(),
+      'updatedAt': FieldValue.serverTimestamp(),
     };
   }
 
@@ -46,10 +49,12 @@ class UserEventModel extends Model<UserEventEntity> {
       eventId: eventID,
       role: role,
       status: status,
+      updatedAt: updatedAt,
     );
   }
 
   final Identifier eventID;
   final EventRoleEnum role;
   final UserEventStatusEnum status;
+  final DateTime updatedAt;
 }
