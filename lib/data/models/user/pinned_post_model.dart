@@ -4,8 +4,8 @@ import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class PinnedPostModel extends Model<PinnedPostEntity> {
-  PinnedPostModel({
+class UserPostModel extends Model<UserPostEntity> {
+  UserPostModel({
     required this.postID,
     required this.caption,
     required this.location,
@@ -15,8 +15,8 @@ class PinnedPostModel extends Model<PinnedPostEntity> {
     required this.createdAt,
   });
 
-  factory PinnedPostModel.fromEntity(PinnedPostEntity entity) {
-    return PinnedPostModel(
+  factory UserPostModel.fromEntity(UserPostEntity entity) {
+    return UserPostModel(
       postID: entity.postID,
       caption: entity.caption,
       location: entity.location,
@@ -27,7 +27,7 @@ class PinnedPostModel extends Model<PinnedPostEntity> {
     );
   }
 
-  factory PinnedPostModel.fromFirestore(Map<String, dynamic> doc) {
+  factory UserPostModel.fromFirestore(Map<String, dynamic> doc) {
     final geolocation = doc['location'] as GeoPoint;
     final location = Geolocation(
       latitude: geolocation.latitude,
@@ -42,7 +42,7 @@ class PinnedPostModel extends Model<PinnedPostEntity> {
       (key, value) => MapEntry(key, (value as num).toInt()),
     );
 
-    return PinnedPostModel(
+    return UserPostModel(
       postID: doc['postID'] as String? ?? '',
       caption: doc['caption'] as String? ?? '',
       location: location,
@@ -54,8 +54,8 @@ class PinnedPostModel extends Model<PinnedPostEntity> {
   }
 
   @override
-  PinnedPostEntity toEntity() {
-    return PinnedPostEntity(
+  UserPostEntity toEntity() {
+    return UserPostEntity(
       postID: postID,
       caption: caption,
       location: location,
