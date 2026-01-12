@@ -5,11 +5,13 @@ import 'package:bulusalim/components/stacked_avatars.dart';
 import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
+import 'package:bulusalim/data/services/security_service_impl.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:bulusalim/domain/repositories/event_repository.dart'
     show EventRepository;
 import 'package:bulusalim/domain/services/remote_config_service.dart';
+import 'package:bulusalim/domain/services/security_service.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/screens/home/eventcomponents/event_info_chip.dart';
 import 'package:bulusalim/screens/home/eventcomponents/event_location_chip.dart';
@@ -59,6 +61,7 @@ class _EventCardState extends State<EventCard> {
   @override
   Widget build(BuildContext context) {
     final currentUser = sessionService.currentUser!;
+    final isPostMine = widget.event.creator.userID == currentUser.userID;
 
     getIt<RemoteConfigService>();
     final categories = AppConfig.categories;
@@ -169,14 +172,15 @@ class _EventCardState extends State<EventCard> {
                                 builder: (context) => CustomActionBottomSheet(
                                   height: 201.h,
                                   options: [
-                                    BottomSheetOption(
-                                      icon: Icons.person_off_outlined,
-                                      text: 'Buluşma Sahibini Takibi Bırak',
-                                      onTap: () {
-                                        logger.info('Takip bırakıldı');
-                                        context.pop();
-                                      },
-                                    ),
+                                    if (!isPostMine)
+                                      BottomSheetOption(
+                                        icon: Icons.person_off_outlined,
+                                        text: 'Buluşma Sahibini Takibi Bırak',
+                                        onTap: () {
+                                          logger.info('Takip bırakıldı');
+                                          context.pop();
+                                        },
+                                      ),
                                     BottomSheetOption(
                                       icon: Icons.share_outlined,
                                       text: 'Paylaş',
@@ -185,15 +189,26 @@ class _EventCardState extends State<EventCard> {
                                         context.pop();
                                       },
                                     ),
-                                    BottomSheetOption(
-                                      icon: Icons.report_gmailerrorred_outlined,
-                                      text: 'Şikayet Et',
-                                      isDestructive: true,
-                                      onTap: () {
-                                        logger.info('Şikayet edildi');
-                                        context.pop();
-                                      },
-                                    ),
+                                    if (!isPostMine)
+                                      BottomSheetOption(
+                                        icon:
+                                            Icons.report_gmailerrorred_outlined,
+                                        text: 'Şikayet Et',
+                                        isDestructive: true,
+                                        onTap: () {
+                                          getIt<SecurityService>().sendReport(
+                                            ReportData(
+                                              reportedEntityId: widget.event.id,
+                                              reportedEntityType: 'event',
+                                              reportedUserId:
+                                                  widget.event.creator.userID,
+                                              requestOwnerId:
+                                                  currentUser.userID,
+                                            ),
+                                          );
+                                          context.pop();
+                                        },
+                                      ),
                                   ],
                                 ),
                               );

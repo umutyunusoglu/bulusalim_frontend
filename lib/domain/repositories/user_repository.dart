@@ -56,7 +56,9 @@ abstract class UserRepository {
   );
 
   // === Pinned Posts Subcollection ===
-  Future<List<PinnedPostEntity>> getPinnedPosts(Identifier userID);
+  Future<List<UserPostEntity>> getPinnedPosts(Identifier userID);
+
+  Future<List<UserPostEntity>> getUserPosts(Identifier userID);
 
   // Hobbies Subcollection
   Future<List<UserHobbyEntity>> getUserHobbies(
