@@ -84,7 +84,7 @@ class _SearchPageState extends State<SearchPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Debug Search'),
+        title: const Text('Search'),
       ),
       body: Column(
         children: [

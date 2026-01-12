@@ -3,8 +3,8 @@ import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
 import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:equatable/equatable.dart';
 
-class PinnedPostEntity with EquatableMixin {
-  PinnedPostEntity({
+class UserPostEntity with EquatableMixin {
+  UserPostEntity({
     required this.postID,
     required this.caption,
     required this.location,
@@ -14,19 +14,19 @@ class PinnedPostEntity with EquatableMixin {
     required this.createdAt,
   });
 
-  PinnedPostEntity copyWith({
+  UserPostEntity copyWith({
     String? postID,
     String? caption,
-    Geolocation? geolocation,
+    Geolocation? location,
     List<String>? imageUrls,
     List<CompactUserEntity>? participants,
     Map<String, int>? emoteCounts,
     DateTime? createdAt,
   }) {
-    return PinnedPostEntity(
+    return UserPostEntity(
       postID: postID ?? this.postID,
       caption: caption ?? this.caption,
-      location: geolocation ?? location,
+      location: location ?? this.location,
       imageUrls: imageUrls ?? this.imageUrls,
       participants: participants ?? this.participants,
       emoteCounts: emoteCounts ?? this.emoteCounts,
@@ -43,5 +43,6 @@ class PinnedPostEntity with EquatableMixin {
   final List<String> imageUrls;
   final List<CompactUserEntity> participants;
   final Map<String, int> emoteCounts;
+  final bool isPinned = true;
   final DateTime createdAt;
 }

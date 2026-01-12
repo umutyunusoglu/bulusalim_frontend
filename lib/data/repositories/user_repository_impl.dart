@@ -444,21 +444,42 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Future<List<PinnedPostEntity>> getPinnedPosts(Identifier userID) async {
+  Future<List<UserPostEntity>> getPinnedPosts(Identifier userID) async {
     _logger.info('Getting pinned posts for user: $userID');
     final snapshot = await _firestore
         .collection('users')
         .doc(userID)
-        .collection('pinnedPosts')
+        .collection('posts')
+        .where('isPinned', isEqualTo: true)
         .get();
 
     final pinnedPosts = snapshot.docs.map(
       (doc) {
-        final model = PinnedPostModel.fromFirestore(doc.data());
+        final model = UserPostModel.fromFirestore(doc.data());
         return model.toEntity();
       },
     ).toList();
+
     return pinnedPosts;
+  }
+
+  @override
+  Future<List<UserPostEntity>> getUserPosts(Identifier userID) async {
+    _logger.info('Getting user posts for user: $userID');
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('posts')
+        .get();
+
+    final posts = snapshot.docs.map(
+      (doc) {
+        final model = UserPostModel.fromFirestore(doc.data());
+        return model.toEntity();
+      },
+    ).toList();
+
+    return posts;
   }
 
   @override
