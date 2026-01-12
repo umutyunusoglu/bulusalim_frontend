@@ -1,10 +1,11 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/components/stacked_avatars.dart'; // <-- 1. BU EKLENDİ (AvatarInfo için)
+import 'package:bulusalim/components/stacked_avatars.dart'; // AvatarInfo için
+import 'package:bulusalim/domain/entities/user/compact_user_entity.dart'; // BU IMPORT EKLENDİ
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/scaffold_with_navbar.dart';
 import 'package:bulusalim/screens/camera/camera_page.dart';
 import 'package:bulusalim/screens/chat/chat_page.dart';
-import 'package:bulusalim/screens/chat/event_settings_page.dart'; // <-- 2. BU EKLENDİ (Ayarlar Sayfası)
+import 'package:bulusalim/screens/chat/event_settings_page.dart';
 import 'package:bulusalim/screens/chat/my_events_page.dart';
 import 'package:bulusalim/screens/home/home_page.dart';
 import 'package:bulusalim/screens/login/login_screen.dart';
@@ -16,27 +17,30 @@ import 'package:bulusalim/screens/sign_in_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-// 1. Ana Yönlendirici (Navbar'ın üstüne çıkan tam ekran sayfalar için)
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-// 2. Shell Yönlendirici (Navbar içindeki sekmeler için)
+List<AvatarInfo> _mapToAvatarInfo(List<dynamic> rawList) {
+  return rawList.map((e) {
+    if (e is CompactUserEntity) {
+      return AvatarInfo(imageUrl: e.profileImageUrl, userId: e.userID);
+    } else if (e is AvatarInfo) {
+      return e;
+    }
+    return AvatarInfo(imageUrl: 'https://picsum.photos/200', userId: '');
+  }).toList();
+}
 
 final router = GoRouter(
   navigatorKey: _rootNavigatorKey,
-
-  // Uygulama '/' rotasından (SignInScreen) başlar.
   initialLocation: '/',
-
   routes: [
-    // ----------------------------------------------------------
-    // A. NAVBAR'LI KISIM (SHELL ROUTE)
-    // ----------------------------------------------------------
+    // 1. BOTTOM NAVIGATION BAR OLAN SAYFALAR (SHELL)
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
         return ScaffoldWithNavbar(navigationShell: navigationShell);
       },
       branches: [
-        // 1. SIRA: MAP (Harita)
+        // BRANCH 1: MAP
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -45,8 +49,7 @@ final router = GoRouter(
             ),
           ],
         ),
-
-        // 2. SIRA: SEARCH (Arama)
+        // BRANCH 2: SEARCH
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -55,8 +58,7 @@ final router = GoRouter(
             ),
           ],
         ),
-
-        // 3. SIRA: HOME (Ana Sayfa)
+        // BRANCH 3: HOME
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -66,7 +68,7 @@ final router = GoRouter(
                 GoRoute(
                   path: 'profile/:userId',
                   builder: (context, state) {
-                    final userId = state.pathParameters['userId']!;
+                    final userId = state.pathParameters['userId'] ?? '';
                     return ProfilePage(profileUserID: userId);
                   },
                 ),
@@ -74,78 +76,16 @@ final router = GoRouter(
             ),
           ],
         ),
-
-        // 4. SIRA: CHAT (Etkinliklerim/Sohbet)
+        // BRANCH 4: CHAT LISTESI
         StatefulShellBranch(
           routes: [
-            // 1. ANA EKRAN: LİSTE (MyEventsPage)
             GoRoute(
               path: '/chat',
               builder: (context, state) => const MyEventsPage(),
-
-              // 2. ALT EKRAN: SOHBET ODASI (ChatPage)
-              routes: [
-                GoRoute(
-                  path: 'room/:eventID', // URL: /chat/room/123
-                  builder: (context, state) {
-                    final eventID = state.pathParameters['eventID']!;
-                    final extra = state.extra as Map<String, dynamic>?;
-
-                    // --- AVATAR LISTESINI GÜVENLİ ÇEKME ---
-                    var avatarList = <AvatarInfo>[];
-                    if (extra != null && extra['avatars'] != null) {
-                      avatarList = (extra['avatars'] as List<dynamic>)
-                          .map((e) => e as AvatarInfo)
-                          .toList();
-                    }
-                    // --------------------------------------
-
-                    return ChatPage(
-                      eventID: eventID,
-                      chatTitle: (extra?['title'] as String?) ?? 'Sohbet',
-                      participantAvatars: avatarList, // LİSTE BURADA
-                      location: (extra?['location'] as String?) ?? '',
-                      participantStatus:
-                          (extra?['participants'] as String?) ?? '',
-                      remainingTime: (extra?['time'] as String?) ?? '',
-                      creatorID: (extra?['creatorID'] as String?) ?? '',
-                    );
-                  },
-                  // 3. ALT EKRAN: AYARLAR (EventSettingsPage)
-                  routes: [
-                    GoRoute(
-                      path: 'settings', // URL: /chat/room/123/settings
-                      builder: (context, state) {
-                        final eventID = state.pathParameters['eventID']!;
-                        final extra = state.extra as Map<String, dynamic>?;
-
-                        var avatarList = <AvatarInfo>[];
-                        if (extra != null && extra['avatars'] != null) {
-                          avatarList = (extra['avatars'] as List<dynamic>)
-                              .map((e) => e as AvatarInfo)
-                              .toList();
-                        }
-
-                        return EventSettingsPage(
-                          eventID: eventID,
-                          chatTitle: (extra?['title'] as String?) ?? 'Ayarlar',
-                          participantAvatars: avatarList,
-                          location: (extra?['location'] as String?) ?? '',
-                          participantStatus:
-                              (extra?['participants'] as String?) ?? '',
-                          remainingTime: (extra?['time'] as String?) ?? '',
-                          creatorID: (extra?['creatorID'] as String?) ?? '',
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ],
             ),
           ],
         ),
-
-        // 5. SIRA: PROFİL (Kendi Profilin)
+        // BRANCH 5: MY PROFILE
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -161,32 +101,75 @@ final router = GoRouter(
       ],
     ),
 
-    // ----------------------------------------------------------
-    // B. NAVBAR'SIZ TAM EKRAN SAYFALAR (ROOT ROUTE)
-    // ----------------------------------------------------------
+    // 2. NAVBARSIZ SAYFALAR (FULL SCREEN / ROOT ROUTES)
 
-    // 1. AÇILIŞ EKRANI (SignIn)
+    // SOHBET ODASI
+    GoRoute(
+      path: '/chat/room/:eventID',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) {
+        final eventID = state.pathParameters['eventID'] ?? '';
+        final extra = state.extra as Map<String, dynamic>?;
+
+        final rawAvatars = (extra?['avatars'] as List?) ?? [];
+        // DÜZELTME: Yardımcı fonksiyon kullanıldı
+        final safeAvatars = _mapToAvatarInfo(rawAvatars);
+
+        final eventDate = extra?['date'] as DateTime? ?? DateTime.now();
+
+        return ChatPage(
+          eventID: eventID,
+          chatTitle: (extra?['title'] as String?) ?? 'Sohbet',
+          participantAvatars: safeAvatars,
+          location: (extra?['location'] as String?) ?? '',
+          participantStatus: (extra?['participants'] as String?) ?? '',
+          eventDate: eventDate,
+          creatorID: (extra?['creatorID'] as String?) ?? '',
+          creatorProfileImage: (extra?['creatorProfileImage'] as String?) ?? '',
+        );
+      },
+      routes: [
+        // CHAT AYARLARI
+        GoRoute(
+          path: 'settings',
+          parentNavigatorKey: _rootNavigatorKey,
+          builder: (context, state) {
+            final eventID = state.pathParameters['eventID'] ?? '';
+            final extra = state.extra as Map<String, dynamic>?;
+
+            final rawAvatars = (extra?['avatars'] as List?) ?? [];
+            final safeAvatars = _mapToAvatarInfo(rawAvatars);
+
+            return EventSettingsPage(
+              eventID: eventID,
+              chatTitle: (extra?['title'] as String?) ?? 'Ayarlar',
+              participantAvatars: safeAvatars,
+              location: (extra?['location'] as String?) ?? '',
+              participantStatus: (extra?['participants'] as String?) ?? '',
+              remainingTime: '',
+              creatorID: (extra?['creatorID'] as String?) ?? '',
+            );
+          },
+        ),
+      ],
+    ),
+
+    // DİĞER SAYFALAR
     GoRoute(
       path: '/',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const SignInScreen(),
     ),
-
-    // 2. GİRİŞ YAP (Login)
     GoRoute(
       path: '/login',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const LoginScreen(),
     ),
-
-    // 3. KAYIT OL (Register)
     GoRoute(
       path: '/register',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const RegisterScreen(),
     ),
-
-    // 4. KAMERA
     GoRoute(
       path: '/camera',
       parentNavigatorKey: _rootNavigatorKey,
