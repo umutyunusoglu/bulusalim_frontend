@@ -142,7 +142,7 @@ class _ProfilePageState extends State<ProfilePage> {
           _bio = user.bio ?? '';
           _school = user.organization;
           // URL boş gelse bile boş string atıyoruz, null hatası almamak için
-          _avatarUrl = user.profileImageUrl ?? '';
+          _avatarUrl = user.profileImageUrl;
         }
 
         _pinnedPosts = pinnedPosts;

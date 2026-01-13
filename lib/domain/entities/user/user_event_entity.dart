@@ -8,6 +8,7 @@ class UserEventEntity extends Equatable {
     required this.eventId,
     required this.role,
     required this.status,
+    required this.updatedAt,
   });
 
   @override
@@ -19,15 +20,18 @@ class UserEventEntity extends Equatable {
     Identifier? eventId,
     EventRoleEnum? role,
     UserEventStatusEnum? status,
+    DateTime? updatedAt,
   }) {
     return UserEventEntity(
       eventId: eventId ?? this.eventId,
       role: role ?? this.role,
       status: status ?? this.status,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
   final Identifier eventId;
   final EventRoleEnum role;
   final UserEventStatusEnum status;
+  final DateTime updatedAt;
 }
