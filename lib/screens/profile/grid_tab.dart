@@ -15,11 +15,13 @@ class ProfileGridTab extends StatelessWidget {
   final List<UserPostEntity> activePosts;
 
   void _openFeedPage(BuildContext context, int index) {
+    final posts = [...activePosts, ...pinnedPosts];
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ProfilePostFeedPage(
-          posts: pinnedPosts,
+          posts: posts,
           initialIndex: index,
         ),
       ),
@@ -42,7 +44,11 @@ class ProfileGridTab extends StatelessWidget {
         final iconData = index < activePosts.length
             ? Icons.access_time_filled
             : Icons.push_pin;
+
         final post = totalPosts[index];
+        print(
+          "activePosts length: ${activePosts.length}, PinnedPosts length: ${pinnedPosts.length}",
+        );
 
         return GestureDetector(
           // TIKLAMA OLAYI BURADA
