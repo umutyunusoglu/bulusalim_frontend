@@ -7,6 +7,7 @@ import 'package:bulusalim/domain/repositories/feed_repository.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -78,6 +79,8 @@ Future<void> main() async {
       9199,
       automaticHostMapping: false,
     );
+
+    FirebaseFunctions.instance.useFunctionsEmulator(AppConfig.host, 5001);
 
     final authInstance = FirebaseAuth.instance;
 
