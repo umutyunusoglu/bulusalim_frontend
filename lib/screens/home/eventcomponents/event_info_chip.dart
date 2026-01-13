@@ -46,7 +46,7 @@ class EventInfoChip extends StatelessWidget {
           ),
 
           SizedBox(width: 8.w),
-          // 2. Kişi Sayısı
+          // 2. Kişi Sayısı (SADECE BURASI GÜNCELLENDİ)
           Icon(
             Icons.people_outline,
             size: 12.sp,
@@ -54,7 +54,7 @@ class EventInfoChip extends StatelessWidget {
           ),
           SizedBox(width: 4.w),
           Text(
-            '$participantCount',
+            '$participantCount', // Eski hali: '$participantCount/$capacity'
             style: TextStyle(
               fontFamily: 'SF Pro Display',
               fontSize: 12.sp,

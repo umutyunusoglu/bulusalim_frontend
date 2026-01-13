@@ -14,8 +14,18 @@ abstract class AppColors {
   static const Color inputFillColor = Color(0xFFF2F2F7); // Input Arka Planları
   static const Color iconColor = Color(0xFF1A1A1A);
   static const Color dividerColor = Color(0xFFEEEEEE); // Liste ayırıcılar için
+  static const Color accordionBackground = Color(
+    0xFFF3F4F6,
+  ); // Accordion zemini
+  static const Color successGreen = Color(0xFF4CAF50); // Onay butonu
 
-  // --- POPUP & WIZARD COLORS (YENİ EKLENENLER) ---
+  // MyEventsPage (Buluşmalarım) Özel Renkleri
+  static const Color darkSlate = Color(0xFF264653); // Başlık ve Aktif Tab Rengi
+  static const Color lightCloud = Color(0xFFF0F3F5); // Tab Arka Plan Rengi
+  static const Color salmonPink = Color(0xFFEABFB9); // Empty State ve İkonlar
+  static const Color textGrey = Colors.grey; // Genel gri yazılar
+
+  // --- POPUP & WIZARD COLORS  ---
   // "İlerle" butonu ve seçim ekranları için
   static const Color popupBtnBackground = Color(0xFFFFCCBC); // Pastel Turuncu
   static const Color popupBtnText = Color(0xFFBF360C); // Koyu Turuncu
