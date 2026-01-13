@@ -5,7 +5,7 @@ import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
 import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
 
 abstract class PostRepository {
-  Future<void> createPost(PostEntity post);
+  Future<void> createPost(PostEntity post, bool isPinned);
   Future<void> deletePost(Identifier postId);
   Future<void> updatePost(PostEntity post);
 

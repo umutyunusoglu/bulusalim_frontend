@@ -805,7 +805,7 @@ class _MapPageState extends State<MapPage> {
         userID: currentUser!.userID,
         username: currentUser.username,
         profileImageUrl: currentUser.profileImageUrl,
-        role: EventRoleEnum.organizer,
+        role: EventRoleEnum.creator,
         eventScore: 5,
       ),
 
@@ -869,7 +869,7 @@ class _MapPageState extends State<MapPage> {
         userID: currentUser.userID,
         username: currentUser.username,
         profileImageUrl: currentUser.profileImageUrl,
-        role: EventRoleEnum.organizer,
+        role: EventRoleEnum.creator,
         eventScore: 0,
       ),
 
