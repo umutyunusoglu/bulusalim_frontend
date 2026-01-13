@@ -54,7 +54,7 @@ class EventInfoChip extends StatelessWidget {
           ),
           SizedBox(width: 4.w),
           Text(
-            '$participantCount/$capacity',
+            '$participantCount',
             style: TextStyle(
               fontFamily: 'SF Pro Display',
               fontSize: 12.sp,

@@ -31,7 +31,12 @@ class _ProfilePageState extends State<ProfilePage> {
   int numberOfFollowing = 0;
 
   String _avatarUrl = '';
-  final List<String> _badges = [];
+  final List<String> _badges = [
+    'assets/badge/badge1.png',
+    'assets/badge/badge2.png',
+    'assets/badge/badge3.png',
+  ];
+
   String _bio = '';
   List<EventEntity> _consideredEvents = [];
   // --- VERİLER ---
@@ -86,14 +91,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
       // 3. ADIM: Pinned Postları çekme
       debugPrint("3. Pinned posts çekiliyor...");
-      final pinnedPosts = await userRepository.getPinnedPosts(
+      final posts = await userRepository.getUserPosts(
         widget.profileUserID,
       );
 
-      debugPrint("3. Aktif postlar çekiliyor...");
-      final activePosts = await userRepository.getActivePosts(
-        widget.profileUserID,
-      );
+      final pinnedPosts = posts.where((post) => post.isPinned).toList();
+      final activePosts = posts.where((post) => !post.isPinned).toList();
 
       // 4. ADIM: Event Loglarını çekme
       debugPrint("4. Event logları çekiliyor...");
@@ -106,7 +109,6 @@ class _ProfilePageState extends State<ProfilePage> {
       final savedEventIds = <Identifier>[];
 
       for (final event in userEventsEnrolled) {
-        // ... switch case kodların aynen kalacak ...
         switch (event.status) {
           case UserEventStatusEnum.upcoming:
             enrolledEventIds.add(event.eventId);

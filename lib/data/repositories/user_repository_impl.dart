@@ -1,5 +1,6 @@
 import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
+import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart';
 import 'package:bulusalim/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/event/event_model.dart';
@@ -220,6 +221,86 @@ class UserRepositoryImpl implements UserRepository {
       'Found events for user: $userID, events: $events',
     );
     return events;
+  }
+
+  @override
+  Future<void> saveEvent(
+    Identifier userID,
+    EventEntity event,
+  ) async {
+    _logger.info('Saving event to user log for user: $userID');
+
+    final UserEventEntity userEvent = UserEventEntity(
+      eventId: event.eventID,
+      role: EventRoleEnum.fromString(event.currentUserRole ?? 'participant'),
+      status: UserEventStatusEnum.saved,
+    );
+
+    final userEventModel = UserEventModel.fromEntity(userEvent);
+
+    await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('eventLog')
+        .doc(event.eventID)
+        .set(userEventModel.toFirestore());
+
+    return;
+  }
+
+  @override
+  Future<void> unSaveEvent(
+    Identifier userID,
+    Identifier eventID,
+  ) async {
+    _logger.info('Unsaving event from user log for user: $userID');
+    final eventLogRef = _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('eventLog')
+        .doc(eventID);
+
+    final eventLogDoc = await eventLogRef.get();
+
+    if (!eventLogDoc.exists) {
+      _logger.info(
+        'Event log entry does not exist for user: $userID and event: $eventID',
+      );
+      return;
+    }
+
+    final eventLog = UserEventModel.fromFirestore(eventLogDoc.data()!);
+
+    if (eventLog.status != UserEventStatusEnum.saved) {
+      _logger.info(
+        'Event log entry is not saved for user: $userID and event: $eventID',
+      );
+      return;
+    }
+
+    await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('eventLog')
+        .doc(eventID)
+        .delete();
+  }
+
+  @override
+  Future<bool> isEventSaved(
+    Identifier userID,
+    Identifier eventID,
+  ) async {
+    _logger.info('Checking if event is saved for user: $userID');
+    final eventLogRef = _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('eventLog')
+        .doc(eventID);
+    final eventLogDoc = await eventLogRef.get();
+    if (!eventLogDoc.exists) return false;
+    final eventLog = UserEventModel.fromFirestore(eventLogDoc.data()!);
+    return eventLog.status == UserEventStatusEnum.saved;
   }
 
   @override
@@ -460,6 +541,7 @@ class UserRepositoryImpl implements UserRepository {
         return model.toEntity();
       },
     ).toList();
+
     return pinnedPosts;
   }
 
@@ -489,6 +571,25 @@ class UserRepositoryImpl implements UserRepository {
       },
     ).toList();
     return activePosts;
+  }
+
+  @override
+  Future<List<UserPostEntity>> getUserPosts(Identifier userID) async {
+    _logger.info('Getting user posts for user: $userID');
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('posts')
+        .get();
+
+    final posts = snapshot.docs.map(
+      (doc) {
+        final model = UserPostModel.fromFirestore(doc.data());
+        return model.toEntity();
+      },
+    ).toList();
+
+    return posts;
   }
 
   @override

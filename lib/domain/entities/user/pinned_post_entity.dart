@@ -18,7 +18,7 @@ class UserPostEntity with EquatableMixin {
   UserPostEntity copyWith({
     String? postID,
     String? caption,
-    Geolocation? geolocation,
+    Geolocation? location,
     List<String>? imageUrls,
     List<CompactUserEntity>? participants,
     Map<String, int>? emoteCounts,
@@ -28,7 +28,7 @@ class UserPostEntity with EquatableMixin {
     return UserPostEntity(
       postID: postID ?? this.postID,
       caption: caption ?? this.caption,
-      location: geolocation ?? location,
+      location: location ?? this.location,
       imageUrls: imageUrls ?? this.imageUrls,
       participants: participants ?? this.participants,
       emoteCounts: emoteCounts ?? this.emoteCounts,

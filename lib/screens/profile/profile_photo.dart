@@ -9,7 +9,7 @@ class ProfilePhoto extends StatelessWidget {
   const ProfilePhoto({
     super.key,
     required this.profileImageUrl,
-    this.badgeUrls = const [],
+    required this.badgeUrls,
   });
 
   @override
@@ -77,6 +77,7 @@ class ProfilePhoto extends StatelessWidget {
 
     for (int i = 0; i < totalSlots; i++) {
       if (i < badgeUrls.length) {
+        print('Badge URL: ${badgeUrls[i]}');
         slots.add(
           _buildSingleBadge(
             isActive: true,
@@ -130,7 +131,7 @@ class ProfilePhoto extends StatelessWidget {
       ),
       child: isActive && imageUrl != null
           ? ClipOval(
-              child: Image.network(
+              child: Image.asset(
                 fixEmulatorUrl(imageUrl),
                 fit: BoxFit.cover,
                 errorBuilder: (c, e, s) => const SizedBox(),

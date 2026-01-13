@@ -6,6 +6,7 @@ import 'package:bulusalim/core/utils/types/enums/emote_enum.dart';
 import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
 import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:bulusalim/domain/repositories/post_repository.dart';
+import 'package:bulusalim/domain/services/security_service.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/screens/home/post%20components/content_tag_chip.dart';
 import 'package:bulusalim/screens/home/post%20components/emoji_chip.dart';
@@ -285,6 +286,7 @@ class _PostCardState extends State<PostCard> {
     required String location,
   }) {
     final theme = Theme.of(context);
+    final isPostMine = widget.post.creator.userID == _myUserId;
     return Row(
       children: [
         GestureDetector(
@@ -337,13 +339,14 @@ class _PostCardState extends State<PostCard> {
               builder: (context) => CustomActionBottomSheet(
                 height: 201.h,
                 options: [
-                  BottomSheetOption(
-                    icon: Icons.person_off_outlined,
-                    text: 'Buluşma Sahibini Takibi Bırak',
-                    onTap: () {
-                      context.pop();
-                    },
-                  ),
+                  if (!isPostMine)
+                    BottomSheetOption(
+                      icon: Icons.person_off_outlined,
+                      text: 'Buluşma Sahibini Takibi Bırak',
+                      onTap: () {
+                        context.pop();
+                      },
+                    ),
                   BottomSheetOption(
                     icon: Icons.share_outlined,
                     text: 'Paylaş',
@@ -351,14 +354,23 @@ class _PostCardState extends State<PostCard> {
                       context.pop();
                     },
                   ),
-                  BottomSheetOption(
-                    icon: Icons.report_gmailerrorred_outlined,
-                    text: 'Şikayet Et',
-                    isDestructive: true,
-                    onTap: () {
-                      context.pop();
-                    },
-                  ),
+                  if (!isPostMine)
+                    BottomSheetOption(
+                      icon: Icons.report_gmailerrorred_outlined,
+                      text: 'Şikayet Et',
+                      isDestructive: true,
+                      onTap: () {
+                        getIt<SecurityService>().sendReport(
+                          ReportData(
+                            reportedEntityId: widget.post.id,
+                            reportedEntityType: 'post',
+                            reportedUserId: widget.post.creator.userID,
+                            requestOwnerId: _myUserId,
+                          ),
+                        );
+                        context.pop();
+                      },
+                    ),
                 ],
               ),
             );
@@ -525,6 +537,7 @@ class _PostCardState extends State<PostCard> {
                 SizedBox(width: 16.w),
                 CountdownTimer(
                   targetTime: widget.post.createdAt ?? DateTime.now(),
+                  isEvent: false,
                   style: timeStyle,
                 ),
               ],
