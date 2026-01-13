@@ -12,6 +12,7 @@ class UserPostModel extends Model<UserPostEntity> {
     required this.imageUrls,
     required this.participants,
     required this.emoteCounts,
+    required this.isPinned,
     required this.createdAt,
   });
 
@@ -23,6 +24,7 @@ class UserPostModel extends Model<UserPostEntity> {
       imageUrls: entity.imageUrls,
       participants: entity.participants,
       emoteCounts: entity.emoteCounts,
+      isPinned: entity.isPinned,
       createdAt: entity.createdAt,
     );
   }
@@ -49,6 +51,7 @@ class UserPostModel extends Model<UserPostEntity> {
       imageUrls: (doc['imageUrls'] as List?)?.cast<String>().toList() ?? [],
       participants: participants,
       emoteCounts: emoteCounts,
+      isPinned: doc['isPinned'] as bool? ?? false,
       createdAt: (doc['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
@@ -62,6 +65,7 @@ class UserPostModel extends Model<UserPostEntity> {
       imageUrls: imageUrls,
       participants: participants,
       emoteCounts: emoteCounts,
+      isPinned: isPinned,
       createdAt: createdAt,
     );
   }
@@ -75,6 +79,7 @@ class UserPostModel extends Model<UserPostEntity> {
       'imageUrls': imageUrls,
       'participants': participants.map((e) => e.toMap()).toList(),
       'emoteCounts': emoteCounts,
+      'isPinned': isPinned,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -85,5 +90,6 @@ class UserPostModel extends Model<UserPostEntity> {
   final List<String> imageUrls;
   final List<CompactUserEntity> participants;
   final Map<String, int> emoteCounts;
+  final bool isPinned;
   final DateTime createdAt;
 }

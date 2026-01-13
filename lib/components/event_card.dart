@@ -10,6 +10,7 @@ import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:bulusalim/domain/repositories/event_repository.dart'
     show EventRepository;
+import 'package:bulusalim/domain/repositories/user_repository.dart';
 import 'package:bulusalim/domain/services/remote_config_service.dart';
 import 'package:bulusalim/domain/services/security_service.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
@@ -41,6 +42,7 @@ class _EventCardState extends State<EventCard> {
   late final SessionService sessionService;
 
   late bool canUserJoin;
+  bool isSaved = false;
 
   @override
   void initState() {
@@ -56,6 +58,47 @@ class _EventCardState extends State<EventCard> {
       widget.event,
       currentUser.userID,
     );
+    _checkIfSaved();
+  }
+
+  Future<void> _checkIfSaved() async {
+    final currentUser = sessionService.currentUser!;
+    final saved = await getIt<UserRepository>().isEventSaved(
+      currentUser.userID,
+      widget.event.eventID,
+    );
+    if (mounted) {
+      setState(() {
+        isSaved = saved;
+      });
+    }
+  }
+
+  Future<void> _toggleSave() async {
+    final currentUser = sessionService.currentUser!;
+    final userRepository = getIt<UserRepository>();
+
+    setState(() {
+      isSaved = !isSaved;
+    });
+
+    try {
+      if (isSaved) {
+        await userRepository.saveEvent(currentUser.userID, widget.event);
+      } else {
+        await userRepository.unSaveEvent(
+          currentUser.userID,
+          widget.event.eventID,
+        );
+      }
+    } catch (e) {
+      logger.error('Error toggling save status: $e');
+      if (mounted) {
+        setState(() {
+          isSaved = !isSaved;
+        });
+      }
+    }
   }
 
   @override
@@ -143,18 +186,23 @@ class _EventCardState extends State<EventCard> {
                         SizedBox(width: 7.w),
 
                         // Kaydet İkonu
-                        SizedBox(
-                          width: 24.w,
-                          height: 24.w,
-                          child: InkWell(
-                            onTap: () {},
-                            child: Icon(
-                              Icons.bookmark_border,
-                              color: Colors.black54,
-                              size: 19.sp,
+                        if (canUserJoin)
+                          SizedBox(
+                            width: 24.w,
+                            height: 24.w,
+                            child: InkWell(
+                              onTap: _toggleSave,
+                              child: Icon(
+                                isSaved
+                                    ? Icons.bookmark
+                                    : Icons.bookmark_border,
+                                color: isSaved
+                                    ? AppColors.primaryColor
+                                    : Colors.black54,
+                                size: 19.sp,
+                              ),
                             ),
                           ),
-                        ),
 
                         SizedBox(width: 8.w),
 
