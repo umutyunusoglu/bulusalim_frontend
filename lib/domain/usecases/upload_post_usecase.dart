@@ -30,6 +30,7 @@ class UploadPost {
     List<File> files,
     bool showParticipants,
     bool addToDump,
+    bool isPinned,
     String caption,
   ) async {
     final uploadUrls = <String>[];
@@ -81,7 +82,7 @@ class UploadPost {
     );
 
     _logger.info('Uploading post: ${post.postID}');
-    await _postRepository.createPost(post);
+    await _postRepository.createPost(post, isPinned);
 
     _logger.info('Post uploaded: ${post.postID}');
     return post;

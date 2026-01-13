@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 class CountdownTimer extends StatefulWidget {
   const CountdownTimer({
     required this.targetTime,
+    required this.isEvent,
     super.key,
     this.style,
   });
   final DateTime targetTime;
+  final bool isEvent;
   final TextStyle? style;
 
   @override
@@ -46,7 +48,7 @@ class CountdownTimerState extends State<CountdownTimer> {
     final difference = startTime.difference(now);
 
     // Negatif süre kontrolü (Örn: Etkinlik başladıysa)
-    if (difference.isNegative) {
+    if (difference.isNegative && widget.isEvent) {
       return 'Başladı';
     }
 
