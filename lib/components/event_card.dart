@@ -5,11 +5,14 @@ import 'package:bulusalim/components/stacked_avatars.dart';
 import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
+import 'package:bulusalim/data/services/security_service_impl.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:bulusalim/domain/repositories/event_repository.dart'
     show EventRepository;
+import 'package:bulusalim/domain/repositories/user_repository.dart';
 import 'package:bulusalim/domain/services/remote_config_service.dart';
+import 'package:bulusalim/domain/services/security_service.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/screens/home/eventcomponents/event_info_chip.dart';
 import 'package:bulusalim/screens/home/eventcomponents/event_location_chip.dart';
@@ -39,6 +42,7 @@ class _EventCardState extends State<EventCard> {
   late final SessionService sessionService;
 
   late bool canUserJoin;
+  bool isSaved = false;
 
   @override
   void initState() {
@@ -54,11 +58,53 @@ class _EventCardState extends State<EventCard> {
       widget.event,
       currentUser.userID,
     );
+    _checkIfSaved();
+  }
+
+  Future<void> _checkIfSaved() async {
+    final currentUser = sessionService.currentUser!;
+    final saved = await getIt<UserRepository>().isEventSaved(
+      currentUser.userID,
+      widget.event.eventID,
+    );
+    if (mounted) {
+      setState(() {
+        isSaved = saved;
+      });
+    }
+  }
+
+  Future<void> _toggleSave() async {
+    final currentUser = sessionService.currentUser!;
+    final userRepository = getIt<UserRepository>();
+
+    setState(() {
+      isSaved = !isSaved;
+    });
+
+    try {
+      if (isSaved) {
+        await userRepository.saveEvent(currentUser.userID, widget.event);
+      } else {
+        await userRepository.unSaveEvent(
+          currentUser.userID,
+          widget.event.eventID,
+        );
+      }
+    } catch (e) {
+      logger.error('Error toggling save status: $e');
+      if (mounted) {
+        setState(() {
+          isSaved = !isSaved;
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final currentUser = sessionService.currentUser!;
+    final isPostMine = widget.event.creator.userID == currentUser.userID;
 
     getIt<RemoteConfigService>();
     final categories = AppConfig.categories;
@@ -140,18 +186,23 @@ class _EventCardState extends State<EventCard> {
                         SizedBox(width: 7.w),
 
                         // Kaydet İkonu
-                        SizedBox(
-                          width: 24.w,
-                          height: 24.w,
-                          child: InkWell(
-                            onTap: () {},
-                            child: Icon(
-                              Icons.bookmark_border,
-                              color: Colors.black54,
-                              size: 19.sp,
+                        if (canUserJoin)
+                          SizedBox(
+                            width: 24.w,
+                            height: 24.w,
+                            child: InkWell(
+                              onTap: _toggleSave,
+                              child: Icon(
+                                isSaved
+                                    ? Icons.bookmark
+                                    : Icons.bookmark_border,
+                                color: isSaved
+                                    ? AppColors.primaryColor
+                                    : Colors.black54,
+                                size: 19.sp,
+                              ),
                             ),
                           ),
-                        ),
 
                         SizedBox(width: 8.w),
 
@@ -169,14 +220,15 @@ class _EventCardState extends State<EventCard> {
                                 builder: (context) => CustomActionBottomSheet(
                                   height: 201.h,
                                   options: [
-                                    BottomSheetOption(
-                                      icon: Icons.person_off_outlined,
-                                      text: 'Buluşma Sahibini Takibi Bırak',
-                                      onTap: () {
-                                        logger.info('Takip bırakıldı');
-                                        context.pop();
-                                      },
-                                    ),
+                                    if (!isPostMine)
+                                      BottomSheetOption(
+                                        icon: Icons.person_off_outlined,
+                                        text: 'Buluşma Sahibini Takibi Bırak',
+                                        onTap: () {
+                                          logger.info('Takip bırakıldı');
+                                          context.pop();
+                                        },
+                                      ),
                                     BottomSheetOption(
                                       icon: Icons.share_outlined,
                                       text: 'Paylaş',
@@ -185,15 +237,26 @@ class _EventCardState extends State<EventCard> {
                                         context.pop();
                                       },
                                     ),
-                                    BottomSheetOption(
-                                      icon: Icons.report_gmailerrorred_outlined,
-                                      text: 'Şikayet Et',
-                                      isDestructive: true,
-                                      onTap: () {
-                                        logger.info('Şikayet edildi');
-                                        context.pop();
-                                      },
-                                    ),
+                                    if (!isPostMine)
+                                      BottomSheetOption(
+                                        icon:
+                                            Icons.report_gmailerrorred_outlined,
+                                        text: 'Şikayet Et',
+                                        isDestructive: true,
+                                        onTap: () {
+                                          getIt<SecurityService>().sendReport(
+                                            ReportData(
+                                              reportedEntityId: widget.event.id,
+                                              reportedEntityType: 'event',
+                                              reportedUserId:
+                                                  widget.event.creator.userID,
+                                              requestOwnerId:
+                                                  currentUser.userID,
+                                            ),
+                                          );
+                                          context.pop();
+                                        },
+                                      ),
                                   ],
                                 ),
                               );

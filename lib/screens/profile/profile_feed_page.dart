@@ -14,7 +14,7 @@ class ProfilePostFeedPage extends StatefulWidget {
     super.key,
   });
 
-  final List<PinnedPostEntity> posts;
+  final List<UserPostEntity> posts;
   final int initialIndex;
 
   @override
@@ -77,7 +77,7 @@ class _ProfilePostFeedPageState extends State<ProfilePostFeedPage> {
 class _PostLoaderItem extends StatefulWidget {
   const _PostLoaderItem({required this.pinnedPost});
 
-  final PinnedPostEntity pinnedPost;
+  final UserPostEntity pinnedPost;
 
   @override
   State<_PostLoaderItem> createState() => _PostLoaderItemState();
