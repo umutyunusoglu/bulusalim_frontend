@@ -14,6 +14,7 @@ class UserPostModel extends Model<UserPostEntity> {
     required this.emoteCounts,
     required this.isPinned,
     required this.createdAt,
+    required this.isPinned,
   });
 
   factory UserPostModel.fromEntity(UserPostEntity entity) {
