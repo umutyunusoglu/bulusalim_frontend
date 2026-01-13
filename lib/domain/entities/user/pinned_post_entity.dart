@@ -11,6 +11,7 @@ class UserPostEntity with EquatableMixin {
     required this.imageUrls,
     required this.participants,
     required this.emoteCounts,
+    required this.isPinned,
     required this.createdAt,
   });
 
@@ -21,6 +22,7 @@ class UserPostEntity with EquatableMixin {
     List<String>? imageUrls,
     List<CompactUserEntity>? participants,
     Map<String, int>? emoteCounts,
+    bool? isPinned,
     DateTime? createdAt,
   }) {
     return UserPostEntity(
@@ -30,6 +32,7 @@ class UserPostEntity with EquatableMixin {
       imageUrls: imageUrls ?? this.imageUrls,
       participants: participants ?? this.participants,
       emoteCounts: emoteCounts ?? this.emoteCounts,
+      isPinned: isPinned ?? this.isPinned,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -43,6 +46,6 @@ class UserPostEntity with EquatableMixin {
   final List<String> imageUrls;
   final List<CompactUserEntity> participants;
   final Map<String, int> emoteCounts;
-  final bool isPinned = true;
+  final bool isPinned;
   final DateTime createdAt;
 }

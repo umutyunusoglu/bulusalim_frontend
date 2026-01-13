@@ -47,6 +47,21 @@ abstract class UserRepository {
     List<UserEventStatusEnum> statuses,
   );
 
+  Future<void> saveEvent(
+    Identifier userID,
+    EventEntity event,
+  );
+
+  Future<void> unSaveEvent(
+    Identifier userID,
+    Identifier eventID,
+  );
+
+  Future<bool> isEventSaved(
+    Identifier userID,
+    Identifier eventID,
+  );
+
   Stream<List<EventEntity>> watchActiveEvents(Identifier userID);
   Stream<List<EventEntity>> watchOngoingEvents(Identifier userID);
 
