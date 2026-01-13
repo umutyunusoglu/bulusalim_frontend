@@ -230,10 +230,11 @@ class UserRepositoryImpl implements UserRepository {
   ) async {
     _logger.info('Saving event to user log for user: $userID');
 
-    final UserEventEntity userEvent = UserEventEntity(
+    final userEvent = UserEventEntity(
       eventId: event.eventID,
       role: EventRoleEnum.fromString(event.currentUserRole ?? 'participant'),
       status: UserEventStatusEnum.saved,
+      updatedAt: DateTime.now(),
     );
 
     final userEventModel = UserEventModel.fromEntity(userEvent);
