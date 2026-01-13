@@ -5,12 +5,14 @@ import 'package:bulusalim/data/services/auth_service_impl.dart';
 import 'package:bulusalim/data/services/file_service_impl.dart';
 import 'package:bulusalim/data/services/persistance_service_impl.dart';
 import 'package:bulusalim/data/services/remote_config_service_impl.dart';
+import 'package:bulusalim/data/services/security_service_impl.dart';
 import 'package:bulusalim/data/services/session_service_impl.dart';
 import 'package:bulusalim/domain/services/auth_service.dart';
 import 'package:bulusalim/domain/services/file_service.dart';
 import 'package:bulusalim/domain/services/global_content_cache.dart';
 import 'package:bulusalim/domain/services/persistance_service.dart';
 import 'package:bulusalim/domain/services/remote_config_service.dart';
+import 'package:bulusalim/domain/services/security_service.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_it/get_it.dart';
@@ -57,6 +59,13 @@ extension ServiceModule on GetIt {
         () => PersistanceServiceImpl(
           logger: this(),
           box: this(),
+        ),
+      )
+      ..registerSingleton<SecurityService>(
+        SecurityServiceImpl(
+          firestore: this(),
+          logger: this(),
+          functions: this(),
         ),
       );
   }

@@ -47,6 +47,21 @@ abstract class UserRepository {
     List<UserEventStatusEnum> statuses,
   );
 
+  Future<void> saveEvent(
+    Identifier userID,
+    EventEntity event,
+  );
+
+  Future<void> unSaveEvent(
+    Identifier userID,
+    Identifier eventID,
+  );
+
+  Future<bool> isEventSaved(
+    Identifier userID,
+    Identifier eventID,
+  );
+
   Stream<List<EventEntity>> watchActiveEvents(Identifier userID);
   Stream<List<EventEntity>> watchOngoingEvents(Identifier userID);
 
@@ -58,8 +73,7 @@ abstract class UserRepository {
   // === Pinned Posts Subcollection ===
   Future<List<UserPostEntity>> getPinnedPosts(Identifier userID);
 
-  // From EventLog Subcollection
-  Future<List<UserPostEntity>> getActivePosts(Identifier userID);
+  Future<List<UserPostEntity>> getUserPosts(Identifier userID);
 
   // Hobbies Subcollection
   Future<List<UserHobbyEntity>> getUserHobbies(
