@@ -5,6 +5,7 @@ import 'package:bulusalim/domain/repositories/chat_repository.dart';
 import 'package:bulusalim/screens/chat/chat_input_bar.dart';
 import 'package:bulusalim/screens/chat/chat_message_buble.dart';
 import 'package:bulusalim/screens/chat/chat_page_header.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -118,15 +119,44 @@ class _ChatPageState extends State<ChatPage> {
       body: Column(
         children: [
           // 1. HEADER
-          ChatPageHeader(
-            eventID: widget.eventID,
-            creatorID: widget.creatorID,
-            chatTitle: widget.chatTitle,
-            creatorProfileImage: widget.creatorProfileImage,
-            location: widget.location,
-            eventDate: widget.eventDate,
-            participantStatus: widget.participantStatus,
-            participantAvatars: widget.participantAvatars,
+          StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('events')
+                .doc(widget.eventID)
+                .snapshots(),
+            builder: (context, snapshot) {
+              var displayLocation = widget.location;
+              var displayDate = widget.eventDate;
+
+              // Veri geldiyse ve doküman varsa güncel veriyi al
+              if (snapshot.hasData &&
+                  snapshot.data != null &&
+                  snapshot.data!.exists) {
+                final data = snapshot.data!.data() as Map<String, dynamic>?;
+                if (data != null) {
+                  if (data.containsKey('displayAddress')) {
+                    displayLocation = data['displayAddress'] as String;
+                  }
+                  if (data.containsKey('startTime')) {
+                    final timestamp = data['startTime'] as Timestamp?;
+                    if (timestamp != null) {
+                      displayDate = timestamp.toDate();
+                    }
+                  }
+                }
+              }
+
+              return ChatPageHeader(
+                eventID: widget.eventID,
+                creatorID: widget.creatorID,
+                chatTitle: widget.chatTitle,
+                creatorProfileImage: widget.creatorProfileImage,
+                location: displayLocation,
+                eventDate: displayDate,
+                participantStatus: widget.participantStatus,
+                participantAvatars: widget.participantAvatars,
+              );
+            },
           ),
 
           // 2. MESAJ LİSTESİ
