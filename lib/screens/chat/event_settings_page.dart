@@ -1,4 +1,5 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
+import 'package:bulusalim/components/popup.dart';
 import 'package:bulusalim/components/stacked_avatars.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
@@ -7,6 +8,8 @@ import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:bulusalim/domain/repositories/event_repository.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/screens/chat/event_avatar_badge.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dart_geohash/dart_geohash.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -37,9 +40,18 @@ class EventSettingsPage extends StatefulWidget {
 
 class _EventSettingsPageState extends State<EventSettingsPage> {
   bool isLocked = false;
+
+  late String _currentLocation;
+
   final LoggingService _logger = getIt<LoggingService>();
   final SessionService sessionService = getIt<SessionService>();
   final EventRepository eventRepository = getIt<EventRepository>();
+
+  @override
+  void initState() {
+    super.initState();
+    _currentLocation = widget.location;
+  }
 
   // --- STYLE CONSTANTS ---
   final TextStyle _labelStyle = TextStyle(
@@ -60,19 +72,120 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
 
   // --- ACTIONS ---
 
+  // 1. KONUM GÜNCELLEME
+  Future<void> _onLocationUpdateTap() async {
+    // 1. Haritayı SEÇİM MODUNDA aç
+    final result = await context.push<Map<String, dynamic>>(
+      '/pick-location-map',
+    );
+
+    // Eğer kullanıcı bir konum seçip geri döndüyse
+    if (result != null) {
+      final newDisplayAddress = result['displayAddress'] as String;
+      final newAddress = result['address'] as String;
+      final newLocation = result['location'];
+
+      // 2. UI'ı ANLIK GÜNCELLE
+      setState(() {
+        _currentLocation = newDisplayAddress;
+      });
+
+      // 3. BACKEND GÜNCELLEMESİ
+      try {
+        await eventRepository.updateEvent(
+          widget.eventID,
+          {
+            'displayAddress': newDisplayAddress,
+            'address': newAddress,
+            'location': GeoPoint(
+              (newLocation.latitude as num).toDouble(),
+              (newLocation.longitude as num).toDouble(),
+            ),
+            'geohash': GeoHasher().encode(
+              (newLocation.longitude as num).toDouble(),
+              (newLocation.latitude as num).toDouble(),
+              precision: 7,
+            ),
+          },
+        );
+
+        _logger.debug("Konum başarıyla güncellendi: $newDisplayAddress");
+      } catch (e) {
+        _logger.error("Konum güncelleme hatası: $e");
+
+        // Hata durumunda UI'ı eski haline döndür
+        setState(() {
+          _currentLocation = widget.location;
+        });
+
+        // Hata durumunda bildirim göster
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Güncelleme başarısız: $e')),
+          );
+        }
+      }
+    }
+  }
+
+  // 2. AYRIL BUTONUNA TIKLANINCA
   void _onLeaveEventTap() {
-    _logger.debug("Etkinlikten ayrıl tıklandı");
+    showDialog(
+      context: context,
+      builder: (context) => Popup(
+        title:
+            '"${widget.chatTitle}" buluşmasından ayrılmak istediğinize emin misiniz?',
+        description:
+            'Kurucusu olduğunuz buluşmadan ayrılmanız durumunda katılımcılardan biri yeni kurucu olarak atanacaktır.',
+        confirmButtonText: 'ayrıl',
+        confirmButtonColor: const Color(0xFF1F415B),
+        onConfirm: () {
+          _performLeaveLogic();
+        },
+      ),
+    );
+  }
+
+  void _performLeaveLogic() {
+    _logger.debug("Etkinlikten ayrıl işlemi onaylandı");
     final event = widget.eventID;
     final currentUser = sessionService.currentUser;
-    final compactUser = CompactUserEntity(
-      userID: currentUser?.userID ?? '',
-      username: currentUser?.username ?? '',
-      profileImageUrl: currentUser?.profileImageUrl ?? '',
-    );
+
     if (currentUser != null) {
+      final compactUser = CompactUserEntity(
+        userID: currentUser.userID,
+        username: currentUser.username,
+        profileImageUrl: currentUser.profileImageUrl ?? '',
+      );
       eventRepository.removeParticipant(event, compactUser);
     }
-    context.pop();
+
+    context
+      ..pop() // Popup kapat
+      ..pop(); // Sayfayı kapat
+  }
+
+  // 3. İPTAL ET BUTONUNA TIKLANINCA
+  void _onCancelEventTap() {
+    showDialog(
+      context: context,
+      builder: (context) => Popup(
+        title:
+            '"${widget.chatTitle}" buluşmasını iptal etmek istediğinize emin misiniz?',
+        description:
+            'Buluşmayı iptal etmeniz durumunda katılımcılara bildirim gönderilecektir.',
+        confirmButtonText: 'iptal et',
+        confirmButtonColor: const Color(0xFF1F415B),
+        onConfirm: () async {
+          _logger.debug("Etkinlik iptal ediliyor...");
+          await eventRepository.deleteEvent(widget.eventID);
+
+          if (mounted) {
+            context.pop(); // Popup kapat
+          }
+        },
+      ),
+    );
   }
 
   @override
@@ -91,7 +204,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
         padding: const EdgeInsets.only(top: 60),
         child: Column(
           children: [
-            // 1. HEADER
+            // HEADER
             Padding(
               padding: EdgeInsets.only(
                 top: 60.h,
@@ -135,21 +248,18 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                   children: [
                     SizedBox(height: 20.h),
 
-                    // 2. PROFİL BÖLÜMÜ (Avatar + Başlık + Edit)
+                    // PROFİL BÖLÜMÜ
                     Row(
                       children: [
-                        // 50x50 Avatar
                         SizedBox(
                           width: 50.w,
                           height: 50.w,
                           child: EventAvatarBadge(
                             imageUrl: profileImage,
-                            categoryIcon: '🎉', // Varsayılan ikon
+                            categoryIcon: '🎉',
                           ),
                         ),
                         SizedBox(width: 12.w),
-
-                        // Başlık
                         Expanded(
                           child: Text(
                             widget.chatTitle,
@@ -163,8 +273,6 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                             ),
                           ),
                         ),
-
-                        // Edit İkonu (Sadece kurucu ise)
                         if (isCreator)
                           Icon(
                             Icons.edit_outlined,
@@ -176,19 +284,21 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
 
                     SizedBox(height: 40.h),
 
-                    // 3. AYARLAR LİSTESİ
+                    // AYARLAR LİSTESİ
 
-                    // Buluşma Konumu
+                    // 1. Buluşma Konumu (Tıklanabilir)
                     _buildPillRow(
                       'Buluşma Konumu',
-                      widget.location.isNotEmpty
-                          ? widget.location
+                      _currentLocation.isNotEmpty
+                          ? _currentLocation
                           : 'Konum Seçilmedi',
                       icon: Icons.location_on_outlined,
+                      // Sadece kurucu değiştirebilir
+                      onTap: isCreator ? _onLocationUpdateTap : null,
                     ),
                     _buildDivider(),
 
-                    // Buluşma Zamanı
+                    // 2. Buluşma Zamanı
                     _buildPillRow(
                       'Buluşma Zamanı',
                       '18 Aralık 21.00',
@@ -196,18 +306,18 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                     ),
                     SizedBox(height: 30.h),
 
-                    // Buluşmayı Kilitle
                     if (isCreator) ...[
                       _buildSwitchRow(
                         'Buluşmayı Kilitle',
                         'Buluşman artık kullanıcıların karşısına çıkmaz.',
                         isLocked,
-                        (val) => setState(() => isLocked = val),
+                        (val) {
+                          setState(() => isLocked = val);
+                        },
                       ),
                       _buildDivider(),
                     ],
 
-                    // Görünürlük Seçenekleri
                     if (isCreator) ...[
                       _buildExpandableRow(
                         'Görünürlük Seçenekleri',
@@ -216,26 +326,21 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                       _buildDivider(),
                     ],
 
-                    // Buluşmayı Bildir
                     _buildSimpleActionRow('Buluşmayı Bildir'),
                     _buildDivider(),
 
-                    // Buluşmadan Ayrıl
                     _buildSimpleActionRow(
                       'Buluşmadan Ayrıl',
                       textColor: AppColors.primaryColor,
                       onTap: _onLeaveEventTap,
                     ),
 
-                    // Buluşmayı İptal Et (Sadece Kurucu)
                     if (isCreator) ...[
                       _buildDivider(),
                       _buildSimpleActionRow(
                         'Buluşmayı İptal Et',
                         textColor: AppColors.primaryColor,
-                        onTap: () {
-                          // İptal fonksiyonu
-                        },
+                        onTap: _onCancelEventTap,
                       ),
                     ],
                   ],
@@ -250,8 +355,12 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
 
   // --- HELPER WIDGETS ---
 
-  // Konum ve Zaman için Hap (Pill) Görünümlü Satır
-  Widget _buildPillRow(String title, String value, {IconData? icon}) {
+  Widget _buildPillRow(
+    String title,
+    String value, {
+    IconData? icon,
+    VoidCallback? onTap,
+  }) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 16.h),
       child: Row(
@@ -259,33 +368,36 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
         children: [
           Text(title, style: _labelStyle),
           Flexible(
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-              decoration: BoxDecoration(
-                color: const Color(0xFFD4E2EB),
-                borderRadius: BorderRadius.circular(20.r),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: 14.sp, color: const Color(0xFF4A6572)),
-                    SizedBox(width: 4.w),
-                  ],
-                  Flexible(
-                    child: Text(
-                      value,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: 'SF Pro Display',
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF2C3E50),
+            child: GestureDetector(
+              onTap: onTap,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD4E2EB),
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (icon != null) ...[
+                      Icon(icon, size: 14.sp, color: const Color(0xFF4A6572)),
+                      SizedBox(width: 4.w),
+                    ],
+                    Flexible(
+                      child: Text(
+                        value,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Display',
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF2C3E50),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -294,7 +406,6 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     );
   }
 
-  // Switch (Toggle) Satırı
   Widget _buildSwitchRow(
     String title,
     String subtitle,
@@ -323,7 +434,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
               value: value,
               onChanged: onChanged,
               activeColor: Colors.white,
-              activeTrackColor: Colors.grey.shade400,
+              activeTrackColor: AppColors.primaryColor,
               inactiveThumbColor: Colors.white,
               inactiveTrackColor: Colors.grey.shade300,
             ),
@@ -355,7 +466,6 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     );
   }
 
-  // Basit Tıklanabilir Satır (Bildir, Ayrıl, İptal Et)
   Widget _buildSimpleActionRow(
     String title, {
     Color? textColor,
@@ -369,9 +479,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
           children: [
             Text(
               title,
-              style: _labelStyle.copyWith(
-                color: textColor ?? Colors.black87,
-              ),
+              style: _labelStyle.copyWith(color: textColor ?? Colors.black87),
             ),
           ],
         ),
@@ -380,6 +488,6 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
   }
 
   Widget _buildDivider() {
-    return Divider(height: 1, thickness: 1, color: const Color(0xFFEEEEEE));
+    return const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE));
   }
 }

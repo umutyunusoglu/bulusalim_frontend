@@ -22,17 +22,21 @@ import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:bulusalim/domain/repositories/event_repository.dart';
 import 'package:bulusalim/domain/repositories/map_repository.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
-import 'package:bulusalim/screens/map/map_profile_marker.dart';
 import 'package:dart_geohash/dart_geohash.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 class MapPage extends StatefulWidget {
-  const MapPage({super.key});
+  final bool isLocationPicker;
+
+  const MapPage({
+    super.key,
+    this.isLocationPicker = false,
+  });
 
   @override
   State<MapPage> createState() => _MapPageState();
@@ -84,6 +88,17 @@ class _MapPageState extends State<MapPage> {
   bool _isDisposed = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Eğer picker modundaysak direkt konum adımını aç
+    if (widget.isLocationPicker) {
+      _isCreatePopupVisible = true;
+      _createEventStep = 1;
+      _tempCategory = 'Genel';
+    }
+  }
+
+  @override
   void dispose() {
     _isDisposed = true;
     _debounceTimer?.cancel();
@@ -102,7 +117,6 @@ class _MapPageState extends State<MapPage> {
 
   // --- YARDIMCI METODLAR ---
 
-  /// Sihirbazı kapatır ve tüm geçici durumları sıfırlar.
   void _closeWizard() {
     _removePickingMarker();
     setState(() {
@@ -119,27 +133,6 @@ class _MapPageState extends State<MapPage> {
     });
   }
 
-  /// Haritadaki konumu onaylar ve popup'ı yukarı taşır.
-  Future<void> _confirmLocationFromMap() async {
-    final locationPlace = await _mapRepository.geocodeLocation(
-      _pickedLocation!,
-    );
-
-    if (_isPickingFromMap && _pickedLocation != null) {
-      setState(() {
-        _logger.info(
-          'Picked location: Lat ${_pickedLocation!.latitude}, Lng ${_pickedLocation!.longitude}',
-        );
-        _tempDisplayAddress = locationPlace?.displayAddress;
-        _tempAddress = locationPlace?.adresss;
-        _tempLocation = _pickedLocation;
-
-        _isPickingFromMap = false;
-      });
-      await _removePickingMarker();
-    }
-  }
-
   Future<void> _removePickingMarker() async {
     if (_pickingMarker != null && pointAnnotationManager != null) {
       try {
@@ -152,15 +145,14 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
+  // --- HARİTADAN İŞARETLEME MANTIĞI ---
   Future<void> _handleMapPick(double lat, double lng) async {
     if (pointAnnotationManager == null) return;
 
     if (_pickingMarker != null) {
       try {
         await pointAnnotationManager!.delete(_pickingMarker!);
-      } catch (e) {
-        // ignore
-      }
+      } catch (e) {}
       _pickingMarker = null;
     }
 
@@ -168,34 +160,45 @@ class _MapPageState extends State<MapPage> {
       _currentUserImageUrl,
       scale: 1.5,
     );
+
     if (customMarkerIcon == null) return;
 
     try {
       final annotation = await pointAnnotationManager!.create(
         PointAnnotationOptions(
-          geometry: Point(
-            coordinates: Position(lng, lat),
-          ),
+          geometry: Point(coordinates: Position(lng, lat)),
           image: customMarkerIcon,
-          iconSize: 0.6,
+          iconSize: 0.8,
+          iconOffset: [0, -10],
         ),
       );
+
+      final newLocation = Geolocation(latitude: lat, longitude: lng);
+
       setState(() {
         _pickingMarker = annotation;
-        _pickedLocation = Geolocation(latitude: lat, longitude: lng);
+        _pickedLocation = newLocation;
       });
+
+      final place = await _mapRepository.geocodeLocation(newLocation);
+      if (place != null && mounted) {
+        setState(() {
+          _tempDisplayAddress = place.displayAddress;
+          _tempAddress = place.adresss;
+          _tempLocation = newLocation;
+        });
+      }
     } catch (e) {
       _logger.error('Error creating picking marker: $e');
     }
   }
 
-  // --- 1. KATEGORİ FİLTRELEME ---
+  // --- FETCH & MARKER YÖNETİMİ ---
   Future<void> _onCategoryChanged() async {
     if (_isDisposed) return;
     await _fetchVisibleEvents(forceRefresh: true);
   }
 
-  // --- 2. MARKER YÖNETİMİ ---
   Future<void> _updateMarkers(List<EventEntity> visibleEvents) async {
     if (_isDisposed || !mounted || pointAnnotationManager == null) return;
     final targetEventIds = visibleEvents.map((e) => e.eventID).toSet();
@@ -211,13 +214,11 @@ class _MapPageState extends State<MapPage> {
             .map((e) => e.key)
             .toList();
 
-        // Local state temizliği
         for (final entry in markersToRemoveEntries) {
           _loadedEventIds.remove(entry.value.eventID);
           _markerEventMap.remove(entry.key);
         }
 
-        // Mapbox temizliği
         final allAnnotations = await pointAnnotationManager!.getAnnotations();
         final annotationsToDelete = allAnnotations
             .where((a) => annotationIdsToDelete.contains(a.id))
@@ -228,12 +229,12 @@ class _MapPageState extends State<MapPage> {
             await pointAnnotationManager!.delete(annotation);
           }
         }
-      } on Exception catch (e) {
+      } catch (e) {
         _logger.warn('Marker silme hatası: $e');
       }
     }
 
-    // EKLENECEKLER
+    // Eklenecekler
     final eventsToAdd = visibleEvents
         .where((e) => !_loadedEventIds.contains(e.eventID))
         .toList();
@@ -277,13 +278,12 @@ class _MapPageState extends State<MapPage> {
         ),
       );
       _markerEventMap[annotation.id] = event;
-    } on Exception catch (e) {
+    } catch (e) {
       _loadedEventIds.remove(event.eventID);
       _logger.error('Marker ekleme hatası: $e');
     }
   }
 
-  // --- 3. RESİM OLUŞTURMA & CACHE ---
   Future<Uint8List?> _generateCustomMarkerImage(
     String imageUrl, {
     double scale = 1.0,
@@ -319,7 +319,6 @@ class _MapPageState extends State<MapPage> {
       final canvas = Canvas(recorder);
       final paint = Paint()..isAntiAlias = true;
 
-      // Gölge
       final shadowPath = Path()
         ..addOval(
           Rect.fromCircle(
@@ -329,13 +328,11 @@ class _MapPageState extends State<MapPage> {
         );
       canvas.drawShadow(shadowPath, Colors.black, 3.0 * scale, true);
 
-      // Çemberler
       paint.color = colorPair.outer;
       canvas.drawCircle(Offset(center, center), outerRadius, paint);
       paint.color = colorPair.inner;
       canvas.drawCircle(Offset(center, center), ringRadius, paint);
 
-      // Clip
       final imagePath = Path()
         ..addOval(
           Rect.fromCircle(center: Offset(center, center), radius: imageRadius),
@@ -427,7 +424,6 @@ class _MapPageState extends State<MapPage> {
     });
   }
 
-  // --- FETCH ---
   Future<void> _fetchVisibleEvents({bool forceRefresh = false}) async {
     if (_isDisposed || !mounted) return;
     try {
@@ -517,225 +513,283 @@ class _MapPageState extends State<MapPage> {
     final size = MediaQuery.of(context).size;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final isSummaryStep = _createEventStep == 5;
+
     final popupTopNormal = 160.h;
-    final popupTopCollapsed = size.height - (160.h + bottomPadding);
-    final camera = CameraOptions(
-      center: Point(coordinates: Position(29.0254, 40.9819)),
-      zoom: 13,
-    );
+    final double collapsedHeight = widget.isLocationPicker ? 70.h : 180.h;
+    final popupTopCollapsed = size.height - (collapsedHeight + bottomPadding);
 
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: Stack(
-        children: [
-          // 1. ZEMİN: HARİTA
-          MapWidget(
-            key: const ValueKey('mapWidget'),
-            cameraOptions: camera,
-            onMapCreated: _onMapCreated,
-            styleUri: MapboxStyles.MAPBOX_STREETS,
-            onTapListener: _onMapBackgroundClick,
-            onCameraChangeListener: _onCameraChangeListener,
-          ),
+    // Geri tuşu mantığı
+    final bool canPop =
+        !_isPickingFromMap && _createEventStep == 0 && !widget.isLocationPicker;
 
-          // 2. KATMAN: FİLTRE BAR
-          if (!_isCreatePopupVisible && !_isCardVisible)
-            Positioned(
-              top: 60.h,
-              left: 0,
-              right: 0,
-              child: SafeArea(
-                child: SizedBox(
-                  height: 40.h,
-                  child: ListView.separated(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w),
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _categories.length,
-                    separatorBuilder: (context, index) => SizedBox(width: 10.w),
-                    itemBuilder: (context, index) {
-                      final key = _categories.keys.elementAt(index);
-                      final value = _categories[key] ?? '';
-                      final isSelected = _selectedCategory == key;
+    return PopScope(
+      canPop: canPop,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
 
-                      return Center(
-                        child: MapFilterChip(
-                          label: key,
-                          emoji: value,
-                          isSelected: isSelected,
-                          onTap: () {
-                            setState(() {
-                              _selectedCategory = isSelected ? null : key;
-                            });
-                            _onCategoryChanged();
-                          },
-                        ),
-                      );
-                    },
+        setState(() {
+          if (_isPickingFromMap) {
+            _isPickingFromMap = false; // Seçim modundaysan yukarı çık
+          } else if (_createEventStep > 0) {
+            _createEventStep--; // İleri adımdaysan geri gel
+          } else if (widget.isLocationPicker) {
+            context.pop(); // Picker modundaysan kapat
+          }
+        });
+      },
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        body: Stack(
+          children: [
+            // 1. ZEMİN: HARİTA
+            Positioned.fill(
+              child: MapWidget(
+                key: const ValueKey('mapWidget'),
+                cameraOptions: CameraOptions(
+                  center: Point(coordinates: Position(29.0254, 40.9819)),
+                  zoom: 13,
+                ),
+                onMapCreated: _onMapCreated,
+                styleUri: MapboxStyles.MAPBOX_STREETS,
+                onTapListener: _onMapBackgroundClick,
+                onCameraChangeListener: _onCameraChangeListener,
+              ),
+            ),
+
+            // 2. KATEGORİ BAR
+            if (!_isCreatePopupVisible &&
+                !_isCardVisible &&
+                !widget.isLocationPicker)
+              Positioned(
+                top: 60.h,
+                left: 0,
+                right: 0,
+                child: SafeArea(
+                  child: SizedBox(
+                    height: 40.h,
+                    child: ListView.separated(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _categories.length,
+                      separatorBuilder: (_, __) => SizedBox(width: 10.w),
+                      itemBuilder: (_, index) {
+                        final key = _categories.keys.elementAt(index);
+                        return Center(
+                          child: MapFilterChip(
+                            label: key,
+                            emoji: _categories[key] ?? '',
+                            isSelected: _selectedCategory == key,
+                            onTap: () => setState(() {
+                              _selectedCategory = _selectedCategory == key
+                                  ? null
+                                  : key;
+                              _onCategoryChanged();
+                            }),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
+
+            // 3. ETKİNLİK KARTI
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOutBack,
+              bottom: _isCardVisible ? 0 : -400.h,
+              left: 0,
+              right: 0,
+              child: _selectedEvent != null
+                  ? EventCard(
+                      event: _selectedEvent!,
+                      participants: _selectedEvent!.participants,
+                    )
+                  : const SizedBox.shrink(),
             ),
 
-          // 3. KATMAN: ETKİNLİK KARTI
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOutBack,
-            bottom: _isCardVisible ? 0 : -400.h,
-            left: 0,
-            right: 0,
-            child: _selectedEvent != null
-                ? EventCard(
-                    event: _selectedEvent!,
-                    participants: _selectedEvent!.participants,
-                  )
-                : const SizedBox.shrink(),
-          ),
-
-          // 4. KATMAN: KARARTMA OVERLAY
-          if (_isCreatePopupVisible)
-            IgnorePointer(
-              ignoring: _isPickingFromMap,
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 400),
-                opacity: _isPickingFromMap ? 0.0 : 0.6,
-                child: GestureDetector(
-                  onTap: () {},
-                  child: Container(color: Colors.black),
+            // 4. KARARTMA OVERLAY
+            if (_isCreatePopupVisible)
+              IgnorePointer(
+                ignoring: _isPickingFromMap,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 400),
+                  opacity: _isPickingFromMap ? 0.0 : 0.6,
+                  child: GestureDetector(
+                    onTap: () {
+                      // Overlay'e basınca popup'ı kapatmak istersen burayı açabilirsin
+                    },
+                    child: Container(color: Colors.black),
+                  ),
                 ),
               ),
-            ),
 
-          // 6. KATMAN: POPUP WIZARD
-          if (_isCreatePopupVisible)
-            if (isSummaryStep)
-              Positioned.fill(
-                child: EventSummaryOverlay(
-                  previewEvent: _createPreviewEvent(),
-                  onCancel: _closeWizard,
-                  onConfirm: _confirmEventCreation,
+            // 5. POPUP WIZARD (DÜZELTİLEN KISIM)
+            if (_isCreatePopupVisible)
+              if (isSummaryStep)
+                Positioned.fill(
+                  child: EventSummaryOverlay(
+                    previewEvent: _createPreviewEvent(),
+                    onCancel: _closeWizard,
+                    onConfirm: _confirmEventCreation,
+                  ),
+                )
+              else
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeInOutCubic,
+                  top: _isPickingFromMap ? popupTopCollapsed : popupTopNormal,
+                  left: 16.w,
+                  right: 16.w,
+                  bottom: null,
+                  child: SizedBox(
+                    height: _isPickingFromMap ? size.height : null,
+                    // ▼▼▼ STACK İLE SARMALADIK ▼▼▼
+                    child: Stack(
+                      children: [
+                        // A) Asıl İçerik
+                        CreateEventPopup(
+                          child: _buildWizardContent(),
+                        ),
+
+                        // B) Dokunma Kalkanı (Sadece Picking Modunda Aktif)
+                        // Bu katman en üstte olduğu için tıklamaları o yakalar.
+                        if (_isPickingFromMap)
+                          Positioned.fill(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior
+                                  .translucent, // Şeffaf olsa bile tıkla
+                              onTap: () {
+                                // Tıklandığında sadece yukarı kaldır
+                                setState(() {
+                                  _isPickingFromMap = false;
+                                });
+                              },
+                              child: Container(
+                                color: Colors.transparent, // Görünmez
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
-              )
-            else
+
+            // 6. HARİTADAN SEÇ BUTONU
+            if (_isCreatePopupVisible &&
+                _createEventStep == 1 &&
+                !_isPickingFromMap)
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 500),
                 curve: Curves.easeInOutCubic,
-                top: _isPickingFromMap ? popupTopCollapsed : popupTopNormal,
-                left: 16.w,
+                top: popupTopNormal + 460.h,
+                left: 0,
+                right: 0,
+                child: Center(child: _buildMapSelectionButton()),
+              ),
+
+            // 7. FAB
+            if (!_isCreatePopupVisible &&
+                !_isCardVisible &&
+                !widget.isLocationPicker)
+              Positioned(
+                bottom: 40.h,
                 right: 16.w,
-                bottom: _isPickingFromMap ? -500.h : null,
-                child: CreateEventPopup(
-                  child: _buildWizardContent(),
+                child: SafeArea(
+                  child: MapCreateButton(
+                    onTap: () => setState(() => _isCreatePopupVisible = true),
+                  ),
                 ),
               ),
-
-          // 7. KATMAN: HARİTADAN SEÇ BUTONU
-          if (_isCreatePopupVisible &&
-              _createEventStep == 1 &&
-              !_isPickingFromMap)
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 500),
-              curve: Curves.easeInOutCubic,
-              top: popupTopNormal + 460.h,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: _buildMapSelectionButton(),
-              ),
-            ),
-
-          // 8. KATMAN: FAB
-          if (!_isCreatePopupVisible && !_isCardVisible)
-            Positioned(
-              bottom: 40.h,
-              right: 16.w,
-              child: SafeArea(
-                child: MapCreateButton(
-                  onTap: () => setState(() => _isCreatePopupVisible = true),
-                ),
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  // --- WIZARD CONTENT ---
   Widget _buildWizardContent() {
     switch (_createEventStep) {
-      // ADIM 0: KATEGORİ
-      case 0:
+      case 0: // Kategori
         return CategorySelectionStep(
           initialSelectedCategory: _tempCategory,
           categories: _categories,
           onClose: _closeWizard,
           onNext: (c) => setState(() {
-            _logCurrentState();
             _tempCategory = c;
             _createEventStep = 1;
           }),
         );
-
-      // ADIM 1: KONUM
-      case 1:
+      case 1: // Konum
         return LocationSelectionStep(
           initialLocation: _tempLocation,
           initialAddress: _tempAddress,
           initialDisplayAddress: _tempDisplayAddress,
-          onHeaderTap: _confirmLocationFromMap,
+
+          onHeaderTap: () {
+            // Popup aşağıdaysa ve header'a tıklanırsa yukarı çıkar
+            if (_isPickingFromMap) {
+              setState(() {
+                _isPickingFromMap = false;
+              });
+            }
+          },
+
+          hideCloseButton: widget.isLocationPicker,
+
           onClose: _closeWizard,
-          onBack: () => setState(() => _createEventStep = 0),
-          onNext: (address, displayAddress, location) => setState(() {
-            _logCurrentState();
+          // Picker modundaysak Geri butonu sayfayı kapatır
+          onBack: widget.isLocationPicker
+              ? () => context.pop()
+              : () => setState(() => _createEventStep = 0),
 
-            _tempLocation = location;
-            _tempAddress = address;
-            _tempDisplayAddress = displayAddress;
-            _createEventStep = 2;
-          }),
+          // Picker modundaysak İlerle butonu veriyi geri döndürür
+          onNext: (address, displayAddress, location) {
+            if (widget.isLocationPicker) {
+              context.pop({
+                'displayAddress': displayAddress,
+                'address': address,
+                'location': location,
+              });
+            } else {
+              setState(() {
+                _tempLocation = location;
+                _tempAddress = address;
+                _tempDisplayAddress = displayAddress;
+                _createEventStep = 2;
+              });
+            }
+          },
         );
-
-      // ADIM 2: ZAMAN
-      case 2:
+      case 2: // Zaman
         return TimeSelectionStep(
           onBack: () => setState(() => _createEventStep = 1),
           onClose: _closeWizard,
           onNext: (d, t, u) => setState(() {
-            _logCurrentState();
             _tempDate = d;
             _tempTime = t;
             _createEventStep = 3;
           }),
         );
-
-      // ADIM 3: GÖRÜNÜRLÜK
-      case 3:
+      case 3: // Görünürlük
         return VisibilitySelectionStep(
           onBack: () => setState(() => _createEventStep = 2),
           onClose: _closeWizard,
-          onNext: (v, g, h) => setState(() {
-            _logCurrentState();
-            _createEventStep = 4;
-          }),
+          onNext: (v, g, h) => setState(() => _createEventStep = 4),
         );
-
-      // ADIM 4: İSİM
-      case 4:
+      case 4: // İsim
         return EventNameStep(
           onBack: () => setState(() => _createEventStep = 3),
           onClose: _closeWizard,
           onNext: (n) => setState(() {
-            _logCurrentState();
             _tempEventName = n;
             _createEventStep = 5;
           }),
         );
-
       default:
         return const SizedBox.shrink();
     }
   }
 
-  // --- UI PARÇALARI ---
   Widget _buildMapSelectionButton() {
     return GestureDetector(
       onTap: () {
@@ -781,6 +835,7 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
+  // --- PREVIEW VE CONFIRM KISIMLARI ---
   EventEntity _createPreviewEvent() {
     final date = _tempDate ?? DateTime.now();
     final time = _tempTime ?? TimeOfDay.now();
@@ -791,34 +846,23 @@ class _MapPageState extends State<MapPage> {
       time.hour,
       time.minute,
     );
-
-    SessionService sessionService = getIt<SessionService>();
-
-    final currentUser = sessionService.currentUser;
+    final currentUser = getIt<SessionService>().currentUser!;
 
     return EventEntity(
       eventID: '',
       name: _tempEventName ?? 'Başlıksız',
       hobbies: [_tempCategory ?? 'Genel'],
-
       creator: EventParticipantEntity(
-        userID: currentUser!.userID,
+        userID: currentUser.userID,
         username: currentUser.username,
         profileImageUrl: currentUser.profileImageUrl,
         role: EventRoleEnum.creator,
         eventScore: 5,
       ),
-
       status: EventStatusEnum.upcoming,
       capacity: 5,
       participantCount: 1,
-      participants: [
-        CompactUserEntity(
-          userID: currentUser.userID,
-          username: currentUser.username,
-          profileImageUrl: currentUser.profileImageUrl,
-        ),
-      ],
+      participants: [],
       requestPool: [],
       rejectedUsers: [],
       startTime: startTime,
@@ -837,10 +881,9 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
-  void _confirmEventCreation() async {
-    final EventRepository eventRepository = getIt<EventRepository>();
+  Future<void> _confirmEventCreation() async {
+    final eventRepository = getIt<EventRepository>();
     final currentUser = getIt<SessionService>().currentUser!;
-
     final date = _tempDate ?? DateTime.now();
     final time = _tempTime ?? TimeOfDay.now();
     final startTime = DateTime(
@@ -850,7 +893,6 @@ class _MapPageState extends State<MapPage> {
       time.hour,
       time.minute,
     );
-
     final currentUserCompact = CompactUserEntity(
       userID: currentUser.userID,
       username: currentUser.username,
@@ -872,7 +914,6 @@ class _MapPageState extends State<MapPage> {
         role: EventRoleEnum.creator,
         eventScore: 0,
       ),
-
       capacity: AppConfig.eventCapacity,
       participants: [currentUserCompact],
       requestPool: [],
@@ -890,29 +931,11 @@ class _MapPageState extends State<MapPage> {
       geohash: geohash,
     );
     await eventRepository.createEvent(event);
-
     _closeWizard();
-  }
-
-  void _logCurrentState() {
-    final logString =
-        '''
---- Current MapPage State ---
-Temp Category: $_tempCategory
-Temp Address: $_tempAddress
-Temp Display Address: $_tempDisplayAddress
-Temp Location: ${_tempLocation?.latitude}, ${_tempLocation?.longitude}
-Temp Date: ${_tempDate?.toString()}
-Temp Time: $_tempTime
-Temp Event Name: $_tempEventName
-------------------------------
-    
-    ''';
-    _logger.info(logString.replaceAll(RegExp(r'\s+'), ' ').trim());
   }
 }
 
-// --- YARDIMCI CLASS ---
+// Marker Renk Paleti
 class MarkerColorPair {
   const MarkerColorPair({required this.outer, required this.inner});
   final Color outer;

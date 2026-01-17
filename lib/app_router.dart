@@ -1,6 +1,6 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/components/stacked_avatars.dart'; // AvatarInfo için
-import 'package:bulusalim/domain/entities/user/compact_user_entity.dart'; // BU IMPORT EKLENDİ
+import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/scaffold_with_navbar.dart';
 import 'package:bulusalim/screens/camera/camera_page.dart';
@@ -102,6 +102,13 @@ final router = GoRouter(
     ),
 
     // 2. NAVBARSIZ SAYFALAR (FULL SCREEN / ROOT ROUTES)
+    GoRoute(
+      path: '/pick-location-map',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) {
+        return const MapPage(isLocationPicker: true);
+      },
+    ),
 
     // SOHBET ODASI
     GoRoute(
@@ -112,7 +119,6 @@ final router = GoRouter(
         final extra = state.extra as Map<String, dynamic>?;
 
         final rawAvatars = (extra?['avatars'] as List?) ?? [];
-        // DÜZELTME: Yardımcı fonksiyon kullanıldı
         final safeAvatars = _mapToAvatarInfo(rawAvatars);
 
         final eventDate = extra?['date'] as DateTime? ?? DateTime.now();
@@ -146,7 +152,9 @@ final router = GoRouter(
               participantAvatars: safeAvatars,
               location: (extra?['location'] as String?) ?? '',
               participantStatus: (extra?['participants'] as String?) ?? '',
-              remainingTime: '',
+              remainingTime:
+                  (extra?['remainingTime'] as String?) ??
+                  '', // Hata almamak için null check
               creatorID: (extra?['creatorID'] as String?) ?? '',
             );
           },
