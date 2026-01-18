@@ -11,12 +11,15 @@ class TimeSelectionStep extends StatefulWidget {
     required this.onBack,
     required this.onNext,
     this.onClose,
+    // YENİ: X butonunu gizlemek için parametre
+    this.hideCloseButton = false,
     super.key,
   });
 
   final VoidCallback onBack;
   final VoidCallback? onClose;
   final Function(DateTime date, TimeOfDay? time, bool isTimeUndefined) onNext;
+  final bool hideCloseButton; // Değişken tanımı
 
   @override
   State<TimeSelectionStep> createState() => _TimeSelectionStepState();
@@ -152,18 +155,19 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
               ],
             ),
 
-            // SAĞ BUTON (KAPAT)
-            Align(
-              alignment: Alignment.centerRight,
-              child: GestureDetector(
-                onTap: widget.onClose,
-                child: Icon(
-                  Icons.close,
-                  size: 24.sp,
-                  color: AppColors.iconColor,
+            // SAĞ BUTON (KAPAT) - SADECE hideCloseButton FALSE İSE GÖSTER
+            if (!widget.hideCloseButton)
+              Align(
+                alignment: Alignment.centerRight,
+                child: GestureDetector(
+                  onTap: widget.onClose,
+                  child: Icon(
+                    Icons.close,
+                    size: 24.sp,
+                    color: AppColors.iconColor,
+                  ),
                 ),
               ),
-            ),
           ],
         ),
 
