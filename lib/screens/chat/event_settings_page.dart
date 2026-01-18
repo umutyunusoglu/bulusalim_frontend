@@ -1,6 +1,7 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/components/popup.dart';
 import 'package:bulusalim/components/stacked_avatars.dart';
+import 'package:bulusalim/core/constants/configs/app_config.dart'; // <--- 1. IMPORT EKLENDİ
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
@@ -42,10 +43,9 @@ class EventSettingsPage extends StatefulWidget {
 class _EventSettingsPageState extends State<EventSettingsPage> {
   bool isLocked = false;
 
-  // Ekranda gösterilecek güncel veriler
   late String _currentLocation;
-  DateTime?
-  _currentDate; // Başlangıçta null olabilir, Stream'den veya veriden dolacak
+  DateTime? _currentDate;
+  String _categoryIcon = '🎉'; // varsayılan ikon
 
   final LoggingService _logger = getIt<LoggingService>();
   final SessionService sessionService = getIt<SessionService>();
@@ -55,10 +55,10 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
   void initState() {
     super.initState();
     _currentLocation = widget.location;
-    _fetchCurrentEventData(); // Güncel saati çekmek için
+    _fetchCurrentEventData();
   }
 
-  // Veritabanından güncel saati çekmek için basit bir metod
+  // Veritabanından güncel verileri çeken metod
   Future<void> _fetchCurrentEventData() async {
     try {
       final doc = await FirebaseFirestore.instance
@@ -68,9 +68,21 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
 
       if (doc.exists && mounted) {
         final data = doc.data();
-        if (data != null && data['startTime'] != null) {
+        if (data != null) {
           setState(() {
-            _currentDate = (data['startTime'] as Timestamp).toDate();
+            // Tarih Güncelleme
+            if (data['startTime'] != null) {
+              _currentDate = (data['startTime'] as Timestamp).toDate();
+            }
+
+            // 3. KATEGORİ İKONU GÜNCELLEME
+            if (data.containsKey('hobbies')) {
+              final hobbies = data['hobbies'] as List<dynamic>?;
+              if (hobbies != null && hobbies.isNotEmpty) {
+                final category = hobbies.first.toString();
+                _categoryIcon = AppConfig.categories[category] ?? '🎉';
+              }
+            }
           });
         }
       }
@@ -140,7 +152,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     }
   }
 
-  // 2. ZAMAN GÜNCELLEME (YENİ)
+  // 2. ZAMAN GÜNCELLEME
   Future<void> _onTimeUpdateTap() async {
     final result = await context.push<Map<String, dynamic>>(
       '/pick-time-map',
@@ -150,7 +162,6 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
       final newDate = result['date'] as DateTime;
       final newTime = result['time'] as TimeOfDay?;
 
-      // Yeni startTime oluştur
       final newStartTime = DateTime(
         newDate.year,
         newDate.month,
@@ -159,18 +170,15 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
         newTime?.minute ?? 0,
       );
 
-      // UI'ı anlık güncelle
       setState(() {
         _currentDate = newStartTime;
       });
 
-      // Veritabanını güncelle
       try {
         await eventRepository.updateEvent(
           widget.eventID,
           {
             'startTime': newStartTime,
-            // Bitiş süresini otomatik 2 saat sonrası yapıyoruz
             'endTime': newStartTime.add(const Duration(hours: 2)),
           },
         );
@@ -241,7 +249,6 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
         ? widget.participantAvatars.first.imageUrl
         : 'https://picsum.photos/200';
 
-    // Tarih formatlama
     String dateString = 'Yükleniyor...';
     if (_currentDate != null) {
       dateString = DateFormat('d MMMM HH.mm', 'tr_TR').format(_currentDate!);
@@ -305,7 +312,8 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                           height: 50.w,
                           child: EventAvatarBadge(
                             imageUrl: profileImage,
-                            categoryIcon: '🎉',
+                            categoryIcon:
+                                _categoryIcon, // 4. KATEGORİ İKONU GÖNDERİLİYOR
                           ),
                         ),
                         SizedBox(width: 12.w),
@@ -346,7 +354,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                     ),
                     _buildDivider(),
 
-                    // 2. Buluşma Zamanı (GÜNCELLENDİ)
+                    // 2. Buluşma Zamanı
                     _buildPillRow(
                       'Buluşma Zamanı',
                       dateString,
@@ -537,6 +545,6 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
   }
 
   Widget _buildDivider() {
-    return Divider(height: 1, thickness: 1, color: const Color(0xFFEEEEEE));
+    return const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE));
   }
 }
