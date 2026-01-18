@@ -13,6 +13,7 @@ import 'package:dart_geohash/dart_geohash.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 class EventSettingsPage extends StatefulWidget {
   const EventSettingsPage({
@@ -41,7 +42,10 @@ class EventSettingsPage extends StatefulWidget {
 class _EventSettingsPageState extends State<EventSettingsPage> {
   bool isLocked = false;
 
+  // Ekranda gösterilecek güncel veriler
   late String _currentLocation;
+  DateTime?
+  _currentDate; // Başlangıçta null olabilir, Stream'den veya veriden dolacak
 
   final LoggingService _logger = getIt<LoggingService>();
   final SessionService sessionService = getIt<SessionService>();
@@ -51,6 +55,28 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
   void initState() {
     super.initState();
     _currentLocation = widget.location;
+    _fetchCurrentEventData(); // Güncel saati çekmek için
+  }
+
+  // Veritabanından güncel saati çekmek için basit bir metod
+  Future<void> _fetchCurrentEventData() async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('events')
+          .doc(widget.eventID)
+          .get();
+
+      if (doc.exists && mounted) {
+        final data = doc.data();
+        if (data != null && data['startTime'] != null) {
+          setState(() {
+            _currentDate = (data['startTime'] as Timestamp).toDate();
+          });
+        }
+      }
+    } catch (e) {
+      _logger.error('Veri çekme hatası: $e');
+    }
   }
 
   // --- STYLE CONSTANTS ---
@@ -74,23 +100,19 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
 
   // 1. KONUM GÜNCELLEME
   Future<void> _onLocationUpdateTap() async {
-    // 1. Haritayı SEÇİM MODUNDA aç
     final result = await context.push<Map<String, dynamic>>(
       '/pick-location-map',
     );
 
-    // Eğer kullanıcı bir konum seçip geri döndüyse
     if (result != null) {
       final newDisplayAddress = result['displayAddress'] as String;
       final newAddress = result['address'] as String;
       final newLocation = result['location'];
 
-      // 2. UI'ı ANLIK GÜNCELLE
       setState(() {
         _currentLocation = newDisplayAddress;
       });
 
-      // 3. BACKEND GÜNCELLEMESİ
       try {
         await eventRepository.updateEvent(
           widget.eventID,
@@ -108,27 +130,58 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
             ),
           },
         );
-
-        _logger.debug("Konum başarıyla güncellendi: $newDisplayAddress");
+        _logger.debug("Konum güncellendi: $newDisplayAddress");
       } catch (e) {
         _logger.error("Konum güncelleme hatası: $e");
-
-        // Hata durumunda UI'ı eski haline döndür
         setState(() {
           _currentLocation = widget.location;
         });
-
-        // Hata durumunda bildirim göster
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Güncelleme başarısız: $e')),
-          );
-        }
       }
     }
   }
 
-  // 2. AYRIL BUTONUNA TIKLANINCA
+  // 2. ZAMAN GÜNCELLEME (YENİ)
+  Future<void> _onTimeUpdateTap() async {
+    final result = await context.push<Map<String, dynamic>>(
+      '/pick-time-map',
+    );
+
+    if (result != null) {
+      final newDate = result['date'] as DateTime;
+      final newTime = result['time'] as TimeOfDay?;
+
+      // Yeni startTime oluştur
+      final newStartTime = DateTime(
+        newDate.year,
+        newDate.month,
+        newDate.day,
+        newTime?.hour ?? 0,
+        newTime?.minute ?? 0,
+      );
+
+      // UI'ı anlık güncelle
+      setState(() {
+        _currentDate = newStartTime;
+      });
+
+      // Veritabanını güncelle
+      try {
+        await eventRepository.updateEvent(
+          widget.eventID,
+          {
+            'startTime': newStartTime,
+            // Bitiş süresini otomatik 2 saat sonrası yapıyoruz
+            'endTime': newStartTime.add(const Duration(hours: 2)),
+          },
+        );
+        _logger.debug("Zaman güncellendi: $newStartTime");
+      } catch (e) {
+        _logger.error("Zaman güncelleme hatası: $e");
+      }
+    }
+  }
+
+  // 3. AYRILMA VE İPTAL İŞLEMLERİ
   void _onLeaveEventTap() {
     showDialog(
       context: context,
@@ -147,25 +200,19 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
   }
 
   void _performLeaveLogic() {
-    _logger.debug("Etkinlikten ayrıl işlemi onaylandı");
-    final event = widget.eventID;
     final currentUser = sessionService.currentUser;
-
     if (currentUser != null) {
       final compactUser = CompactUserEntity(
         userID: currentUser.userID,
         username: currentUser.username,
         profileImageUrl: currentUser.profileImageUrl ?? '',
       );
-      eventRepository.removeParticipant(event, compactUser);
+      eventRepository.removeParticipant(widget.eventID, compactUser);
     }
-
-    context
-      ..pop() // Popup kapat
-      ..pop(); // Sayfayı kapat
+    context.pop();
+    context.pop();
   }
 
-  // 3. İPTAL ET BUTONUNA TIKLANINCA
   void _onCancelEventTap() {
     showDialog(
       context: context,
@@ -177,12 +224,8 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
         confirmButtonText: 'iptal et',
         confirmButtonColor: const Color(0xFF1F415B),
         onConfirm: () async {
-          _logger.debug("Etkinlik iptal ediliyor...");
           await eventRepository.deleteEvent(widget.eventID);
-
-          if (mounted) {
-            context.pop(); // Popup kapat
-          }
+          if (mounted) context.pop();
         },
       ),
     );
@@ -197,6 +240,12 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     final String profileImage = widget.participantAvatars.isNotEmpty
         ? widget.participantAvatars.first.imageUrl
         : 'https://picsum.photos/200';
+
+    // Tarih formatlama
+    String dateString = 'Yükleniyor...';
+    if (_currentDate != null) {
+      dateString = DateFormat('d MMMM HH.mm', 'tr_TR').format(_currentDate!);
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
@@ -286,23 +335,23 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
 
                     // AYARLAR LİSTESİ
 
-                    // 1. Buluşma Konumu (Tıklanabilir)
+                    // 1. Buluşma Konumu
                     _buildPillRow(
                       'Buluşma Konumu',
                       _currentLocation.isNotEmpty
                           ? _currentLocation
                           : 'Konum Seçilmedi',
                       icon: Icons.location_on_outlined,
-                      // Sadece kurucu değiştirebilir
                       onTap: isCreator ? _onLocationUpdateTap : null,
                     ),
                     _buildDivider(),
 
-                    // 2. Buluşma Zamanı
+                    // 2. Buluşma Zamanı (GÜNCELLENDİ)
                     _buildPillRow(
                       'Buluşma Zamanı',
-                      '18 Aralık 21.00',
+                      dateString,
                       icon: Icons.access_time,
+                      onTap: isCreator ? _onTimeUpdateTap : null,
                     ),
                     SizedBox(height: 30.h),
 
@@ -488,6 +537,6 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
   }
 
   Widget _buildDivider() {
-    return const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE));
+    return Divider(height: 1, thickness: 1, color: const Color(0xFFEEEEEE));
   }
 }

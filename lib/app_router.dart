@@ -109,6 +109,13 @@ final router = GoRouter(
         return const MapPage(isLocationPicker: true);
       },
     ),
+    GoRoute(
+      path: '/pick-time-map',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) {
+        return const MapPage(isTimePicker: true);
+      },
+    ),
 
     // SOHBET ODASI
     GoRoute(
