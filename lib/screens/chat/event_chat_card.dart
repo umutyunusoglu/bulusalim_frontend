@@ -4,7 +4,7 @@ import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/screens/chat/chat_event_info_chip.dart';
 import 'package:bulusalim/screens/chat/event_avatar_badge.dart';
 import 'package:bulusalim/screens/chat/event_status_according.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // <--- Stream için gerekli
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -28,17 +28,21 @@ class EventChatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // STREAMBUILDER: Kartın içindeki verileri canlı tutar
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
           .collection('events')
           .doc(event.eventID)
           .snapshots(),
       builder: (context, snapshot) {
+        // 1. Başlangıç Değerleri (Eğer internet yavaşsa veya stream henüz gelmediyse mevcut veriyi göster)
         var displayName = event.name;
         var displayLocation = event.displayAddress.isNotEmpty
             ? event.displayAddress
             : 'Konum Yok';
+        var displayDate = event.startTime;
 
+        // 2. Canlı Veri Geldiyse Değerleri Güncelle
         if (snapshot.hasData &&
             snapshot.data != null &&
             snapshot.data!.exists) {
@@ -53,6 +57,12 @@ class EventChatCard extends StatelessWidget {
               displayLocation = addr;
             }
           }
+          if (data.containsKey('startTime')) {
+            final ts = data['startTime'] as Timestamp?;
+            if (ts != null) {
+              displayDate = ts.toDate();
+            }
+          }
         }
 
         final categoryIcon = _getCategoryIcon();
@@ -62,57 +72,63 @@ class EventChatCard extends StatelessWidget {
           margin: EdgeInsets.zero,
           child: Column(
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // --- 1. AVATAR ---
-                  EventAvatarBadge(
-                    imageUrl: event.creator.profileImageUrl,
-                    categoryIcon: categoryIcon,
-                  ),
-
-                  SizedBox(width: 12.w),
-
-                  // --- 2. BİLGİ ALANI ---
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Başlık
-                        Text(
-                          displayName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: 'SF Pro Display',
-                            fontSize: 15.sp,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.darkSlate,
-                          ),
-                        ),
-                        SizedBox(height: 4.h),
-
-                        // Bilgi Çipi
-                        ChatEventInfoChip(
-                          location: displayLocation,
-                          startTime: event.startTime,
-                          participantCount: event.participants.length,
-                        ),
-                      ],
+              // Tıklanabilir Alan (Sohbet İkonu Hariç)
+              GestureDetector(
+                onTap:
+                    onTapChat, // Karta tıklayınca da detaya/sohbete gitmesi için
+                behavior: HitTestBehavior.translucent,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // --- 1. AVATAR ---
+                    EventAvatarBadge(
+                      imageUrl: event.creator.profileImageUrl,
+                      categoryIcon: categoryIcon,
                     ),
-                  ),
 
-                  // --- 3. SAĞ AKSİYON İKONU ---
-                  if (isCreator)
-                    _buildChatIcon()
-                  else if (participantStatus == 'pending')
-                    _buildPendingIcon()
-                  else
-                    _buildChatIcon(),
-                ],
+                    SizedBox(width: 12.w),
+
+                    // --- 2. BİLGİ ALANI ---
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Başlık (Canlı)
+                          Text(
+                            displayName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Display',
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.darkSlate,
+                            ),
+                          ),
+                          SizedBox(height: 4.h),
+
+                          // Bilgi Çipi (Canlı Tarih ve Konum)
+                          ChatEventInfoChip(
+                            location: displayLocation,
+                            startTime: displayDate,
+                            participantCount: event.participants.length,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // --- 3. SAĞ AKSİYON İKONU (Sohbet/Bekleme) ---
+                    if (isCreator)
+                      _buildChatIcon()
+                    else if (participantStatus == 'pending')
+                      _buildPendingIcon()
+                    else
+                      _buildChatIcon(),
+                  ],
+                ),
               ),
 
-              // --- 4. ACCORDION (Sadece Kurucuysa) ---
+              // --- 4. ACCORDION (Sadece Kurucuysa ve Bekleyen İstek Varsa) ---
               if (isCreator)
                 EventStatusAccordion(
                   eventId: event.eventID,

@@ -31,12 +31,13 @@ import 'package:http/http.dart' as http;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 class MapPage extends StatefulWidget {
-  final bool isLocationPicker;
-
   const MapPage({
     super.key,
     this.isLocationPicker = false,
+    this.isTimePicker = false,
   });
+  final bool isLocationPicker;
+  final bool isTimePicker;
 
   @override
   State<MapPage> createState() => _MapPageState();
@@ -68,10 +69,7 @@ class _MapPageState extends State<MapPage> {
   DateTime? _tempDate;
   TimeOfDay? _tempTime;
   String? _tempEventName;
-
   PointAnnotation? _pickingMarker;
-  Geolocation? _pickedLocation;
-
   final String _currentUserImageUrl = 'https://i.pravatar.cc/300?img=12';
 
   // --- MAPBOX ---
@@ -90,11 +88,16 @@ class _MapPageState extends State<MapPage> {
   @override
   void initState() {
     super.initState();
-    // Eğer picker modundaysak direkt konum adımını aç
+    // Modlara göre başlangıç adımını ayarla
     if (widget.isLocationPicker) {
       _isCreatePopupVisible = true;
-      _createEventStep = 1;
+      _createEventStep = 1; // Konum adımı
       _tempCategory = 'Genel';
+    } else if (widget.isTimePicker) {
+      _isCreatePopupVisible = true;
+      _createEventStep = 2; // Zaman adımı
+      _tempCategory = 'Genel';
+      _isPickingFromMap = false;
     }
   }
 
@@ -141,7 +144,6 @@ class _MapPageState extends State<MapPage> {
         _logger.warn('Error removing picking marker: $e');
       }
       _pickingMarker = null;
-      _pickedLocation = null;
     }
   }
 
@@ -177,7 +179,6 @@ class _MapPageState extends State<MapPage> {
 
       setState(() {
         _pickingMarker = annotation;
-        _pickedLocation = newLocation;
       });
 
       final place = await _mapRepository.geocodeLocation(newLocation);
@@ -515,12 +516,18 @@ class _MapPageState extends State<MapPage> {
     final isSummaryStep = _createEventStep == 5;
 
     final popupTopNormal = 160.h;
-    final double collapsedHeight = widget.isLocationPicker ? 70.h : 180.h;
+
+    // Konum veya Zaman seçici modundaysak aşağıda dursun
+    final double collapsedHeight =
+        (widget.isLocationPicker || widget.isTimePicker) ? 110.h : 180.h;
+
     final popupTopCollapsed = size.height - (collapsedHeight + bottomPadding);
 
-    // Geri tuşu mantığı
-    final bool canPop =
-        !_isPickingFromMap && _createEventStep == 0 && !widget.isLocationPicker;
+    final canPop =
+        !_isPickingFromMap &&
+        _createEventStep == 0 &&
+        !widget.isLocationPicker &&
+        !widget.isTimePicker;
 
     return PopScope(
       canPop: canPop,
@@ -529,11 +536,11 @@ class _MapPageState extends State<MapPage> {
 
         setState(() {
           if (_isPickingFromMap) {
-            _isPickingFromMap = false; // Seçim modundaysan yukarı çık
-          } else if (_createEventStep > 0) {
-            _createEventStep--; // İleri adımdaysan geri gel
-          } else if (widget.isLocationPicker) {
-            context.pop(); // Picker modundaysan kapat
+            _isPickingFromMap = false;
+          } else if (_createEventStep > 0 && !widget.isTimePicker) {
+            _createEventStep--;
+          } else if (widget.isLocationPicker || widget.isTimePicker) {
+            context.pop();
           }
         });
       },
@@ -559,7 +566,8 @@ class _MapPageState extends State<MapPage> {
             // 2. KATEGORİ BAR
             if (!_isCreatePopupVisible &&
                 !_isCardVisible &&
-                !widget.isLocationPicker)
+                !widget.isLocationPicker &&
+                !widget.isTimePicker)
               Positioned(
                 top: 60.h,
                 left: 0,
@@ -616,15 +624,13 @@ class _MapPageState extends State<MapPage> {
                   duration: const Duration(milliseconds: 400),
                   opacity: _isPickingFromMap ? 0.0 : 0.6,
                   child: GestureDetector(
-                    onTap: () {
-                      // Overlay'e basınca popup'ı kapatmak istersen burayı açabilirsin
-                    },
+                    onTap: () {},
                     child: Container(color: Colors.black),
                   ),
                 ),
               ),
 
-            // 5. POPUP WIZARD (DÜZELTİLEN KISIM)
+            // 5. POPUP WIZARD
             if (_isCreatePopupVisible)
               if (isSummaryStep)
                 Positioned.fill(
@@ -641,10 +647,8 @@ class _MapPageState extends State<MapPage> {
                   top: _isPickingFromMap ? popupTopCollapsed : popupTopNormal,
                   left: 16.w,
                   right: 16.w,
-                  bottom: null,
                   child: SizedBox(
                     height: _isPickingFromMap ? size.height : null,
-                    // ▼▼▼ STACK İLE SARMALADIK ▼▼▼
                     child: Stack(
                       children: [
                         // A) Asıl İçerik
@@ -653,12 +657,10 @@ class _MapPageState extends State<MapPage> {
                         ),
 
                         // B) Dokunma Kalkanı (Sadece Picking Modunda Aktif)
-                        // Bu katman en üstte olduğu için tıklamaları o yakalar.
                         if (_isPickingFromMap)
                           Positioned.fill(
                             child: GestureDetector(
-                              behavior: HitTestBehavior
-                                  .translucent, // Şeffaf olsa bile tıkla
+                              behavior: HitTestBehavior.translucent,
                               onTap: () {
                                 // Tıklandığında sadece yukarı kaldır
                                 setState(() {
@@ -666,7 +668,7 @@ class _MapPageState extends State<MapPage> {
                                 });
                               },
                               child: Container(
-                                color: Colors.transparent, // Görünmez
+                                color: Colors.transparent,
                               ),
                             ),
                           ),
@@ -691,7 +693,8 @@ class _MapPageState extends State<MapPage> {
             // 7. FAB
             if (!_isCreatePopupVisible &&
                 !_isCardVisible &&
-                !widget.isLocationPicker)
+                !widget.isLocationPicker &&
+                !widget.isTimePicker)
               Positioned(
                 bottom: 40.h,
                 right: 16.w,
@@ -762,13 +765,33 @@ class _MapPageState extends State<MapPage> {
         );
       case 2: // Zaman
         return TimeSelectionStep(
-          onBack: () => setState(() => _createEventStep = 1),
-          onClose: _closeWizard,
-          onNext: (d, t, u) => setState(() {
-            _tempDate = d;
-            _tempTime = t;
-            _createEventStep = 3;
-          }),
+          // Geri butonu: TimePicker modundaysak sayfayı kapat, yoksa adım 1'e git
+          onBack: widget.isTimePicker
+              ? () => context.pop()
+              : () => setState(() => _createEventStep = 1),
+
+          // Kapat butonu: TimePicker modundaysak null yapıyoruz
+          onClose: widget.isTimePicker ? null : _closeWizard,
+
+          // X Butonunu gizle
+          hideCloseButton: widget.isTimePicker,
+
+          // İlerle butonu
+          onNext: (d, t, isUndefined) {
+            if (widget.isTimePicker) {
+              context.pop({
+                'date': d,
+                'time': t,
+                'isTimeUndefined': isUndefined,
+              });
+            } else {
+              setState(() {
+                _tempDate = d;
+                _tempTime = t;
+                _createEventStep = 3;
+              });
+            }
+          },
         );
       case 3: // Görünürlük
         return VisibilitySelectionStep(
