@@ -1,4 +1,5 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
+import 'package:bulusalim/core/constants/configs/app_config.dart'; // <--- BU SATIR EKLENDİ
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:bulusalim/domain/entities/chat/message_entity.dart';
 import 'package:bulusalim/domain/repositories/chat_repository.dart';
@@ -125,22 +126,45 @@ class _ChatPageState extends State<ChatPage> {
                 .doc(widget.eventID)
                 .snapshots(),
             builder: (context, snapshot) {
+              var displayTitle = widget.chatTitle;
               var displayLocation = widget.location;
               var displayDate = widget.eventDate;
+              var displayCreatorImage = widget.creatorProfileImage;
 
-              // Veri geldiyse ve doküman varsa güncel veriyi al
+              // 2. VARSAYILAN İKON TANIMLA
+              String categoryIcon = '🎉';
+
               if (snapshot.hasData &&
                   snapshot.data != null &&
                   snapshot.data!.exists) {
                 final data = snapshot.data!.data() as Map<String, dynamic>?;
                 if (data != null) {
+                  if (data.containsKey('name')) {
+                    displayTitle = data['name'] as String;
+                  }
                   if (data.containsKey('displayAddress')) {
                     displayLocation = data['displayAddress'] as String;
                   }
+
                   if (data.containsKey('startTime')) {
                     final timestamp = data['startTime'] as Timestamp?;
-                    if (timestamp != null) {
-                      displayDate = timestamp.toDate();
+                    if (timestamp != null) displayDate = timestamp.toDate();
+                  }
+
+                  if (data.containsKey('creator') && data['creator'] is Map) {
+                    final creatorMap = data['creator'] as Map<String, dynamic>;
+                    if (creatorMap.containsKey('profileImageUrl')) {
+                      displayCreatorImage =
+                          creatorMap['profileImageUrl'] as String;
+                    }
+                  }
+
+                  // 3. HOBİLERDEN İKONU AL
+                  if (data.containsKey('hobbies')) {
+                    final hobbies = data['hobbies'] as List<dynamic>?;
+                    if (hobbies != null && hobbies.isNotEmpty) {
+                      final category = hobbies.first.toString();
+                      categoryIcon = AppConfig.categories[category] ?? '🎉';
                     }
                   }
                 }
@@ -149,12 +173,13 @@ class _ChatPageState extends State<ChatPage> {
               return ChatPageHeader(
                 eventID: widget.eventID,
                 creatorID: widget.creatorID,
-                chatTitle: widget.chatTitle,
-                creatorProfileImage: widget.creatorProfileImage,
+                chatTitle: displayTitle,
+                creatorProfileImage: displayCreatorImage,
                 location: displayLocation,
                 eventDate: displayDate,
                 participantStatus: widget.participantStatus,
                 participantAvatars: widget.participantAvatars,
+                categoryIcon: categoryIcon, // 4. KATEGORİ İKONUNU GÖNDER
               );
             },
           ),
