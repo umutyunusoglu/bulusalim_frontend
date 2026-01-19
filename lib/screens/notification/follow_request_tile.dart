@@ -1,0 +1,200 @@
+import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:bulusalim/domain/entities/notification/follow_notification_entity.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:timeago/timeago.dart' as timeago;
+
+class FollowRequestTile extends StatelessWidget {
+  const FollowRequestTile({required this.item, super.key});
+
+  final FollowNotificationEntity item;
+
+  // Sağ taraftaki aksiyon butonlarını oluşturur
+  Widget _buildTrailingAction() {
+    switch (item.status) {
+      // DURUM 1: Takip Ediliyor
+      case FollowStatus.following:
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF2F2F7),
+            borderRadius: BorderRadius.circular(20.r),
+          ),
+          child: Text(
+            'takip ediliyor',
+            style: TextStyle(
+              fontSize: 10.sp,
+              color: AppColors.tertiaryColor,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        );
+
+      // DURUM 2: İstek Gönderildi
+      case FollowStatus.sent:
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF2F2F7),
+            borderRadius: BorderRadius.circular(20.r),
+          ),
+          child: Text(
+            'istek gönderildi',
+            style: TextStyle(
+              fontSize: 10.sp,
+              color: AppColors.tertiaryColor,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        );
+
+      // DURUM 3: Takip Et
+      case FollowStatus.none:
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
+          decoration: BoxDecoration(
+            color: AppColors.primaryColor,
+            borderRadius: BorderRadius.circular(20.r),
+          ),
+          child: Text(
+            'takip et',
+            style: TextStyle(
+              fontSize: 10.sp,
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        );
+
+      // DURUM 4: Kabul Et / Sil
+      case FollowStatus.pending:
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
+              decoration: BoxDecoration(
+                color: AppColors.primaryColor,
+                borderRadius: BorderRadius.circular(20.r),
+              ),
+              child: Text(
+                'kabul et',
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            SizedBox(width: 4.w),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF2F2F7),
+                borderRadius: BorderRadius.circular(20.r),
+              ),
+              child: Text(
+                'sil',
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  color: AppColors.tertiaryColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Özel formatı ('tr_short') sisteme tanıtıyoruz
+    timeago.setLocaleMessages('tr_short', TrShortMessages());
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      child: Row(
+        children: [
+          // 1. AVATAR
+          CircleAvatar(
+            radius: 16.r,
+            backgroundImage: NetworkImage(item.profileUrl),
+          ),
+          SizedBox(width: 12.w),
+
+          // 2. METİN
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: TextStyle(
+                  fontFamily: 'SF Pro Display',
+                  fontSize: 12.sp,
+                  color: Colors.black,
+                  height: 1.3,
+                ),
+                children: [
+                  TextSpan(
+                    text: '${item.username} ',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  TextSpan(
+                    text: item.message.replaceAll('\n', ' ').trim(),
+                    style: const TextStyle(fontWeight: FontWeight.w400),
+                  ),
+                  // Zaman Bilgisi
+                  TextSpan(
+                    text:
+                        ' ${timeago.format(item.createdAt, locale: 'tr_short')}',
+                    style: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 12.sp,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // 3. BUTONLAR
+          _buildTrailingAction(),
+        ],
+      ),
+    );
+  }
+}
+
+class TrShortMessages implements timeago.LookupMessages {
+  @override
+  String prefixAgo() => '';
+  @override
+  String prefixFromNow() => '';
+  @override
+  String suffixAgo() => '';
+  @override
+  String suffixFromNow() => '';
+  @override
+  String lessThanOneMinute(int seconds) => 'şimdi';
+  @override
+  String aboutAMinute(int minutes) => '1dk';
+  @override
+  String minutes(int minutes) => '${minutes}dk';
+  @override
+  String aboutAnHour(int minutes) => '1sa';
+  @override
+  String hours(int hours) => '${hours}sa';
+  @override
+  String aDay(int hours) => '1gn';
+  @override
+  String days(int days) => '${days}gn';
+  @override
+  String aboutAMonth(int days) => '1ay';
+  @override
+  String months(int months) => '${months}ay';
+  @override
+  String aboutAYear(int year) => '1yl';
+  @override
+  String years(int years) => '${years}yl';
+  @override
+  String wordSeparator() => ' ';
+}
