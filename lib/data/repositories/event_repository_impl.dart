@@ -193,6 +193,29 @@ class EventRepositoryImpl implements EventRepository {
   }
 
   @override
+  Stream<List<EventEntity>> getEnrichedEventsOfUserStream(Identifier userId) {
+    return _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('eventLog')
+        .where('status', whereIn: ['upcoming', 'ongoing', 'pending'])
+        .snapshots()
+        .asyncMap((snapshot) async {
+          if (snapshot.docs.isEmpty) return [];
+
+          final eventIds = snapshot.docs
+              .map((doc) => UserEventModel.fromFirestore(doc.data()).eventID)
+              .toList();
+
+          final enrichedEvents = await getEventsByIds(
+            eventIds,
+            loadDetails: true,
+          );
+          return enrichedEvents;
+        });
+  }
+
+  @override
   // loadDetails: true -> Full (3 liste dahil)
   // loadDetails: false -> Light (Sadece ana döküman)
   Future<EventEntity?> getEvent(
@@ -570,5 +593,22 @@ class EventRepositoryImpl implements EventRepository {
   @override
   Future<List<EventEntity>> getEventsByHobby(List<HobbyEntity> categories) {
     throw UnimplementedError();
+  }
+
+  @override
+  Stream<List<UserEventEntity>> getUserEventsStream(Identifier userId) {
+    return _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('eventLog')
+        .where('status', whereIn: ['upcoming', 'ongoing', 'pending'])
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map(
+                (doc) => UserEventModel.fromFirestore(doc.data()).toEntity(),
+              )
+              .toList(),
+        );
   }
 }

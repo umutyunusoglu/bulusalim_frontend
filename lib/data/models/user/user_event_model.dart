@@ -37,7 +37,7 @@ class UserEventModel extends Model<UserEventEntity> {
   Map<String, dynamic> toFirestore() {
     return {
       'eventID': eventID,
-      'role': role.index,
+      'role': role.toString(),
       'status': status.toString(),
       'updatedAt': FieldValue.serverTimestamp(),
     };

@@ -63,10 +63,20 @@ class _EventCardState extends State<EventCard> {
 
   Future<void> _checkIfSaved() async {
     final currentUser = sessionService.currentUser!;
+
+    //TODO: UGA BUGA YAPMA!
+    if (widget.event.creator.userID == currentUser.userID) {
+      setState(() {
+        isSaved = true;
+      });
+      return;
+    }
+
     final saved = await getIt<UserRepository>().isEventSaved(
       currentUser.userID,
       widget.event.eventID,
     );
+
     if (mounted) {
       setState(() {
         isSaved = saved;
@@ -369,6 +379,10 @@ class _EventCardState extends State<EventCard> {
               child: Center(
                 child: Text(
                   categories[widget.event.hobbies[0]] ?? '',
+                  style: TextStyle(
+                    fontSize: 24.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
