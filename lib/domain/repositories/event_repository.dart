@@ -17,6 +17,8 @@ abstract class EventRepository {
   });
   Future<EventEntity> enrichEventWithDetails(EventEntity event);
 
+  Stream<List<EventEntity>> getEnrichedEventsOfUserStream(Identifier userId);
+
   /// Messages Subcollection
   Future<void> addMessage(Identifier eventId, EventMessagesEntity message);
   Future<List<EventMessagesEntity>> getMessages(Identifier eventId);
