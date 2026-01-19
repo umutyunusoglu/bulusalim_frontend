@@ -144,7 +144,6 @@ class _MyEventsPageState extends State<MyEventsPage> {
                             vertical: 24.h,
                           ),
                           itemCount: filteredItems.length,
-
                           separatorBuilder: (c, i) => Padding(
                             padding: EdgeInsets.symmetric(vertical: 20.h),
                             child: const Divider(
@@ -153,7 +152,6 @@ class _MyEventsPageState extends State<MyEventsPage> {
                               color: AppColors.dividerColor,
                             ),
                           ),
-
                           itemBuilder: (context, index) {
                             final item = filteredItems[index];
 
@@ -320,7 +318,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
 
           GestureDetector(
             onTap: () {
-              //context.push('/create_event');
+              context.go('/map');
             },
             child: Column(
               children: [
@@ -367,9 +365,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
         children: [
           // 1. Üstteki Açıklama Metni
           Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: 40.w,
-            ), // Kenarlardan boşluk
+            padding: EdgeInsets.symmetric(horizontal: 40.w),
             child: Text(
               'Şu anda katılımcısı olduğunuz veya katılım onayı beklediğiniz bir buluşma bulunmamaktadır.',
               textAlign: TextAlign.center,
@@ -383,27 +379,21 @@ class _MyEventsPageState extends State<MyEventsPage> {
             ),
           ),
 
-          SizedBox(height: 16.h), // Metin ile ikon arası boşluk
+          SizedBox(height: 16.h),
           // 2. İkon ve Keşfet Butonu
           GestureDetector(
             onTap: () {
               // Harita veya Keşfet sayfasına yönlendir
-              context.go('/map');
+              context.go('/home');
             },
             child: Column(
               children: [
-                // Harita İkonu
                 Icon(
                   Icons.map_outlined,
                   size: 90.sp,
-                  color: AppColors.salmonPink.withOpacity(
-                    0.3,
-                  ),
+                  color: AppColors.salmonPink.withOpacity(0.3),
                 ),
-
                 SizedBox(height: 16.h),
-
-                // "Buluşmaları Keşfet" Yazısı
                 Text(
                   'Buluşmaları Keşfet',
                   style: TextStyle(
@@ -416,7 +406,6 @@ class _MyEventsPageState extends State<MyEventsPage> {
               ],
             ),
           ),
-
           SizedBox(height: 60.h),
         ],
       ),

@@ -11,10 +11,10 @@ class MapCreateButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 68.w, // Genişlik: 68px
-        height: 68.w, // Yükseklik: 68px
+        width: 68.w,
+        height: 68.w,
         decoration: BoxDecoration(
-          color: const Color(0xFFFF5C35), // Turuncu
+          color: const Color(0xFFFF5C35),
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(

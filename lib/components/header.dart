@@ -1,6 +1,7 @@
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 class Header extends StatelessWidget {
   const Header({
@@ -35,31 +36,37 @@ class Header extends StatelessWidget {
               ),
             ),
 
-            // 2. BOŞLUK
-            SizedBox(width: 33.w),
-            SizedBox(
-              width: 236.w,
-              height: 45.h,
-              child: Center(
-                child: middleWidget ?? const SizedBox(),
-              ),
+          // 2. BOŞLUK
+          SizedBox(width: 33.w),
+
+          // 3. ORTA WIDGET
+          SizedBox(
+            width: 236.w,
+            height: 45.h,
+            child: Center(
+              child: middleWidget ?? const SizedBox(),
             ),
 
             // 4. BOŞLUK
             SizedBox(width: 38.w),
 
-            // 5. BİLDİRİM İKONU
-            trailing ??
-                SizedBox(
-                  width: 24.sp,
-                  height: 24.sp,
-                  child: InkWell(
-                    onTap: () {},
-                    child: Icon(
-                      Icons.notifications_none_outlined,
-                      color: iconColor,
-                      size: 24.sp,
-                    ),
+          // 5. BİLDİRİM İKONU
+          trailing ??
+              SizedBox(
+                width: 24.sp,
+                height: 24.sp,
+                child: InkWell(
+                  onTap: () {
+                    // Bildirimler sayfasına yönlendir
+                    context.push('/notifications');
+                  },
+                  borderRadius: BorderRadius.circular(
+                    12,
+                  ), // Tıklama efekti yuvarlak
+                  child: Icon(
+                    Icons.notifications_none_outlined,
+                    color: iconColor,
+                    size: 24.sp,
                   ),
                 ),
           ],
