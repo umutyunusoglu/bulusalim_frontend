@@ -18,20 +18,23 @@ class Header extends StatelessWidget {
     const iconColor = AppColors.secondaryColor;
 
     return Container(
+      color: Colors.transparent,
       width: double.infinity,
       margin: EdgeInsets.symmetric(horizontal: 16.w),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // 1. LOGO
-          SizedBox(
-            width: 30.w,
-            height: 30.w,
-            child: Image.asset(
-              'assets/logo.png',
-              fit: BoxFit.contain,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // 1. LOGO
+            SizedBox(
+              width: 30.w,
+              height: 30.w,
+              child: Image.asset(
+                'assets/logo.png',
+                fit: BoxFit.contain,
+              ),
             ),
-          ),
 
           // 2. BOŞLUK
           SizedBox(width: 33.w),
@@ -43,10 +46,9 @@ class Header extends StatelessWidget {
             child: Center(
               child: middleWidget ?? const SizedBox(),
             ),
-          ),
 
-          // 4. BOŞLUK
-          SizedBox(width: 38.w),
+            // 4. BOŞLUK
+            SizedBox(width: 38.w),
 
           // 5. BİLDİRİM İKONU
           trailing ??
@@ -67,8 +69,8 @@ class Header extends StatelessWidget {
                     size: 24.sp,
                   ),
                 ),
-              ),
-        ],
+          ],
+        ),
       ),
     );
   }
