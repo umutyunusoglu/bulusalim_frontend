@@ -16,6 +16,7 @@ class ChatPageHeader extends StatelessWidget {
     required this.eventDate,
     required this.participantStatus,
     required this.participantAvatars,
+    this.categoryIcon = '🎉',
     super.key,
   });
 
@@ -27,6 +28,7 @@ class ChatPageHeader extends StatelessWidget {
   final DateTime eventDate;
   final String participantStatus;
   final List<dynamic> participantAvatars;
+  final String categoryIcon;
 
   // --- 1. POPUP FONKSİYONU ---
   void _showStartEventDialog(BuildContext context) {
@@ -216,7 +218,6 @@ class ChatPageHeader extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(height: 12.h),
-                // Gri Çubuk
                 Container(
                   width: 24.w,
                   height: 3.h,
@@ -226,8 +227,6 @@ class ChatPageHeader extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 25.h),
-
-                // ADRES SATIRI
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -239,7 +238,7 @@ class ChatPageHeader extends StatelessWidget {
                     SizedBox(width: 20.w),
                     Expanded(
                       child: Text(
-                        location, // Adres bilgisi buraya geliyor
+                        location,
                         style: TextStyle(
                           fontFamily: 'SF Pro Display',
                           fontSize: 14.sp,
@@ -251,14 +250,10 @@ class ChatPageHeader extends StatelessWidget {
                     ),
                   ],
                 ),
-
                 SizedBox(height: 20.h),
-
-                // HARİTADA GÖR BUTONU
                 GestureDetector(
                   onTap: () {
                     Navigator.pop(context);
-                    // TODO: Harita sayfasına yönlendirme işlemi
                   },
                   child: Row(
                     children: [
@@ -294,169 +289,164 @@ class ChatPageHeader extends StatelessWidget {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
     final isCreator = currentUserId == creatorID;
 
+    final topPadding = MediaQuery.of(context).padding.top;
+
     var participantCount = 0;
     try {
       final parts = participantStatus.split('/');
       participantCount = int.parse(parts[0].trim());
     } catch (_) {}
 
-    return Padding(
-      padding: const EdgeInsets.only(top: 24),
-      child: Container(
-        width: double.infinity,
-        color: Colors.white,
-        padding: const EdgeInsets.only(top: 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // 1. Geri Butonu
-                  InkWell(
-                    onTap: () => context.pop(),
-                    borderRadius: BorderRadius.circular(20),
-                    child: Padding(
-                      padding: EdgeInsets.all(4.w),
-                      child: Icon(
-                        Icons.keyboard_backspace,
-                        size: 24.sp,
-                        color: Colors.black87,
-                      ),
+    return Container(
+      width: double.infinity,
+      color: Colors.white,
+      padding: EdgeInsets.only(top: topPadding + 50.h),
+
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // 1. Geri Butonu
+                InkWell(
+                  onTap: () => context.pop(),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Padding(
+                    padding: EdgeInsets.zero,
+                    child: Icon(
+                      Icons.keyboard_backspace,
+                      size: 24.sp,
+                      color: Colors.black87,
                     ),
                   ),
+                ),
 
-                  SizedBox(width: 8.w),
-
-                  // 2. Avatar
-                  SizedBox(
-                    width: 50.w,
-                    height: 50.w,
-                    child: EventAvatarBadge(
-                      imageUrl: creatorProfileImage,
-                      categoryIcon: '🎉',
-                    ),
+                SizedBox(width: 10.w),
+                // 2. Avatar
+                SizedBox(
+                  width: 50.w,
+                  height: 50.w,
+                  child: EventAvatarBadge(
+                    imageUrl: creatorProfileImage,
+                    categoryIcon: categoryIcon,
                   ),
+                ),
 
-                  SizedBox(width: 12.w),
+                SizedBox(width: 12.w),
 
-                  // 3. İçerik
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Üst Satır
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                chatTitle,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontFamily: 'SF Pro Display',
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 14.sp,
-                                  color: Colors.black,
-                                  height: 1.2,
-                                ),
+                // 3. İçerik
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Üst Satır
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              chatTitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Display',
+                                fontWeight: FontWeight.w500,
+                                fontSize: 14.sp,
+                                color: Colors.black,
+                                height: 1.2,
                               ),
                             ),
+                          ),
 
-                            SizedBox(width: 12.w),
+                          SizedBox(width: 8.w),
 
-                            // Buton Grubu
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (isCreator) ...[
-                                  // PLAY BUTONU
-                                  GestureDetector(
-                                    onTap: () => _showStartEventDialog(context),
-                                    child: Container(
-                                      width: 22.w,
-                                      height: 22.w,
-                                      decoration: const BoxDecoration(
-                                        color: AppColors.primaryColor,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        Icons.play_arrow,
-                                        color: Colors.white,
-                                        size: 18.sp,
-                                      ),
+                          // Buton Grubu
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (isCreator) ...[
+                                GestureDetector(
+                                  onTap: () => _showStartEventDialog(context),
+                                  child: Container(
+                                    width: 22.w,
+                                    height: 22.w,
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.primaryColor,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.play_arrow,
+                                      color: Colors.white,
+                                      size: 18.sp,
                                     ),
                                   ),
-                                  SizedBox(width: 12.w),
-                                ],
-
-                                // AYARLAR BUTONU
-                                GestureDetector(
-                                  onTap: () {
-                                    if (isCreator) {
-                                      // Kurucu -> Ayarlar Sayfası
-                                      context.push(
-                                        '/chat/room/$eventID/settings',
-                                        extra: {
-                                          'title': chatTitle,
-                                          'avatars': participantAvatars,
-                                          'location': location,
-                                          'participants': participantStatus,
-                                          'date': eventDate,
-                                          'creatorID': creatorID,
-                                          'creatorProfileImage':
-                                              creatorProfileImage,
-                                        },
-                                      );
-                                    } else {
-                                      // Katılımcı -> Bottom Sheet
-                                      _showParticipantSettingsSheet(context);
-                                    }
-                                  },
-                                  child: Icon(
-                                    Icons.settings_outlined,
-                                    size: 24.sp,
-                                    color: Colors.black87,
-                                  ),
                                 ),
+                                SizedBox(width: 12.w),
                               ],
-                            ),
-                          ],
-                        ),
 
-                        SizedBox(height: 4.h),
+                              GestureDetector(
+                                onTap: () {
+                                  if (isCreator) {
+                                    context.push(
+                                      '/chat/room/$eventID/settings',
+                                      extra: {
+                                        'title': chatTitle,
+                                        'avatars': participantAvatars,
+                                        'location': location,
+                                        'participants': participantStatus,
+                                        'date': eventDate,
+                                        'creatorID': creatorID,
+                                        'creatorProfileImage':
+                                            creatorProfileImage,
+                                      },
+                                    );
+                                  } else {
+                                    _showParticipantSettingsSheet(context);
+                                  }
+                                },
+                                child: Icon(
+                                  Icons.settings_outlined,
+                                  size: 24.sp,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
 
-                        // INFO CHIP
-                        GestureDetector(
-                          onTap: () => _showLocationDetailSheet(context),
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            physics: const BouncingScrollPhysics(),
-                            child: ChatEventInfoChip(
-                              location: location,
-                              startTime: eventDate,
-                              participantCount: participantCount,
-                            ),
+                      SizedBox(height: 4.h),
+
+                      // INFO CHIP
+                      GestureDetector(
+                        onTap: () => _showLocationDetailSheet(context),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          child: ChatEventInfoChip(
+                            location: location,
+                            startTime: eventDate,
+                            participantCount: participantCount,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
 
-            SizedBox(height: 12.h),
+          SizedBox(height: 12.h),
 
-            Divider(
-              height: 1,
-              thickness: 1,
-              color: Colors.grey.shade100,
-            ),
-          ],
-        ),
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: Colors.grey.shade100,
+          ),
+        ],
       ),
     );
   }

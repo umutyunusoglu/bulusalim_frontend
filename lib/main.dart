@@ -84,7 +84,7 @@ Future<void> main() async {
 
     final authInstance = FirebaseAuth.instance;
 
-    const testUserId = 'demo34@test.com';
+    const testUserId = 'user13@test.com';
 
     if (testUserId == 'A') {
       if (authInstance.currentUser != null) {
