@@ -3,6 +3,8 @@ import 'package:bulusalim/application/providers/hive_providers.dart';
 import 'package:bulusalim/application/providers/repository_providers.dart';
 import 'package:bulusalim/application/providers/service_providers.dart';
 import 'package:bulusalim/application/providers/usecase_providers.dart';
+import 'package:bulusalim/data/repositories/mock_inbox_repository_impl.dart';
+import 'package:bulusalim/domain/repositories/inbox_repository.dart';
 import 'package:get_it/get_it.dart';
 
 final GetIt getIt = GetIt.instance;
@@ -14,7 +16,7 @@ Future<void> getItSetup() async {
     ..registerFirebase()
     ..registerRepositories()
     ..registerServices()
-    ..registerUsecases();
-
+    ..registerUsecases()
+    ..registerLazySingleton<InboxRepository>(() => MockInboxRepository());
   await getIt.allReady();
 }

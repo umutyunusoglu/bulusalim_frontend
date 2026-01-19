@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/components/popup_next_button.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
@@ -7,9 +6,7 @@ import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
 import 'package:bulusalim/domain/repositories/map_repository.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
 class LocationSelectionStep extends StatefulWidget {
@@ -21,6 +18,9 @@ class LocationSelectionStep extends StatefulWidget {
     this.initialDisplayAddress,
     this.onClose,
     this.onHeaderTap,
+    this.buttonText = 'ilerle',
+    this.hideCloseButton = false,
+    this.showCloseButton = true,
     super.key,
   });
 
@@ -31,6 +31,9 @@ class LocationSelectionStep extends StatefulWidget {
   final String? initialDisplayAddress;
   final VoidCallback? onClose;
   final VoidCallback? onHeaderTap;
+  final String buttonText;
+  final bool hideCloseButton;
+  final bool showCloseButton;
 
   @override
   State<LocationSelectionStep> createState() => _LocationSelectionStepState();
@@ -78,7 +81,6 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
           _searchController.text = newText;
         }
 
-        // If location is provided directly (e.g. Map Pick), we don't need to fetch by ID
         if (widget.initialLocation != null) {
           _selectedPlaceId = '';
           _places = [];
@@ -137,7 +139,7 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
 
     return Column(
       children: [
-        // 1. HEADER (Tıklanabilir - Picking Mode için)
+        // 1. HEADER
         GestureDetector(
           onTap: widget.onHeaderTap,
           behavior: HitTestBehavior.opaque,
@@ -146,7 +148,7 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
 
         SizedBox(height: 20.h),
 
-        // 2. ARAMA VE LİSTE ALANI
+        // 2. SEARCH AND LIST AREA
         SizedBox(
           height: 260.h,
           child: Column(
@@ -191,12 +193,11 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
 
               SizedBox(height: 12.h),
 
-              // B. Liste Alanı (Gri Arka Planlı)
               Expanded(
                 child: Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8F9FA), // Çok açık gri zemin
+                    color: const Color(0xFFF8F9FA),
                     borderRadius: BorderRadius.circular(16.r),
                     border: Border.all(color: Colors.grey.shade100),
                   ),
@@ -247,7 +248,6 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Konum İkonu (Yuvarlak arka planlı)
                                   Container(
                                     padding: EdgeInsets.all(6.w),
                                     decoration: BoxDecoration(
@@ -266,8 +266,6 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
                                     ),
                                   ),
                                   SizedBox(width: 10.w),
-
-                                  // Konum Metni
                                   Expanded(
                                     child: Padding(
                                       padding: EdgeInsets.only(
@@ -305,12 +303,12 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
 
         const Spacer(),
 
+        // NEXT BUTTON
         PopupNextButton(
-          text: 'ilerle',
+          text: widget.buttonText,
           onPressed: (_selectedAddress == null || _selectedAddress!.isEmpty)
               ? null
               : () async {
-                  // 1. If we don't have a location but have a placeId (from search), fetch it.
                   if (_selectedLocation == null &&
                       _selectedPlaceId.isNotEmpty) {
                     try {
@@ -321,21 +319,20 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
                       );
                       _sessionToken = const Uuid().v4();
                     } catch (e) {
-                      // Handle error silently or show snackbar
+                      // Hata yönetimi
                     } finally {
                       if (mounted) setState(() => _isLoading = false);
                     }
                   }
 
-                  // 2. Validate and Proceed
                   if (_selectedLocation != null && _selectedAddress != null) {
                     final display =
                         _selectedDisplayAddress ?? _selectedAddress!;
 
-                    final logger = getIt<LoggingService>();
-                    logger.debug(
-                      'Seçilen konum: $_selectedAddress, Lokasyon: $_selectedLocation',
-                    );
+                    final logger = getIt<LoggingService>()
+                      ..debug(
+                        'Seçilen konum: $_selectedAddress, Lokasyon: $_selectedLocation',
+                      );
                     widget.onNext(
                       _selectedAddress!,
                       display,
@@ -364,7 +361,11 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
                 color: Colors.transparent,
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.undo, size: 22.sp, color: AppColors.iconColor),
+              child: Icon(
+                Icons.keyboard_backspace,
+                size: 24.sp,
+                color: AppColors.iconColor,
+              ),
             ),
           ),
         ),
@@ -387,16 +388,22 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
             ),
           ],
         ),
-        Align(
-          alignment: Alignment.centerRight,
-          child: GestureDetector(
-            onTap: widget.onClose ?? () {},
-            child: Container(
-              padding: EdgeInsets.all(8.w),
-              child: Icon(Icons.close, size: 22.sp, color: AppColors.iconColor),
+
+        if (!widget.hideCloseButton && widget.showCloseButton)
+          Align(
+            alignment: Alignment.centerRight,
+            child: GestureDetector(
+              onTap: widget.onClose ?? () {},
+              child: Container(
+                padding: EdgeInsets.all(8.w),
+                child: Icon(
+                  Icons.close,
+                  size: 22.sp,
+                  color: AppColors.iconColor,
+                ),
+              ),
             ),
           ),
-        ),
       ],
     );
   }
