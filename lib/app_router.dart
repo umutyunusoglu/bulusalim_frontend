@@ -10,6 +10,8 @@ import 'package:bulusalim/screens/chat/my_events_page.dart';
 import 'package:bulusalim/screens/home/home_page.dart';
 import 'package:bulusalim/screens/login/login_screen.dart';
 import 'package:bulusalim/screens/map/map_page.dart';
+import 'package:bulusalim/screens/notification/follow_request.dart';
+import 'package:bulusalim/screens/notification/notification_page.dart';
 import 'package:bulusalim/screens/profile/profile_page.dart';
 import 'package:bulusalim/screens/register_screen.dart';
 import 'package:bulusalim/screens/search/search_page.dart';
@@ -102,6 +104,19 @@ final router = GoRouter(
     ),
 
     // 2. NAVBARSIZ SAYFALAR (FULL SCREEN / ROOT ROUTES)
+
+    // --- BİLDİRİMLER SAYFASI  ---
+    GoRoute(
+      path: '/notifications',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const NotificationPage(),
+    ),
+    GoRoute(
+      path: '/follow-requests',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const FollowRequestsPage(),
+    ),
+
     GoRoute(
       path: '/pick-location-map',
       parentNavigatorKey: _rootNavigatorKey,
