@@ -3,8 +3,9 @@ analyzer:
   errors:
     avoid_positional_boolean_parameters: ignore
     camel_case_types: ignore
+    deprecated_member_use: ignore
     flutter_style_todos: ignore
-    lines_longer_than_80_chars: ignore ignore
+    lines_longer_than_80_chars: ignore
     one_member_abstracts: ignore
     public_member_api_docs: ignore
     unnecessary_lambdas: ignore

@@ -6,6 +6,7 @@ import 'package:bulusalim/data/models/user/user_event_model.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/user_event_entity.dart';
 import 'package:bulusalim/domain/repositories/event_repository.dart';
+import 'package:bulusalim/domain/repositories/user_repository.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/screens/chat/event_chat_card.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -42,72 +43,29 @@ class _MyEventsPageState extends State<MyEventsPage> {
   @override
   void initState() {
     super.initState();
+
     initializeDateFormatting('tr_TR');
 
     final sessionService = getIt<SessionService>();
-    final logger = getIt<LoggingService>();
     currentUserId = sessionService.currentUser!.userID;
-
-    // 1. Temel Sorgu (User Events)
-    final query = FirebaseFirestore.instance
-        .collection('users')
-        .doc(currentUserId)
-        .collection('eventLog')
-        .where('status', whereIn: ['upcoming', 'ongoing', 'pending']);
-
-    // 2. Stream Dönüşümü ve Zenginleştirme
-    _enrichedEventsStream = query.snapshots().asyncMap((snapshot) async {
-      if (snapshot.docs.isEmpty) return [];
-
-      // A) UserEventEntity Listesi
-      final userEvents = snapshot.docs
-          .map((doc) {
-            try {
-              return UserEventModel.fromFirestore(doc.data()).toEntity();
-            } catch (e) {
-              logger.debug('Model Parse Hatası: $e');
-              return null;
-            }
-          })
-          .whereType<UserEventEntity>()
-          .toList();
-
-      if (userEvents.isEmpty) return [];
-
-      // B) Detaylı Event Verilerini Çek
-      return await _fetchEnrichedEvents(userEvents);
-    });
-  }
-
-  Future<List<MyEventItemData>> _fetchEnrichedEvents(
-    List<UserEventEntity> userEvents,
-  ) async {
     final eventRepository = getIt<EventRepository>();
 
-    try {
-      final events = await eventRepository.getEventsByIds(
-        userEvents.map((e) => e.eventId).toList(),
-      );
+    _enrichedEventsStream = eventRepository
+        .getEnrichedEventsOfUserStream(currentUserId)
+        .asyncMap((events) async {
+          return await Future.wait(
+            events.map((event) async {
+              final pendingCount = event.requestPool.length;
+              final unreadCount = 0;
 
-      final enrichedList = await Future.wait(
-        events.map((event) async {
-          // TODO: Backend hazır olunca buradaki count sorgularını aç
-          const pendingCount = 0;
-          const unreadCount = 0;
-
-          return MyEventItemData(
-            event: event,
-            pendingRequestCount: pendingCount,
-            unreadChatCount: unreadCount,
+              return MyEventItemData(
+                event: event,
+                pendingRequestCount: pendingCount,
+                unreadChatCount: unreadCount,
+              );
+            }),
           );
-        }),
-      );
-
-      return enrichedList;
-    } catch (e) {
-      debugPrint('Zenginleştirme Hatası: $e');
-      return [];
-    }
+        });
   }
 
   @override
@@ -146,7 +104,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
                   padding: EdgeInsets.only(
                     left: 24.w,
                     right: 24.w,
-                    top: 65.h,
+                    top: 24.h,
                     bottom: 13.h,
                   ),
                   child: Row(
@@ -202,6 +160,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
                               isCreator: _selectedTabIndex == 0,
                               pendingRequestCount: item.pendingRequestCount,
                               chatNotificationCount: item.unreadChatCount,
+
                               onTapChat: () {
                                 context.push(
                                   '/chat/room/${item.event.eventID}',
