@@ -301,12 +301,11 @@ class ChatPageHeader extends StatelessWidget {
     } catch (_) {}
 
     return Padding(
-      padding: const EdgeInsets.only(top: 60),
+      padding: const EdgeInsets.only(top: 24),
       child: Container(
         width: double.infinity,
         color: Colors.white,
-        padding: const EdgeInsets.only(top: 60),
-
+        padding: const EdgeInsets.only(top: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
