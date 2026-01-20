@@ -257,7 +257,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
       body: Padding(
-        padding: const EdgeInsets.only(top: 24),
+        padding: const EdgeInsets.only(top: 100),
         child: Column(
           children: [
             // HEADER
