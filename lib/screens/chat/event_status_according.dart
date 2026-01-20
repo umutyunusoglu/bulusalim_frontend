@@ -238,7 +238,7 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
                   height: 20.w,
                   alignment: Alignment.center,
                   decoration: const BoxDecoration(
-                    color: AppColors.salmonPink, // Turuncu/Pembe renk
+                    color: AppColors.primaryColor, // Turuncu/Pembe renk
                     shape: BoxShape.circle,
                   ),
                   child: Text(
@@ -396,14 +396,14 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
               width: 24.w,
               height: 24.w,
               decoration: BoxDecoration(
-                color: AppColors.salmonPink.withOpacity(0.2), // Açık pembe
+                color: AppColors.primaryColor.withOpacity(0.3), // Açık pembe
                 shape: BoxShape.circle,
               ),
               // Icon olarak 'remove' (tire) kullanıyoruz
               child: Icon(
                 Icons.remove,
                 size: 14.sp,
-                color: AppColors.salmonPink,
+                color: AppColors.primaryColor,
               ),
             ),
           ),
