@@ -1,5 +1,9 @@
+import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
+import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
+import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
+import 'package:bulusalim/domain/repositories/event_repository.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -37,12 +41,12 @@ class ParticipantItem {
 
 class EventStatusAccordion extends StatefulWidget {
   const EventStatusAccordion({
-    required this.eventId,
+    required this.event,
     required this.pendingCount,
     super.key,
   });
 
-  final String eventId;
+  final EventEntity event;
   final int pendingCount;
 
   @override
@@ -56,6 +60,7 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
 
   List<ParticipantItem> _pendingUsers = [];
   List<ParticipantItem> _approvedUsers = [];
+  final EventRepository _eventRepository = getIt<EventRepository>();
 
   // --- VERİ ÇEKME ---
   Future<void> _fetchParticipants() async {
@@ -64,65 +69,45 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
 
     setState(() => _isLoading = true);
 
+    final loadedParticipants = <ParticipantItem>[];
+
+    for (final participant in widget.event.participants) {
+      try {
+        final ParticipantItem userItem = ParticipantItem(
+          userId: participant.userID,
+          username: participant.username,
+          imageUrl: participant.profileImageUrl,
+          status: 'approved',
+        );
+        loadedParticipants.add(userItem);
+      } catch (e) {
+        debugPrint('User fetch error: $e');
+      }
+    }
+
+    final pendingParticipants = <ParticipantItem>[];
+
+    for (final request in widget.event.requestPool) {
+      try {
+        final ParticipantItem userItem = ParticipantItem(
+          userId: request.userID,
+          username: request.username,
+          imageUrl: request.profileImageUrl,
+          status: 'pending',
+        );
+        pendingParticipants.add(userItem);
+      } catch (e) {
+        debugPrint('Pending user fetch error: $e');
+      }
+    }
+
+    if (!mounted) return;
+
     try {
-      final requestSnapshot = await FirebaseFirestore.instance
-          .collection('events')
-          .doc(widget.eventId)
-          .collection('participants')
-          .get();
-
-      final loadedParticipants = await Future.wait(
-        requestSnapshot.docs.map((doc) async {
-          final data = doc.data();
-          final userId = doc.id;
-          final status = (data['status'] as String?) ?? 'pending';
-
-          DateTime? requestDate;
-          if (data['createdAt'] is Timestamp) {
-            requestDate = (data['createdAt'] as Timestamp).toDate();
-          }
-
-          String username = 'İsimsiz';
-          String userImage = '';
-
-          try {
-            final userDoc = await FirebaseFirestore.instance
-                .collection('users')
-                .doc(userId)
-                .get();
-
-            if (userDoc.exists) {
-              final userData = userDoc.data() ?? {};
-              username =
-                  (userData['username'] as String?) ??
-                  (userData['name'] as String?) ??
-                  'İsimsiz';
-              userImage = (userData['profileImageUrl'] as String?) ?? '';
-            }
-          } catch (e) {
-            debugPrint('User fetch error: $e');
-          }
-
-          return ParticipantItem(
-            userId: userId,
-            username: username,
-            imageUrl: userImage,
-            status: status,
-            requestTime: requestDate,
-          );
-        }),
-      );
-
-      if (!mounted) return;
-
       setState(() {
-        _pendingUsers = loadedParticipants
-            .where((u) => u.status == 'pending')
-            .toList();
+        _pendingUsers = pendingParticipants.toList();
 
-        _approvedUsers = loadedParticipants
-            .where((u) => u.status == 'approved' || u.status == 'joined')
-            .toList();
+        _approvedUsers = loadedParticipants.toList();
 
         _dataLoaded = true;
         _isLoading = false;
@@ -155,14 +140,24 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
         );
       }
     });
+    final compactUser = CompactUserEntity(
+      userID: user.userId,
+      username: user.username,
+      profileImageUrl: user.imageUrl,
+    );
 
     try {
-      await FirebaseFirestore.instance
-          .collection('events')
-          .doc(widget.eventId)
-          .collection('participants')
-          .doc(userId)
-          .update({'status': isAccepted ? 'approved' : 'rejected'});
+      if (isAccepted) {
+        await _eventRepository.acceptParticipant(
+          widget.event.eventID,
+          compactUser,
+        );
+      } else {
+        await _eventRepository.rejectRequest(
+          widget.event.eventID,
+          compactUser,
+        );
+      }
     } catch (e) {
       debugPrint('Update error: $e');
     }
@@ -170,17 +165,30 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
 
   // Onaylı kullanıcıyı kaldırma (Opsiyonel)
   Future<void> _removeParticipant(String userId) async {
+    final user = _approvedUsers.firstWhere(
+      (u) => u.userId == userId,
+      orElse: () => ParticipantItem(
+        userId: '',
+        username: '',
+        imageUrl: '',
+        status: '',
+      ),
+    );
     setState(() {
       _approvedUsers.removeWhere((u) => u.userId == userId);
     });
+
     try {
-      // Veritabanından sil veya status güncelle
-      await FirebaseFirestore.instance
-          .collection('events')
-          .doc(widget.eventId)
-          .collection('participants')
-          .doc(userId)
-          .delete(); // Veya update status: removed
+      final compactUser = CompactUserEntity(
+        userID: user.userId,
+        username: user.username,
+        profileImageUrl: user.imageUrl,
+      );
+
+      await _eventRepository.removeParticipant(
+        widget.event.eventID,
+        compactUser,
+      );
     } catch (e) {
       debugPrint("Remove error: $e");
     }

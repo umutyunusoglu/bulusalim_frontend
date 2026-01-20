@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:802871659996:android:efc9c632ef59e1f9c11319",
+        "mobilesdk_app_id": "1:802871659996:android:34c66160e6cebb96c11319",
         "android_client_info": {
-          "package_name": "com.example.bulusalim"
+          "package_name": "app.outnest"
         }
       },
       "oauth_client": [
