@@ -84,7 +84,7 @@ Future<void> main() async {
 
     final authInstance = FirebaseAuth.instance;
 
-    const testUserId = 'user13@test.com';
+    const testUserId = 'user1@test.com';
 
     if (testUserId == 'A') {
       if (authInstance.currentUser != null) {
@@ -110,8 +110,6 @@ Future<void> main() async {
   final feedRepository = getIt<FeedRepository>();
   await feedRepository.warmup();
 
-  final r = await http.get(Uri.parse('https://google.com'));
-  print(r.statusCode);
   runApp(const ProviderScope(child: MainApp()));
 }
 

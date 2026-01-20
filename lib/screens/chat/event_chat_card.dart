@@ -131,7 +131,7 @@ class EventChatCard extends StatelessWidget {
               // --- 4. ACCORDION (Sadece Kurucuysa ve Bekleyen İstek Varsa) ---
               if (isCreator)
                 EventStatusAccordion(
-                  eventId: event.eventID,
+                  event: event,
                   pendingCount: pendingRequestCount,
                 ),
             ],

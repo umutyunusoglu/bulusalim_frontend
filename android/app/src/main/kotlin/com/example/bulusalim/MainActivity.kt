@@ -1,4 +1,4 @@
-package com.example.bulusalim
+package app.outnest
 
 import io.flutter.embedding.android.FlutterActivity
 
