@@ -1,19 +1,19 @@
 enum NotificationType {
   join, // Katıldı
-  invite, // Davet
-  cancel, // İptal
-  updateTime, // Zaman Güncellemesi
-  updateLocation, // Konum Güncellemesi
-  warning, // Şikayet/Uyarı
-  tag, // Etiketleme
-  badgeWin, // Rozet Kazanımı
-  badgeProgress, // Rozet İlerlemesi
-  participants, // Yeni Katılımcılar
-  left, // Ayrılanlar
-  timeEnding, // Süre Dolmak Üzere
+  invite, // Davet +
+  cancel, // İptal +
+  updateTime, // Zaman Güncellemesi +
+  updateLocation, // Konum Güncellemesi +
+  warning, // Şikayet/Uyarı +
+  tag, // Etiketleme +
+  badgeWin, // Rozet Kazanımı ?
+  badgeProgress, // Rozet İlerlemesi ?
+  participants, // Yeni Katılımcılar +
+  left, // Ayrılanlar +
+  timeEnding, // Süre Dolmak Üzere + -> düşün
   created, // Oluşturdu
-  startingSoon, // Başlamasına Az Kaldı
-  earlyStart, // Erken Başlatıldı
+  startingSoon, // Başlamasına Az Kaldı + -> düşün
+  earlyStart, // Erken Başlatıldı +
 }
 
 class NotificationEntity {
