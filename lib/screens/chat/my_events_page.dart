@@ -273,7 +273,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
                 child: Container(
                   padding: EdgeInsets.all(4.w),
                   decoration: BoxDecoration(
-                    color: AppColors.salmonPink,
+                    color: AppColors.primaryColor,
                     shape: BoxShape.circle,
                     border: Border.all(color: AppColors.lightCloud, width: 1.5),
                   ),
