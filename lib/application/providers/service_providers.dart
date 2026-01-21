@@ -4,6 +4,7 @@ import 'package:bulusalim/data/repositories/global_content_cache_impl.dart';
 import 'package:bulusalim/data/services/auth_service_impl.dart';
 import 'package:bulusalim/data/services/file_service_impl.dart';
 import 'package:bulusalim/data/services/persistance_service_impl.dart';
+import 'package:bulusalim/data/services/push_notifications_service_impl.dart';
 import 'package:bulusalim/data/services/remote_config_service_impl.dart';
 import 'package:bulusalim/data/services/security_service_impl.dart';
 import 'package:bulusalim/data/services/session_service_impl.dart';
@@ -11,6 +12,7 @@ import 'package:bulusalim/domain/services/auth_service.dart';
 import 'package:bulusalim/domain/services/file_service.dart';
 import 'package:bulusalim/domain/services/global_content_cache.dart';
 import 'package:bulusalim/domain/services/persistance_service.dart';
+import 'package:bulusalim/domain/services/push_notifications_service.dart';
 import 'package:bulusalim/domain/services/remote_config_service.dart';
 import 'package:bulusalim/domain/services/security_service.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
@@ -66,6 +68,12 @@ extension ServiceModule on GetIt {
           firestore: this(),
           logger: this(),
           functions: this(),
+        ),
+      )
+      ..registerLazySingleton<PushNotificationsService>(
+        () => PushNotificationsServiceImpl(
+          firebaseMessaging: this(),
+          logger: this(),
         ),
       );
   }
