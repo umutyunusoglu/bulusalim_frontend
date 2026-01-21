@@ -101,4 +101,14 @@ abstract class UserRepository {
   // === Query & Search ===
   Future<List<UserEntity>> searchUsersByName(String name);
   Future<List<UserEntity>> getUsersByOrg(String org);
+
+  // FMC Token Management
+  Future<void> updateFcmToken(
+    Identifier userID,
+    String fcmToken,
+  );
+  Future<void> removeFcmToken(
+    Identifier userID,
+    String fcmToken,
+  );
 }

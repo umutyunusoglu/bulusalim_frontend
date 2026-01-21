@@ -174,7 +174,7 @@ class MockInboxRepository implements InboxRepository {
     final requests = <FollowNotificationEntity>[
       // --- BUGÜN ---
       FollowNotificationEntity(
-        id: '1',
+        userID: '1',
         username: 'yarkin.yoruk',
         profileUrl: userImage,
         message: 'seni takip etmeye başladı.',
@@ -182,7 +182,7 @@ class MockInboxRepository implements InboxRepository {
         createdAt: now.subtract(const Duration(minutes: 16)),
       ),
       FollowNotificationEntity(
-        id: '2',
+        userID: '2',
         username: 'yarkin.yoruk',
         profileUrl: userImage,
         message: 'seni takip etmeye başladı.',
@@ -190,7 +190,7 @@ class MockInboxRepository implements InboxRepository {
         createdAt: now.subtract(const Duration(minutes: 16)),
       ),
       FollowNotificationEntity(
-        id: '3',
+        userID: '3',
         username: 'yarkin.yoruk',
         profileUrl: userImage,
         message: 'seni takip etmeye başladı.',
@@ -198,7 +198,7 @@ class MockInboxRepository implements InboxRepository {
         createdAt: now.subtract(const Duration(minutes: 16)),
       ),
       FollowNotificationEntity(
-        id: '4',
+        userID: '4',
         username: 'yarkin.yoruk',
         profileUrl: userImage,
         message: 'seni takip etmek istiyor.',
@@ -208,7 +208,7 @@ class MockInboxRepository implements InboxRepository {
 
       // --- SON 7 GÜN ---
       FollowNotificationEntity(
-        id: '5',
+        userID: '5',
         username: 'yarkin.yoruk',
         profileUrl: userImage,
         message: 'seni takip etmeye başladı.',
@@ -216,7 +216,7 @@ class MockInboxRepository implements InboxRepository {
         createdAt: now.subtract(const Duration(days: 1)),
       ),
       FollowNotificationEntity(
-        id: '6',
+        userID: '6',
         username: 'yarkin.yoruk',
         profileUrl: userImage,
         message: 'seni takip etmeye başladı.',
@@ -224,7 +224,7 @@ class MockInboxRepository implements InboxRepository {
         createdAt: now.subtract(const Duration(days: 2)),
       ),
       FollowNotificationEntity(
-        id: '7',
+        userID: '7',
         username: 'yarkin.yoruk',
         profileUrl: userImage,
         message: 'seni takip etmeye başladı.',
@@ -232,7 +232,7 @@ class MockInboxRepository implements InboxRepository {
         createdAt: now.subtract(const Duration(days: 3)),
       ),
       FollowNotificationEntity(
-        id: '8',
+        userID: '8',
         username: 'yarkin.yoruk',
         profileUrl: userImage,
         message: 'seni takip etmek istiyor.',
