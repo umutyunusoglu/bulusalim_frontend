@@ -621,4 +621,24 @@ class UserRepositoryImpl implements UserRepository {
           return events;
         });
   }
+
+  @override
+  Future<void> updateFcmToken(
+    Identifier userID,
+    String fcmToken,
+  ) async {
+    await _firestore.collection('users').doc(userID).update({
+      'fcmTokens': FieldValue.arrayUnion([fcmToken]),
+    });
+  }
+
+  @override
+  Future<void> removeFcmToken(
+    Identifier userID,
+    String fcmToken,
+  ) async {
+    await _firestore.collection('users').doc(userID).update({
+      'fcmTokens': FieldValue.arrayRemove([fcmToken]),
+    });
+  }
 }

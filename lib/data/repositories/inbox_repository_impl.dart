@@ -167,7 +167,7 @@ class InboxRepositoryImpl implements InboxRepository {
     }
 
     return FollowNotificationEntity(
-      id: id,
+      userID: id,
       username: (data['username'] as String?) ?? 'Kullanıcı',
       profileUrl:
           (data['profileUrl'] as String?) ?? 'https://picsum.photos/200',
