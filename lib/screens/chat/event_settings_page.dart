@@ -61,30 +61,24 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
   // Veritabanından güncel verileri çeken metod
   Future<void> _fetchCurrentEventData() async {
     try {
-      final doc = await FirebaseFirestore.instance
-          .collection('events')
-          .doc(widget.eventID)
-          .get();
+      final data = await eventRepository.getEvent(widget.eventID);
 
-      if (doc.exists && mounted) {
-        final data = doc.data();
-        if (data != null) {
-          setState(() {
-            // Tarih Güncelleme
-            if (data['startTime'] != null) {
-              _currentDate = (data['startTime'] as Timestamp).toDate();
-            }
+      if (data != null && mounted) {
+        setState(() {
+          // Tarih Güncelleme
+          if (data.startTime != null) {
+            _currentDate = data.startTime;
+          }
 
-            // 3. KATEGORİ İKONU GÜNCELLEME
-            if (data.containsKey('hobbies')) {
-              final hobbies = data['hobbies'] as List<dynamic>?;
-              if (hobbies != null && hobbies.isNotEmpty) {
-                final category = hobbies.first.toString();
-                _categoryIcon = AppConfig.categories[category] ?? '🎉';
-              }
+          // 3. KATEGORİ İKONU GÜNCELLEME
+          if (data.hobbies != null && data.hobbies!.isNotEmpty) {
+            final hobbies = data.hobbies;
+            if (hobbies != null && hobbies.isNotEmpty) {
+              final category = hobbies.first;
+              _categoryIcon = AppConfig.categories[category] ?? '🎉';
             }
-          });
-        }
+          }
+        });
       }
     } catch (e) {
       _logger.error('Veri çekme hatası: $e');
@@ -117,6 +111,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     );
 
     if (result != null) {
+      _logger.debug("Yeni konum seçildi: $result");
       final newDisplayAddress = result['displayAddress'] as String;
       final newAddress = result['address'] as String;
       final newLocation = result['location'];
