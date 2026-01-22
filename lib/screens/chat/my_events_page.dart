@@ -48,7 +48,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
     _enrichedEventsStream = eventRepository
         .getEnrichedEventsOfUserStream(currentUserId)
         .asyncMap((events) async {
-          return await Future.wait(
+          return Future.wait(
             events.map((event) async {
               final pendingCount = event.requestPool.length;
               final unreadCount = 0;
@@ -172,6 +172,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
                                     'creatorProfileImage':
                                         item.event.creator.profileImageUrl,
                                     'avatars': item.event.participants,
+                                    'event': item.event,
                                   },
                                 );
                               },

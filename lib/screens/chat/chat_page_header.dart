@@ -1,4 +1,9 @@
+import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:bulusalim/core/utils/logging/logging_service.dart';
+import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
+import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
+import 'package:bulusalim/domain/usecases/force_start_event_usecase.dart';
 import 'package:bulusalim/screens/chat/chat_event_info_chip.dart';
 import 'package:bulusalim/screens/chat/event_avatar_badge.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -9,6 +14,7 @@ import 'package:go_router/go_router.dart';
 class ChatPageHeader extends StatelessWidget {
   const ChatPageHeader({
     required this.eventID,
+    required this.event,
     required this.creatorID,
     required this.chatTitle,
     required this.creatorProfileImage,
@@ -21,6 +27,7 @@ class ChatPageHeader extends StatelessWidget {
   });
 
   final String eventID;
+  final EventEntity event;
   final String creatorID;
   final String chatTitle;
   final String creatorProfileImage;
@@ -94,32 +101,29 @@ class ChatPageHeader extends StatelessWidget {
                   ),
                   SizedBox(width: 12.w),
                   Expanded(
-                    child: GestureDetector(
-                      onTap: () {
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final forceStartEvent = getIt<ForceStartEvent>();
+
+                        forceStartEvent(event);
                         context.pop();
                       },
-                      child: Container(
-                        height: 44.h,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryColor,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                        shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30.r),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primaryColor.withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
                         ),
-                        child: Text(
-                          'başlat',
-                          style: TextStyle(
-                            fontFamily: 'SF Pro Display',
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white,
-                          ),
+                        elevation: 8,
+                        shadowColor: AppColors.primaryColor.withOpacity(0.3),
+                        minimumSize: Size.fromHeight(44.h),
+                      ),
+                      child: Text(
+                        'başlat',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Display',
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -288,6 +292,8 @@ class ChatPageHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
     final isCreator = currentUserId == creatorID;
+    final LoggingService logger = getIt<LoggingService>();
+    logger.debug('Building ChatPageHeader for eventID: $eventID');
 
     final topPadding = MediaQuery.of(context).padding.top;
 
@@ -366,7 +372,8 @@ class ChatPageHeader extends StatelessWidget {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              if (isCreator) ...[
+                              if (isCreator &&
+                                  event.status != EventStatusEnum.ongoing) ...[
                                 GestureDetector(
                                   onTap: () => _showStartEventDialog(context),
                                   child: Container(

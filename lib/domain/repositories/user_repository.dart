@@ -137,4 +137,10 @@ abstract class UserRepository {
     Identifier userID,
     String fcmToken,
   );
+
+  Future<void> updateUserEventLogStatus(
+    Identifier userID,
+    String eventID,
+    String status,
+  );
 }
