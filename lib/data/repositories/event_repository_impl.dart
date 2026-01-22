@@ -198,7 +198,7 @@ class EventRepositoryImpl implements EventRepository {
         .collection('users')
         .doc(userId)
         .collection('eventLog')
-        .where('status', whereIn: ['upcoming', 'ongoing', 'pending'])
+        .where('status', whereIn: ['upcoming', 'ongoing'])
         .snapshots()
         .asyncMap((snapshot) async {
           if (snapshot.docs.isEmpty) return [];

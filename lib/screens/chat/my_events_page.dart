@@ -1,15 +1,10 @@
 import 'dart:async';
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
-import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/data/models/user/user_event_model.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
-import 'package:bulusalim/domain/entities/user/user_event_entity.dart';
 import 'package:bulusalim/domain/repositories/event_repository.dart';
-import 'package:bulusalim/domain/repositories/user_repository.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/screens/chat/event_chat_card.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -53,7 +48,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
     _enrichedEventsStream = eventRepository
         .getEnrichedEventsOfUserStream(currentUserId)
         .asyncMap((events) async {
-          return await Future.wait(
+          return Future.wait(
             events.map((event) async {
               final pendingCount = event.requestPool.length;
               final unreadCount = 0;
@@ -177,6 +172,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
                                     'creatorProfileImage':
                                         item.event.creator.profileImageUrl,
                                     'avatars': item.event.participants,
+                                    'event': item.event,
                                   },
                                 );
                               },
