@@ -14,8 +14,10 @@ import 'package:bulusalim/screens/profile/events_tab.dart';
 import 'package:bulusalim/screens/profile/grid_tab.dart';
 import 'package:bulusalim/screens/profile/profile_photo.dart';
 import 'package:bulusalim/screens/profile/profile_tab_bar.dart';
+import 'package:bulusalim/screens/settings/settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({required this.profileUserID, super.key});
@@ -256,10 +258,15 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                         ),
-                        Icon(
-                          Icons.settings_outlined,
-                          color: AppColors.darkBackgroundColor,
-                          size: 24.sp,
+                        GestureDetector(
+                          onTap: () {
+                            context.push('/settings');
+                          },
+                          child: Icon(
+                            Icons.settings_outlined,
+                            color: AppColors.darkBackgroundColor,
+                            size: 24.sp,
+                          ),
                         ),
                       ],
                     ),

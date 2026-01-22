@@ -1,5 +1,5 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/components/stacked_avatars.dart'; // AvatarInfo için
+import 'package:bulusalim/components/stacked_avatars.dart';
 import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/scaffold_with_navbar.dart';
@@ -15,6 +15,8 @@ import 'package:bulusalim/screens/notification/notification_page.dart';
 import 'package:bulusalim/screens/profile/profile_page.dart';
 import 'package:bulusalim/screens/register_screen.dart';
 import 'package:bulusalim/screens/search/search_page.dart';
+import 'package:bulusalim/screens/settings/edit_profile_page.dart';
+import 'package:bulusalim/screens/settings/settings.dart';
 import 'package:bulusalim/screens/sign_in_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -105,6 +107,21 @@ final router = GoRouter(
 
     // 2. NAVBARSIZ SAYFALAR (FULL SCREEN / ROOT ROUTES)
 
+    // --- AYARLAR VE PROFİL DÜZENLEME  ---
+    GoRoute(
+      path: '/settings',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const SettingsPage(),
+      routes: [
+        // settings/edit-profile olarak erişilir
+        GoRoute(
+          path: 'edit-profile',
+          parentNavigatorKey: _rootNavigatorKey,
+          builder: (context, state) => const EditProfilePage(),
+        ),
+      ],
+    ),
+
     // --- BİLDİRİMLER SAYFASI  ---
     GoRoute(
       path: '/notifications',
@@ -174,9 +191,7 @@ final router = GoRouter(
               participantAvatars: safeAvatars,
               location: (extra?['location'] as String?) ?? '',
               participantStatus: (extra?['participants'] as String?) ?? '',
-              remainingTime:
-                  (extra?['remainingTime'] as String?) ??
-                  '', // Hata almamak için null check
+              remainingTime: (extra?['remainingTime'] as String?) ?? '',
               creatorID: (extra?['creatorID'] as String?) ?? '',
             );
           },
