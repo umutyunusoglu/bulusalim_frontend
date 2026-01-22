@@ -16,7 +16,6 @@ Future<void> getItSetup() async {
     ..registerFirebase()
     ..registerRepositories()
     ..registerServices()
-    ..registerUsecases()
-    ..registerLazySingleton<InboxRepository>(() => MockInboxRepository());
+    ..registerUsecases();
   await getIt.allReady();
 }
