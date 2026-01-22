@@ -15,7 +15,6 @@ class MockInboxRepository implements InboxRepository {
     final mockNotifications = <NotificationEntity>[
       // --- BUGÜN ---
       NotificationEntity(
-        id: '1',
         type: NotificationType.join,
         title: 'Bizimle beraber tracking yapmak ister misiniz???',
         message: 'buluşmasına katıldı.',
@@ -23,7 +22,6 @@ class MockInboxRepository implements InboxRepository {
         createdAt: now.subtract(const Duration(minutes: 46)),
       ),
       NotificationEntity(
-        id: '2',
         type: NotificationType.invite,
         title: 'yarkin.yoruk',
         message: 'seni Sinema Gecesi buluşmasına çağırıyor.',
@@ -32,7 +30,6 @@ class MockInboxRepository implements InboxRepository {
         createdAt: now.subtract(const Duration(hours: 1)),
       ),
       NotificationEntity(
-        id: '3',
         type: NotificationType.cancel,
         title: 'Katıldığın Sinema Gecesi',
         message: 'buluşması iptal edildi.',
@@ -43,7 +40,6 @@ class MockInboxRepository implements InboxRepository {
 
       // --- SON 7 GÜN ---
       NotificationEntity(
-        id: '4',
         type: NotificationType.updateTime,
         title: 'Katıldığın Sinema Gecesi',
         message: 'buluşmasının zamanı 25 Aralık 20.00 olarak güncellendi.',
@@ -51,7 +47,6 @@ class MockInboxRepository implements InboxRepository {
         createdAt: now.subtract(const Duration(hours: 24)),
       ),
       NotificationEntity(
-        id: '5',
         type: NotificationType.updateLocation,
         title: 'Katıldığın Sinema Gecesi',
         message: 'buluşmasının konumu Kült Kavaklıdere olarak güncellendi.',
@@ -59,7 +54,6 @@ class MockInboxRepository implements InboxRepository {
         createdAt: now.subtract(const Duration(hours: 25)),
       ),
       NotificationEntity(
-        id: '6',
         type: NotificationType.updateLocation,
         title: 'Katıldığın Sinema Gecesi',
         message: 'buluşmasının konumu Kült Kavaklıdere olarak güncellendi.',
@@ -69,7 +63,6 @@ class MockInboxRepository implements InboxRepository {
         ), // Tekrar eden bildirim örneği
       ),
       NotificationEntity(
-        id: '7',
         type: NotificationType.warning,
         title: '',
         message: 'Gönderdiğin şikayet alındı ve süreç ile ilgileniyoruz.',
@@ -77,7 +70,6 @@ class MockInboxRepository implements InboxRepository {
         createdAt: now.subtract(const Duration(hours: 27)),
       ),
       NotificationEntity(
-        id: '8',
         type: NotificationType.tag,
         title: 'yarkin.yoruk',
         message: 'seni katıldığın Sinema Gecesi gönderisine etiketledi.',
@@ -85,7 +77,6 @@ class MockInboxRepository implements InboxRepository {
         createdAt: now.subtract(const Duration(days: 1)),
       ),
       NotificationEntity(
-        id: '9',
         type: NotificationType.badgeProgress,
         title: 'ABC rozetini kazanmak',
         message: 'sadece 2 🏃 koşu uzağında hemen buluşma oluştur ya da katıl.',
@@ -93,7 +84,6 @@ class MockInboxRepository implements InboxRepository {
         createdAt: now.subtract(const Duration(days: 1, hours: 2)),
       ),
       NotificationEntity(
-        id: '10',
         type: NotificationType.badgeWin,
         title: 'ABC rozetini kazandın!',
         message: 'Başarını görüntüle.',
@@ -101,7 +91,6 @@ class MockInboxRepository implements InboxRepository {
         createdAt: now.subtract(const Duration(days: 1, hours: 3)),
       ),
       NotificationEntity(
-        id: '11',
         type: NotificationType.participants,
         title: 'Katıldığın Sinema Gecesi',
         message:
@@ -110,7 +99,6 @@ class MockInboxRepository implements InboxRepository {
         createdAt: now.subtract(const Duration(days: 2)),
       ),
       NotificationEntity(
-        id: '12',
         type: NotificationType.left,
         title: 'Katıldığın Sinema Gecesi',
         message: 'buluşmasından ayrılanlar var. Kimlerin ayrıldığını gör.',
@@ -118,7 +106,6 @@ class MockInboxRepository implements InboxRepository {
         createdAt: now.subtract(const Duration(days: 2, hours: 1)),
       ),
       NotificationEntity(
-        id: '13',
         type: NotificationType.timeEnding,
         title: 'Sinema Gecesi',
         message:
@@ -127,7 +114,6 @@ class MockInboxRepository implements InboxRepository {
         createdAt: now.subtract(const Duration(days: 2, hours: 4)),
       ),
       NotificationEntity(
-        id: '14',
         type: NotificationType.created,
         title: 'yarkin.yoruk',
         message: 'Çay buluşmasını oluşturdu. İlgini çekebilir.',
@@ -135,7 +121,6 @@ class MockInboxRepository implements InboxRepository {
         createdAt: now.subtract(const Duration(days: 3)),
       ),
       NotificationEntity(
-        id: '15',
         type: NotificationType.startingSoon,
         title: 'Katıldığın Çay',
         message:
@@ -144,7 +129,6 @@ class MockInboxRepository implements InboxRepository {
         createdAt: now.subtract(const Duration(days: 3, hours: 1)),
       ),
       NotificationEntity(
-        id: '16',
         type: NotificationType.earlyStart,
         title: 'Katıldığın Çay',
         message: 'buluşması saatinden erken başlatıldı. Buluşmayı kaçırma!',
@@ -174,68 +158,60 @@ class MockInboxRepository implements InboxRepository {
     final requests = <FollowNotificationEntity>[
       // --- BUGÜN ---
       FollowNotificationEntity(
-        id: '1',
+        userID: '1',
         username: 'yarkin.yoruk',
-        profileUrl: userImage,
-        message: 'seni takip etmeye başladı.',
+        profileImageUrl: userImage,
         status: FollowStatus.following, // "takip ediliyor"
         createdAt: now.subtract(const Duration(minutes: 16)),
       ),
       FollowNotificationEntity(
-        id: '2',
+        userID: '2',
         username: 'yarkin.yoruk',
-        profileUrl: userImage,
-        message: 'seni takip etmeye başladı.',
+        profileImageUrl: userImage,
         status: FollowStatus.sent, // "istek gönderildi"
         createdAt: now.subtract(const Duration(minutes: 16)),
       ),
       FollowNotificationEntity(
-        id: '3',
+        userID: '3',
         username: 'yarkin.yoruk',
-        profileUrl: userImage,
-        message: 'seni takip etmeye başladı.',
+        profileImageUrl: userImage,
         status: FollowStatus.none, // "takip et"
         createdAt: now.subtract(const Duration(minutes: 16)),
       ),
       FollowNotificationEntity(
-        id: '4',
+        userID: '4',
         username: 'yarkin.yoruk',
-        profileUrl: userImage,
-        message: 'seni takip etmek istiyor.',
+        profileImageUrl: userImage,
         status: FollowStatus.pending, // "kabul et / sil"
         createdAt: now.subtract(const Duration(minutes: 8)),
       ),
 
       // --- SON 7 GÜN ---
       FollowNotificationEntity(
-        id: '5',
+        userID: '5',
         username: 'yarkin.yoruk',
-        profileUrl: userImage,
-        message: 'seni takip etmeye başladı.',
+        profileImageUrl: userImage,
         status: FollowStatus.following,
         createdAt: now.subtract(const Duration(days: 1)),
       ),
       FollowNotificationEntity(
-        id: '6',
+        userID: '6',
         username: 'yarkin.yoruk',
-        profileUrl: userImage,
-        message: 'seni takip etmeye başladı.',
+        profileImageUrl: userImage,
         status: FollowStatus.sent,
         createdAt: now.subtract(const Duration(days: 2)),
       ),
       FollowNotificationEntity(
-        id: '7',
+        userID: '7',
         username: 'yarkin.yoruk',
-        profileUrl: userImage,
-        message: 'seni takip etmeye başladı.',
+        profileImageUrl: userImage,
         status: FollowStatus.none,
         createdAt: now.subtract(const Duration(days: 3)),
       ),
       FollowNotificationEntity(
-        id: '8',
+        userID: '8',
         username: 'yarkin.yoruk',
-        profileUrl: userImage,
-        message: 'seni takip etmek istiyor.',
+        profileImageUrl: userImage,
         status: FollowStatus.pending,
         createdAt: now.subtract(const Duration(days: 4)),
       ),

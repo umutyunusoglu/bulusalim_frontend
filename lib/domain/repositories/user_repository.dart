@@ -98,7 +98,49 @@ abstract class UserRepository {
     Identifier followeeID,
   );
 
+  Future<bool> isFollowing(
+    Identifier userID,
+    Identifier otherUserID,
+  );
+
+  Future<bool> isFollower(
+    Identifier userID,
+    Identifier otherUserID,
+  );
+
+  Future<List<Follower>> getFollowers(Identifier userID);
+  Future<List<Followee>> getFollowees(Identifier userID);
+
+  Future<void> sendFollowRequest(
+    Identifier fromUserID,
+    Identifier toUserID,
+  );
+  Future<void> cancelFollowRequest(
+    Identifier fromUserID,
+    Identifier toUserID,
+  );
+  Future<bool> hasSentFollowRequest(
+    Identifier fromUserID,
+    Identifier toUserID,
+  );
+
   // === Query & Search ===
   Future<List<UserEntity>> searchUsersByName(String name);
   Future<List<UserEntity>> getUsersByOrg(String org);
+
+  // FMC Token Management
+  Future<void> updateFcmToken(
+    Identifier userID,
+    String fcmToken,
+  );
+  Future<void> removeFcmToken(
+    Identifier userID,
+    String fcmToken,
+  );
+
+  Future<void> updateUserEventLogStatus(
+    Identifier userID,
+    String eventID,
+    String status,
+  );
 }

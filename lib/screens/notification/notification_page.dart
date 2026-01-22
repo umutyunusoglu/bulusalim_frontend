@@ -24,7 +24,6 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   void _onNotificationTap(NotificationEntity notification) {
-    _inboxRepository.markAsRead(notification.id);
     // Buraya bildirim detayına gitme mantığı eklenebilir
   }
 
