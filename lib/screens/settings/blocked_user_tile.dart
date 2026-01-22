@@ -1,0 +1,73 @@
+import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+class BlockedUserTile extends StatelessWidget {
+  const BlockedUserTile({
+    required this.username,
+    required this.profileImageUrl,
+    required this.onUnblockTap,
+    super.key,
+  });
+
+  final String username;
+  final String profileImageUrl;
+  final VoidCallback onUnblockTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 12.h),
+      child: Row(
+        children: [
+          // 1. AVATAR
+          CircleAvatar(
+            radius: 20.r,
+            backgroundColor: Colors.grey.shade200,
+            backgroundImage: NetworkImage(profileImageUrl),
+            onBackgroundImageError: (_, __) {},
+            child: profileImageUrl.isEmpty
+                ? Icon(Icons.person, color: Colors.grey, size: 24.sp)
+                : null,
+          ),
+          SizedBox(width: 12.w),
+
+          // 2. KULLANICI ADI
+          Expanded(
+            child: Text(
+              username,
+              style: TextStyle(
+                fontFamily: 'SF Pro Display',
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w400,
+                color: Colors.black,
+              ),
+            ),
+          ),
+
+          // 3. ENGELİ KALDIR BUTONU
+          InkWell(
+            onTap: onUnblockTap,
+            borderRadius: BorderRadius.circular(20.r),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF2F2F7),
+                borderRadius: BorderRadius.circular(20.r),
+              ),
+              child: Text(
+                'engeli kaldır',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Display',
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.tertiaryColor,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
