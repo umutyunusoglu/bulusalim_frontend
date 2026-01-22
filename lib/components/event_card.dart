@@ -5,7 +5,6 @@ import 'package:bulusalim/components/stacked_avatars.dart';
 import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/data/services/security_service_impl.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:bulusalim/domain/repositories/event_repository.dart'
