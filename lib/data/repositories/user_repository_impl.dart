@@ -761,6 +761,20 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
+  Future<void> updateUserEventLogStatus(
+    Identifier userID,
+    String eventID,
+    String status,
+  ) async {
+    await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('eventLog')
+        .doc(eventID)
+        .update({'status': status});
+  }
+
+  @override
   Future<void> updateFcmToken(
     Identifier userID,
     String fcmToken,
