@@ -1,6 +1,7 @@
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/core/utils/logging/logging_service_impl.dart';
 import 'package:bulusalim/data/repositories/global_content_cache_impl.dart';
+import 'package:bulusalim/data/repositories/inbox_repository_impl.dart';
 import 'package:bulusalim/data/services/auth_service_impl.dart';
 import 'package:bulusalim/data/services/file_service_impl.dart';
 import 'package:bulusalim/data/services/persistance_service_impl.dart';
@@ -8,6 +9,7 @@ import 'package:bulusalim/data/services/push_notifications_service_impl.dart';
 import 'package:bulusalim/data/services/remote_config_service_impl.dart';
 import 'package:bulusalim/data/services/security_service_impl.dart';
 import 'package:bulusalim/data/services/session_service_impl.dart';
+import 'package:bulusalim/domain/repositories/inbox_repository.dart';
 import 'package:bulusalim/domain/services/auth_service.dart';
 import 'package:bulusalim/domain/services/file_service.dart';
 import 'package:bulusalim/domain/services/global_content_cache.dart';
@@ -75,6 +77,7 @@ extension ServiceModule on GetIt {
           firebaseMessaging: this(),
           logger: this(),
         ),
-      );
+      )
+      ..registerLazySingleton<InboxRepository>(() => InboxRepositoryImpl());
   }
 }

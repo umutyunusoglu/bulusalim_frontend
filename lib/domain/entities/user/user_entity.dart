@@ -20,6 +20,7 @@ class UserEntity extends Equatable {
     required this.followeeCount,
     required this.followerCount,
     required this.activeEvents,
+    this.isPrivate = false,
     this.hobbies = const [],
   });
 
@@ -42,6 +43,7 @@ class UserEntity extends Equatable {
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? lastActiveAt,
+    bool? isPrivate,
     List<EventEntity>? activeEvents,
   }) {
     return UserEntity(
@@ -60,6 +62,7 @@ class UserEntity extends Equatable {
       hobbies: hobbies ?? this.hobbies,
       followeeCount: followeeCount ?? this.followeeCount,
       followerCount: followerCount ?? this.followerCount,
+      isPrivate: isPrivate ?? this.isPrivate,
       activeEvents: activeEvents ?? this.activeEvents,
     );
   }
@@ -80,6 +83,7 @@ class UserEntity extends Equatable {
   final int followerCount;
   final List<EventEntity> activeEvents;
   final List<String> hobbies;
+  final bool isPrivate; //TODO : implement
 
   @override
   List<Object?> get props => [

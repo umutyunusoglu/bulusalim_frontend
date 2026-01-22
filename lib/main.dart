@@ -83,7 +83,7 @@ Future<void> main() async {
 
     final authInstance = FirebaseAuth.instance;
 
-    const testUserId = 'user1@test.com';
+    const testUserId = 'user6@test.com';
 
     if (testUserId == 'A') {
       if (authInstance.currentUser != null) {
@@ -120,6 +120,9 @@ Future<void> main() async {
 
   final sessionService = getIt<SessionService>();
   await sessionService.init();
+  debugPrint(
+    'Oturum servisi başlatıldı, oturum durumu: ${sessionService.ongoingEvents}',
+  );
 
   final feedRepository = getIt<FeedRepository>();
   await feedRepository.warmup();
