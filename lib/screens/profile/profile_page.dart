@@ -4,6 +4,7 @@ import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:bulusalim/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
+import 'package:bulusalim/domain/entities/user/friend_entity.dart';
 import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart';
 import 'package:bulusalim/domain/repositories/event_repository.dart';
 import 'package:bulusalim/domain/repositories/user_repository.dart';
@@ -45,6 +46,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   String _fullName = '';
   bool _isFollowing = false;
+  bool _hasSentFollowRequest = false;
   bool _isLoadingEvents = true;
   final bool _isPrivateAccount = false;
   final PageController _pageController = PageController();
@@ -124,6 +126,27 @@ class _ProfilePageState extends State<ProfilePage> {
         }
       }
 
+      final sessionService = getIt<SessionService>();
+
+      var isFollowing = false;
+      final currentUser = sessionService.currentUser;
+      if (user!.userID == currentUser?.userID) {
+        isFollowing = true;
+      } else {
+        isFollowing = await userRepository.isFollowing(
+          currentUser!.userID,
+          user.userID,
+        );
+      }
+
+      bool hasSentFollowRequest = false;
+      if (!isFollowing) {
+        hasSentFollowRequest = await userRepository.hasSentFollowRequest(
+          currentUser!.userID,
+          user.userID,
+        );
+      }
+
       List<EventEntity> enrolledEvents = [];
       if (enrolledEventIds.isNotEmpty) {
         enrolledEvents = await eventRepository.getEventsByIds(enrolledEventIds);
@@ -146,6 +169,9 @@ class _ProfilePageState extends State<ProfilePage> {
           _avatarUrl = user.profileImageUrl;
         }
 
+        _isFollowing = isFollowing;
+        _hasSentFollowRequest = hasSentFollowRequest;
+
         _pinnedPosts = pinnedPosts;
         _activePosts = activePosts;
         _currentEvents = enrolledEvents;
@@ -164,8 +190,77 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  void _toggleFollow() {
+  Future<void> _sendFollowRequest() async {
+    final userRepository = getIt<UserRepository>();
+    final sessionService = getIt<SessionService>();
+    final currentUser = sessionService.currentUser;
+    if (currentUser == null) return;
+
+    setState(() => _hasSentFollowRequest = !_hasSentFollowRequest);
+
+    try {
+      if (_hasSentFollowRequest) {
+        await userRepository.sendFollowRequest(
+          currentUser.userID,
+          widget.profileUserID,
+        );
+      } else {
+        await userRepository.cancelFollowRequest(
+          currentUser.userID,
+          widget.profileUserID,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _hasSentFollowRequest = !_hasSentFollowRequest);
+      }
+    }
+  }
+
+  Future<void> _toggleFollow() async {
+    final userRepository = getIt<UserRepository>();
+    final sessionService = getIt<SessionService>();
+    final currentUser = sessionService.currentUser;
+    if (currentUser == null) return;
+
     setState(() => _isFollowing = !_isFollowing);
+    //TODO: Popups ?
+    try {
+      if (_isFollowing) {
+        final me = Follower(
+          userID: currentUser.userID,
+          username: currentUser.username,
+          profileImageUrl: currentUser.profileImageUrl,
+          createdAt: DateTime.now(),
+        );
+        final target = Followee(
+          userID: widget.profileUserID,
+          username: _username,
+          profileImageUrl: _avatarUrl,
+          createdAt: DateTime.now(),
+        );
+
+        await Future.wait([
+          userRepository.addFollowee(currentUser.userID, target),
+          userRepository.addFollower(widget.profileUserID, me),
+        ]);
+      } else {
+        await Future.wait([
+          userRepository.removeFollowee(
+            currentUser.userID,
+            widget.profileUserID,
+          ),
+          userRepository.removeFollower(
+            widget.profileUserID,
+            currentUser.userID,
+          ),
+        ]);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isFollowing = !_isFollowing);
+      }
+    }
   }
 
   void _onTabSelected(int index) {
@@ -325,8 +420,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: LoginButton(
                     label: _isFollowing
                         ? 'takip ediyorsun'
-                        : (_isPrivateAccount ? 'istek gönder' : 'takip et'),
-                    onPress: _toggleFollow,
+                        : (_isPrivateAccount && _hasSentFollowRequest)
+                        ? 'istek gönderildi'
+                        : 'takip et',
+                    onPress: _isFollowing
+                        ? _toggleFollow
+                        : (_isPrivateAccount
+                              ? _sendFollowRequest
+                              : _toggleFollow),
                     height: 32.h,
                     width: 361,
                     borderRadius: 20.r,

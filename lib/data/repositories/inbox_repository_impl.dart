@@ -38,7 +38,7 @@ class InboxRepositoryImpl implements InboxRepository {
     return _firestore
         .collection('users')
         .doc(_userId)
-        .collection('followRequests')
+        .collection('followNotifications')
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
@@ -84,55 +84,39 @@ class InboxRepositoryImpl implements InboxRepository {
     switch (data['type']) {
       case 'join':
         type = NotificationType.join;
-        break;
       case 'invite':
         type = NotificationType.invite;
-        break;
       case 'cancel':
         type = NotificationType.cancel;
-        break;
       case 'updateTime':
         type = NotificationType.updateTime;
-        break;
       case 'updateLocation':
         type = NotificationType.updateLocation;
-        break;
       case 'warning':
         type = NotificationType.warning;
-        break;
       case 'tag':
         type = NotificationType.tag;
-        break;
       case 'badgeWin':
         type = NotificationType.badgeWin;
-        break;
       case 'badgeProgress':
         type = NotificationType.badgeProgress;
-        break;
       case 'participants':
         type = NotificationType.participants;
-        break;
       case 'left':
         type = NotificationType.left;
-        break;
       case 'timeEnding':
         type = NotificationType.timeEnding;
-        break;
       case 'created':
         type = NotificationType.created;
-        break;
       case 'startingSoon':
         type = NotificationType.startingSoon;
-        break;
       case 'earlyStart':
         type = NotificationType.earlyStart;
-        break;
       default:
         type = NotificationType.join;
     }
 
     return NotificationEntity(
-      id: id,
       type: type,
       title: (data['title'] as String?) ?? '',
       message: (data['message'] as String?) ?? (data['body'] as String?) ?? '',
@@ -155,13 +139,10 @@ class InboxRepositoryImpl implements InboxRepository {
     switch (data['status']) {
       case 'following':
         status = FollowStatus.following;
-        break;
       case 'sent':
         status = FollowStatus.sent;
-        break;
       case 'pending':
         status = FollowStatus.pending;
-        break;
       default:
         status = FollowStatus.none;
     }
@@ -169,9 +150,8 @@ class InboxRepositoryImpl implements InboxRepository {
     return FollowNotificationEntity(
       userID: id,
       username: (data['username'] as String?) ?? 'Kullanıcı',
-      profileUrl:
+      profileImageUrl:
           (data['profileUrl'] as String?) ?? 'https://picsum.photos/200',
-      message: (data['message'] as String?) ?? 'seni takip etmek istiyor.',
       status: status,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );

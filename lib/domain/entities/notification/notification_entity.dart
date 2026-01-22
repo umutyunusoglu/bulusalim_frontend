@@ -18,7 +18,6 @@ enum NotificationType {
 
 class NotificationEntity {
   NotificationEntity({
-    required this.id,
     required this.type,
     required this.title,
     required this.message,
@@ -30,7 +29,6 @@ class NotificationEntity {
   });
 
   NotificationEntity copyWith({
-    String? id,
     NotificationType? type,
     String? title,
     String? message,
@@ -41,7 +39,6 @@ class NotificationEntity {
     String? eventId,
   }) {
     return NotificationEntity(
-      id: id ?? this.id,
       type: type ?? this.type,
       title: title ?? this.title,
       message: message ?? this.message,
@@ -53,7 +50,6 @@ class NotificationEntity {
     );
   }
 
-  final String id;
   final NotificationType type;
   final String title; // Kalın yazılacak kısım (Örn: Kullanıcı adı)
   final String message; // Normal metin
