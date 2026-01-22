@@ -1,5 +1,7 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/components/stacked_avatars.dart'; // AvatarInfo için
+import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
+import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/scaffold_with_navbar.dart';
@@ -147,6 +149,7 @@ final router = GoRouter(
 
         return ChatPage(
           eventID: eventID,
+          event: extra?['event'] as EventEntity,
           chatTitle: (extra?['title'] as String?) ?? 'Sohbet',
           participantAvatars: safeAvatars,
           location: (extra?['location'] as String?) ?? '',
