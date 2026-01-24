@@ -100,13 +100,17 @@ Future<void> main() async {
       final userRepository = getIt<UserRepository>();
       await pushService.initialize();
 
-      final fcmToken = await pushService.getToken();
-
-      if (fcmToken != null) {
-        await userRepository.updateFcmToken(
-          authInstance.currentUser!.uid,
-          fcmToken,
-        );
+      try {
+        final fcmToken = await pushService.getToken();
+        if (fcmToken != null) {
+          await userRepository.updateFcmToken(
+            authInstance.currentUser!.uid,
+            fcmToken,
+          );
+        }
+      } catch (e) {
+        debugPrint('FCM token henüz hazır değil: $e');
+        // Token daha sonra gelecek, sorun değil
       }
     }
 
