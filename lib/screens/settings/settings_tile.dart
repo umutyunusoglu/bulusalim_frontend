@@ -66,7 +66,7 @@ class SettingsTile extends StatelessWidget {
                   trailingText!,
                   style: TextStyle(
                     fontFamily: 'SF Pro Display',
-                    fontSize: 10.sp, // İsteğine göre fixlendi
+                    fontSize: 10.sp,
                     color: Colors.grey,
                     fontWeight: FontWeight.w400,
                   ),
