@@ -42,6 +42,7 @@ class _PostCardState extends State<PostCard> {
   bool _isLikedByMe = false;
   bool _isClappedByMe = false;
   bool _isEggedByMe = false;
+  bool isVisible = true;
 
   // Servisler
   late final PostRepository _postRepository;
@@ -231,48 +232,55 @@ class _PostCardState extends State<PostCard> {
         ? mediaUrls
         : [defaultImageUrl];
 
-    return Center(
-      child: Container(
-        width: 361.w,
-        margin: EdgeInsets.only(bottom: 24.h, top: 12.h),
-        color: Colors.transparent,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. Header
-            _buildHeader(
-              context,
-              avatarUrl: userAvatarUrl,
-              username: username,
-              location: staticLocationName,
-            ),
+    return AnimatedCrossFade(
+      duration: const Duration(milliseconds: 500),
+      crossFadeState: isVisible
+          ? CrossFadeState.showFirst
+          : CrossFadeState.showSecond,
+      secondChild: const SizedBox(width: double.infinity),
+      firstChild: Center(
+        child: Container(
+          width: 361.w,
+          margin: EdgeInsets.only(bottom: 24.h, top: 12.h),
+          color: Colors.transparent,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Header
+              _buildHeader(
+                context,
+                avatarUrl: userAvatarUrl,
+                username: username,
+                location: staticLocationName,
+              ),
 
-            SizedBox(height: 12.h),
+              SizedBox(height: 12.h),
 
-            // 2. Content (Image/PageView)
-            _buildContent(
-              context,
-              mediaUrls: effectiveMediaUrls,
-              likedByAvatars: participantAvatars,
-            ),
+              // 2. Content (Image/PageView)
+              _buildContent(
+                context,
+                mediaUrls: effectiveMediaUrls,
+                likedByAvatars: participantAvatars,
+              ),
 
-            // Page Indicator
-            if (effectiveMediaUrls.length > 1) ...[
-              SizedBox(height: 10.h),
-              Center(
-                child: _buildPageIndicator(effectiveMediaUrls.length),
+              // Page Indicator
+              if (effectiveMediaUrls.length > 1) ...[
+                SizedBox(height: 10.h),
+                Center(
+                  child: _buildPageIndicator(effectiveMediaUrls.length),
+                ),
+              ],
+
+              SizedBox(height: 12.h),
+
+              // 3. Footer
+              _buildFooter(
+                context,
+                caption: caption,
+                tags: tags,
               ),
             ],
-
-            SizedBox(height: 12.h),
-
-            // 3. Footer
-            _buildFooter(
-              context,
-              caption: caption,
-              tags: tags,
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -337,7 +345,6 @@ class _PostCardState extends State<PostCard> {
               isScrollControlled: true,
               backgroundColor: Colors.transparent,
               builder: (context) => CustomActionBottomSheet(
-                height: 201.h,
                 options: [
                   if (!isPostMine)
                     BottomSheetOption(
@@ -354,13 +361,13 @@ class _PostCardState extends State<PostCard> {
                       context.pop();
                     },
                   ),
-                  if (!isPostMine)
+                  if (!isPostMine) ...[
                     BottomSheetOption(
-                      icon: Icons.report_gmailerrorred_outlined,
-                      text: 'Şikayet Et',
+                      icon: Icons.block,
+                      text: 'Kullanıcıyı Engelle',
                       isDestructive: true,
-                      onTap: () {
-                        getIt<SecurityService>().sendReport(
+                      onTap: () async {
+                        await getIt<SecurityService>().blockUser(
                           ReportData(
                             reportedEntityId: widget.post.id,
                             reportedEntityType: 'post',
@@ -368,9 +375,36 @@ class _PostCardState extends State<PostCard> {
                             requestOwnerId: _myUserId,
                           ),
                         );
-                        context.pop();
+                        if (mounted) {
+                          setState(() {
+                            isVisible = false;
+                          });
+                          context.pop();
+                        }
                       },
                     ),
+                    BottomSheetOption(
+                      icon: Icons.report_gmailerrorred_outlined,
+                      text: 'Şikayet Et',
+                      isDestructive: true,
+                      onTap: () async {
+                        await getIt<SecurityService>().sendReport(
+                          ReportData(
+                            reportedEntityId: widget.post.id,
+                            reportedEntityType: 'post',
+                            reportedUserId: widget.post.creator.userID,
+                            requestOwnerId: _myUserId,
+                          ),
+                        );
+                        if (mounted) {
+                          setState(() {
+                            isVisible = false;
+                          });
+                          context.pop();
+                        }
+                      },
+                    ),
+                  ],
                 ],
               ),
             );
