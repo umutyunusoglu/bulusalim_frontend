@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <default-config cleartextTrafficPermitted="false" />
+    <base-config cleartextTrafficPermitted="false" />
     
-   <domain-config cleartextTrafficPermitted="false">
+    <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">api.mapbox.com</domain>
     </domain-config>
 
@@ -12,4 +12,4 @@
         <domain includeSubdomains="true">127.0.0.1</domain>
         <domain includeSubdomains="true">localhost</domain>
     </domain-config>
-    </network-security-config>
+</network-security-config>
