@@ -1,6 +1,8 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
+import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
-import 'package:bulusalim/screens/settings/blocked_users_page.dart'; // YENİ EKLENDİ
+import 'package:bulusalim/screens/settings/acoount_settings_page.dart';
+import 'package:bulusalim/screens/settings/blocked_users_page.dart';
 import 'package:bulusalim/screens/settings/edit_profile_page.dart';
 import 'package:bulusalim/screens/settings/settings_section_header.dart';
 import 'package:bulusalim/screens/settings/settings_tile.dart';
@@ -15,13 +17,17 @@ class SettingsPage extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
-        backgroundColor: theme.colorScheme.surface,
+        backgroundColor: AppColors.backgroundColor,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black, size: 24),
+          icon: const Icon(
+            Icons.arrow_back,
+            color: AppColors.iconColor,
+            size: 24,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -30,7 +36,7 @@ class SettingsPage extends StatelessWidget {
             fontFamily: 'SF Pro Display',
             fontSize: 16.sp,
             fontWeight: FontWeight.w700,
-            color: Colors.black,
+            color: AppColors.onBackgroundColor,
           ),
         ),
       ),
@@ -43,17 +49,22 @@ class SettingsPage extends StatelessWidget {
             _buildProfileEditSection(context),
             SizedBox(height: 24.h),
 
-            Divider(height: 1, color: Colors.grey.shade200),
+            Divider(height: 1, color: AppColors.dividerColor),
             SizedBox(height: 24.h),
 
             // --- GENEL AYARLAR ---
-            const SettingsTile(
+            SettingsTile(
               title: 'Hesap Ayarları',
               subtitle: 'Gizlilik, üniversite, şifre, iletişim bilgileri',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AccountSettingsPage(),
+                  ),
+                );
+              },
             ),
-
-            const SettingsTile(title: 'Kümeler'),
-            const SettingsTile(title: 'Rozetler'),
 
             SettingsTile(
               title: 'Engellenen Kullanıcılar',
@@ -61,14 +72,14 @@ class SettingsPage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const BlockedUsersPage(),
+                    builder: (_) => const BlockedUsersPage(),
                   ),
                 );
               },
             ),
 
             SizedBox(height: 24.h),
-            Divider(height: 1, color: Colors.grey.shade200),
+            const Divider(height: 1, color: AppColors.dividerColor),
             SizedBox(height: 24.h),
 
             // --- CİHAZ İZİNLERİ ---
@@ -93,7 +104,7 @@ class SettingsPage extends StatelessWidget {
             ),
 
             SizedBox(height: 12.h),
-            Divider(height: 1, color: Colors.grey.shade200),
+            const Divider(height: 1, color: AppColors.dividerColor),
             SizedBox(height: 24.h),
 
             // --- YASAL VE DESTEK ---
@@ -102,13 +113,13 @@ class SettingsPage extends StatelessWidget {
             const SettingsTile(title: 'Destek ve Yardım'),
 
             SizedBox(height: 12.h),
-            Divider(height: 1, color: Colors.grey.shade200),
+            const Divider(height: 1, color: AppColors.dividerColor),
             SizedBox(height: 24.h),
 
             // --- AKSİYONLAR ---
             SettingsTile(
               title: 'Hesabı Sil',
-              titleColor: Colors.redAccent,
+              titleColor: AppColors.primaryColor,
               showArrow: false,
               onTap: () {
                 // Silme işlemi
@@ -116,7 +127,7 @@ class SettingsPage extends StatelessWidget {
             ),
             SettingsTile(
               title: 'Çıkış Yap',
-              titleColor: Colors.redAccent,
+              titleColor: AppColors.primaryColor,
               showArrow: false,
               onTap: () {
                 // Çıkış işlemi
@@ -130,8 +141,6 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  // --- WIDGET'LAR ---
-
   Widget _buildProfileEditSection(BuildContext context) {
     final currentUser = getIt<SessionService>().currentUser;
     final profileImageUrl = currentUser?.profileImageUrl ?? '';
@@ -140,7 +149,7 @@ class SettingsPage extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const EditProfilePage()),
+          MaterialPageRoute(builder: (_) => const EditProfilePage()),
         );
       },
       child: Padding(
@@ -149,12 +158,12 @@ class SettingsPage extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 24.r,
-              backgroundColor: Colors.grey.shade200,
+              backgroundColor: AppColors.dividerColor,
               backgroundImage: (profileImageUrl.isNotEmpty)
                   ? NetworkImage(profileImageUrl)
                   : null,
               child: (profileImageUrl.isEmpty)
-                  ? Icon(Icons.person, color: Colors.grey, size: 24.sp)
+                  ? Icon(Icons.person, color: AppColors.textGrey, size: 24.sp)
                   : null,
             ),
             SizedBox(width: 12.w),
@@ -164,11 +173,11 @@ class SettingsPage extends StatelessWidget {
                 fontFamily: 'SF Pro Display',
                 fontSize: 16.sp,
                 fontWeight: FontWeight.w500,
-                color: Colors.black,
+                color: AppColors.onBackgroundColor,
               ),
             ),
             const Spacer(),
-            Icon(Icons.chevron_right, color: Colors.black, size: 24.sp),
+            Icon(Icons.chevron_right, color: AppColors.iconColor, size: 24.sp),
           ],
         ),
       ),
