@@ -65,6 +65,8 @@ abstract class UserRepository {
   Stream<List<EventEntity>> watchActiveEvents(Identifier userID);
   Stream<List<EventEntity>> watchOngoingEvents(Identifier userID);
 
+  Future<int> getCompletedEventCount(Identifier userID);
+
   Future<void> deleteEvent(
     Identifier userID,
     Identifier eventID,
@@ -107,6 +109,9 @@ abstract class UserRepository {
     Identifier userID,
     Identifier otherUserID,
   );
+
+  Future<int> getFollowersCount(Identifier userID);
+  Future<int> getFolloweesCount(Identifier userID);
 
   Future<List<Follower>> getFollowers(Identifier userID);
   Future<List<Followee>> getFollowees(Identifier userID);

@@ -446,6 +446,10 @@ class UserRepositoryImpl implements UserRepository {
         .collection('followers')
         .doc(followerID)
         .delete();
+
+    await _firestore.collection('users').doc(userID).update({
+      'followerCount': FieldValue.increment(-1),
+    });
   }
 
   @override
@@ -468,6 +472,10 @@ class UserRepositoryImpl implements UserRepository {
         .collection('followees')
         .doc(followee.userID)
         .set(followeeData);
+
+    await _firestore.collection('users').doc(userID).update({
+      'followeeCount': FieldValue.increment(1),
+    });
   }
 
   @override
@@ -483,6 +491,10 @@ class UserRepositoryImpl implements UserRepository {
         .collection('followees')
         .doc(followeeID)
         .delete();
+
+    await _firestore.collection('users').doc(userID).update({
+      'followeeCount': FieldValue.increment(-1),
+    });
   }
 
   @override
@@ -556,6 +568,32 @@ class UserRepositoryImpl implements UserRepository {
     }).toList();
 
     return followees;
+  }
+
+  @override
+  Future<int> getFollowersCount(Identifier userID) async {
+    _logger.info('Getting followers count for user: $userID');
+
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('followers')
+        .get();
+
+    return snapshot.size;
+  }
+
+  @override
+  Future<int> getFolloweesCount(Identifier userID) async {
+    _logger.info('Getting followees count for user: $userID');
+
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('followees')
+        .get();
+
+    return snapshot.size;
   }
 
   @override
@@ -772,6 +810,20 @@ class UserRepositoryImpl implements UserRepository {
         .collection('eventLog')
         .doc(eventID)
         .update({'status': status});
+  }
+
+  @override
+  Future<int> getCompletedEventCount(Identifier userID) async {
+    _logger.info('Getting completed event count for user: $userID');
+
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('eventLog')
+        .where('status', isEqualTo: 'completed')
+        .get();
+
+    return snapshot.size;
   }
 
   @override

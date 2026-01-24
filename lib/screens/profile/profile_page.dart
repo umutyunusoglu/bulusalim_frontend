@@ -157,6 +157,18 @@ class _ProfilePageState extends State<ProfilePage> {
         savedEvents = await eventRepository.getEventsByIds(savedEventIds);
       }
 
+      //TODO: Inefficient way to get follower/followee counts
+      final followerCount = await userRepository.getFollowersCount(
+        widget.profileUserID,
+      );
+      final followeeCount = await userRepository.getFolloweesCount(
+        widget.profileUserID,
+      );
+
+      final completedEventCount = await userRepository.getCompletedEventCount(
+        widget.profileUserID,
+      );
+
       if (!mounted) return;
 
       setState(() {
@@ -171,6 +183,10 @@ class _ProfilePageState extends State<ProfilePage> {
 
         _isFollowing = isFollowing;
         _hasSentFollowRequest = hasSentFollowRequest;
+
+        numberOfFollowers = followerCount;
+        numberOfFollowing = followeeCount;
+        numberOfEvents = completedEventCount;
 
         _pinnedPosts = pinnedPosts;
         _activePosts = activePosts;
@@ -364,12 +380,18 @@ class _ProfilePageState extends State<ProfilePage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const ProfileStatItem(count: '47', label: 'Etkinlik'),
                           ProfileStatItem(
-                            count: _isFollowing ? '139' : '138',
+                            count: '$numberOfEvents',
+                            label: 'Etkinlik',
+                          ),
+                          ProfileStatItem(
+                            count: '$numberOfFollowers',
                             label: 'Takipçi',
                           ),
-                          const ProfileStatItem(count: '125', label: 'Takip'),
+                          ProfileStatItem(
+                            count: '$numberOfFollowing',
+                            label: 'Takip',
+                          ),
                         ],
                       ),
                     ),
