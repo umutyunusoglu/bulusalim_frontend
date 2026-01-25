@@ -89,6 +89,7 @@ flutter:
     - assets/remote_config_defaults.json
     - assets/map/
     - assets/badge/
+    - assets/data/
     - .env
 
 flutter_intl:

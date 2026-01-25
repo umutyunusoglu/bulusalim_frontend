@@ -1,5 +1,6 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/domain/datasources/university_datasource.dart';
+import 'package:bulusalim/domain/repositories/user_repository.dart';
 import 'package:flutter/material.dart';
 
 class DebugVerificationScreen extends StatefulWidget {
@@ -33,7 +34,7 @@ class _DebugVerificationScreenState extends State<DebugVerificationScreen> {
       // Sizin yazdığınız datasource metodunu çağırıyoruz
       final uniNames = await getIt<UniversityDatasource>().getUniversityOfMail(
         email,
-        "Turkey",
+        "Turkiye",
       );
 
       setState(() {
@@ -59,7 +60,9 @@ class _DebugVerificationScreenState extends State<DebugVerificationScreen> {
     });
 
     try {
-      // await getIt<SecurityService>().sendVerificationEmail(_emailController.text.trim());
+      await getIt<UserRepository>().sendVerificationEmail(
+        _emailController.text.trim(),
+      );
 
       _logger("OTP Gönderildi: ${_emailController.text}");
       setState(() => _isCodeSent = true);
@@ -80,7 +83,11 @@ class _DebugVerificationScreenState extends State<DebugVerificationScreen> {
     });
 
     try {
-      // await getIt<SecurityService>().verifyEmailCode(_otpController.text.trim());
+      await getIt<UserRepository>().verifyEmail(
+        _emailController.text.trim(),
+        _detectedUniversity!,
+        _otpController.text.trim(),
+      );
 
       _logger("Doğrulama Başarılı!");
       if (mounted) {
@@ -130,7 +137,7 @@ class _DebugVerificationScreenState extends State<DebugVerificationScreen> {
                   border: const OutlineInputBorder(),
                   helperText: _detectedUniversity != null
                       ? "Tespit Edildi: $_detectedUniversity"
-                      : "Lütfen .edu.tr uzantılı mailinizi girin",
+                      : "Lütfen .edu uzantılı mailinizi girin",
                   helperStyle: const TextStyle(
                     color: Colors.green,
                     fontWeight: FontWeight.bold,

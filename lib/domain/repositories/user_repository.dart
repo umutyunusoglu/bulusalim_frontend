@@ -148,4 +148,7 @@ abstract class UserRepository {
     String eventID,
     String status,
   );
+
+  Future<void> sendVerificationEmail(String email);
+  Future<bool> verifyEmail(String email, String universityName, String code);
 }
