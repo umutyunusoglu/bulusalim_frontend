@@ -102,6 +102,17 @@ class SignInScreen extends StatelessWidget {
                   borderRadius: 40,
                   width: 340.w,
                 ),
+                LoginButton(
+                  label: 'Debug',
+                  onPress: () {
+                    // YENİ: Giriş Yap sayfasına git
+                    context.push('/debug');
+                  },
+                  height: 50.h,
+                  borderWidth: 2,
+                  borderRadius: 40,
+                  width: 340.w,
+                ),
               ],
             ),
           ),

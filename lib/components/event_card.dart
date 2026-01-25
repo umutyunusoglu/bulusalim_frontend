@@ -233,7 +233,7 @@ class _EventCardState extends State<EventCard> {
                                   useRootNavigator: true,
                                   isScrollControlled: true,
                                   backgroundColor: Colors.transparent,
-                                  builder: (context) => CustomActionBottomSheet(
+                                  builder: (sheetContext) => CustomActionBottomSheet(
                                     options: [
                                       if (!isPostMine)
                                         BottomSheetOption(
@@ -241,7 +241,7 @@ class _EventCardState extends State<EventCard> {
                                           text: 'Buluşma Sahibini Takibi Bırak',
                                           onTap: () {
                                             logger.info('Takip bırakıldı');
-                                            context.pop();
+                                            sheetContext.pop();
                                           },
                                         ),
                                       BottomSheetOption(
@@ -249,7 +249,7 @@ class _EventCardState extends State<EventCard> {
                                         text: 'Paylaş',
                                         onTap: () {
                                           logger.info('Paylaşıldı');
-                                          context.pop();
+                                          sheetContext.pop();
                                         },
                                       ),
                                       if (!isPostMine) ...[
@@ -276,7 +276,9 @@ class _EventCardState extends State<EventCard> {
                                               setState(() {
                                                 isVisible = false;
                                               });
-                                              context.pop();
+                                            }
+                                            if (sheetContext.mounted) {
+                                              sheetContext.pop();
                                             }
                                           },
                                         ),
@@ -286,25 +288,50 @@ class _EventCardState extends State<EventCard> {
                                           text: 'Şikayet Et',
                                           isDestructive: true,
                                           onTap: () async {
-                                            await getIt<SecurityService>()
-                                                .sendReport(
-                                                  ReportData(
-                                                    reportedEntityId:
-                                                        widget.event.id,
-                                                    reportedEntityType: 'event',
-                                                    reportedUserId: widget
-                                                        .event
-                                                        .creator
-                                                        .userID,
-                                                    requestOwnerId:
-                                                        currentUser.userID,
+                                            try {
+                                              await getIt<SecurityService>()
+                                                  .sendReport(
+                                                    ReportData(
+                                                      reportedEntityId:
+                                                          widget.event.id,
+                                                      reportedEntityType:
+                                                          'event',
+                                                      reportedUserId: widget
+                                                          .event
+                                                          .creator
+                                                          .userID,
+                                                      requestOwnerId:
+                                                          currentUser.userID,
+                                                    ),
+                                                  );
+                                            } catch (e) {
+                                              logger.error(
+                                                'Rapor gönderilemedi: $e',
+                                              );
+                                              if (sheetContext.mounted) {
+                                                sheetContext.pop();
+                                              }
+                                              if (mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Rapor gönderilemedi. Lütfen tekrar deneyin.',
+                                                    ),
                                                   ),
                                                 );
+                                              }
+                                              return;
+                                            }
+
                                             if (mounted) {
                                               setState(() {
                                                 isVisible = false;
                                               });
-                                              context.pop();
+                                            }
+                                            if (sheetContext.mounted) {
+                                              sheetContext.pop();
                                             }
                                           },
                                         ),
