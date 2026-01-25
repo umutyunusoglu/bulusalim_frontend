@@ -10,7 +10,9 @@ class UserEntity extends Equatable {
     required this.email,
     required this.birthDate,
     required this.gender,
-    required this.organization,
+    required this.university,
+    required this.universityEmail,
+    required this.isUniversityVerified,
     required this.profileImageUrl,
     required this.bio,
     required this.permissions,
@@ -32,7 +34,9 @@ class UserEntity extends Equatable {
     String? username,
     DateTime? birthDate,
     GenderEnum? gender,
-    String? organization,
+    String? university,
+    String? universityEmail,
+    bool? isUniversityVerified,
     String? profileImageUrl,
     String? avatarUrl,
     String? bio,
@@ -52,7 +56,7 @@ class UserEntity extends Equatable {
       username: username ?? this.username,
       birthDate: birthDate ?? this.birthDate,
       gender: gender ?? this.gender,
-      organization: organization ?? this.organization,
+      university: university ?? this.university,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       bio: bio ?? this.bio,
       createdAt: createdAt ?? this.createdAt,
@@ -63,6 +67,8 @@ class UserEntity extends Equatable {
       followeeCount: followeeCount ?? this.followeeCount,
       followerCount: followerCount ?? this.followerCount,
       isPrivate: isPrivate ?? this.isPrivate,
+      universityEmail: universityEmail ?? this.universityEmail,
+      isUniversityVerified: isUniversityVerified ?? this.isUniversityVerified,
       activeEvents: activeEvents ?? this.activeEvents,
     );
   }
@@ -72,7 +78,9 @@ class UserEntity extends Equatable {
   final String username;
   final DateTime birthDate;
   final GenderEnum gender;
-  final String organization;
+  final String? university;
+  final String? universityEmail;
+  final bool isUniversityVerified;
   final String profileImageUrl;
   final String? bio;
   final UserPermissions permissions;

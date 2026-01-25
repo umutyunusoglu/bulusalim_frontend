@@ -3,6 +3,7 @@ import 'package:bulusalim/app_router.dart';
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/constants/theme/app_theme.dart';
+import 'package:bulusalim/domain/datasources/university_datasource.dart';
 import 'package:bulusalim/domain/repositories/feed_repository.dart';
 import 'package:bulusalim/domain/repositories/user_repository.dart';
 import 'package:bulusalim/domain/services/push_notifications_service.dart';
@@ -129,6 +130,8 @@ Future<void> main() async {
 
   final feedRepository = getIt<FeedRepository>();
   await feedRepository.warmup();
+
+  getIt<UniversityDatasource>().initialize();
 
   runApp(const ProviderScope(child: MainApp()));
 }

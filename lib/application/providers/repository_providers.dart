@@ -21,6 +21,7 @@ extension RepositoryModule on GetIt {
         () => UserRepositoryImpl(
           firestore: this(),
           logger: this(),
+          functions: this(),
         ),
       )
       ..registerLazySingleton<EventRepository>(

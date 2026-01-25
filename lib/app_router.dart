@@ -8,6 +8,7 @@ import 'package:bulusalim/screens/camera/camera_page.dart';
 import 'package:bulusalim/screens/chat/chat_page.dart';
 import 'package:bulusalim/screens/chat/event_settings_page.dart';
 import 'package:bulusalim/screens/chat/my_events_page.dart';
+import 'package:bulusalim/screens/debug/debug_verification_screen.dart';
 import 'package:bulusalim/screens/home/home_page.dart';
 import 'package:bulusalim/screens/login/login_screen.dart';
 import 'package:bulusalim/screens/map/map_page.dart';
@@ -221,6 +222,11 @@ final router = GoRouter(
       path: '/camera',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const CameraPage(),
+    ),
+    GoRoute(
+      path: '/debug',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const DebugVerificationScreen(),
     ),
   ],
 );

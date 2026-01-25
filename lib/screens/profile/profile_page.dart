@@ -178,7 +178,7 @@ class _ProfilePageState extends State<ProfilePage> {
           _username = user.username;
           _fullName = user.username;
           _bio = user.bio ?? '';
-          _school = user.organization;
+          _school = user.university ?? 'Üniversite Doğrulanmadı';
           // URL boş gelse bile boş string atıyoruz, null hatası almamak için
           _avatarUrl = user.profileImageUrl;
         }
@@ -389,7 +389,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         children: [
                           ProfileStatItem(
                             count: '$numberOfEvents',
-                            label: 'Etkinlik',
+                            label: 'Buluşma',
                           ),
                           ProfileStatItem(
                             count: '$numberOfFollowers',
