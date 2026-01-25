@@ -1,5 +1,6 @@
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:bulusalim/screens/settings/change_account_type_page.dart';
+import 'package:bulusalim/screens/settings/change_password_page.dart';
 import 'package:bulusalim/screens/settings/change_phone_number.dart'; // Dosya ismine dikkat
 import 'package:bulusalim/screens/settings/change_university_page.dart';
 import 'package:bulusalim/screens/settings/connect_social_media_page.dart';
@@ -207,12 +208,41 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
   }
 
   Widget _buildPasswordSection() {
-    return _buildSettingItem(
-      label: 'Şifre Değiştir',
-      showArrow: true,
-      onTap: () {
-        debugPrint('Şifre değiştir sayfasına git');
-      },
+    return Row(
+      children: [
+        SizedBox(
+          width: 110.w,
+          child: Text(
+            'Şifre Değiştir',
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+              color: AppColors.onBackgroundColor,
+              height: 1.3,
+            ),
+          ),
+        ),
+        const Spacer(),
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ChangePasswordPage(),
+              ),
+            );
+          },
+          behavior: HitTestBehavior.opaque,
+          child: Padding(
+            padding: EdgeInsets.only(left: 8.w),
+            child: Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.iconColor,
+              size: 24.sp,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -263,41 +293,41 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     Color? valueColor,
     VoidCallback? onTap,
   }) {
-    return GestureDetector(
-      onTap: showArrow || trailing != null ? onTap : null,
-      behavior: HitTestBehavior.opaque,
-      child: Row(
-        children: [
-          SizedBox(
-            width: 110.w,
+    return Row(
+      children: [
+        SizedBox(
+          width: 110.w,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+              color: AppColors.onBackgroundColor,
+              height: 1.3,
+            ),
+          ),
+        ),
+        if (value != null)
+          Expanded(
             child: Text(
-              label,
+              value,
+              textAlign: TextAlign.left,
               style: TextStyle(
                 fontSize: 14.sp,
-                fontWeight: FontWeight.w500,
-                color: AppColors.onBackgroundColor,
-                height: 1.3,
+                fontWeight: FontWeight.w400,
+                color: valueColor ?? AppColors.onBackgroundColor,
               ),
             ),
           ),
-          if (value != null)
-            Expanded(
-              child: Text(
-                value,
-                textAlign: TextAlign.left,
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w400,
-                  color: valueColor ?? AppColors.onBackgroundColor,
-                ),
-              ),
-            ),
-          if (trailing != null) ...[
-            SizedBox(width: 8.w),
-            trailing,
-          ],
-          if (showArrow)
-            Padding(
+        if (trailing != null) ...[
+          SizedBox(width: 8.w),
+          trailing,
+        ],
+        if (showArrow)
+          GestureDetector(
+            onTap: onTap,
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
               padding: EdgeInsets.only(left: 8.w),
               child: Icon(
                 Icons.chevron_right_rounded,
@@ -305,8 +335,8 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                 size: 24.sp,
               ),
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 }

@@ -3,18 +3,106 @@ import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/screens/settings/acoount_settings_page.dart';
 import 'package:bulusalim/screens/settings/blocked_users_page.dart';
+import 'package:bulusalim/screens/settings/delete_account_page.dart';
+import 'package:bulusalim/screens/settings/device_permissons_page.dart';
 import 'package:bulusalim/screens/settings/edit_profile_page.dart';
 import 'package:bulusalim/screens/settings/settings_section_header.dart';
 import 'package:bulusalim/screens/settings/settings_tile.dart';
+import 'package:bulusalim/screens/settings/static_info_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
+  void _navigateToPermissionDetail(
+    BuildContext context, {
+    required String title,
+    required String description,
+    required Permission permission,
+  }) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DevicePermissionsPage(
+          title: title,
+          description: description,
+          permission: permission,
+        ),
+      ),
+    );
+  }
+
+  // --- POPUP FONKSİYONU ---
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+          backgroundColor: Colors.white,
+          elevation: 0,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Hesabından çıkış yapmak istediğine\nemin misin?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Display',
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.onBackgroundColor,
+                    height: 1.4,
+                  ),
+                ),
+                SizedBox(height: 20.h),
+                SizedBox(
+                  width: 173.w,
+                  height: 40.h,
+
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Çıkış işlemleri burada yapılacak
+                      Navigator.pop(context); // Dialogu kapat
+                      // Navigator.pushReplacementNamed(context, '/login'); // Login sayfasına at
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor, // Turuncu renk
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24.r),
+                      ),
+                    ),
+                    child: Text(
+                      'Çıkış Yap',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Display',
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final currentUser = getIt<SessionService>().currentUser;
+    final profileImageUrl = currentUser?.profileImageUrl ?? '';
 
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
@@ -46,10 +134,10 @@ class SettingsPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // --- PROFİLİ DÜZENLE ---
-            _buildProfileEditSection(context),
-            SizedBox(height: 24.h),
+            _buildProfileEditSection(context, profileImageUrl),
 
-            Divider(height: 1, color: AppColors.dividerColor),
+            SizedBox(height: 24.h),
+            const Divider(height: 1, color: AppColors.dividerColor),
             SizedBox(height: 24.h),
 
             // --- GENEL AYARLAR ---
@@ -71,9 +159,7 @@ class SettingsPage extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => const BlockedUsersPage(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const BlockedUsersPage()),
                 );
               },
             ),
@@ -85,22 +171,60 @@ class SettingsPage extends StatelessWidget {
             // --- CİHAZ İZİNLERİ ---
             const SettingsSectionHeader(title: 'Cihaz İzinleri'),
 
-            const SettingsTile(
+            SettingsTile(
               title: 'Bildirimler',
               trailingText: 'izin verildi',
+              onTap: () => _navigateToPermissionDetail(
+                context,
+                title: 'Bildirimler',
+                description:
+                    'Outnest uygulamasına bu cihaza güncellemeler ve önemli bildirimler göndermesine izin verilir.',
+                permission: Permission.notification,
+              ),
             ),
-            const SettingsTile(
+            SettingsTile(
               title: 'Bluetooth',
               trailingText: 'izin verildi',
+              onTap: () => _navigateToPermissionDetail(
+                context,
+                title: 'Bluetooth',
+                description:
+                    "Outnest uygulamasına yakındaki cihazlarla bağlantı kurmak için Bluetooth'u kullanmasına izin verilir.",
+                permission: Permission.bluetooth,
+              ),
             ),
-            const SettingsTile(
+            SettingsTile(
               title: 'Konum Servisleri',
               trailingText: 'izin verildi',
+              onTap: () => _navigateToPermissionDetail(
+                context,
+                title: 'Konum Servisleri',
+                description:
+                    'Outnest uygulamasına bulunduğun konuma göre içerik ve öneriler sunmak için konum bilgine erişmesine izin verilir.',
+                permission: Permission.location,
+              ),
             ),
-            const SettingsTile(title: 'Kamera', trailingText: 'izin verildi'),
-            const SettingsTile(
+            SettingsTile(
+              title: 'Kamera',
+              trailingText: 'izin verildi',
+              onTap: () => _navigateToPermissionDetail(
+                context,
+                title: 'Kamera',
+                description:
+                    'Outnest uygulamasında fotoğraf çekmek ve paylaşmak için kameranıza erişim izni verilir.',
+                permission: Permission.camera,
+              ),
+            ),
+            SettingsTile(
               title: 'Fotoğraflar',
               trailingText: 'izin verilmedi',
+              onTap: () => _navigateToPermissionDetail(
+                context,
+                title: 'Fotoğraflar',
+                description:
+                    'Outnest uygulamasının galerinizdeki fotoğrafları seçip yükleyebilmesi için erişim izni verilir.',
+                permission: Permission.photos,
+              ),
             ),
 
             SizedBox(height: 12.h),
@@ -108,30 +232,75 @@ class SettingsPage extends StatelessWidget {
             SizedBox(height: 24.h),
 
             // --- YASAL VE DESTEK ---
-            const SettingsTile(title: 'Gizlilik Politikası'),
-            const SettingsTile(title: 'Hizmet Şartları'),
-            const SettingsTile(title: 'Destek ve Yardım'),
+            SettingsTile(
+              title: 'Gizlilik Politikası',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const StaticInfoPage(
+                      title: 'Gizlilik Politikası',
+                      content:
+                          'Outnest’te verilerinin nasıl toplandığını, kullanıldığını ve korunduğunu buradan öğrenebilirsin.',
+                      linkText:
+                          'Gizlilik ve veri kullanımı hakkında daha fazla bilgi al',
+                    ),
+                  ),
+                );
+              },
+            ),
+            SettingsTile(
+              title: 'Hizmet Şartları',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const StaticInfoPage(
+                      title: 'Hizmet Şartları',
+                      content:
+                          'Outnest’i kullanırken geçerli olan kurallar ve sorumluluklar hakkında buradan bilgi edinebilirsin.',
+                      linkText:
+                          'Hizmet şartları ve kullanım koşulları hakkında daha fazla bilgi al',
+                    ),
+                  ),
+                );
+              },
+            ),
+            SettingsTile(
+              title: 'Destek ve Yardım',
+              onTap: () {
+                // Destek sayfasına yönlendirme eklenebilir
+              },
+            ),
 
             SizedBox(height: 12.h),
             const Divider(height: 1, color: AppColors.dividerColor),
             SizedBox(height: 24.h),
 
-            // --- AKSİYONLAR ---
-            SettingsTile(
-              title: 'Hesabı Sil',
-              titleColor: AppColors.primaryColor,
-              showArrow: false,
+            GestureDetector(
               onTap: () {
-                // Silme işlemi
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const DeleteAccountPage()),
+                );
               },
+              behavior: HitTestBehavior.opaque,
+              child: const SettingsTile(
+                title: 'Hesabı Sil',
+                titleColor: AppColors.primaryColor,
+                showArrow: false,
+              ),
             ),
-            SettingsTile(
-              title: 'Çıkış Yap',
-              titleColor: AppColors.primaryColor,
-              showArrow: false,
-              onTap: () {
-                // Çıkış işlemi
-              },
+
+            // --- ÇIKIŞ YAP (GÜNCELLENDİ) ---
+            GestureDetector(
+              onTap: () => _showLogoutDialog(context), // Popup açılıyor
+              behavior: HitTestBehavior.opaque,
+              child: const SettingsTile(
+                title: 'Çıkış Yap',
+                titleColor: AppColors.primaryColor,
+                showArrow: false,
+              ),
             ),
 
             SizedBox(height: 40.h),
@@ -141,45 +310,53 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileEditSection(BuildContext context) {
-    final currentUser = getIt<SessionService>().currentUser;
-    final profileImageUrl = currentUser?.profileImageUrl ?? '';
-
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const EditProfilePage()),
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.only(top: 10),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 24.r,
-              backgroundColor: AppColors.dividerColor,
-              backgroundImage: (profileImageUrl.isNotEmpty)
-                  ? NetworkImage(profileImageUrl)
-                  : null,
-              child: (profileImageUrl.isEmpty)
-                  ? Icon(Icons.person, color: AppColors.textGrey, size: 24.sp)
-                  : null,
+  Widget _buildProfileEditSection(
+    BuildContext context,
+    String profileImageUrl,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 24.r,
+            backgroundColor: AppColors.dividerColor,
+            backgroundImage: (profileImageUrl.isNotEmpty)
+                ? NetworkImage(profileImageUrl)
+                : null,
+            child: (profileImageUrl.isEmpty)
+                ? Icon(Icons.person, color: AppColors.textGrey, size: 24.sp)
+                : null,
+          ),
+          SizedBox(width: 12.w),
+          Text(
+            'Profili Düzenle',
+            style: TextStyle(
+              fontFamily: 'SF Pro Display',
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w500,
+              color: AppColors.onBackgroundColor,
             ),
-            SizedBox(width: 12.w),
-            Text(
-              'Profili Düzenle',
-              style: TextStyle(
-                fontFamily: 'SF Pro Display',
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w500,
-                color: AppColors.onBackgroundColor,
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const EditProfilePage()),
+              );
+            },
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: EdgeInsets.all(8.w),
+              child: Icon(
+                Icons.chevron_right,
+                color: AppColors.iconColor,
+                size: 24.sp,
               ),
             ),
-            const Spacer(),
-            Icon(Icons.chevron_right, color: AppColors.iconColor, size: 24.sp),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
