@@ -1,5 +1,6 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/components/stacked_avatars.dart';
+import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/scaffold_with_navbar.dart';
