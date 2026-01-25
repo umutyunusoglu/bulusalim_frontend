@@ -68,12 +68,11 @@ class SettingsPage extends StatelessWidget {
 
                   child: ElevatedButton(
                     onPressed: () {
-                      // Çıkış işlemleri burada yapılacak
-                      Navigator.pop(context); // Dialogu kapat
+                      Navigator.pop(context);
                       // Navigator.pushReplacementNamed(context, '/login'); // Login sayfasına at
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor, // Turuncu renk
+                      backgroundColor: AppColors.primaryColor,
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -268,9 +267,7 @@ class SettingsPage extends StatelessWidget {
             ),
             SettingsTile(
               title: 'Destek ve Yardım',
-              onTap: () {
-                // Destek sayfasına yönlendirme eklenebilir
-              },
+              onTap: () {},
             ),
 
             SizedBox(height: 12.h),
@@ -292,9 +289,9 @@ class SettingsPage extends StatelessWidget {
               ),
             ),
 
-            // --- ÇIKIŞ YAP (GÜNCELLENDİ) ---
+            // --- ÇIKIŞ YAP  ---
             GestureDetector(
-              onTap: () => _showLogoutDialog(context), // Popup açılıyor
+              onTap: () => _showLogoutDialog(context),
               behavior: HitTestBehavior.opaque,
               child: const SettingsTile(
                 title: 'Çıkış Yap',
@@ -314,49 +311,48 @@ class SettingsPage extends StatelessWidget {
     BuildContext context,
     String profileImageUrl,
   ) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 10),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 24.r,
-            backgroundColor: AppColors.dividerColor,
-            backgroundImage: (profileImageUrl.isNotEmpty)
-                ? NetworkImage(profileImageUrl)
-                : null,
-            child: (profileImageUrl.isEmpty)
-                ? Icon(Icons.person, color: AppColors.textGrey, size: 24.sp)
-                : null,
-          ),
-          SizedBox(width: 12.w),
-          Text(
-            'Profili Düzenle',
-            style: TextStyle(
-              fontFamily: 'SF Pro Display',
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w500,
-              color: AppColors.onBackgroundColor,
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const EditProfilePage()),
+        );
+      },
+      // Tıklama efekti rengi
+      splashColor: Colors.grey.withOpacity(0.1),
+      highlightColor: Colors.grey.withOpacity(0.1),
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 10.h),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 20.r,
+              backgroundColor: AppColors.dividerColor,
+              backgroundImage: (profileImageUrl.isNotEmpty)
+                  ? NetworkImage(profileImageUrl)
+                  : null,
+              child: (profileImageUrl.isEmpty)
+                  ? Icon(Icons.person, color: AppColors.textGrey, size: 20.sp)
+                  : null,
             ),
-          ),
-          const Spacer(),
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const EditProfilePage()),
-              );
-            },
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: EdgeInsets.all(8.w),
-              child: Icon(
-                Icons.chevron_right,
-                color: AppColors.iconColor,
-                size: 24.sp,
+            SizedBox(width: 12.w),
+            Text(
+              'Profili Düzenle',
+              style: TextStyle(
+                fontFamily: 'SF Pro Display',
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w500,
+                color: AppColors.onBackgroundColor,
               ),
             ),
-          ),
-        ],
+            const Spacer(),
+            Icon(
+              Icons.chevron_right,
+              color: AppColors.iconColor,
+              size: 24.sp,
+            ),
+          ],
+        ),
       ),
     );
   }
