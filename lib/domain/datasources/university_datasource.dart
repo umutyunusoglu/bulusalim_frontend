@@ -12,4 +12,6 @@ abstract class UniversityDatasource {
   });
 
   Future<List<String>> getUniversityOfMail(String email, String? country);
+
+  void initialize();
 }

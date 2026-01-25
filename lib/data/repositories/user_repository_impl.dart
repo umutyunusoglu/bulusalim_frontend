@@ -19,16 +19,20 @@ import 'package:bulusalim/domain/entities/user/user_hobby_entity.dart';
 import 'package:bulusalim/domain/repositories/event_repository.dart';
 import 'package:bulusalim/domain/repositories/user_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 class UserRepositoryImpl implements UserRepository {
   UserRepositoryImpl({
     required FirebaseFirestore firestore,
     required LoggingService logger,
+    required FirebaseFunctions functions,
   }) : _firestore = firestore,
-       _logger = logger;
+       _logger = logger,
+       _functions = functions;
 
   final FirebaseFirestore _firestore;
   final LoggingService _logger;
+  final FirebaseFunctions _functions;
   final EventRepository eventRepository = getIt<EventRepository>();
 
   // === User CRUD ===
@@ -843,6 +847,30 @@ class UserRepositoryImpl implements UserRepository {
   ) async {
     await _firestore.collection('users').doc(userID).update({
       'fcmTokens': FieldValue.arrayRemove([fcmToken]),
+    });
+  }
+
+  @override
+  Future<bool> verifyEmail(
+    String email,
+    String universityName,
+    String code,
+  ) async {
+    final response = await _functions.httpsCallable("verifyEmailCode").call({
+      'universityEmail': email,
+      'universityName': universityName,
+      'otp': code,
+    });
+
+    return response.data['success'] as bool;
+  }
+
+  @override
+  Future<void> sendVerificationEmail(
+    String email,
+  ) async {
+    await _functions.httpsCallable("sendVerificationEmail").call({
+      'email': email,
     });
   }
 }
