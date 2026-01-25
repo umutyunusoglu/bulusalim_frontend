@@ -25,14 +25,14 @@ class SecurityServiceImpl implements SecurityService {
     await _firestore
         .collection('users')
         .doc(currentUserID)
-        .collection('banned_users')
+        .collection('blocked_users')
         .doc(reportedUserID)
         .set({
           'userID': reportedUserID,
-          'banned_at': FieldValue.serverTimestamp(),
+          'blocked_at': FieldValue.serverTimestamp(),
         });
 
-    _logger.info('User $reportedUserID has been banned by $currentUserID.');
+    _logger.info('User $reportedUserID has been blocked by $currentUserID.');
   }
 
   @override

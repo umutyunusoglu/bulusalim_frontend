@@ -1,9 +1,11 @@
+import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart';
 import 'package:bulusalim/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/data/models/event/event_model.dart';
+import 'package:bulusalim/data/models/user/friend_model.dart';
 import 'package:bulusalim/data/models/user/pinned_post_model.dart';
 import 'package:bulusalim/data/models/user/user_event_model.dart';
 import 'package:bulusalim/data/models/user/user_hobby_model.dart';
@@ -14,6 +16,7 @@ import 'package:bulusalim/domain/entities/user/index.dart';
 import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart';
 import 'package:bulusalim/domain/entities/user/user_event_entity.dart';
 import 'package:bulusalim/domain/entities/user/user_hobby_entity.dart';
+import 'package:bulusalim/domain/repositories/event_repository.dart';
 import 'package:bulusalim/domain/repositories/user_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -26,6 +29,7 @@ class UserRepositoryImpl implements UserRepository {
 
   final FirebaseFirestore _firestore;
   final LoggingService _logger;
+  final EventRepository eventRepository = getIt<EventRepository>();
 
   // === User CRUD ===
   @override
@@ -313,7 +317,6 @@ class UserRepositoryImpl implements UserRepository {
         .doc(userID)
         .collection('eventLog')
         .where('status', whereIn: ['ongoing']) // Sadece devam edenler
-        .orderBy('date')
         .snapshots()
         .asyncMap((snapshot) async {
           _logger.info(
@@ -333,10 +336,8 @@ class UserRepositoryImpl implements UserRepository {
                 .get();
             if (!eventDoc.exists) return null;
 
-            final eventEntity = EventModel.fromFirestore(
-              eventDoc.data()!,
-            ).toEntity();
-
+            final eventEntity = await eventRepository.getEvent(eventId);
+            if (eventEntity == null) return null;
             // Status ve Role bilgisini güncelle
             return eventEntity.copyWith(
               myStatus: historyData['status'] as String,
@@ -445,6 +446,10 @@ class UserRepositoryImpl implements UserRepository {
         .collection('followers')
         .doc(followerID)
         .delete();
+
+    await _firestore.collection('users').doc(userID).update({
+      'followerCount': FieldValue.increment(-1),
+    });
   }
 
   @override
@@ -467,6 +472,10 @@ class UserRepositoryImpl implements UserRepository {
         .collection('followees')
         .doc(followee.userID)
         .set(followeeData);
+
+    await _firestore.collection('users').doc(userID).update({
+      'followeeCount': FieldValue.increment(1),
+    });
   }
 
   @override
@@ -482,6 +491,173 @@ class UserRepositoryImpl implements UserRepository {
         .collection('followees')
         .doc(followeeID)
         .delete();
+
+    await _firestore.collection('users').doc(userID).update({
+      'followeeCount': FieldValue.increment(-1),
+    });
+  }
+
+  @override
+  Future<bool> isFollowing(
+    Identifier userID,
+    Identifier otherUserID,
+  ) async {
+    _logger.info(
+      'Checking if user: $userID is following user: $otherUserID',
+    );
+
+    final doc = await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('followees')
+        .doc(otherUserID)
+        .get();
+
+    return doc.exists;
+  }
+
+  @override
+  Future<bool> isFollower(
+    Identifier userID,
+    Identifier otherUserID,
+  ) async {
+    _logger.info(
+      'Checking if user: $userID is a follower of user: $otherUserID',
+    );
+    final doc = await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('followers')
+        .doc(otherUserID)
+        .get();
+
+    return doc.exists;
+  }
+
+  Future<List<Follower>> getFollowers(Identifier userID) async {
+    _logger.info('Getting followers for user: $userID');
+
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('followers')
+        .get();
+
+    final followers = snapshot.docs.map((doc) {
+      final data = doc.data();
+      final friendModel = FriendModel.fromFirestore(data);
+      return friendModel.toEntity();
+    }).toList();
+
+    return followers;
+  }
+
+  @override
+  Future<List<Followee>> getFollowees(Identifier userID) async {
+    _logger.info('Getting followees for user: $userID');
+
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('followees')
+        .get();
+    final followees = snapshot.docs.map((doc) {
+      final data = doc.data();
+      final friendModel = FriendModel.fromFirestore(data);
+      return friendModel.toEntity();
+    }).toList();
+
+    return followees;
+  }
+
+  @override
+  Future<int> getFollowersCount(Identifier userID) async {
+    _logger.info('Getting followers count for user: $userID');
+
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('followers')
+        .get();
+
+    return snapshot.size;
+  }
+
+  @override
+  Future<int> getFolloweesCount(Identifier userID) async {
+    _logger.info('Getting followees count for user: $userID');
+
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('followees')
+        .get();
+
+    return snapshot.size;
+  }
+
+  @override
+  Future<void> sendFollowRequest(
+    Identifier fromUserID,
+    Identifier toUserID,
+  ) async {
+    _logger.info(
+      'Sending follow request from user: $fromUserID to user: $toUserID',
+    );
+
+    final fromUser = await getUser(fromUserID);
+    if (fromUser == null) {
+      _logger.error('From user not found: $fromUserID');
+      return;
+    }
+
+    await _firestore
+        .collection('users')
+        .doc(toUserID)
+        .collection('followRequests')
+        .doc(fromUserID)
+        .set({
+          'userID': fromUserID,
+          'username': fromUser.username,
+          'profileImageUrl': fromUser.profileImageUrl,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+  }
+
+  @override
+  Future<void> cancelFollowRequest(
+    Identifier fromUserID,
+    Identifier toUserID,
+  ) async {
+    _logger.info(
+      'Cancelling follow request from user: $fromUserID to user: $toUserID',
+    );
+
+    await _firestore
+        .collection('users')
+        .doc(toUserID)
+        .collection('followRequests')
+        .doc(fromUserID)
+        .delete();
+  }
+
+  @override
+  Future<bool> hasSentFollowRequest(
+    Identifier userID,
+    Identifier otherUserID,
+  ) async {
+    _logger.info(
+      'Checking if user: $userID has sent a follow request to user: $otherUserID',
+    );
+
+    final doc = await _firestore
+        .collection('users')
+        .doc(otherUserID)
+        .collection('followRequests')
+        .doc(userID)
+        .get();
+
+    return doc.exists;
   }
 
   // === Query & Search ===
@@ -620,5 +796,53 @@ class UserRepositoryImpl implements UserRepository {
           );
           return events;
         });
+  }
+
+  @override
+  Future<void> updateUserEventLogStatus(
+    Identifier userID,
+    String eventID,
+    String status,
+  ) async {
+    await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('eventLog')
+        .doc(eventID)
+        .update({'status': status});
+  }
+
+  @override
+  Future<int> getCompletedEventCount(Identifier userID) async {
+    _logger.info('Getting completed event count for user: $userID');
+
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('eventLog')
+        .where('status', isEqualTo: 'completed')
+        .get();
+
+    return snapshot.size;
+  }
+
+  @override
+  Future<void> updateFcmToken(
+    Identifier userID,
+    String fcmToken,
+  ) async {
+    await _firestore.collection('users').doc(userID).update({
+      'fcmTokens': FieldValue.arrayUnion([fcmToken]),
+    });
+  }
+
+  @override
+  Future<void> removeFcmToken(
+    Identifier userID,
+    String fcmToken,
+  ) async {
+    await _firestore.collection('users').doc(userID).update({
+      'fcmTokens': FieldValue.arrayRemove([fcmToken]),
+    });
   }
 }
