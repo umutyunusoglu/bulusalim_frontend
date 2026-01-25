@@ -14,7 +14,7 @@ class UniversityDataSourceImpl implements UniversityDatasource {
   final apiRootUrl = 'http://universities.hipolabs.com/search';
 
   @override
-  Future<List<OrganizationEntity>> getAllUniversities({
+  Future<List<OrganizationEntity>> getAllUniversitiesInCountry({
     String? universityName,
     String? country,
   }) async {
@@ -59,16 +59,48 @@ class UniversityDataSourceImpl implements UniversityDatasource {
     String? universityName,
     String? country,
   }) {
-    return getAllUniversities(
+    return getAllUniversitiesInCountry(
       country: country,
       universityName: universityName,
     ).then((universities) {
       if (universities.isNotEmpty) {
-        return universities.first.mailExtension.isNotEmpty
-            ? universities.first.mailExtension
-            : [];
+        final university = universities.first;
+        return university.mailExtension;
       }
       return [];
     });
+  }
+
+  @override
+  Future<List<String>> getUniversityOfMail(
+    String email,
+    String? country,
+  ) async {
+    // 1. Email'den domain ayıklama
+    if (!email.contains('@')) return [];
+    final emailDomain = email.split('@').last.toLowerCase().trim();
+
+    try {
+      // 2. Belirtilen ülkedeki üniversiteleri getir
+      // Performans için 'country' parametresini API'ye gönderiyoruz
+      final allUniversities = await getAllUniversitiesInCountry(
+        country: country ?? 'Turkey',
+      );
+
+      // 3. Domain eşleştirmesi yap
+      final matchingUniversities = allUniversities.where((uni) {
+        // API bazen 'domains' (List<String>) döndürür, paylaştığınız formatta ise 'domain' (String)
+        // Entity içinde bu mailExtension olarak tutuluyorsa:
+        return uni.mailExtension.any(
+          (domain) => domain.toLowerCase() == emailDomain,
+        );
+      }).toList();
+
+      // 4. Eşleşen üniversitelerin isimlerini döndür
+      return matchingUniversities.map((e) => e.name).toList();
+    } catch (e) {
+      logger.error('Üniversite aranırken hata oluştu: $e');
+      return [];
+    }
   }
 }

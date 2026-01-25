@@ -344,21 +344,21 @@ class _PostCardState extends State<PostCard> {
               useRootNavigator: true,
               isScrollControlled: true,
               backgroundColor: Colors.transparent,
-              builder: (context) => CustomActionBottomSheet(
+              builder: (sheetContext) => CustomActionBottomSheet(
                 options: [
                   if (!isPostMine)
                     BottomSheetOption(
                       icon: Icons.person_off_outlined,
                       text: 'Buluşma Sahibini Takibi Bırak',
                       onTap: () {
-                        context.pop();
+                        sheetContext.pop();
                       },
                     ),
                   BottomSheetOption(
                     icon: Icons.share_outlined,
                     text: 'Paylaş',
                     onTap: () {
-                      context.pop();
+                      sheetContext.pop();
                     },
                   ),
                   if (!isPostMine) ...[
@@ -379,7 +379,9 @@ class _PostCardState extends State<PostCard> {
                           setState(() {
                             isVisible = false;
                           });
-                          context.pop();
+                        }
+                        if (sheetContext.mounted) {
+                          sheetContext.pop();
                         }
                       },
                     ),
@@ -388,19 +390,37 @@ class _PostCardState extends State<PostCard> {
                       text: 'Şikayet Et',
                       isDestructive: true,
                       onTap: () async {
-                        await getIt<SecurityService>().sendReport(
-                          ReportData(
-                            reportedEntityId: widget.post.id,
-                            reportedEntityType: 'post',
-                            reportedUserId: widget.post.creator.userID,
-                            requestOwnerId: _myUserId,
-                          ),
-                        );
+                        try {
+                          await getIt<SecurityService>().sendReport(
+                            ReportData(
+                              reportedEntityId: widget.post.id,
+                              reportedEntityType: 'post',
+                              reportedUserId: widget.post.creator.userID,
+                              requestOwnerId: _myUserId,
+                            ),
+                          );
+                        } catch (e) {
+                          if (sheetContext.mounted) {
+                            sheetContext.pop();
+                          }
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Rapor gönderilemedi. Lütfen tekrar deneyin.',
+                                ),
+                              ),
+                            );
+                          }
+                          return;
+                        }
                         if (mounted) {
                           setState(() {
                             isVisible = false;
                           });
-                          context.pop();
+                        }
+                        if (sheetContext.mounted) {
+                          sheetContext.pop();
                         }
                       },
                     ),
