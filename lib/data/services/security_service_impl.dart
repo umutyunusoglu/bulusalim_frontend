@@ -2,7 +2,6 @@ import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/domain/services/security_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:dart_firebase_admin/firestore.dart' hide FieldValue;
 
 class SecurityServiceImpl implements SecurityService {
   SecurityServiceImpl({
@@ -22,6 +21,8 @@ class SecurityServiceImpl implements SecurityService {
     final currentUserID = reportData.requestOwnerId;
     final reportedUserID = reportData.reportedUserId;
 
+    if (currentUserID == null || reportedUserID == null) return;
+
     await _firestore
         .collection('users')
         .doc(currentUserID)
@@ -37,16 +38,37 @@ class SecurityServiceImpl implements SecurityService {
 
   @override
   Future<void> sendReport(ReportData reportData) async {
-    await blockUser(reportData);
+    try {
+      // 1. Önce kullanıcıyı engelle (Local işlem)
+      await blockUser(reportData);
 
-    final callable = _functions.httpsCallable('reportUser');
-    final result = await callable.call(<String, dynamic>{
-      'reportedEntityID': reportData.reportedEntityId,
-      'reportedEntityType': reportData.reportedEntityType,
-      'reportedUserID': reportData.reportedUserId,
-      'requestOwnerID': reportData.requestOwnerId,
-    });
+      // 2. Fonksiyonu çağır
+      final callable = _functions.httpsCallable('reportUser');
 
-    _logger.info('Report sent: ${result.data}');
+      final result = await callable.call(<String, dynamic>{
+        'reportedEntityID': reportData.reportedEntityId,
+        'reportedEntityType': reportData.reportedEntityType,
+        'reportedUserID': reportData.reportedUserId,
+        // requestOwnerID'yi client'tan göndermeye gerek yok,
+        // Cloud Function bunu request.auth.uid'den güvenli şekilde alıyor.
+      });
+
+      _logger.info('Report sent successfully: ${result.data}');
+    } on FirebaseFunctionsException catch (e) {
+      // Cloud Function'dan fırlatılan HttpsError'ları burada yakalıyoruz
+      _logger.error('Report failed [${e.code}]: ${e.message}');
+
+      // Eğer rate limit hatasıysa (resource-exhausted)
+      if (e.code == 'resource-exhausted') {
+        // Burada UI tarafına bir hata fırlatabilir veya bir Exception döndürebilirsin
+        throw Exception(e.message ?? 'Çok sık rapor gönderiyorsunuz.');
+      }
+
+      throw Exception('Rapor gönderilemedi: ${e.message}');
+    } catch (e) {
+      // Beklenmedik diğer hatalar (İnternet kaybı vb.)
+      _logger.error('Unexpected error during reporting: $e');
+      throw Exception('Bir hata oluştu. Lütfen tekrar deneyin.');
+    }
   }
 }
