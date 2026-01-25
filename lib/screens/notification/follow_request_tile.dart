@@ -1,13 +1,18 @@
+import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/domain/entities/notification/follow_notification_entity.dart';
+import 'package:bulusalim/domain/repositories/user_repository.dart';
+import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class FollowRequestTile extends StatelessWidget {
-  const FollowRequestTile({required this.item, super.key});
+  FollowRequestTile({required this.item, super.key});
 
   final FollowNotificationEntity item;
+  final LoggingService _logger = getIt<LoggingService>();
 
   // Sağ taraftaki aksiyon butonlarını oluşturur
   Widget _buildTrailingAction() {
@@ -50,18 +55,44 @@ class FollowRequestTile extends StatelessWidget {
 
       // DURUM 3: Takip Et
       case FollowStatus.none:
-        return Container(
-          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
-          decoration: BoxDecoration(
-            color: AppColors.primaryColor,
-            borderRadius: BorderRadius.circular(20.r),
-          ),
-          child: Text(
-            'takip et',
-            style: TextStyle(
-              fontSize: 10.sp,
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
+        return GestureDetector(
+          onTap: () async {
+            // TODO: Takip etme işlemi
+            _logger.info('Takip et butonuna tıklandı: ${item.username}');
+
+            final sessionService = getIt<SessionService>();
+            final userRepository = getIt<UserRepository>();
+
+            final targetUserID = item.userID;
+            final currentUser = sessionService.currentUser;
+
+            final targetUser = await userRepository.getUser(targetUserID);
+
+            if (targetUser!.isPrivate) {
+              // Özel hesap, takip isteği gönder
+              _logger.info(
+                'Özel hesaba takip isteği gönderiliyor: ${targetUser.username}',
+              );
+              await userRepository.sendFollowRequest(
+                currentUser!.userID,
+                targetUserID,
+              );
+            }
+          },
+
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
+            decoration: BoxDecoration(
+              color: AppColors.primaryColor,
+              borderRadius: BorderRadius.circular(20.r),
+            ),
+            child: Text(
+              'takip et',
+              style: TextStyle(
+                fontSize: 10.sp,
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         );
@@ -71,34 +102,44 @@ class FollowRequestTile extends StatelessWidget {
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
-              decoration: BoxDecoration(
-                color: AppColors.primaryColor,
-                borderRadius: BorderRadius.circular(20.r),
-              ),
-              child: Text(
-                'kabul et',
-                style: TextStyle(
-                  fontSize: 10.sp,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
+            GestureDetector(
+              onTap: () {
+                // TODO: Kabul etme işlemi
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor,
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                child: Text(
+                  'kabul et',
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
             SizedBox(width: 4.w),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF2F2F7),
-                borderRadius: BorderRadius.circular(20.r),
-              ),
-              child: Text(
-                'sil',
-                style: TextStyle(
-                  fontSize: 10.sp,
-                  color: AppColors.tertiaryColor,
-                  fontWeight: FontWeight.w500,
+            GestureDetector(
+              onTap: () {
+                // TODO: Silme işlemi
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF2F2F7),
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                child: Text(
+                  'sil',
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    color: AppColors.tertiaryColor,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
@@ -119,7 +160,7 @@ class FollowRequestTile extends StatelessWidget {
           // 1. AVATAR
           CircleAvatar(
             radius: 16.r,
-            backgroundImage: NetworkImage(item.profileUrl),
+            backgroundImage: NetworkImage(item.profileImageUrl),
           ),
           SizedBox(width: 12.w),
 

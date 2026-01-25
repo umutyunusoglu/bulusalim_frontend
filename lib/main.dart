@@ -4,6 +4,8 @@ import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/constants/theme/app_theme.dart';
 import 'package:bulusalim/domain/repositories/feed_repository.dart';
+import 'package:bulusalim/domain/repositories/user_repository.dart';
+import 'package:bulusalim/domain/services/push_notifications_service.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -11,20 +13,20 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:http/http.dart' as http;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart'
     show MapboxOptions;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   try {
-    // Önce zaten var mı diye kontrol et
     if (Firebase.apps.isEmpty) {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
@@ -34,17 +36,13 @@ Future<void> main() async {
     }
   } on FirebaseException catch (e) {
     if (e.code == 'duplicate-app') {
-      // Eğer "duplicate-app" hatası alırsak, Firebase zaten native tarafta başlamış demektir.
-      // Bu hatayı görmezden gelip devam ediyoruz.
       debugPrint(
         'Firebase zaten native tarafta başlatılmış, işlem devam ediyor.',
       );
     } else {
-      // Başka bir hata varsa fırlat
       rethrow;
     }
   } on Exception catch (e) {
-    // Beklenmedik diğer hatalar için
     debugPrint('Firebase başlatma hatası (Generic): $e');
   }
   await dotenv.load();
@@ -97,6 +95,23 @@ Future<void> main() async {
         email: testUserId,
         password: 'password123',
       );
+
+      final pushService = getIt<PushNotificationsService>();
+      final userRepository = getIt<UserRepository>();
+      await pushService.initialize();
+
+      try {
+        final fcmToken = await pushService.getToken();
+        if (fcmToken != null) {
+          await userRepository.updateFcmToken(
+            authInstance.currentUser!.uid,
+            fcmToken,
+          );
+        }
+      } catch (e) {
+        debugPrint('FCM token henüz hazır değil: $e');
+        // Token daha sonra gelecek, sorun değil
+      }
     }
 
     debugPrint("Current ${authInstance.currentUser?.email ?? "No user"}");
@@ -104,8 +119,13 @@ Future<void> main() async {
     await FirebaseAppCheck.instance.activate();
   }
 
+  await FirebaseMessaging.instance.setAutoInitEnabled(true);
+
   final sessionService = getIt<SessionService>();
   await sessionService.init();
+  debugPrint(
+    'Oturum servisi başlatıldı, oturum durumu: ${sessionService.ongoingEvents}',
+  );
 
   final feedRepository = getIt<FeedRepository>();
   await feedRepository.warmup();

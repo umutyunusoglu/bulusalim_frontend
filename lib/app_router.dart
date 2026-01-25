@@ -164,6 +164,7 @@ final router = GoRouter(
 
         return ChatPage(
           eventID: eventID,
+          event: extra?['event'] as EventEntity,
           chatTitle: (extra?['title'] as String?) ?? 'Sohbet',
           participantAvatars: safeAvatars,
           location: (extra?['location'] as String?) ?? '',

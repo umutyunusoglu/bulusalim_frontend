@@ -17,7 +17,39 @@ enum NotificationType {
 }
 
 class NotificationEntity {
-  final String id;
+  NotificationEntity({
+    required this.type,
+    required this.title,
+    required this.message,
+    required this.avatarUrl,
+    required this.createdAt,
+    this.actionText,
+    this.isRead = false,
+    this.eventId,
+  });
+
+  NotificationEntity copyWith({
+    NotificationType? type,
+    String? title,
+    String? message,
+    String? actionText,
+    String? avatarUrl,
+    DateTime? createdAt,
+    bool? isRead,
+    String? eventId,
+  }) {
+    return NotificationEntity(
+      type: type ?? this.type,
+      title: title ?? this.title,
+      message: message ?? this.message,
+      actionText: actionText ?? this.actionText,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      createdAt: createdAt ?? this.createdAt,
+      isRead: isRead ?? this.isRead,
+      eventId: eventId ?? this.eventId,
+    );
+  }
+
   final NotificationType type;
   final String title; // Kalın yazılacak kısım (Örn: Kullanıcı adı)
   final String message; // Normal metin
@@ -27,16 +59,4 @@ class NotificationEntity {
   final DateTime createdAt;
   final bool isRead;
   final String? eventId;
-
-  NotificationEntity({
-    required this.id,
-    required this.type,
-    required this.title,
-    required this.message,
-    this.actionText,
-    required this.avatarUrl,
-    required this.createdAt,
-    this.isRead = false,
-    this.eventId,
-  });
 }

@@ -1,7 +1,9 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/configs/app_config.dart'; // <--- BU SATIR EKLENDİ
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
 import 'package:bulusalim/domain/entities/chat/message_entity.dart';
+import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/repositories/chat_repository.dart';
 import 'package:bulusalim/screens/chat/chat_input_bar.dart';
 import 'package:bulusalim/screens/chat/chat_message_buble.dart';
@@ -15,6 +17,7 @@ import 'package:intl/intl.dart';
 class ChatPage extends StatefulWidget {
   const ChatPage({
     required this.eventID,
+    required this.event,
     required this.creatorID,
     required this.chatTitle,
     required this.participantAvatars,
@@ -26,6 +29,7 @@ class ChatPage extends StatefulWidget {
   });
 
   final String eventID;
+  final EventEntity event;
   final String creatorID;
   final String chatTitle;
   final List<dynamic> participantAvatars;
@@ -125,6 +129,7 @@ class _ChatPageState extends State<ChatPage> {
                 .collection('events')
                 .doc(widget.eventID)
                 .snapshots(),
+
             builder: (context, snapshot) {
               var displayTitle = widget.chatTitle;
               var displayLocation = widget.location;
@@ -172,6 +177,7 @@ class _ChatPageState extends State<ChatPage> {
 
               return ChatPageHeader(
                 eventID: widget.eventID,
+                event: widget.event,
                 creatorID: widget.creatorID,
                 chatTitle: displayTitle,
                 creatorProfileImage: displayCreatorImage,
