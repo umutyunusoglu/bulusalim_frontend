@@ -3,10 +3,9 @@ import 'package:bulusalim/domain/datasources/university_datasource.dart';
 import 'package:get_it/get_it.dart';
 
 extension RepositoryModule on GetIt {
-  void registerRepositories() {
+  void registerDatasources() {
     this.registerLazySingleton<UniversityDatasource>(
       () => UniversityDataSourceImpl(
-        httpClient: this(),
         logger: this(),
       ),
     );

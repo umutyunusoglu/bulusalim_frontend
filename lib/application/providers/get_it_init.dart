@@ -1,3 +1,4 @@
+import 'package:bulusalim/application/providers/datasource_providers.dart';
 import 'package:bulusalim/application/providers/firebase_providers.dart';
 import 'package:bulusalim/application/providers/hive_providers.dart';
 import 'package:bulusalim/application/providers/repository_providers.dart';
@@ -14,6 +15,7 @@ Future<void> getItSetup() async {
     ..registerFirebase()
     ..registerRepositories()
     ..registerServices()
+    ..registerDatasources()
     ..registerUsecases();
   await getIt.allReady();
 }
