@@ -15,7 +15,9 @@ class UserModel extends Model<UserEntity> {
     required this.email,
     required this.birthDate,
     required this.gender,
-    required this.organization,
+    required this.university,
+    required this.universityEmail,
+    required this.isUniversityVerified,
     required this.profileImageUrl,
     required this.bio,
     required this.permissions,
@@ -37,7 +39,9 @@ class UserModel extends Model<UserEntity> {
       searchName: entity.username.toLowerCase(),
       birthDate: entity.birthDate,
       gender: entity.gender,
-      organization: entity.organization,
+      university: entity.university,
+      universityEmail: entity.universityEmail,
+      isUniversityVerified: entity.isUniversityVerified,
       profileImageUrl: entity.profileImageUrl,
       bio: entity.bio,
       permissions: entity.permissions,
@@ -78,7 +82,9 @@ class UserModel extends Model<UserEntity> {
           .toLowerCase(),
       birthDate: birthDate,
       gender: gender,
-      organization: doc['organization'] as String? ?? '',
+      university: doc['university'] as String?,
+      universityEmail: doc['universityEmail'] as String?,
+      isUniversityVerified: doc['isUniversityVerified'] as bool? ?? false,
       profileImageUrl: doc['profileImageUrl'] as String? ?? '',
       bio: doc['bio'] as String?,
       permissions: userPermissionsFromFirestore(
@@ -118,7 +124,7 @@ class UserModel extends Model<UserEntity> {
       'username': username,
       'birthDate': Timestamp.fromDate(birthDate),
       'gender': gender.value, // DİKKAT: .index yerine .value ("male", "female")
-      'organization': organization,
+      'university': university,
       'profileImageUrl': profileImageUrlFirestore,
       'bio': bio,
       'createdAt': Timestamp.fromDate(createdAt),
@@ -140,7 +146,9 @@ class UserModel extends Model<UserEntity> {
       username: username,
       birthDate: birthDate,
       gender: gender,
-      organization: organization,
+      university: university,
+      universityEmail: universityEmail,
+      isUniversityVerified: isUniversityVerified,
       profileImageUrl: profileImageUrl,
       bio: bio,
       permissions: permissions,
@@ -160,7 +168,9 @@ class UserModel extends Model<UserEntity> {
   final String searchName;
   final DateTime birthDate;
   final GenderEnum gender;
-  final String organization;
+  final String? university;
+  final String? universityEmail;
+  final bool isUniversityVerified;
   final String profileImageUrl;
   final String? bio;
   final UserPermissions permissions;
