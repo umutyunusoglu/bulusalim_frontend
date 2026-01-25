@@ -22,7 +22,7 @@ class SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap ?? () {},
+      onTap: onTap,
       highlightColor: Colors.grey.withOpacity(0.1),
       splashColor: Colors.grey.withOpacity(0.1),
       child: Padding(
