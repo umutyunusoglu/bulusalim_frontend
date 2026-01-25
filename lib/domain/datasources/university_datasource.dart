@@ -1,7 +1,7 @@
 import 'package:bulusalim/domain/entities/organization/organization_entity.dart';
 
 abstract class UniversityDatasource {
-  Future<List<OrganizationEntity>> getAllUniversities({
+  Future<List<OrganizationEntity>> getAllUniversitiesInCountry({
     String? country,
     String? universityName,
   });
@@ -10,4 +10,6 @@ abstract class UniversityDatasource {
     String? universityName,
     String? country,
   });
+
+  Future<List<String>> getUniversityOfMail(String email, String? country);
 }
