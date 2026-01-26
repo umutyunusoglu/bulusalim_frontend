@@ -28,6 +28,8 @@ class UserModel extends Model<UserEntity> {
     required this.followeeCount,
     required this.followerCount,
     required this.activeEvents,
+    required this.isPrivate,
+    required this.hideSavedEvents,
   });
 
   @override
@@ -52,6 +54,8 @@ class UserModel extends Model<UserEntity> {
       followeeCount: entity.followeeCount,
       followerCount: entity.followerCount,
       activeEvents: entity.activeEvents,
+      isPrivate: entity.isPrivate,
+      hideSavedEvents: entity.hideSavedEvents,
     );
   }
 
@@ -99,6 +103,8 @@ class UserModel extends Model<UserEntity> {
       followeeCount: doc['followeeCount'] as int? ?? 0,
       followerCount: doc['followerCount'] as int? ?? 0,
       activeEvents: [], // Aktif etkinlikler daha sonra yüklenebilir
+      isPrivate: doc['isPrivate'] as bool? ?? false,
+      hideSavedEvents: doc['hideSavedEvents'] as bool? ?? false,
     );
   }
 
@@ -123,7 +129,7 @@ class UserModel extends Model<UserEntity> {
       'email': email,
       'username': username,
       'birthDate': Timestamp.fromDate(birthDate),
-      'gender': gender.value, // DİKKAT: .index yerine .value ("male", "female")
+      'gender': gender.toString(),
       'university': university,
       'profileImageUrl': profileImageUrlFirestore,
       'bio': bio,
@@ -135,6 +141,8 @@ class UserModel extends Model<UserEntity> {
       'followeeCount': followeeCount,
       'followerCount': followerCount,
       'activeEvents': activeEvents,
+      'isPrivate': isPrivate,
+      'hideSavedEvents': hideSavedEvents,
     };
   }
 
@@ -180,6 +188,8 @@ class UserModel extends Model<UserEntity> {
   final int followeeCount;
   final int followerCount;
   final List<EventEntity> activeEvents;
+  final bool isPrivate;
+  final bool hideSavedEvents;
 
   final List<String> hobbies;
 }

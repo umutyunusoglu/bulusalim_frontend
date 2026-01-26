@@ -1,8 +1,8 @@
 enum GenderEnum {
-  male._('male'),
-  female._('female'),
-  other._('other'),
-  preferNotToSay._('preferNotToSay');
+  male._('Erkek'),
+  female._('Kadın'),
+  other._('Diğer'),
+  preferNotToSay._('Belirtmek İstemiyorum');
 
   const GenderEnum._(this.value);
 

@@ -1,4 +1,8 @@
+import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
+import 'package:bulusalim/core/utils/types/types.dart';
+import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
+import 'package:bulusalim/domain/repositories/user_repository.dart';
 import 'package:bulusalim/domain/services/security_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -23,14 +27,19 @@ class SecurityServiceImpl implements SecurityService {
 
     if (currentUserID == null || reportedUserID == null) return;
 
+    final UserRepository userRepository = getIt<UserRepository>();
+    final blockedUser = await userRepository.getUser(reportedUserID);
+    if (blockedUser == null) return;
+
     await _firestore
         .collection('users')
         .doc(currentUserID)
-        .collection('blocked_users')
+        .collection('blockedUsers')
         .doc(reportedUserID)
         .set({
-          'userID': reportedUserID,
-          'blocked_at': FieldValue.serverTimestamp(),
+          'userID': blockedUser.userID,
+          'username': blockedUser.username,
+          'profileImageUrl': blockedUser.profileImageUrl,
         });
 
     _logger.info('User $reportedUserID has been blocked by $currentUserID.');
@@ -70,5 +79,56 @@ class SecurityServiceImpl implements SecurityService {
       _logger.error('Unexpected error during reporting: $e');
       throw Exception('Bir hata oluştu. Lütfen tekrar deneyin.');
     }
+  }
+
+  @override
+  Future<void> unblockUser(
+    Identifier ownerID,
+    Identifier blockedUserID,
+  ) async {
+    if (!await isUserBlocked(ownerID, blockedUserID)) {
+      return;
+    }
+
+    await _firestore
+        .collection('users')
+        .doc(ownerID)
+        .collection('blockedUsers')
+        .doc(blockedUserID)
+        .delete();
+  }
+
+  @override
+  Future<List<CompactUserEntity>> getBlockedUsers(Identifier ownerID) async {
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(ownerID)
+        .collection('blockedUsers')
+        .get();
+
+    return snapshot.docs
+        .map(
+          (doc) => CompactUserEntity(
+            userID: doc['userID'] as String,
+            username: doc['username'] as String,
+            profileImageUrl: doc['profileImageUrl'] as String,
+          ),
+        )
+        .toList();
+  }
+
+  @override
+  Future<bool> isUserBlocked(
+    Identifier ownerID,
+    Identifier queriedUserID,
+  ) async {
+    final doc = await _firestore
+        .collection('users')
+        .doc(ownerID)
+        .collection('blockedUsers')
+        .doc(queriedUserID)
+        .get();
+
+    return doc.exists;
   }
 }
