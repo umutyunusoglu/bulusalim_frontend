@@ -18,6 +18,8 @@ abstract class UserRepository {
   );
   Future<void> deleteUser(Identifier userID);
 
+  Future<bool> tryUpdateUsername(String newUsername, String userId);
+
   // === Hobbies Subcollection ===
   Future<void> addHobby(
     Identifier userID,

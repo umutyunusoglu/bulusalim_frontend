@@ -1,5 +1,6 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/screens/settings/acoount_settings_page.dart';
 import 'package:bulusalim/screens/settings/blocked_users_page.dart';
@@ -322,7 +323,7 @@ class SettingsPage extends StatelessWidget {
             radius: 24.r,
             backgroundColor: AppColors.dividerColor,
             backgroundImage: (profileImageUrl.isNotEmpty)
-                ? NetworkImage(profileImageUrl)
+                ? NetworkImage(fixEmulatorUrl(profileImageUrl))
                 : null,
             child: (profileImageUrl.isEmpty)
                 ? Icon(Icons.person, color: AppColors.textGrey, size: 24.sp)
