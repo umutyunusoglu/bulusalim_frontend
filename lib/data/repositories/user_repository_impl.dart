@@ -183,38 +183,41 @@ class UserRepositoryImpl implements UserRepository {
     Map<String, dynamic> updates,
   ) async {
     _logger.info('Updating user: $userID');
+    try {
+      await _firestore.runTransaction((transaction) async {
+        // 1. Eğer updates içinde 'username' alanı varsa benzersizlik kontrolü yap
+        if (updates.containsKey('username')) {
+          final newUsername = updates['username'] as String;
+          final lowercaseName = newUsername.toLowerCase();
 
-    return await _firestore.runTransaction((transaction) async {
-      // 1. Eğer updates içinde 'username' alanı varsa benzersizlik kontrolü yap
-      if (updates.containsKey('username')) {
-        final newUsername = updates['username'] as String;
-        final lowercaseName = newUsername.toLowerCase();
+          // İsmin başkası tarafından alınıp alınmadığını kontrol et
+          final querySnapshot = await _firestore
+              .collection('users')
+              .where('username_lowercase', isEqualTo: lowercaseName)
+              .get();
 
-        // İsmin başkası tarafından alınıp alınmadığını kontrol et
-        final querySnapshot = await _firestore
-            .collection('users')
-            .where('username_lowercase', isEqualTo: lowercaseName)
-            .get();
+          // Eğer isim varsa VE bu isim bizim şu anki userID'mize ait değilse başkası kapmış demektir
+          if (querySnapshot.docs.isNotEmpty &&
+              querySnapshot.docs.first.id != userID) {
+            _logger.warn(
+              'Username $newUsername is already taken by another user.',
+            );
+            throw Exception('username-already-exists');
+          }
 
-        // Eğer isim varsa VE bu isim bizim şu anki userID'mize ait değilse başkası kapmış demektir
-        if (querySnapshot.docs.isNotEmpty &&
-            querySnapshot.docs.first.id != userID) {
-          _logger.warn(
-            'Username $newUsername is already taken by another user.',
-          );
-          throw Exception('username-already-exists');
+          // Güncelleme paketine küçük harf versiyonunu da ekle (Sorgular için şart)
+          updates['username_lowercase'] = lowercaseName;
         }
 
-        // Güncelleme paketine küçük harf versiyonunu da ekle (Sorgular için şart)
-        updates['username_lowercase'] = lowercaseName;
-      }
+        // 2. Güncelleme işlemini gerçekleştir
+        final docRef = _firestore.collection('users').doc(userID);
+        transaction.update(docRef, updates);
 
-      // 2. Güncelleme işlemini gerçekleştir
-      final docRef = _firestore.collection('users').doc(userID);
-      transaction.update(docRef, updates);
-
-      _logger.info('User $userID successfully updated');
-    });
+        _logger.info('User $userID successfully updated');
+      });
+    } catch (e) {
+      _logger.warn('İşlem hatası: $e');
+    }
   }
 
   // === Hobbies Subcollection ===
