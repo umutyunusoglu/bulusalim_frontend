@@ -102,15 +102,73 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Future<void> createUser(
-    UserEntity user,
-  ) async {
-    _logger.info('Creating user: ${user.userID}');
+  Future<void> createUser(UserEntity user) async {
+    _logger.info(
+      'Creating user: ${user.userID} with username: ${user.username}',
+    );
 
-    final doc = _firestore.collection('users').doc();
-    final userModel = UserModel.fromEntity(user.copyWith(userID: doc.id));
+    // Sorgulama yapabilmek için username'in küçük harf versiyonu şart
+    final lowercaseUsername = user.username!.toLowerCase();
 
-    await doc.set(userModel.toFirestore());
+    return await _firestore.runTransaction((transaction) async {
+      // 1. ADIM: Username daha önce alınmış mı kontrol et
+      final usernameQuery = await _firestore
+          .collection('users')
+          .where('username_lowercase', isEqualTo: lowercaseUsername)
+          .get();
+
+      if (usernameQuery.docs.isNotEmpty) {
+        _logger.warn('Username already taken: ${user.username}');
+        throw Exception('username-already-exists');
+        // UI tarafında bu hatayı yakalayıp "Bu isim alınmış" diyebilirsin.
+      }
+
+      // 2. ADIM: Yeni doküman referansını al
+      // Eğer Auth'tan gelen bir UID varsa onu kullanmak daha mantıklıdır (user.userID)
+      final docRef = _firestore.collection('users').doc(user.userID);
+
+      // 3. ADIM: Modelini hazırla (lowercase alanını eklemeyi unutma)
+      final userModel = UserModel.fromEntity(user);
+      final userData = userModel.toFirestore();
+      userData['username_lowercase'] =
+          lowercaseUsername; // Veritabanına bu alanı ekliyoruz
+
+      // 4. ADIM: Kaydı gerçekleştir
+      transaction.set(docRef, userData);
+
+      _logger.info('User successfully created with unique username');
+    });
+  }
+
+  @override
+  Future<bool> tryUpdateUsername(String newUsername, String userId) async {
+    final lowercaseName = newUsername.toLowerCase();
+
+    try {
+      return await _firestore.runTransaction((transaction) async {
+        // 1. ADIM: SORGULA (Transaction içinde)
+        final snapshot = await _firestore
+            .collection('users')
+            .where('username_lowercase', isEqualTo: lowercaseName)
+            .get();
+
+        // Eğer isim başkası tarafından alınmışsa işlemi iptal et
+        if (snapshot.docs.isNotEmpty && snapshot.docs.first.id != userId) {
+          return false;
+        }
+
+        // 2. ADIM: YAZ (Transaction içinde)
+        transaction.update(_firestore.collection('users').doc(userId), {
+          'username': newUsername,
+          'username_lowercase': lowercaseName,
+        });
+
+        return true; // İşlem başarılı, isim alındı ve güncellendi.
+      });
+    } catch (e) {
+      _logger.warn('İşlem hatası: $e');
+      return false;
+    }
   }
 
   @override
@@ -121,11 +179,42 @@ class UserRepositoryImpl implements UserRepository {
 
   @override
   Future<void> updateUser(
-    Identifier userID,
+    String userID,
     Map<String, dynamic> updates,
   ) async {
     _logger.info('Updating user: $userID');
-    await _firestore.collection('users').doc(userID).update(updates);
+
+    return await _firestore.runTransaction((transaction) async {
+      // 1. Eğer updates içinde 'username' alanı varsa benzersizlik kontrolü yap
+      if (updates.containsKey('username')) {
+        final newUsername = updates['username'] as String;
+        final lowercaseName = newUsername.toLowerCase();
+
+        // İsmin başkası tarafından alınıp alınmadığını kontrol et
+        final querySnapshot = await _firestore
+            .collection('users')
+            .where('username_lowercase', isEqualTo: lowercaseName)
+            .get();
+
+        // Eğer isim varsa VE bu isim bizim şu anki userID'mize ait değilse başkası kapmış demektir
+        if (querySnapshot.docs.isNotEmpty &&
+            querySnapshot.docs.first.id != userID) {
+          _logger.warn(
+            'Username $newUsername is already taken by another user.',
+          );
+          throw Exception('username-already-exists');
+        }
+
+        // Güncelleme paketine küçük harf versiyonunu da ekle (Sorgular için şart)
+        updates['username_lowercase'] = lowercaseName;
+      }
+
+      // 2. Güncelleme işlemini gerçekleştir
+      final docRef = _firestore.collection('users').doc(userID);
+      transaction.update(docRef, updates);
+
+      _logger.info('User $userID successfully updated');
+    });
   }
 
   // === Hobbies Subcollection ===

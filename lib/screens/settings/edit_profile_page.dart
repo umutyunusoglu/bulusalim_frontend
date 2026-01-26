@@ -1,6 +1,11 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
+import 'package:bulusalim/core/utils/logging/logging_service.dart';
+import 'package:bulusalim/core/utils/types/enums/gender_enum.dart';
+import 'package:bulusalim/domain/repositories/user_repository.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
+import 'package:bulusalim/domain/usecases/upload_profile_picture_usecase.dart';
 import 'package:bulusalim/screens/settings/profile_input_row.dart';
 import 'package:flutter/cupertino.dart'; // Carousel DatePicker için gerekli
 import 'package:flutter/material.dart';
@@ -19,9 +24,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController _genderController;
   late TextEditingController _dobController;
 
+  late GenderEnum _selectedGender;
+  late DateTime _selectedDob;
+
   bool _hideSavedEvents = false;
   String _profileImageUrl = '';
   String _username = '';
+
+  bool _profileImageChanged = false;
+
+  late String _previousName;
+  late String _previousBio;
+  late String _previousGender;
+  late String _previousDob;
+  late bool _previousHideSavedEvents;
+
   bool _hasChanges = false;
 
   // Carousel dönerken seçilen geçici tarih
@@ -35,12 +52,29 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   void _initializeUserData() {
     final user = getIt<SessionService>().currentUser;
+
     _nameController = TextEditingController(text: user?.username ?? '');
     _bioController = TextEditingController(text: user?.bio ?? '');
-    _genderController = TextEditingController(text: '');
-    _dobController = TextEditingController(text: '');
+    _genderController = TextEditingController(
+      text: user?.gender.toString() ?? '',
+    );
+    _dobController = TextEditingController(
+      text: user?.birthDate != null
+          ? '${user!.birthDate.day} ${_getMonthName(user.birthDate.month)} ${user.birthDate.year}'
+          : '',
+    );
     _username = user?.username ?? '';
     _profileImageUrl = user?.profileImageUrl ?? '';
+    _hideSavedEvents = user?.hideSavedEvents ?? false;
+    _selectedGender = user?.gender ?? GenderEnum.preferNotToSay;
+    _selectedDob = user?.birthDate ?? DateTime(2002, 1, 1);
+
+    // Önceki değerleri sakla
+    _previousName = user?.username ?? '';
+    _previousBio = user?.bio ?? '';
+    _previousGender = user?.gender.toString() ?? '';
+    _previousDob = _dobController.text;
+    _previousHideSavedEvents = user?.hideSavedEvents ?? false;
   }
 
   @override
@@ -120,7 +154,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     onTap: () {
                       Navigator.pop(context);
                       setState(() {
+                        //TODO: Fotoğraf kaldırma işlemi
                         _profileImageUrl = '';
+                        _profileImageChanged = true;
                         _hasChanges = true;
                       });
                     },
@@ -203,11 +239,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   _buildGenderOption(icon: Icons.female, label: 'Kadın'),
                   SizedBox(height: 27.h),
                   _buildGenderOption(icon: Icons.male, label: 'Erkek'),
-                  SizedBox(height: 27.h),
-                  _buildGenderOption(
-                    icon: Icons.transgender,
-                    label: 'Non-binary',
-                  ),
+
                   SizedBox(height: 27.h),
                   _buildGenderOption(
                     icon: Icons.block_outlined,
@@ -232,6 +264,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return InkWell(
       onTap: () {
         _genderController.text = label;
+        switch (label) {
+          case 'Kadın':
+            _selectedGender = GenderEnum.female;
+          case 'Erkek':
+            _selectedGender = GenderEnum.male;
+          case 'Belirtmek İstemiyorum':
+            _selectedGender = GenderEnum.preferNotToSay;
+          case 'Diğer':
+            _selectedGender = GenderEnum.other;
+          default:
+            _selectedGender = GenderEnum.preferNotToSay;
+        }
+
         _onFieldChanged(label);
         Navigator.pop(context);
       },
@@ -303,8 +348,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       onPressed: () {
                         // Seçimi onayla
                         final formattedDate =
-                            "${_tempSelectedDate.day} ${_getMonthName(_tempSelectedDate.month)} ${_tempSelectedDate.year}";
+                            '${_tempSelectedDate.day} ${_getMonthName(_tempSelectedDate.month)} ${_tempSelectedDate.year}';
                         _dobController.text = formattedDate;
+                        _selectedDob = _tempSelectedDate;
                         _onFieldChanged(formattedDate);
                         Navigator.pop(context);
                       },
@@ -386,7 +432,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         actions: [
           TextButton(
             onPressed: () async {
-              debugPrint('Kaydediliyor: ${_nameController.text}');
+              await _saveProfileChanges();
               if (context.mounted) Navigator.pop(context, true);
             },
             child: Text(
@@ -492,7 +538,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               radius: 38.r,
               backgroundColor: Colors.grey.shade200,
               backgroundImage: _profileImageUrl.isNotEmpty
-                  ? NetworkImage(_profileImageUrl)
+                  ? NetworkImage(fixEmulatorUrl(_profileImageUrl))
                   : null,
               child: _profileImageUrl.isEmpty
                   ? Icon(Icons.person, size: 38.sp, color: Colors.grey)
@@ -533,5 +579,43 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ),
       ],
     );
+  }
+
+  Future<void> _saveProfileChanges() async {
+    debugPrint('Profil değişiklikleri kaydediliyor...');
+    var updatedData = <String, dynamic>{};
+
+    if (_profileImageChanged) {
+      final newURL = await getIt<UploadProfilePicture>().call(
+        getIt<SessionService>().currentUser!.userID,
+        _profileImageUrl,
+      );
+      updatedData['profileImageUrl'] = newURL;
+    }
+    if (_nameController.text != _previousName) {
+      updatedData['username'] = _nameController.text;
+    }
+    if (_bioController.text != _previousBio) {
+      updatedData['bio'] = _bioController.text;
+    }
+    if (_genderController.text != _previousGender) {
+      getIt<LoggingService>().info('Yeni cinsiyet seçildi: $_selectedGender');
+      updatedData['gender'] = _selectedGender;
+    }
+    if (_dobController.text != _previousDob) {
+      updatedData['birthDate'] = _selectedDob;
+    }
+    if (_hideSavedEvents != _previousHideSavedEvents) {
+      updatedData['hideSavedEvents'] = _hideSavedEvents;
+    }
+
+    if (updatedData.isNotEmpty) {
+      await getIt<UserRepository>().updateUser(
+        getIt<SessionService>().currentUser!.userID,
+        updatedData,
+      );
+    }
+
+    debugPrint('Profil değişiklikleri kaydedildi.');
   }
 }
