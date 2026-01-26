@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class BottomSheetOption {
-  // Eğer true ise  kırmızı olur.
-
   BottomSheetOption({
     required this.icon,
     required this.text,
@@ -20,7 +18,7 @@ class BottomSheetOption {
 class CustomActionBottomSheet extends StatelessWidget {
   const CustomActionBottomSheet({
     required this.options,
-    this.height, //yukekliği dışarıdan ezebilir
+    this.height,
     super.key,
   });
 
@@ -39,10 +37,9 @@ class CustomActionBottomSheet extends StatelessWidget {
     );
 
     return Container(
-      // Eğer yükseklik verilmezse içeriğe göre esner, verilirse sabit kalır.
       height: height,
       width: double.infinity,
-      padding: EdgeInsets.only(bottom: 20.h),
+      padding: EdgeInsets.only(bottom: 30.h),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
@@ -52,7 +49,6 @@ class CustomActionBottomSheet extends StatelessWidget {
         children: [
           SizedBox(height: 12.h),
 
-          // --- SÜRÜKLEME ÇUBUĞU (Sabit Tasarım) ---
           Container(
             width: 32.w,
             height: 4.h,
@@ -62,21 +58,16 @@ class CustomActionBottomSheet extends StatelessWidget {
             ),
           ),
 
-          SizedBox(height: 24.h), // İçerik ile çubuk arası boşluk
-          // --- DİNAMİK LİSTE ---
-          // Gelen seçenekler listesini dönüp ekrana basıyoruz
+          SizedBox(height: 24.h),
           ...options.map((option) {
             final color = option.isDestructive
-                ? AppColors
-                      .primaryColor // Kırmızı (#FE6348)
+                ? AppColors.primaryColor
                 : Colors.black87;
 
             return Column(
               children: [
                 InkWell(
                   onTap: () {
-                    // Tıklanınca önce bottom sheet'i kapat, sonra aksiyonu al
-                    // (veya aksiyon içinde context.pop yapabilirsin, tercih senin)
                     option.onTap();
                   },
                   child: Padding(
