@@ -1,6 +1,7 @@
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class StaticInfoPage extends StatelessWidget {
   // Mavi Link Metni
@@ -9,11 +10,13 @@ class StaticInfoPage extends StatelessWidget {
     required this.title,
     required this.content,
     required this.linkText,
+    required this.linkUrl,
     super.key,
   });
   final String title; // AppBar Başlığı (Örn: Gizlilik Politikası)
   final String content; // Açıklama Metni
   final String linkText;
+  final String linkUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +45,8 @@ class StaticInfoPage extends StatelessWidget {
             // Mavi Link Metni
             GestureDetector(
               onTap: () {
-                debugPrint('$title linkine tıklandı.');
+                final uri = Uri.parse(linkUrl);
+                launchUrl(uri);
               },
               child: Text(
                 linkText,

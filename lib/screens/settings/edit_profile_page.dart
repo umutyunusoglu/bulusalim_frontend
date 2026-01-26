@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
@@ -10,6 +12,7 @@ import 'package:bulusalim/screens/settings/profile_input_row.dart';
 import 'package:flutter/cupertino.dart'; // Carousel DatePicker için gerekli
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:image_picker/image_picker.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -133,7 +136,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     label: 'Fotoğraf Çek',
                     onTap: () {
                       Navigator.pop(context);
-                      // Kamera işlemi
+                      _pickImage(ImageSource.camera);
                     },
                   ),
                   SizedBox(height: 27.h),
@@ -142,7 +145,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     label: 'Fotoğraflardan Seç',
                     onTap: () {
                       Navigator.pop(context);
-                      // Galeri işlemi
+                      _pickImage(ImageSource.gallery);
                     },
                   ),
                   SizedBox(height: 27.h),
@@ -529,6 +532,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   // --- AVATAR BÖLÜMÜ ---
   Widget _buildProfilePhotoSection() {
+    ImageProvider? imageProvider;
+
+    if (_profileImageUrl.isNotEmpty) {
+      // Eğer URL 'http' ile başlıyorsa sunucudaki resimdir
+      if (_profileImageUrl.startsWith('http')) {
+        imageProvider = NetworkImage(fixEmulatorUrl(_profileImageUrl));
+      } else {
+        // Değilse, cihazdan yeni seçilmiş yerel bir dosyadır
+        imageProvider = FileImage(File(_profileImageUrl));
+      }
+    }
+
     return Column(
       children: [
         Stack(
@@ -537,9 +552,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
             CircleAvatar(
               radius: 38.r,
               backgroundColor: Colors.grey.shade200,
-              backgroundImage: _profileImageUrl.isNotEmpty
-                  ? NetworkImage(fixEmulatorUrl(_profileImageUrl))
-                  : null,
+              backgroundImage:
+                  imageProvider, // Yukarıdaki mantığı buraya veriyoruz
               child: _profileImageUrl.isEmpty
                   ? Icon(Icons.person, size: 38.sp, color: Colors.grey)
                   : null,
@@ -581,6 +595,28 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
+  Future<void> _pickImage(ImageSource source) async {
+    final ImagePicker picker = ImagePicker();
+    try {
+      final XFile? pickedFile = await picker.pickImage(
+        source: source,
+        imageQuality: 80, // Performans için kaliteyi biraz düşürebilirsin
+        maxWidth: 1000, // Çok büyük resimleri küçültmek iyi olur
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _profileImageUrl = pickedFile.path; // Yerel dosya yolunu kaydet
+          _profileImageChanged = true; // Değişiklik olduğunu işaretle
+          _hasChanges = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('Fotoğraf seçerken hata oluştu: $e');
+      // İstersen burada bir snackbar ile kullanıcıya hata gösterebilirsin
+    }
+  }
+
   Future<void> _saveProfileChanges() async {
     debugPrint('Profil değişiklikleri kaydediliyor...');
     var updatedData = <String, dynamic>{};
@@ -600,7 +636,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
     if (_genderController.text != _previousGender) {
       getIt<LoggingService>().info('Yeni cinsiyet seçildi: $_selectedGender');
-      updatedData['gender'] = _selectedGender;
+      updatedData['gender'] = _selectedGender.toString();
     }
     if (_dobController.text != _previousDob) {
       updatedData['birthDate'] = _selectedDob;

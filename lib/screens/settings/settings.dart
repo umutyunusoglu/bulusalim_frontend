@@ -2,7 +2,7 @@ import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
-import 'package:bulusalim/screens/settings/acoount_settings_page.dart';
+import 'package:bulusalim/screens/settings/account_settings_page.dart';
 import 'package:bulusalim/screens/settings/blocked_users_page.dart';
 import 'package:bulusalim/screens/settings/delete_account_page.dart';
 import 'package:bulusalim/screens/settings/device_permissons_page.dart';
@@ -245,6 +245,7 @@ class SettingsPage extends StatelessWidget {
                           'Outnest’te verilerinin nasıl toplandığını, kullanıldığını ve korunduğunu buradan öğrenebilirsin.',
                       linkText:
                           'Gizlilik ve veri kullanımı hakkında daha fazla bilgi al',
+                      linkUrl: 'https://outnest.app/yasal/gizlilik-politikasi',
                     ),
                   ),
                 );
@@ -262,6 +263,7 @@ class SettingsPage extends StatelessWidget {
                           'Outnest’i kullanırken geçerli olan kurallar ve sorumluluklar hakkında buradan bilgi edinebilirsin.',
                       linkText:
                           'Hizmet şartları ve kullanım koşulları hakkında daha fazla bilgi al',
+                      linkUrl: 'https://outnest.app/yasal/hizmet-kosullari',
                     ),
                   ),
                 );
@@ -270,7 +272,18 @@ class SettingsPage extends StatelessWidget {
             SettingsTile(
               title: 'Destek ve Yardım',
               onTap: () {
-                // Destek sayfasına yönlendirme eklenebilir
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const StaticInfoPage(
+                      title: 'Destek ve Yardım',
+                      content:
+                          'Outnest ile ilgili soruların mı var? Yardım almak ve destek talep etmek için buraya göz atabilirsin.',
+                      linkText: 'Destek ve yardım sayfasına git',
+                      linkUrl: 'https://outnest.app/',
+                    ),
+                  ),
+                );
               },
             ),
 
