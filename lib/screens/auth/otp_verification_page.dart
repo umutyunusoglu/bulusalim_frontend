@@ -52,13 +52,13 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
           verificationId: widget.verificationID ?? '',
           smsCode: otpCode,
         );
+        
         logger.info('Kullanıcı doğrulandı: $result');
       } catch (e) {
         debugPrint('Hata: $e');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Doğrulama hatası: $e')),
         );
-        return;
       }
 
       if (widget.isLogin) {
