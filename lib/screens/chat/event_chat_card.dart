@@ -1,9 +1,9 @@
-import 'package:bulusalim/core/constants/configs/app_config.dart';
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
-import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
-import 'package:bulusalim/screens/chat/chat_event_info_chip.dart';
-import 'package:bulusalim/screens/chat/event_avatar_badge.dart';
-import 'package:bulusalim/screens/chat/event_status_according.dart';
+import 'package:outnest/core/constants/configs/app_config.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/screens/chat/chat_event_info_chip.dart';
+import 'package:outnest/screens/chat/event_avatar_badge.dart';
+import 'package:outnest/screens/chat/event_status_according.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';

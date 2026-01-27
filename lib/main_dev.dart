@@ -1,12 +1,12 @@
 import 'dart:ui';
-import 'package:bulusalim/app_router.dart';
-import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/core/constants/configs/app_config.dart';
-import 'package:bulusalim/core/constants/theme/app_theme.dart';
-import 'package:bulusalim/domain/datasources/university_datasource.dart';
-import 'package:bulusalim/domain/repositories/feed_repository.dart';
-import 'package:bulusalim/domain/services/session_service.dart';
-import 'package:bulusalim/firebase_options.dart';
+import 'package:outnest/app_router.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/constants/configs/app_config.dart';
+import 'package:outnest/core/constants/theme/app_theme.dart';
+import 'package:outnest/domain/datasources/university_datasource.dart';
+import 'package:outnest/domain/repositories/feed_repository.dart';
+import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
@@ -146,16 +146,16 @@ class MainApp extends StatelessWidget {
   }
 }
 // import 'dart:ui';
-// import 'package:bulusalim/app_router.dart';
-// import 'package:bulusalim/application/providers/get_it_init.dart';
-// import 'package:bulusalim/core/constants/configs/app_config.dart';
-// import 'package:bulusalim/core/constants/theme/app_theme.dart';
-// import 'package:bulusalim/domain/datasources/university_datasource.dart';
-// import 'package:bulusalim/domain/repositories/feed_repository.dart';
-// import 'package:bulusalim/domain/repositories/user_repository.dart';
-// import 'package:bulusalim/domain/services/push_notifications_service.dart';
-// import 'package:bulusalim/domain/services/session_service.dart';
-// import 'package:bulusalim/firebase_options.dart';
+// import 'package:outnest/app_router.dart';
+// import 'package:outnest/application/providers/get_it_init.dart';
+// import 'package:outnest/core/constants/configs/app_config.dart';
+// import 'package:outnest/core/constants/theme/app_theme.dart';
+// import 'package:outnest/domain/datasources/university_datasource.dart';
+// import 'package:outnest/domain/repositories/feed_repository.dart';
+// import 'package:outnest/domain/repositories/user_repository.dart';
+// import 'package:outnest/domain/services/push_notifications_service.dart';
+// import 'package:outnest/domain/services/session_service.dart';
+// import 'package:outnest/firebase_options.dart';
 // import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:cloud_functions/cloud_functions.dart';
 // import 'package:firebase_app_check/firebase_app_check.dart';

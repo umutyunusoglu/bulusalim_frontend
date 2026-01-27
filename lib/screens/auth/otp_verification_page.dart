@@ -1,9 +1,9 @@
-import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/components/auth_button.dart';
-import 'package:bulusalim/components/otp_row.dart';
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
-import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/domain/services/auth_service.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/components/auth_button.dart';
+import 'package:outnest/components/otp_row.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/domain/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';

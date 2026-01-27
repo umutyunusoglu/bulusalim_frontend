@@ -1,4 +1,4 @@
-import 'package:bulusalim/core/utils/types/types.dart';
+import 'package:outnest/core/utils/types/types.dart';
 
 class MessageEntity {
   MessageEntity({

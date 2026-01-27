@@ -1,7 +1,7 @@
-import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
-import 'package:bulusalim/domain/datasources/university_datasource.dart';
-import 'package:bulusalim/domain/repositories/user_repository.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/domain/datasources/university_datasource.dart';
+import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:pinput/pinput.dart';

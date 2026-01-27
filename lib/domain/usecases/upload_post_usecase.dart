@@ -1,13 +1,13 @@
 import 'dart:io';
 
-import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
-import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
-import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
-import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
-import 'package:bulusalim/domain/repositories/post_repository.dart';
-import 'package:bulusalim/domain/services/file_service.dart';
-import 'package:bulusalim/domain/services/session_service.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/feed/post/post_entity.dart';
+import 'package:outnest/domain/entities/hobby/hobby_entity.dart';
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
+import 'package:outnest/domain/repositories/post_repository.dart';
+import 'package:outnest/domain/services/file_service.dart';
+import 'package:outnest/domain/services/session_service.dart';
 
 class UploadPost {
   UploadPost({

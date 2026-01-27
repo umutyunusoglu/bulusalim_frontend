@@ -1,6 +1,6 @@
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
-import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
-import 'package:bulusalim/domain/entities/notification/notification_entity.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
+import 'package:outnest/domain/entities/notification/notification_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:timeago/timeago.dart' as timeago;

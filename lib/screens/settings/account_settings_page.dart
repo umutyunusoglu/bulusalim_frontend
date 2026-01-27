@@ -1,14 +1,14 @@
-import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
-import 'package:bulusalim/core/utils/types/enums/account_type_enum.dart';
-import 'package:bulusalim/domain/repositories/user_repository.dart';
-import 'package:bulusalim/domain/services/auth_service.dart';
-import 'package:bulusalim/domain/services/session_service.dart';
-import 'package:bulusalim/screens/settings/change_account_type_page.dart';
-import 'package:bulusalim/screens/settings/change_password_page.dart';
-import 'package:bulusalim/screens/settings/change_phone_number.dart'; // Dosya ismine dikkat
-import 'package:bulusalim/screens/settings/change_university_page.dart';
-import 'package:bulusalim/screens/settings/connect_social_media_page.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
+import 'package:outnest/domain/repositories/user_repository.dart';
+import 'package:outnest/domain/services/auth_service.dart';
+import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/screens/settings/change_account_type_page.dart';
+import 'package:outnest/screens/settings/change_password_page.dart';
+import 'package:outnest/screens/settings/change_phone_number.dart'; // Dosya ismine dikkat
+import 'package:outnest/screens/settings/change_university_page.dart';
+import 'package:outnest/screens/settings/connect_social_media_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
