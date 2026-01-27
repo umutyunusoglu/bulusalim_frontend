@@ -1,4 +1,5 @@
 import 'package:bulusalim/core/constants/configs/app_config.dart';
+import 'package:bulusalim/core/utils/types/enums/account_type_enum.dart';
 // GenderEnum importunun doğru olduğundan emin ol
 import 'package:bulusalim/core/utils/types/enums/gender_enum.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
@@ -30,6 +31,9 @@ class UserModel extends Model<UserEntity> {
     required this.activeEvents,
     required this.isPrivate,
     required this.hideSavedEvents,
+    required this.instagram,
+    required this.phoneNumber,
+    required this.accountType,
   });
 
   @override
@@ -56,6 +60,9 @@ class UserModel extends Model<UserEntity> {
       activeEvents: entity.activeEvents,
       isPrivate: entity.isPrivate,
       hideSavedEvents: entity.hideSavedEvents,
+      instagram: entity.instagram,
+      phoneNumber: entity.phoneNumber,
+      accountType: entity.accountType,
     );
   }
 
@@ -86,7 +93,7 @@ class UserModel extends Model<UserEntity> {
           .toLowerCase(),
       birthDate: birthDate,
       gender: gender,
-      university: doc['university'] as String?,
+      university: doc['universityName'] as String?,
       universityEmail: doc['universityEmail'] as String?,
       isUniversityVerified: doc['isUniversityVerified'] as bool? ?? false,
       profileImageUrl: doc['profileImageUrl'] as String? ?? '',
@@ -105,6 +112,11 @@ class UserModel extends Model<UserEntity> {
       activeEvents: [], // Aktif etkinlikler daha sonra yüklenebilir
       isPrivate: doc['isPrivate'] as bool? ?? false,
       hideSavedEvents: doc['hideSavedEvents'] as bool? ?? false,
+      instagram: doc['instagram'] as String?,
+      phoneNumber: doc['phoneNumber'] as String?,
+      accountType: AccountType.fromString(
+        doc['accountType'] as String? ?? 'personal',
+      ),
     );
   }
 
@@ -130,7 +142,9 @@ class UserModel extends Model<UserEntity> {
       'username': username,
       'birthDate': Timestamp.fromDate(birthDate),
       'gender': gender.toString(),
-      'university': university,
+      'universityName': university,
+      'universityEmail': universityEmail,
+      'isUniversityVerified': isUniversityVerified,
       'profileImageUrl': profileImageUrlFirestore,
       'bio': bio,
       'createdAt': Timestamp.fromDate(createdAt),
@@ -143,6 +157,9 @@ class UserModel extends Model<UserEntity> {
       'activeEvents': activeEvents,
       'isPrivate': isPrivate,
       'hideSavedEvents': hideSavedEvents,
+      'instagram': instagram,
+      'phoneNumber': phoneNumber,
+      'accountType': accountType.toString(),
     };
   }
 
@@ -167,6 +184,11 @@ class UserModel extends Model<UserEntity> {
       followeeCount: followeeCount,
       followerCount: followerCount,
       activeEvents: activeEvents,
+      isPrivate: isPrivate,
+      hideSavedEvents: hideSavedEvents,
+      instagram: instagram,
+      phoneNumber: phoneNumber,
+      accountType: accountType,
     );
   }
 
@@ -190,6 +212,10 @@ class UserModel extends Model<UserEntity> {
   final List<EventEntity> activeEvents;
   final bool isPrivate;
   final bool hideSavedEvents;
+
+  final String? instagram;
+  final String? phoneNumber;
+  final AccountType accountType;
 
   final List<String> hobbies;
 }

@@ -1,3 +1,4 @@
+import 'package:bulusalim/core/utils/types/enums/account_type_enum.dart';
 import 'package:bulusalim/core/utils/types/enums/gender_enum.dart';
 import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
@@ -22,6 +23,11 @@ class UserEntity extends Equatable {
     required this.followeeCount,
     required this.followerCount,
     required this.activeEvents,
+
+    required this.accountType,
+    required this.phoneNumber,
+    required this.instagram,
+
     this.isPrivate = false,
     this.hideSavedEvents = false,
     this.hobbies = const [],
@@ -41,6 +47,10 @@ class UserEntity extends Equatable {
     String? profileImageUrl,
     String? avatarUrl,
     String? bio,
+    String? phoneNumber,
+    String? instagram,
+    AccountType? accountType,
+
     UserPermissions? permissions,
     List<String>? hobbies,
     int? followeeCount,
@@ -63,6 +73,9 @@ class UserEntity extends Equatable {
       bio: bio ?? this.bio,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      instagram: instagram ?? this.instagram,
+      accountType: accountType ?? this.accountType,
       lastActiveAt: lastActiveAt ?? this.lastActiveAt,
       permissions: permissions ?? this.permissions,
       hobbies: hobbies ?? this.hobbies,
@@ -79,12 +92,15 @@ class UserEntity extends Equatable {
   final String email;
   final String username;
   final DateTime birthDate;
+  final String? phoneNumber;
   final GenderEnum gender;
   final String? university;
   final String? universityEmail;
   final bool isUniversityVerified;
   final String profileImageUrl;
   final String? bio;
+  final String? instagram;
+  final AccountType accountType;
   final UserPermissions permissions;
   final DateTime createdAt;
   final DateTime updatedAt;
