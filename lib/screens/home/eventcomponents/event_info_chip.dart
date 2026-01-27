@@ -7,12 +7,14 @@ class EventInfoChip extends StatelessWidget {
     required this.startTime,
     required this.participantCount,
     required this.capacity,
+    this.onParticipantsTap,
     super.key,
   });
 
   final DateTime startTime;
   final int participantCount;
   final int capacity;
+  final VoidCallback? onParticipantsTap;
 
   @override
   Widget build(BuildContext context) {
@@ -46,20 +48,29 @@ class EventInfoChip extends StatelessWidget {
           ),
 
           SizedBox(width: 8.w),
-          // 2. Kişi Sayısı (SADECE BURASI GÜNCELLENDİ)
-          Icon(
-            Icons.people_outline,
-            size: 12.sp,
-            color: AppColors.infoBadgeText,
-          ),
-          SizedBox(width: 4.w),
-          Text(
-            '$participantCount', // Eski hali: '$participantCount/$capacity'
-            style: TextStyle(
-              fontFamily: 'SF Pro Display',
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w400,
-              color: AppColors.infoBadgeText,
+
+          // 2. Kişi Sayısı
+          GestureDetector(
+            onTap: onParticipantsTap,
+            behavior: HitTestBehavior.opaque,
+            child: Row(
+              children: [
+                Icon(
+                  Icons.people_outline,
+                  size: 12.sp,
+                  color: AppColors.infoBadgeText,
+                ),
+                SizedBox(width: 4.w),
+                Text(
+                  '$participantCount',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Display',
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.infoBadgeText,
+                  ),
+                ),
+              ],
             ),
           ),
 

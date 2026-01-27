@@ -19,6 +19,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
+// 3 DURUM
+enum _EventJoinStatus {
+  canJoin, // 1. Katıl
+  pending, // 2. Bekliyor
+  joined, // 3. Katıldın
+}
+
 class EventCard extends StatefulWidget {
   const EventCard({
     required this.event,
@@ -40,7 +47,8 @@ class _EventCardState extends State<EventCard> {
   late final EventRepository eventRepository;
   late final SessionService sessionService;
 
-  late bool canUserJoin;
+  late _EventJoinStatus _joinStatus;
+
   bool isSaved = false;
   bool isVisible = true;
 
@@ -52,46 +60,58 @@ class _EventCardState extends State<EventCard> {
     eventRepository = getIt<EventRepository>();
     sessionService = getIt<SessionService>();
 
-    final currentUser = sessionService.currentUser!;
-
-    canUserJoin = eventRepository.canUserJoinEvent(
-      widget.event,
-      currentUser.userID,
-    );
+    _calculateJoinStatus();
     _checkIfSaved();
   }
 
-  Future<void> _checkIfSaved() async {
-    final currentUser = sessionService.currentUser!;
+  // --- GÜVENLİ DURUM HESAPLAMA ---
+  void _calculateJoinStatus() {
+    final currentUser = sessionService.currentUser;
+    // Kullanıcı yoksa boş string ata, çökmesini engelle
+    final uid = currentUser?.userID ?? '';
 
-    //TODO: UGA BUGA YAPMA!
-    if (widget.event.creator.userID == currentUser.userID) {
-      setState(() {
-        isSaved = true;
-      });
+    // Kullanıcı giriş yapmamışsa varsayılan durum
+    if (uid.isEmpty) {
+      _joinStatus = _EventJoinStatus.canJoin;
       return;
     }
 
+    // 1. Zaten katılımcı mı? -> KATILDIN
+    if (widget.participants.any((p) => p.userID == uid) ||
+        widget.event.creator.userID == uid) {
+      _joinStatus = _EventJoinStatus.joined;
+    }
+    // 2. İstek göndermiş mi? -> BEKLİYOR (KUM SAATİ)
+    else if (widget.event.requestPool.any((p) => p.userID == uid)) {
+      _joinStatus = _EventJoinStatus.pending;
+    }
+    // 3. Diğer her durumda -> KATIL
+    else {
+      _joinStatus = _EventJoinStatus.canJoin;
+    }
+  }
+
+  Future<void> _checkIfSaved() async {
+    final currentUser = sessionService.currentUser;
+    if (currentUser == null) return; // Güvenlik kontrolü
+
+    if (widget.event.creator.userID == currentUser.userID) {
+      if (mounted) setState(() => isSaved = true);
+      return;
+    }
     final saved = await getIt<UserRepository>().isEventSaved(
       currentUser.userID,
       widget.event.eventID,
     );
-
-    if (mounted) {
-      setState(() {
-        isSaved = saved;
-      });
-    }
+    if (mounted) setState(() => isSaved = saved);
   }
 
   Future<void> _toggleSave() async {
-    final currentUser = sessionService.currentUser!;
+    final currentUser = sessionService.currentUser;
+    if (currentUser == null) return; // Güvenlik kontrolü
+
     final userRepository = getIt<UserRepository>();
-
-    setState(() {
-      isSaved = !isSaved;
-    });
-
+    setState(() => isSaved = !isSaved);
     try {
       if (isSaved) {
         await userRepository.saveEvent(currentUser.userID, widget.event);
@@ -103,18 +123,344 @@ class _EventCardState extends State<EventCard> {
       }
     } catch (e) {
       logger.error('Error toggling save status: $e');
+      if (mounted) setState(() => isSaved = !isSaved);
+    }
+  }
+
+  // --- ACTION SHEET ---
+  void _showActionBottomSheet(bool isEventMine) {
+    showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => CustomActionBottomSheet(
+        options: [
+          // BULUŞMA SAHİBİ İSE
+          if (isEventMine) ...[
+            // 1. Buluşma Ayarları
+            BottomSheetOption(
+              icon: Icons.settings_outlined,
+              text: "Buluşma Ayarları'na Git",
+              onTap: () {
+                sheetContext.pop();
+                // TODO: Ayarlar sayfasına yönlendir
+              },
+            ),
+            // 2. Paylaş
+            BottomSheetOption(
+              icon: Icons.share_outlined,
+              text: 'Buluşmayı Paylaş',
+              onTap: () {
+                logger.info('Buluşma paylaşıldı: ${widget.event.id}');
+                sheetContext.pop();
+              },
+            ),
+            // 3. Ayrıl
+            BottomSheetOption(
+              icon: Icons.exit_to_app_outlined,
+              text: 'Buluşmadan Ayrıl',
+              isDestructive: true,
+              onTap: () {
+                sheetContext.pop();
+                // TODO: Ayrılma servisini çağır
+              },
+            ),
+            // 4. İptal Et
+            BottomSheetOption(
+              icon: Icons.highlight_off_rounded,
+              text: 'Buluşmayı İptal Et',
+              isDestructive: true,
+              onTap: () async {
+                sheetContext.pop();
+                // TODO: İptal etme servisini çağır
+              },
+            ),
+          ]
+          // BAŞKASININ ETKİNLİĞİ İSE
+          else ...[
+            // 1. Paylaş
+            BottomSheetOption(
+              icon: Icons.share_outlined,
+              text: 'Buluşmayı Paylaş',
+              onTap: () {
+                sheetContext.pop();
+              },
+            ),
+            // 2. Engelle
+            BottomSheetOption(
+              icon: Icons.person_off_outlined,
+              text: 'Buluşma Sahibini Engelle',
+              isDestructive: true,
+              onTap: () async {
+                await _handleBlockUser(sheetContext);
+              },
+            ),
+            // 3. Şikayet Et
+            BottomSheetOption(
+              icon: Icons.error_outline,
+              text: 'Şikayet Et',
+              isDestructive: true,
+              onTap: () async {
+                await _handleReportEvent(sheetContext);
+              },
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleBlockUser(BuildContext sheetContext) async {
+    final currentUser = sessionService.currentUser;
+    if (currentUser == null) return;
+
+    try {
+      await getIt<SecurityService>().blockUser(
+        ReportData(
+          reportedEntityId: widget.event.id,
+          reportedEntityType: 'event',
+          reportedUserId: widget.event.creator.userID,
+          requestOwnerId: currentUser.userID,
+        ),
+      );
+      if (mounted) setState(() => isVisible = false);
+    } catch (e) {
+      logger.error('Block user failed: $e');
+    }
+    if (sheetContext.mounted) sheetContext.pop();
+  }
+
+  Future<void> _handleReportEvent(BuildContext sheetContext) async {
+    final currentUser = sessionService.currentUser;
+    if (currentUser == null) return;
+
+    try {
+      await getIt<SecurityService>().sendReport(
+        ReportData(
+          reportedEntityId: widget.event.id,
+          reportedEntityType: 'event',
+          reportedUserId: widget.event.creator.userID,
+          requestOwnerId: currentUser.userID,
+        ),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Rapor gönderildi.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Bir hata oluştu.')),
+        );
+      }
+    }
+    if (sheetContext.mounted) sheetContext.pop();
+  }
+
+  void _showParticipantsBottomSheet() {
+    final creator = widget.event.creator as CompactUserEntity;
+    final otherParticipants = widget.participants
+        .where((p) => p.userID != creator.userID)
+        .toList();
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+      ),
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.5,
+          minChildSize: 0.3,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return Column(
+              children: [
+                SizedBox(height: 12.h),
+                Container(
+                  width: 36.w,
+                  height: 4.h,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2.r),
+                  ),
+                ),
+                SizedBox(height: 20.h),
+                // Başlık
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Buluşmaya Katılacak Kişiler',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Display',
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                // Liste
+                Expanded(
+                  child: ListView.builder(
+                    controller: scrollController,
+                    itemCount: 1 + otherParticipants.length,
+                    itemBuilder: (context, index) {
+                      final isCreatorItem = index == 0;
+
+                      // Eğer ilk elemansa Creator verisini, değilse listeden al
+                      final user = isCreatorItem
+                          ? creator
+                          : otherParticipants[index - 1];
+
+                      // 1. GÜVENLİ URL KONTROLÜ (Çökme Önleyici)
+                      // Eğer profil resmi boşsa varsayılan bir resim ata
+                      final rawUrl = user.profileImageUrl.isNotEmpty
+                          ? user.profileImageUrl
+                          : 'https://picsum.photos/200'; // Placeholder
+
+                      // 2. EMULATOR FIX (Resim Görünmeme Önleyici)
+                      final safeImageUrl = fixEmulatorUrl(rawUrl);
+
+                      return InkWell(
+                        onTap: () =>
+                            context.push('/home/profile/${user.userID}'),
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFF9F9F9),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 8,
+                            ),
+                            child: Row(
+                              children: [
+                                // Avatar
+                                CircleAvatar(
+                                  radius: 24.r,
+                                  backgroundColor: Colors.grey.shade200,
+                                  backgroundImage: NetworkImage(safeImageUrl),
+                                  onBackgroundImageError: (_, __) {
+                                    // Resim yüklenemezse burası tetiklenir,
+                                    // app çökmez ama kullanıcı boş avatar görür.
+                                  },
+                                ),
+                                SizedBox(width: 20.w),
+                                // Kullanıcı Adı
+                                Expanded(
+                                  child: Text(
+                                    user.username,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontFamily: 'SF Pro Display',
+                                      fontSize: 16.sp,
+                                      fontWeight: FontWeight.w400,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                                // Buluşma Sahibi Etiketi
+                                if (isCreatorItem) ...[
+                                  SizedBox(width: 8.w),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 8.w,
+                                      vertical: 4.h,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: AppColors.primaryColor,
+                                      ),
+                                      color: AppColors.primaryColor.withOpacity(
+                                        0.05,
+                                      ),
+                                      borderRadius: BorderRadius.circular(20.r),
+                                    ),
+                                    child: Text(
+                                      'buluşma sahibi',
+                                      style: TextStyle(
+                                        fontFamily: 'SF Pro Display',
+                                        fontSize: 10.sp,
+                                        color: AppColors.primaryColor,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _handleJoinTap() async {
+    final currentUser = sessionService.currentUser;
+    if (currentUser == null) return; // Güvenlik kontrolü
+
+    if (_joinStatus != _EventJoinStatus.canJoin) return;
+
+    setState(() {
+      _joinStatus = _EventJoinStatus.pending;
+    });
+
+    try {
+      await eventRepository.requestJoin(
+        widget.event.id,
+        CompactUserEntity(
+          userID: currentUser.userID,
+          username: currentUser.username,
+          profileImageUrl: currentUser.profileImageUrl,
+        ),
+      );
+
+      widget.event.requestPool.add(
+        CompactUserEntity(
+          userID: currentUser.userID,
+          username: currentUser.username,
+          profileImageUrl: currentUser.profileImageUrl,
+        ),
+      );
+    } catch (e) {
+      logger.error('Join request failed: $e');
       if (mounted) {
         setState(() {
-          isSaved = !isSaved;
+          _joinStatus = _EventJoinStatus.canJoin;
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('İstek gönderilemedi, tekrar deneyin.')),
+        );
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = sessionService.currentUser!;
-    final isPostMine = widget.event.creator.userID == currentUser.userID;
+    final currentUser = sessionService.currentUser;
+
+    final isEventMine =
+        currentUser != null &&
+        widget.event.creator.userID == currentUser.userID;
 
     getIt<RemoteConfigService>();
     final categories = AppConfig.categories;
@@ -128,7 +474,7 @@ class _EventCardState extends State<EventCard> {
                 ),
               )
               .toList()
-        : <AvatarInfo>[
+        : [
             AvatarInfo(
               userId: '1',
               imageUrl: 'https://picsum.photos/seed/1/100',
@@ -142,6 +488,10 @@ class _EventCardState extends State<EventCard> {
               imageUrl: 'https://picsum.photos/seed/3/100',
             ),
           ];
+
+    final categoryIcon = widget.event.hobbies.isNotEmpty
+        ? categories[widget.event.hobbies[0]] ?? ''
+        : '🎉';
 
     return AnimatedCrossFade(
       duration: const Duration(milliseconds: 500),
@@ -166,12 +516,12 @@ class _EventCardState extends State<EventCard> {
                 bumpRadius: 25.w,
                 bumpOffset: 24.h,
               ),
-              child: Container(
+              child: SizedBox(
                 height: 204.h,
                 width: double.infinity,
                 child: Stack(
                   children: [
-                    // 1. ÜST SATIR (BAŞLIK + İKONLAR)
+                    // 1. ÜST SATIR
                     Positioned(
                       top: 30.h,
                       left: 0,
@@ -179,18 +529,18 @@ class _EventCardState extends State<EventCard> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SizedBox(width: 70.w), // Soldan boşluk
-                          // Başlık
+                          SizedBox(width: 70.w),
                           SizedBox(
                             width: 221.w,
                             child: Text(
                               widget.event.name.isNotEmpty
                                   ? widget.event.name
-                                  : 'Bizimle beraber tracking yapmak ister misiniz???',
+                                  : 'İsimsiz Etkinlik',
                               textAlign: TextAlign.center,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
+                                fontFamily: 'SF Pro Display',
                                 fontWeight: FontWeight.w500,
                                 fontSize: 16.sp,
                                 height: 1.1,
@@ -198,11 +548,10 @@ class _EventCardState extends State<EventCard> {
                               ),
                             ),
                           ),
-
                           SizedBox(width: 7.w),
 
-                          // Kaydet İkonu
-                          if (canUserJoin)
+                          // Katılınabilir durumdaysa (canJoin) kaydet butonunu göster
+                          if (_joinStatus == _EventJoinStatus.canJoin)
                             SizedBox(
                               width: 24.w,
                               height: 24.w,
@@ -219,127 +568,14 @@ class _EventCardState extends State<EventCard> {
                                 ),
                               ),
                             ),
-
                           SizedBox(width: 8.w),
 
-                          // Ayarlar İkonu
+                          // 3 NOKTA MENÜ (MORE VERT)
                           SizedBox(
                             width: 19.w,
                             height: 19.w,
                             child: InkWell(
-                              onTap: () {
-                                showModalBottomSheet<void>(
-                                  context: context,
-                                  useRootNavigator: true,
-                                  isScrollControlled: true,
-                                  backgroundColor: Colors.transparent,
-                                  builder: (sheetContext) => CustomActionBottomSheet(
-                                    options: [
-                                      if (!isPostMine)
-                                        BottomSheetOption(
-                                          icon: Icons.person_off_outlined,
-                                          text: 'Buluşma Sahibini Takibi Bırak',
-                                          onTap: () {
-                                            logger.info('Takip bırakıldı');
-                                            sheetContext.pop();
-                                          },
-                                        ),
-                                      BottomSheetOption(
-                                        icon: Icons.share_outlined,
-                                        text: 'Paylaş',
-                                        onTap: () {
-                                          logger.info('Paylaşıldı');
-                                          sheetContext.pop();
-                                        },
-                                      ),
-                                      if (!isPostMine) ...[
-                                        BottomSheetOption(
-                                          icon: Icons.block,
-                                          text: 'Kullanıcıyı Engelle',
-                                          isDestructive: true,
-                                          onTap: () async {
-                                            await getIt<SecurityService>()
-                                                .blockUser(
-                                                  ReportData(
-                                                    reportedEntityId:
-                                                        widget.event.id,
-                                                    reportedEntityType: 'event',
-                                                    reportedUserId: widget
-                                                        .event
-                                                        .creator
-                                                        .userID,
-                                                    requestOwnerId:
-                                                        currentUser.userID,
-                                                  ),
-                                                );
-                                            if (mounted) {
-                                              setState(() {
-                                                isVisible = false;
-                                              });
-                                            }
-                                            if (sheetContext.mounted) {
-                                              sheetContext.pop();
-                                            }
-                                          },
-                                        ),
-                                        BottomSheetOption(
-                                          icon: Icons
-                                              .report_gmailerrorred_outlined,
-                                          text: 'Şikayet Et',
-                                          isDestructive: true,
-                                          onTap: () async {
-                                            try {
-                                              await getIt<SecurityService>()
-                                                  .sendReport(
-                                                    ReportData(
-                                                      reportedEntityId:
-                                                          widget.event.id,
-                                                      reportedEntityType:
-                                                          'event',
-                                                      reportedUserId: widget
-                                                          .event
-                                                          .creator
-                                                          .userID,
-                                                      requestOwnerId:
-                                                          currentUser.userID,
-                                                    ),
-                                                  );
-                                            } catch (e) {
-                                              logger.error(
-                                                'Rapor gönderilemedi: $e',
-                                              );
-                                              if (sheetContext.mounted) {
-                                                sheetContext.pop();
-                                              }
-                                              if (mounted) {
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text(
-                                                      'Rapor gönderilemedi. Lütfen tekrar deneyin.',
-                                                    ),
-                                                  ),
-                                                );
-                                              }
-                                              return;
-                                            }
-
-                                            if (mounted) {
-                                              setState(() {
-                                                isVisible = false;
-                                              });
-                                            }
-                                            if (sheetContext.mounted) {
-                                              sheetContext.pop();
-                                            }
-                                          },
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                );
-                              },
+                              onTap: () => _showActionBottomSheet(isEventMine),
                               child: Icon(
                                 Icons.more_vert,
                                 color: Colors.black54,
@@ -367,11 +603,13 @@ class _EventCardState extends State<EventCard> {
                             startTime: widget.event.startTime,
                             participantCount: widget.event.participantCount,
                             capacity: widget.event.capacity,
+                            onParticipantsTap: _showParticipantsBottomSheet,
                           ),
                         ],
                       ),
                     ),
 
+                    // 3. BUTON
                     if (widget.showJoinButton)
                       Positioned(
                         bottom: 12.h,
@@ -379,59 +617,9 @@ class _EventCardState extends State<EventCard> {
                         child: Material(
                           color: Colors.transparent,
                           child: InkWell(
-                            onTap: !canUserJoin
-                                ? null
-                                : () async {
-                                    await eventRepository.requestJoin(
-                                      widget.event.id,
-                                      CompactUserEntity(
-                                        userID: currentUser.userID,
-                                        username: currentUser.username,
-                                        profileImageUrl:
-                                            currentUser.profileImageUrl,
-                                      ),
-                                    );
-
-                                    setState(() {
-                                      canUserJoin = false;
-
-                                      widget.event.requestPool.add(
-                                        CompactUserEntity(
-                                          userID: currentUser.userID,
-                                          username: currentUser.username,
-                                          profileImageUrl:
-                                              currentUser.profileImageUrl,
-                                        ),
-                                      );
-                                    });
-                                  },
+                            onTap: _handleJoinTap,
                             borderRadius: BorderRadius.circular(20.r),
-                            child: Container(
-                              width: 72.w,
-                              height: 36.h,
-                              decoration: BoxDecoration(
-                                color: canUserJoin
-                                    ? AppColors.primaryColor
-                                    : Colors.grey,
-                                borderRadius: BorderRadius.circular(20.r),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Color(0x26000000),
-                                    offset: Offset(0, 4),
-                                    blurRadius: 4,
-                                  ),
-                                ],
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                canUserJoin ? 'katıl' : 'kilitli',
-                                style: TextStyle(
-                                  fontSize: 16.sp,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
+                            child: _buildJoinButtonContent(),
                           ),
                         ),
                       ),
@@ -439,7 +627,6 @@ class _EventCardState extends State<EventCard> {
                 ),
               ),
             ),
-
             Positioned(
               top: -24.h,
               child: SizedBox(
@@ -447,8 +634,9 @@ class _EventCardState extends State<EventCard> {
                 height: 50.w,
                 child: Center(
                   child: Text(
-                    categories[widget.event.hobbies[0]] ?? '',
+                    categoryIcon,
                     style: TextStyle(
+                      fontFamily: 'SF Pro Display',
                       fontSize: 24.sp,
                       fontWeight: FontWeight.bold,
                     ),
@@ -456,20 +644,98 @@ class _EventCardState extends State<EventCard> {
                 ),
               ),
             ),
-
             Positioned(
               top: 80.h,
               left: 0,
               right: 0,
               child: Center(
-                child: StackedAvatars(
-                  avatarDataList: displayAvatars,
-                ),
+                child: StackedAvatars(avatarDataList: displayAvatars),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  // 3 FARKLI BUTON STİLİ
+  Widget _buildJoinButtonContent() {
+    final width = 72.w;
+    final height = 36.h;
+
+    switch (_joinStatus) {
+      // 1. KATIL (Standart Dolu Renk)
+      case _EventJoinStatus.canJoin:
+        return Container(
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            color: AppColors.primaryColor,
+            borderRadius: BorderRadius.circular(20.r),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x26000000),
+                offset: Offset(0, 4),
+                blurRadius: 4,
+              ),
+            ],
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            'katıl',
+            style: TextStyle(
+              fontFamily: 'SF Pro Display',
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+            ),
+          ),
+        );
+
+      // 2. BEKLİYOR
+      case _EventJoinStatus.pending:
+        return Container(
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20.r),
+          ),
+          alignment: Alignment.center,
+          child: Icon(
+            Icons.hourglass_empty_rounded,
+            color: AppColors.primaryColor,
+            size: 20.sp,
+          ),
+        );
+
+      // 3. KATILDIN
+      case _EventJoinStatus.joined:
+        return Container(
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20.r),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x1A000000),
+                offset: Offset(0, 4),
+                blurRadius: 8,
+              ),
+            ],
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            'katıldın',
+            style: TextStyle(
+              fontFamily: 'SF Pro Display',
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primaryColor,
+            ),
+          ),
+        );
+    }
   }
 }
