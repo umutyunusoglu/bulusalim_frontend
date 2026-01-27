@@ -1,5 +1,5 @@
-import 'package:bulusalim/core/utils/types/types.dart';
-import 'package:bulusalim/domain/entities/feed/feed_entity.dart';
+import 'package:outnest/core/utils/types/types.dart';
+import 'package:outnest/domain/entities/feed/feed_entity.dart';
 
 abstract class GlobalContentCache {
   /// Tek bir entity'yi cache'e ekler veya günceller.

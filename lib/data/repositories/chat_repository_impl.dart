@@ -1,8 +1,8 @@
-import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/core/utils/types/types.dart';
-import 'package:bulusalim/data/models/chat/message_model.dart';
-import 'package:bulusalim/domain/entities/chat/message_entity.dart';
-import 'package:bulusalim/domain/repositories/chat_repository.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/types.dart';
+import 'package:outnest/data/models/chat/message_model.dart';
+import 'package:outnest/domain/entities/chat/message_entity.dart';
+import 'package:outnest/domain/repositories/chat_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ChatRepositoryImpl implements ChatRepository {

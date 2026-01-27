@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:bulusalim/core/constants/configs/app_config.dart';
+import 'package:outnest/core/constants/configs/app_config.dart';
 
 String fixEmulatorUrl(String url) {
   // Sadece Android ve URL içinde 'localhost' varsa işlem yap

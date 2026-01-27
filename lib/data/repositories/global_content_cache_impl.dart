@@ -1,9 +1,9 @@
-import 'package:bulusalim/core/constants/configs/app_config.dart';
-import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/core/utils/types/types.dart';
-import 'package:bulusalim/domain/entities/feed/feed_entity.dart';
-import 'package:bulusalim/domain/services/global_content_cache.dart';
-import 'package:bulusalim/domain/services/in_memory_cache.dart';
+import 'package:outnest/core/constants/configs/app_config.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/types.dart';
+import 'package:outnest/domain/entities/feed/feed_entity.dart';
+import 'package:outnest/domain/services/global_content_cache.dart';
+import 'package:outnest/domain/services/in_memory_cache.dart';
 
 class GlobalContentCacheImpl implements GlobalContentCache {
   GlobalContentCacheImpl({

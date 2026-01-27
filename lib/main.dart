@@ -1,12 +1,12 @@
 import 'dart:ui';
-import 'package:bulusalim/app_router.dart';
-import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/core/constants/configs/app_config.dart';
-import 'package:bulusalim/core/constants/theme/app_theme.dart';
-import 'package:bulusalim/domain/datasources/university_datasource.dart';
-import 'package:bulusalim/domain/repositories/feed_repository.dart';
-import 'package:bulusalim/domain/services/session_service.dart';
-import 'package:bulusalim/firebase_options.dart';
+import 'package:outnest/app_router.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/constants/configs/app_config.dart';
+import 'package:outnest/core/constants/theme/app_theme.dart';
+import 'package:outnest/domain/datasources/university_datasource.dart';
+import 'package:outnest/domain/repositories/feed_repository.dart';
+import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -61,15 +61,10 @@ Future<void> main() async {
 
   // 3. App Check ve Emülatör Ayarları
   if (kDebugMode) {
-    // Debug modunda geliştirme yaparken App Check token sorunu yaşamamak için
-    // DebugProvider kullanıyoruz. Ancak VERİTABANI ARTIK GERÇEK (Production).
     await FirebaseAppCheck.instance.activate(
       androidProvider: AndroidProvider.debug,
       appleProvider: AppleProvider.debug,
     );
-
-    // NOT: Emülatör kodları kaldırıldı. Artık debug modda bile gerçek servislere bağlanır.
-    // Otomatik çıkış yapma kodu (signOut) kaldırıldı.
   } else {
     // Release Modu (Production)
     await FirebaseAppCheck.instance.activate(
@@ -78,8 +73,6 @@ Future<void> main() async {
     );
   }
 
-  // 4. Firestore Cache Ayarları (Opsiyonel ama önerilir)
-  // Offline persistence'ı açık tutuyoruz.
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,

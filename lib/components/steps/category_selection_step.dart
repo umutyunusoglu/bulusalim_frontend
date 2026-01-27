@@ -1,6 +1,6 @@
-import 'package:bulusalim/components/map_filter_chip.dart';
-import 'package:bulusalim/components/popup_next_button.dart';
-import 'package:bulusalim/core/constants/theme/color_themes.dart'; // AppColors
+import 'package:outnest/components/map_filter_chip.dart';
+import 'package:outnest/components/popup_next_button.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart'; // AppColors
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 

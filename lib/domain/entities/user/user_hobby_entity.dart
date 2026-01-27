@@ -1,4 +1,4 @@
-import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
+import 'package:outnest/domain/entities/hobby/hobby_entity.dart';
 import 'package:equatable/equatable.dart';
 
 class UserHobbyEntity extends Equatable {

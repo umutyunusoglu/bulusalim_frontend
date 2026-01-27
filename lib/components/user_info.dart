@@ -1,7 +1,7 @@
-import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/core/utils/types/types.dart';
-import 'package:bulusalim/domain/entities/user/user_entity.dart';
-import 'package:bulusalim/domain/repositories/user_repository.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/utils/types/types.dart';
+import 'package:outnest/domain/entities/user/user_entity.dart';
+import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:flutter/material.dart';
 
 class UserInfo extends StatefulWidget {

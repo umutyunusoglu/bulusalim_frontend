@@ -1,5 +1,5 @@
-import 'package:bulusalim/core/utils/types/types.dart';
-import 'package:bulusalim/domain/entities/chat/message_entity.dart';
+import 'package:outnest/core/utils/types/types.dart';
+import 'package:outnest/domain/entities/chat/message_entity.dart';
 
 abstract class ChatRepository {
   Stream<List<MessageEntity>> getChatMessagesStream(Identifier eventID);
