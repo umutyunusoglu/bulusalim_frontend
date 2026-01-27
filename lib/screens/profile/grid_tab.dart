@@ -1,5 +1,5 @@
 import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
-import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart';
+import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart'; // UserPostEntity
 import 'package:bulusalim/screens/profile/profile_feed_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -15,13 +15,24 @@ class ProfileGridTab extends StatelessWidget {
   final List<UserPostEntity> activePosts;
 
   void _openFeedPage(BuildContext context, int index) {
-    final posts = [...activePosts, ...pinnedPosts];
+    // 1. Aktif Postları İşaretle (isPinned: false)
+    final markedActivePosts = activePosts.map((post) {
+      return post.copyWith(isPinned: false);
+    }).toList();
+
+    // 2. Sabitlenmiş Postları İşaretle (isPinned: true)
+    final markedPinnedPosts = pinnedPosts.map((post) {
+      return post.copyWith(isPinned: true);
+    }).toList();
+
+    // 3. Listeleri birleştir (Sıralama: Önce Active, Sonra Pinned)
+    final allPosts = [...markedActivePosts, ...markedPinnedPosts];
 
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ProfilePostFeedPage(
-          posts: posts,
+          posts: allPosts,
           initialIndex: index,
         ),
       ),
@@ -30,6 +41,7 @@ class ProfileGridTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Grid gösterimi için ham listeleri birleştir
     final totalPosts = [...activePosts, ...pinnedPosts];
 
     return GridView.builder(
@@ -41,17 +53,15 @@ class ProfileGridTab extends StatelessWidget {
       ),
       itemCount: totalPosts.length,
       itemBuilder: (context, index) {
-        final iconData = index < activePosts.length
-            ? Icons.access_time_filled
-            : Icons.push_pin;
+        final bool isPinnedItem = index >= activePosts.length;
+
+        final iconData = isPinnedItem
+            ? Icons.push_pin
+            : Icons.access_time_filled;
 
         final post = totalPosts[index];
-        print(
-          "activePosts length: ${activePosts.length}, PinnedPosts length: ${pinnedPosts.length}",
-        );
 
         return GestureDetector(
-          // TIKLAMA OLAYI BURADA
           onTap: () => _openFeedPage(context, index),
           child: Stack(
             fit: StackFit.expand,
@@ -69,7 +79,7 @@ class ProfileGridTab extends StatelessWidget {
                 ),
               ),
 
-              // 2. SAĞ ÜST İKON
+              // 2. SAĞ ÜST İKON (Dinamik)
               Positioned(
                 top: 6.h,
                 right: 4.w,

@@ -6,7 +6,6 @@ import 'package:bulusalim/core/utils/types/enums/emote_enum.dart';
 import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
 import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:bulusalim/domain/repositories/post_repository.dart';
-import 'package:bulusalim/domain/services/security_service.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/screens/home/post%20components/content_tag_chip.dart';
 import 'package:bulusalim/screens/home/post%20components/emoji_chip.dart';
@@ -32,8 +31,12 @@ class _PostCardState extends State<PostCard> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
+  // --- RENK SABİTLERİ (AppColor Optimizasyonu) ---
+  static const Color _kTextMainColor = Color(0xFF1A1A1A);
+  static const Color _kTextGreyColor = Color(0xFF8E8E93);
+  static const Color _kInactiveIndicatorColor = Color(0xFFD9D9D9);
+
   // --- STATE DEĞİŞKENLERİ ---
-  // Sayılar değişeceği için bunları state'te tutuyoruz
   late int _likeCount;
   late int _clapCount;
   late int _eggCount;
@@ -68,9 +71,6 @@ class _PostCardState extends State<PostCard> {
   /// Kullanıcının bu post'a attığı eski reaksiyonları kontrol eder
   Future<void> _checkExistingEmotes() async {
     if (_myUserId.isEmpty) return;
-
-    // Performans notu: İdealde bu bilgi PostEntity içinde 'myReaction: ["heart"]' gibi gelmelidir.
-    // Şimdilik ayrı sorgularla yapıyoruz:
 
     final results = await Future.wait([
       _postRepository.isUserEmotedPost(
@@ -109,10 +109,7 @@ class _PostCardState extends State<PostCard> {
   Future<void> _handleEmoteTap(EmoteEnum emote) async {
     if (_myUserId.isEmpty) return; // Login olmamışsa işlem yapma
 
-    // Hangi değişkenleri değiştireceğimizi belirleyelim
     bool isSelectedCurrent;
-
-    // Geçici değişkenler (Rollback için)
     int previousCount;
     bool previousState;
 
@@ -286,7 +283,7 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  // --- HEADER WIDGET ---
+  // HEADER WIDGET
   Widget _buildHeader(
     BuildContext context, {
     required String avatarUrl,
@@ -295,6 +292,10 @@ class _PostCardState extends State<PostCard> {
   }) {
     final theme = Theme.of(context);
     final isPostMine = widget.post.creator.userID == _myUserId;
+
+    // GridTab'dan gelen isPinned verisini oku
+    final isPinned = widget.post.isPinned;
+
     return Row(
       children: [
         GestureDetector(
@@ -314,10 +315,10 @@ class _PostCardState extends State<PostCard> {
                 child: Text(
                   username,
                   style: const TextStyle(
-                    fontFamily: 'Urbanist',
+                    fontFamily: 'SF Pro Display', // Font değiştirildi
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: Color(0xFF1A1A1A),
+                    color: _kTextMainColor, // Renk optimize edildi
                   ),
                 ),
               ),
@@ -326,9 +327,9 @@ class _PostCardState extends State<PostCard> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontFamily: 'Urbanist',
+                  fontFamily: 'SF Pro Display', // Font değiştirildi
                   fontSize: 12,
-                  color: Color(0xFF1A1A1A),
+                  color: _kTextMainColor, // Renk optimize edildi
                 ),
               ),
             ],
@@ -346,35 +347,45 @@ class _PostCardState extends State<PostCard> {
               backgroundColor: Colors.transparent,
               builder: (sheetContext) => CustomActionBottomSheet(
                 options: [
-                  if (!isPostMine)
+                  // --- KULLANICININ KENDİ GÖNDERİSİ İSE ---
+                  if (isPostMine) ...[
+                    // DURUM 1: SABİTLENMİŞSE -> "SABİTLEMEYİ KALDIR"
+                    if (isPinned)
+                      BottomSheetOption(
+                        icon: Icons.push_pin_outlined,
+                        text: 'Sabitlemeyi Kaldır',
+                        onTap: () async {
+                          // TODO: Unpin servisini çağır
+                          sheetContext.pop();
+                        },
+                      )
+                    // DURUM 2: NORMAL İSE -> "PROFİLE SABİTLE"
+                    else
+                      BottomSheetOption(
+                        icon: Icons.push_pin,
+                        text: 'Gönderiyi Profile Sabitle',
+                        onTap: () async {
+                          // TODO: Pin servisini çağır
+                          sheetContext.pop();
+                        },
+                      ),
+
+                    // Ortak: PAYLAŞ
                     BottomSheetOption(
-                      icon: Icons.person_off_outlined,
-                      text: 'Buluşma Sahibini Takibi Bırak',
+                      icon: Icons.share_outlined,
+                      text: 'Gönderiyi Paylaş',
                       onTap: () {
                         sheetContext.pop();
                       },
                     ),
-                  BottomSheetOption(
-                    icon: Icons.share_outlined,
-                    text: 'Paylaş',
-                    onTap: () {
-                      sheetContext.pop();
-                    },
-                  ),
-                  if (!isPostMine) ...[
+
+                    // Ortak: SİL (Kırmızı)
                     BottomSheetOption(
-                      icon: Icons.block,
-                      text: 'Kullanıcıyı Engelle',
+                      icon: Icons.delete_outline,
+                      text: 'Gönderiyi Sil',
                       isDestructive: true,
                       onTap: () async {
-                        await getIt<SecurityService>().blockUser(
-                          ReportData(
-                            reportedEntityId: widget.post.id,
-                            reportedEntityType: 'post',
-                            reportedUserId: widget.post.creator.userID,
-                            requestOwnerId: _myUserId,
-                          ),
-                        );
+                        // TODO: Silme işlemi
                         if (mounted) {
                           setState(() {
                             isVisible = false;
@@ -385,44 +396,25 @@ class _PostCardState extends State<PostCard> {
                         }
                       },
                     ),
+                  ]
+                  // --- BAŞKASININ GÖNDERİSİ İSE ---
+                  else ...[
                     BottomSheetOption(
-                      icon: Icons.report_gmailerrorred_outlined,
+                      icon: Icons.share_outlined,
+                      text: 'Gönderiyi Paylaş',
+                      onTap: () => sheetContext.pop(),
+                    ),
+                    BottomSheetOption(
+                      icon: Icons.block_outlined,
+                      text: 'Kullanıcıyı Engelle',
+                      isDestructive: true,
+                      onTap: () => sheetContext.pop(),
+                    ),
+                    BottomSheetOption(
+                      icon: Icons.error_outline,
                       text: 'Şikayet Et',
                       isDestructive: true,
-                      onTap: () async {
-                        try {
-                          await getIt<SecurityService>().sendReport(
-                            ReportData(
-                              reportedEntityId: widget.post.id,
-                              reportedEntityType: 'post',
-                              reportedUserId: widget.post.creator.userID,
-                              requestOwnerId: _myUserId,
-                            ),
-                          );
-                        } catch (e) {
-                          if (sheetContext.mounted) {
-                            sheetContext.pop();
-                          }
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Rapor gönderilemedi. Lütfen tekrar deneyin.',
-                                ),
-                              ),
-                            );
-                          }
-                          return;
-                        }
-                        if (mounted) {
-                          setState(() {
-                            isVisible = false;
-                          });
-                        }
-                        if (sheetContext.mounted) {
-                          sheetContext.pop();
-                        }
-                      },
+                      onTap: () => sheetContext.pop(),
                     ),
                   ],
                 ],
@@ -440,7 +432,6 @@ class _PostCardState extends State<PostCard> {
     required List<String> mediaUrls,
     required List<String> likedByAvatars,
   }) {
-    // Burada likeCount vb. parametreleri kaldırdım çünkü artık state'ten okuyacağız
     return Stack(
       children: [
         ClipRRect(
@@ -482,7 +473,7 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  // --- INTERACTION OVERLAY (GÜNCELLENDİ) ---
+  //  INTERACTION OVERLAY
   Widget _buildInteractionsOverlay(
     BuildContext context, {
     required List<String> likedByAvatars,
@@ -495,19 +486,19 @@ class _PostCardState extends State<PostCard> {
           // KALP
           EmojiChip(
             icon: Icons.favorite,
-            text: '$_likeCount', // State değişkeni
+            text: '$_likeCount',
             color: Colors.red,
-            isSelected: _isLikedByMe, // State değişkeni
-            onTap: () => _handleEmoteTap(EmoteEnum.heart), // Logic bağlantısı
+            isSelected: _isLikedByMe,
+            onTap: () => _handleEmoteTap(EmoteEnum.heart),
           ),
           SizedBox(width: 12.w),
 
           // ALKIŞ/CHAT
           EmojiChip(
             icon: Icons.chat_rounded,
-            text: '$_clapCount', // State değişkeni
+            text: '$_clapCount',
             color: Colors.amber,
-            isSelected: _isClappedByMe, // State değişkeni
+            isSelected: _isClappedByMe,
             onTap: () => _handleEmoteTap(EmoteEnum.clap),
           ),
           SizedBox(width: 12.w),
@@ -515,9 +506,9 @@ class _PostCardState extends State<PostCard> {
           // YUMURTA
           EmojiChip(
             icon: Icons.egg,
-            text: '$_eggCount', // State değişkeni
+            text: '$_eggCount',
             color: Colors.white,
-            isSelected: _isEggedByMe, // State değişkeni
+            isSelected: _isEggedByMe,
             onTap: () => _handleEmoteTap(EmoteEnum.egg),
           ),
 
@@ -548,7 +539,7 @@ class _PostCardState extends State<PostCard> {
             shape: BoxShape.circle,
             color: _currentPage == index
                 ? activeColor
-                : const Color(0xFFD9D9D9),
+                : _kInactiveIndicatorColor, // Renk optimize edildi
           ),
         );
       }),
@@ -562,9 +553,9 @@ class _PostCardState extends State<PostCard> {
     required List<String> tags,
   }) {
     const timeStyle = TextStyle(
-      fontFamily: 'Urbanist',
+      fontFamily: 'SF Pro Display', // Font değiştirildi
       fontSize: 12,
-      color: Color(0xFF8E8E93),
+      color: _kTextGreyColor, // Renk optimize edildi
     );
 
     return Padding(
@@ -583,6 +574,7 @@ class _PostCardState extends State<PostCard> {
                     caption,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.bold,
+                      fontFamily: 'SF Pro Display', // Font değiştirildi
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
