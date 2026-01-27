@@ -5,6 +5,7 @@ import 'package:bulusalim/core/constants/configs/app_config.dart';
 import 'package:bulusalim/core/constants/theme/app_theme.dart';
 import 'package:bulusalim/domain/datasources/university_datasource.dart';
 import 'package:bulusalim/domain/repositories/feed_repository.dart';
+import 'package:bulusalim/domain/services/push_notifications_service.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -80,6 +81,21 @@ Future<void> main() async {
       debugPrint('Geliştirme modu: Eski oturum temizleniyor...');
       await authInstance.signOut();
     }
+
+    const testUserId = 'user1@test.com';
+
+    if (testUserId == 'A') {
+      if (authInstance.currentUser != null) {
+        await authInstance.signOut();
+      }
+
+      await authInstance.signInAnonymously();
+    } else {
+      await authInstance.signInWithEmailAndPassword(
+        email: testUserId,
+        password: 'password123',
+      );
+    }
   } else {
     // Release modu
     await FirebaseAppCheck.instance.activate();
@@ -89,6 +105,8 @@ Future<void> main() async {
   await FirebaseMessaging.instance.setAutoInitEnabled(true);
 
   final sessionService = getIt<SessionService>();
+  final pushService = getIt<PushNotificationsService>();
+  await pushService.initialize();
   await sessionService.init();
   debugPrint(
     'Oturum servisi başlatıldı. Durum: ${sessionService.currentUser != null ? "Giriş Var" : "Giriş Yok (Welcome Page)"}',
