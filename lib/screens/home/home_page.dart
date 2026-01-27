@@ -284,25 +284,25 @@ class _HomePageState extends State<HomePage> {
     // TEST ALANI BAŞLANGIÇ
     // **********************************************************
 
-    // Gerçek veriyi burada eziyoruz. Test bitince burayı sil.
-    final List<dynamic> activeEvents = [
-      MockEvent(
-        name: "Kahve Molası",
-        imageUrls: ["https://picsum.photos/seed/coffee/200"],
-      ),
-      MockEvent(
-        name: "Kodlama Kampı",
-        imageUrls: ["https://picsum.photos/seed/code/200"],
-      ),
-      MockEvent(
-        name: "Akşam Yemeği",
-        imageUrls: ["https://picsum.photos/seed/dinner/200"],
-      ),
-    ];
+    // // Gerçek veriyi burada eziyoruz. Test bitince burayı sil.
+    // final List<dynamic> activeEvents = [
+    //   MockEvent(
+    //     name: "Kahve Molası",
+    //     imageUrls: ["https://picsum.photos/seed/coffee/200"],
+    //   ),
+    //   MockEvent(
+    //     name: "Kodlama Kampı",
+    //     imageUrls: ["https://picsum.photos/seed/code/200"],
+    //   ),
+    //   MockEvent(
+    //     name: "Akşam Yemeği",
+    //     imageUrls: ["https://picsum.photos/seed/dinner/200"],
+    //   ),
+    // ];
 
     // **********************************************************
     // TEST ALANI BİTİŞ (Normalde aşağıdaki satır kullanılır)
-    // final activeEvents = currentUser.activeEvents;
+    final activeEvents = currentUser.activeEvents;
     // **********************************************************
 
     if (activeEvents.isEmpty) {
