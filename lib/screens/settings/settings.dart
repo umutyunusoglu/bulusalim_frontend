@@ -350,24 +350,24 @@ class SettingsPage extends StatelessWidget {
               fontWeight: FontWeight.w500,
               color: AppColors.onBackgroundColor,
             ),
-            SizedBox(width: 12.w),
-            Text(
-              'Profili Düzenle',
-              style: TextStyle(
-                fontFamily: 'SF Pro Display',
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w500,
-                color: AppColors.onBackgroundColor,
-              ),
+          ),
+          SizedBox(width: 12.w),
+          Text(
+            'Profili Düzenle',
+            style: TextStyle(
+              fontFamily: 'SF Pro Display',
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+              color: AppColors.onBackgroundColor,
             ),
-            const Spacer(),
-            Icon(
-              Icons.chevron_right,
-              color: AppColors.iconColor,
-              size: 24.sp,
-            ),
-          ],
-        ),
+          ),
+          const Spacer(),
+          Icon(
+            Icons.chevron_right,
+            color: AppColors.iconColor,
+            size: 24.sp,
+          ),
+        ],
       ),
     );
   }
