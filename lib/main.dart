@@ -65,6 +65,33 @@ Future<void> main() async {
       androidProvider: AndroidProvider.debug,
       appleProvider: AppleProvider.debug,
     );
+    await FirebaseStorage.instance.useStorageEmulator(
+      AppConfig.host,
+      9199,
+      automaticHostMapping: false,
+    );
+    FirebaseFunctions.instance.useFunctionsEmulator(AppConfig.host, 5001);
+
+    final authInstance = FirebaseAuth.instance;
+    if (authInstance.currentUser != null) {
+      debugPrint('Geliştirme modu: Eski oturum temizleniyor...');
+      await authInstance.signOut();
+    }
+
+    const testUserId = 'user1@test.com';
+
+    if (testUserId == 'A') {
+      if (authInstance.currentUser != null) {
+        await authInstance.signOut();
+      }
+
+      await authInstance.signInAnonymously();
+    } else {
+      await authInstance.signInWithEmailAndPassword(
+        email: testUserId,
+        password: 'password123',
+      );
+    }
   } else {
     // Release Modu (Production)
     await FirebaseAppCheck.instance.activate(
@@ -82,6 +109,8 @@ Future<void> main() async {
   await FirebaseMessaging.instance.setAutoInitEnabled(true);
 
   final sessionService = getIt<SessionService>();
+  final pushService = getIt<PushNotificationsService>();
+  await pushService.initialize();
   await sessionService.init();
 
   // Session logunu sadece debug'da görelim, production loglarını kirletmeyelim
