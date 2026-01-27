@@ -124,33 +124,6 @@ class _ChangeAccountTypePageState extends State<ChangeAccountTypePage> {
         ),
       ),
       centerTitle: true,
-      // SAĞ ÜST KAYDET BUTONU
-      actions: [
-        Padding(
-          padding: EdgeInsets.only(right: 8.w),
-          child: TextButton(
-            onPressed: () {
-              // Seçimi geri döndür ve sayfayı kapat
-              String result = _selectedType == AccountType.personal
-                  ? 'Kişisel Hesap'
-                  : 'Topluluk Hesabı';
-              Navigator.pop(context, result);
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.primaryColor,
-            ),
-            child: Text(
-              'Kaydet',
-              style: TextStyle(
-                fontFamily: 'SF Pro Display',
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.tertiaryColor,
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
