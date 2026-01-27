@@ -1,18 +1,7 @@
 import 'dart:ui';
-import 'package:cloud_functions/cloud_functions.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:outnest/app_router.dart';
-import 'package:outnest/application/providers/get_it_init.dart';
-import 'package:outnest/core/constants/configs/app_config.dart';
-import 'package:outnest/core/constants/theme/app_theme.dart';
-import 'package:outnest/domain/datasources/university_datasource.dart';
-import 'package:outnest/domain/repositories/feed_repository.dart';
-import 'package:outnest/domain/services/push_notifications_service.dart';
-import 'package:outnest/domain/services/session_service.dart';
-import 'package:outnest/firebase_options.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart'; // Eklendi
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -23,6 +12,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart'
     show MapboxOptions;
+import 'package:outnest/app_router.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/constants/configs/app_config.dart';
+import 'package:outnest/core/constants/theme/app_theme.dart';
+import 'package:outnest/domain/datasources/university_datasource.dart';
+import 'package:outnest/domain/repositories/feed_repository.dart';
+import 'package:outnest/domain/services/push_notifications_service.dart';
+import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

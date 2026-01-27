@@ -1,6 +1,6 @@
-import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
 
 class EventInfoChip extends StatelessWidget {
   const EventInfoChip({
@@ -49,28 +49,38 @@ class EventInfoChip extends StatelessWidget {
 
           SizedBox(width: 8.w),
 
-          // 2. Kişi Sayısı
-          GestureDetector(
-            onTap: onParticipantsTap,
-            behavior: HitTestBehavior.opaque,
-            child: Row(
-              children: [
-                Icon(
-                  Icons.people_outline,
-                  size: 12.sp,
-                  color: AppColors.infoBadgeText,
+          // 2. Kişi Sayısı - TIKLANABILIR
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                print('🎯 Katılımcı ikonuna tıklandı!'); // Debug
+                onParticipantsTap?.call();
+              },
+              borderRadius: BorderRadius.circular(12.r),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.people_outline,
+                      size: 12.sp,
+                      color: AppColors.infoBadgeText,
+                    ),
+                    SizedBox(width: 4.w),
+                    Text(
+                      '$participantCount',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Display',
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.infoBadgeText,
+                      ),
+                    ),
+                  ],
                 ),
-                SizedBox(width: 4.w),
-                Text(
-                  '$participantCount',
-                  style: TextStyle(
-                    fontFamily: 'SF Pro Display',
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.infoBadgeText,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
 

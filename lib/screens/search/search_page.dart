@@ -1,6 +1,7 @@
 import 'dart:async'; // Timer için gerekli
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:outnest/screens/profile/profile_page.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -139,8 +140,20 @@ class _SearchPageState extends State<SearchPage> {
                         title: Text(
                           data['search_name'] as String? ?? 'İsimsiz',
                         ),
-                        subtitle: Text(doc.id), // Debug için ID görmek iyidir
-                        onTap: () => debugPrint('Tıklandı: User ${doc.id}'),
+                        subtitle: Text(doc.id),
+                        onTap: () {
+                          // Klavye açıksa kapat
+                          FocusScope.of(context).unfocus();
+
+                          // ProfilePage sayfasına yönlendir
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  ProfilePage(profileUserID: doc.id),
+                            ),
+                          );
+                        },
                       );
                     }),
                   ],
