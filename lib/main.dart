@@ -1,10 +1,13 @@
 import 'dart:ui';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:outnest/app_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/app_theme.dart';
 import 'package:outnest/domain/datasources/university_datasource.dart';
 import 'package:outnest/domain/repositories/feed_repository.dart';
+import 'package:outnest/domain/services/push_notifications_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -61,6 +64,7 @@ Future<void> main() async {
 
   // 3. App Check ve Emülatör Ayarları
   if (kDebugMode) {
+    /*
     await FirebaseAppCheck.instance.activate(
       androidProvider: AndroidProvider.debug,
       appleProvider: AppleProvider.debug,
@@ -92,6 +96,8 @@ Future<void> main() async {
         password: 'password123',
       );
     }
+
+    */
   } else {
     // Release Modu (Production)
     await FirebaseAppCheck.instance.activate(

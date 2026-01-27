@@ -1,5 +1,8 @@
 import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/components/announcement_button.dart';
 import 'package:outnest/components/login_button.dart';
+import 'package:outnest/components/popup.dart';
+import 'package:outnest/components/private_account_view.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:outnest/core/utils/types/types.dart';

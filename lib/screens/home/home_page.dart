@@ -1,6 +1,9 @@
+import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/custom_tab_bar.dart';
 import 'package:outnest/components/header.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/types/enums/feed_type.dart';
+import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/screens/home/home_content_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
