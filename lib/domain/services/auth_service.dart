@@ -14,6 +14,11 @@ abstract class AuthService {
     required String smsCode,
   });
 
+  Future<void> verifyAndChangePhoneNumber({
+    required String verificationId,
+    required String smsCode,
+  });
+
   Future<String> signInWithApple();
 
   Identifier getCurrentUserID();

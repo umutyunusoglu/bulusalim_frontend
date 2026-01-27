@@ -102,6 +102,78 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
+  Stream<UserEntity?> watchUser(Identifier userID) {
+    final uid = userID;
+
+    return _firestore
+        .collection('users')
+        .doc(uid)
+        .snapshots() // 1. Dinlemeyi başlatıyoruz
+        .asyncMap((userDocSnapshot) async {
+          // 2. Her update geldiğinde ASYNC işlem yapıyoruz
+
+          try {
+            if (!userDocSnapshot.exists) return null;
+
+            // --- BURASI ESKİ KODUNUN AYNISI (Event Log Fetching) ---
+            final historySnapshot = await _firestore
+                .collection('users')
+                .doc(uid)
+                .collection('eventLog')
+                .where('status', whereIn: ['upcoming', 'ongoing'])
+                .orderBy('date')
+                .get(); // DİKKAT: Burası hala 'get', yani eventLog değişirse stream tetiklenmez!
+
+            final eventFutures = historySnapshot.docs.map((doc) async {
+              final historyData = doc.data();
+              final eventId = historyData['eventID'] as Identifier;
+
+              final eventDoc = await _firestore
+                  .collection('events')
+                  .doc(eventId)
+                  .get();
+
+              if (!eventDoc.exists) return null;
+
+              final eventEntity = EventModel.fromFirestore(
+                eventDoc.data()!,
+              ).toEntity();
+
+              return eventEntity.copyWith(
+                myStatus: historyData['status'].toString(),
+                myRole: historyData['role'].toString(),
+              );
+            }).toList();
+
+            final realActiveEvents = (await Future.wait(
+              eventFutures,
+            )).whereType<EventEntity>().toList();
+
+            // --- HOBBY LIST ---
+            final hobbyList =
+                (userDocSnapshot.data()?['hobbies'] as List<dynamic>?)
+                    ?.map((hobby) => hobby.toString())
+                    .toList() ??
+                [];
+
+            // --- MODEL OLUŞTURMA ---
+            final userModel = await UserModel.fromFirestore(
+              userDocSnapshot.data()!,
+            );
+
+            return userModel.toEntity().copyWith(
+              activeEvents: realActiveEvents,
+              hobbies: hobbyList,
+            );
+          } catch (e) {
+            // Stream içinde hata olursa logla ve null dön (veya hatayı fırlat)
+            _logger.error('User Repository Stream Error: $e');
+            return null;
+          }
+        });
+  }
+
+  @override
   Future<void> createUser(UserEntity user) async {
     _logger.info(
       'Creating user: ${user.userID} with username: ${user.username}',
@@ -172,9 +244,21 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Future<void> deleteUser(Identifier userID) async {
-    _logger.info('Deleting user: $userID');
-    await _firestore.collection('users').doc(userID).delete();
+  Future<void> deleteUser(String? reason) async {
+    final result = await _functions.httpsCallable('deleteAccount').call({
+      'reason': reason,
+    });
+
+    if (result.data['success'] == true) {
+      _logger.info(
+        'User deletion function executed successfully for user',
+      );
+    } else {
+      _logger.error(
+        'User deletion function failed for user with message: ${result.data['message']}',
+      );
+      throw Exception('User deletion failed: ${result.data['message']}');
+    }
   }
 
   @override

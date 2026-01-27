@@ -1,5 +1,7 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
+import 'package:bulusalim/domain/repositories/user_repository.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -79,7 +81,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                   radius: 20.r,
                   backgroundColor: AppColors.dividerColor,
                   backgroundImage: (profileImageUrl.isNotEmpty)
-                      ? NetworkImage(profileImageUrl)
+                      ? NetworkImage(fixEmulatorUrl(profileImageUrl))
                       : null,
                   child: (profileImageUrl.isEmpty)
                       ? Icon(
@@ -189,7 +191,12 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
               height: 40.h,
               child: ElevatedButton(
                 onPressed: () {
-                  // Şifre sorma modal'ı açılabilir
+                  final UserRepository userRepository = getIt<UserRepository>()
+                    ..deleteUser(
+                      _selectedReason,
+                    );
+
+                  //TODO: Ana ekrana dönüp oturumu kapat
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,

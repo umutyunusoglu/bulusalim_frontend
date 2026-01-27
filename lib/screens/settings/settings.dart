@@ -144,7 +144,7 @@ class SettingsPage extends StatelessWidget {
             // --- GENEL AYARLAR ---
             SettingsTile(
               title: 'Hesap Ayarları',
-              subtitle: 'Gizlilik, üniversite, şifre, iletişim bilgileri',
+              subtitle: 'Gizlilik, üniversite, iletişim bilgileri',
               onTap: () {
                 Navigator.push(
                   context,
