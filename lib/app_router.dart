@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/stacked_avatars.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
@@ -13,7 +15,6 @@ import 'package:outnest/screens/camera/camera_page.dart';
 import 'package:outnest/screens/chat/chat_page.dart';
 import 'package:outnest/screens/chat/event_settings_page.dart';
 import 'package:outnest/screens/chat/my_events_page.dart';
-import 'package:outnest/screens/debug/debug_verification_screen.dart';
 import 'package:outnest/screens/home/home_page.dart';
 import 'package:outnest/screens/map/map_page.dart';
 import 'package:outnest/screens/notification/follow_request.dart';
@@ -22,8 +23,6 @@ import 'package:outnest/screens/profile/profile_page.dart';
 import 'package:outnest/screens/search/search_page.dart';
 import 'package:outnest/screens/settings/edit_profile_page.dart';
 import 'package:outnest/screens/settings/settings.dart';
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 

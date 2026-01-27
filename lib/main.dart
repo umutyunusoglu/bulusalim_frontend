@@ -64,10 +64,14 @@ Future<void> main() async {
 
   // 3. App Check ve Emülatör Ayarları
   if (kDebugMode) {
-    /*
     await FirebaseAppCheck.instance.activate(
       androidProvider: AndroidProvider.debug,
       appleProvider: AppleProvider.debug,
+    );
+
+    FirebaseFirestore.instance.useFirestoreEmulator(
+      AppConfig.host,
+      8080,
     );
     await FirebaseStorage.instance.useStorageEmulator(
       AppConfig.host,
@@ -77,6 +81,8 @@ Future<void> main() async {
     FirebaseFunctions.instance.useFunctionsEmulator(AppConfig.host, 5001);
 
     final authInstance = FirebaseAuth.instance;
+    await authInstance.useAuthEmulator(AppConfig.host, 9099);
+
     if (authInstance.currentUser != null) {
       debugPrint('Geliştirme modu: Eski oturum temizleniyor...');
       await authInstance.signOut();
@@ -96,8 +102,6 @@ Future<void> main() async {
         password: 'password123',
       );
     }
-
-    */
   } else {
     // Release Modu (Production)
     await FirebaseAppCheck.instance.activate(

@@ -116,6 +116,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
       final newAddress = result['address'] as String;
       final newLocation = result['location'];
 
+      if (!mounted) return;
       setState(() {
         _currentLocation = newDisplayAddress;
       });
@@ -140,9 +141,11 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
         _logger.debug("Konum güncellendi: $newDisplayAddress");
       } catch (e) {
         _logger.error("Konum güncelleme hatası: $e");
-        setState(() {
-          _currentLocation = widget.location;
-        });
+        if (mounted) {
+          setState(() {
+            _currentLocation = widget.location;
+          });
+        }
       }
     }
   }
@@ -165,6 +168,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
         newTime?.minute ?? 0,
       );
 
+      if (!mounted) return;
       setState(() {
         _currentDate = newStartTime;
       });

@@ -75,9 +75,11 @@ class FollowRequestTile extends StatelessWidget {
               _logger.info(
                 'Özel hesaba takip isteği gönderiliyor: ${targetUser.username}',
               );
+
               await userRepository.sendFollowRequest(
                 currentUser!.userID,
                 targetUserID,
+                true,
               );
             }
           },
@@ -112,7 +114,7 @@ class FollowRequestTile extends StatelessWidget {
                 final targetUserID = item.userID;
                 final currentUser = sessionService.currentUser;
 
-                FriendEntity follower = FriendEntity(
+                final follower = FriendEntity(
                   userID: targetUserID,
                   username: item.username,
                   profileImageUrl: item.profileImageUrl,
@@ -137,6 +139,7 @@ class FollowRequestTile extends StatelessWidget {
                 ),
               ),
             ),
+
             SizedBox(width: 4.w),
             GestureDetector(
               onTap: () {
