@@ -31,7 +31,7 @@ class _PostCardState extends State<PostCard> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  // --- RENK SABİTLERİ (AppColor Optimizasyonu) ---
+  // --- RENK SABİTLERİ ---
   static const Color _kTextMainColor = Color(0xFF1A1A1A);
   static const Color _kTextGreyColor = Color(0xFF8E8E93);
   static const Color _kInactiveIndicatorColor = Color(0xFFD9D9D9);
@@ -41,13 +41,11 @@ class _PostCardState extends State<PostCard> {
   late int _clapCount;
   late int _eggCount;
 
-  // Kullanıcının seçim durumları
   bool _isLikedByMe = false;
   bool _isClappedByMe = false;
   bool _isEggedByMe = false;
   bool isVisible = true;
 
-  // Servisler
   late final PostRepository _postRepository;
   late final SessionService _sessionService;
   late final String _myUserId;
@@ -59,16 +57,13 @@ class _PostCardState extends State<PostCard> {
     _sessionService = getIt<SessionService>();
     _myUserId = _sessionService.currentUser?.userID ?? '';
 
-    // 1. Sayıları PostEntity'den başlat
     _likeCount = widget.post.emoteCounts[EmoteEnum.heart] ?? 0;
     _clapCount = widget.post.emoteCounts[EmoteEnum.clap] ?? 0;
     _eggCount = widget.post.emoteCounts[EmoteEnum.egg] ?? 0;
 
-    // 2. Kullanıcı daha önce beğenmiş mi kontrol et
     _checkExistingEmotes();
   }
 
-  /// Kullanıcının bu post'a attığı eski reaksiyonları kontrol eder
   Future<void> _checkExistingEmotes() async {
     if (_myUserId.isEmpty) return;
 
@@ -105,9 +100,8 @@ class _PostCardState extends State<PostCard> {
     super.dispose();
   }
 
-  // --- LOGIC: TIKLAMA YÖNETİMİ ---
   Future<void> _handleEmoteTap(EmoteEnum emote) async {
-    if (_myUserId.isEmpty) return; // Login olmamışsa işlem yapma
+    if (_myUserId.isEmpty) return;
 
     bool isSelectedCurrent;
     int previousCount;
@@ -128,7 +122,6 @@ class _PostCardState extends State<PostCard> {
         previousState = _isEggedByMe;
     }
 
-    // 1. Optimistic Update (Ekranı hemen güncelle)
     setState(() {
       if (emote == EmoteEnum.heart) {
         if (_isLikedByMe) {
@@ -157,25 +150,17 @@ class _PostCardState extends State<PostCard> {
       }
     });
 
-    // 2. API İsteği
     try {
       if (isSelectedCurrent) {
-        // Zaten seçiliydi, kaldırmak istiyor
         await _postRepository.removeEmoteFromPost(
           widget.post.id,
           _myUserId,
           emote,
         );
       } else {
-        // Seçili değildi, eklemek istiyor
-        await _postRepository.addEmoteToPost(
-          widget.post.id,
-          _myUserId,
-          emote,
-        );
+        await _postRepository.addEmoteToPost(widget.post.id, _myUserId, emote);
       }
     } on Exception catch (e) {
-      // 3. Hata olursa geri al (Rollback)
       if (mounted) {
         setState(() {
           if (emote == EmoteEnum.heart) {
@@ -189,7 +174,6 @@ class _PostCardState extends State<PostCard> {
             _isEggedByMe = previousState;
           }
         });
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('İşlem başarısız: $e')),
         );
@@ -204,9 +188,110 @@ class _PostCardState extends State<PostCard> {
     }
   }
 
+  // --- YENİ EKLENEN: BAŞKASININ PROFİLİ İÇİN MENÜ ---
+  void _showOtherUserPostOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.symmetric(vertical: 12.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Gri Çizgi (Drag Handle)
+              Container(
+                width: 36.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
+              ),
+              SizedBox(height: 20.h),
+
+              // 1. Takibi Bırak
+              _buildOptionItem(
+                context,
+                icon: Icons.person_remove_outlined,
+                text: 'Takibi Bırak',
+                color: Colors.black,
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Takibi bırakma servisi
+                },
+              ),
+
+              // 2. Engelle (Kırmızı)
+              _buildOptionItem(
+                context,
+                icon: Icons.block_outlined,
+                text: 'Engelle',
+                color: const Color(0xFFFF3B30),
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Engelleme servisi
+                },
+              ),
+
+              // 3. Şikayet Et (Kırmızı)
+              _buildOptionItem(
+                context,
+                icon: Icons.report_gmailerrorred_outlined,
+                text: 'Şikayet Et',
+                color: const Color(0xFFFF3B30),
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Şikayet servisi
+                },
+              ),
+
+              SizedBox(height: 10.h),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Menü Yardımcı Widget'ı
+  Widget _buildOptionItem(
+    BuildContext context, {
+    required IconData icon,
+    required String text,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 14.h),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 24.sp),
+            SizedBox(width: 16.w),
+            Text(
+              text,
+              style: TextStyle(
+                fontFamily: 'SF Pro Display',
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w400,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Dynamic Data
+    if (!isVisible) return const SizedBox.shrink();
+
     final caption = widget.post.caption;
     final mediaUrls = widget.post.imageUrls ?? [];
     final tags = widget.post.hobbies.map((h) => h.name).toList();
@@ -216,7 +301,6 @@ class _PostCardState extends State<PostCard> {
         widget.user?.profileImageUrl ??
         'https://picsum.photos/seed/avatar_default/100/100';
 
-    // Static Data (Örnek)
     final staticLocationName =
         widget.post.displayAddress ?? 'Konum Bilgisi Yok';
     final participantAvatars = widget.post.participants
@@ -229,61 +313,38 @@ class _PostCardState extends State<PostCard> {
         ? mediaUrls
         : [defaultImageUrl];
 
-    return AnimatedCrossFade(
-      duration: const Duration(milliseconds: 500),
-      crossFadeState: isVisible
-          ? CrossFadeState.showFirst
-          : CrossFadeState.showSecond,
-      secondChild: const SizedBox(width: double.infinity),
-      firstChild: Center(
-        child: Container(
-          width: 361.w,
-          margin: EdgeInsets.only(bottom: 24.h, top: 12.h),
-          color: Colors.transparent,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. Header
-              _buildHeader(
-                context,
-                avatarUrl: userAvatarUrl,
-                username: username,
-                location: staticLocationName,
-              ),
-
-              SizedBox(height: 12.h),
-
-              // 2. Content (Image/PageView)
-              _buildContent(
-                context,
-                mediaUrls: effectiveMediaUrls,
-                likedByAvatars: participantAvatars,
-              ),
-
-              // Page Indicator
-              if (effectiveMediaUrls.length > 1) ...[
-                SizedBox(height: 10.h),
-                Center(
-                  child: _buildPageIndicator(effectiveMediaUrls.length),
-                ),
-              ],
-
-              SizedBox(height: 12.h),
-
-              // 3. Footer
-              _buildFooter(
-                context,
-                caption: caption,
-                tags: tags,
-              ),
+    return Center(
+      child: Container(
+        width: 361.w,
+        margin: EdgeInsets.only(bottom: 24.h, top: 12.h),
+        color: Colors.transparent,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(
+              context,
+              avatarUrl: userAvatarUrl,
+              username: username,
+              location: staticLocationName,
+            ),
+            SizedBox(height: 12.h),
+            _buildContent(
+              context,
+              mediaUrls: effectiveMediaUrls,
+              likedByAvatars: participantAvatars,
+            ),
+            if (effectiveMediaUrls.length > 1) ...[
+              SizedBox(height: 10.h),
+              Center(child: _buildPageIndicator(effectiveMediaUrls.length)),
             ],
-          ),
+            SizedBox(height: 12.h),
+            _buildFooter(context, caption: caption, tags: tags),
+          ],
         ),
       ),
     );
   }
 
-  // HEADER WIDGET
   Widget _buildHeader(
     BuildContext context, {
     required String avatarUrl,
@@ -292,8 +353,6 @@ class _PostCardState extends State<PostCard> {
   }) {
     final theme = Theme.of(context);
     final isPostMine = widget.post.creator.userID == _myUserId;
-
-    // GridTab'dan gelen isPinned verisini oku
     final isPinned = widget.post.isPinned;
 
     return Row(
@@ -315,10 +374,10 @@ class _PostCardState extends State<PostCard> {
                 child: Text(
                   username,
                   style: const TextStyle(
-                    fontFamily: 'SF Pro Display', // Font değiştirildi
+                    fontFamily: 'SF Pro Display',
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: _kTextMainColor, // Renk optimize edildi
+                    color: _kTextMainColor,
                   ),
                 ),
               ),
@@ -327,50 +386,45 @@ class _PostCardState extends State<PostCard> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontFamily: 'SF Pro Display', // Font değiştirildi
+                  fontFamily: 'SF Pro Display',
                   fontSize: 12,
-                  color: _kTextMainColor, // Renk optimize edildi
+                  color: _kTextMainColor,
                 ),
               ),
             ],
           ),
         ),
+        // --- 3 NOKTA MENÜSÜ ---
         IconButton(
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
           icon: Icon(Icons.more_vert, color: theme.colorScheme.secondary),
           onPressed: () {
-            showModalBottomSheet<void>(
-              context: context,
-              useRootNavigator: true,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (sheetContext) => CustomActionBottomSheet(
-                options: [
-                  // --- KULLANICININ KENDİ GÖNDERİSİ İSE ---
-                  if (isPostMine) ...[
-                    // DURUM 1: SABİTLENMİŞSE -> "SABİTLEMEYİ KALDIR"
+            if (isPostMine) {
+              // --- KENDİ GÖNDERİSİ İSE ESKİ MENÜ ---
+              showModalBottomSheet<void>(
+                context: context,
+                useRootNavigator: true,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (sheetContext) => CustomActionBottomSheet(
+                  options: [
                     if (isPinned)
                       BottomSheetOption(
                         icon: Icons.push_pin_outlined,
                         text: 'Sabitlemeyi Kaldır',
                         onTap: () async {
-                          // TODO: Unpin servisini çağır
                           sheetContext.pop();
                         },
                       )
-                    // DURUM 2: NORMAL İSE -> "PROFİLE SABİTLE"
                     else
                       BottomSheetOption(
                         icon: Icons.push_pin,
                         text: 'Gönderiyi Profile Sabitle',
                         onTap: () async {
-                          // TODO: Pin servisini çağır
                           sheetContext.pop();
                         },
                       ),
-
-                    // Ortak: PAYLAŞ
                     BottomSheetOption(
                       icon: Icons.share_outlined,
                       text: 'Gönderiyi Paylaş',
@@ -378,14 +432,11 @@ class _PostCardState extends State<PostCard> {
                         sheetContext.pop();
                       },
                     ),
-
-                    // Ortak: SİL (Kırmızı)
                     BottomSheetOption(
                       icon: Icons.delete_outline,
                       text: 'Gönderiyi Sil',
                       isDestructive: true,
                       onTap: () async {
-                        // TODO: Silme işlemi
                         if (mounted) {
                           setState(() {
                             isVisible = false;
@@ -396,37 +447,19 @@ class _PostCardState extends State<PostCard> {
                         }
                       },
                     ),
-                  ]
-                  // --- BAŞKASININ GÖNDERİSİ İSE ---
-                  else ...[
-                    BottomSheetOption(
-                      icon: Icons.share_outlined,
-                      text: 'Gönderiyi Paylaş',
-                      onTap: () => sheetContext.pop(),
-                    ),
-                    BottomSheetOption(
-                      icon: Icons.block_outlined,
-                      text: 'Kullanıcıyı Engelle',
-                      isDestructive: true,
-                      onTap: () => sheetContext.pop(),
-                    ),
-                    BottomSheetOption(
-                      icon: Icons.error_outline,
-                      text: 'Şikayet Et',
-                      isDestructive: true,
-                      onTap: () => sheetContext.pop(),
-                    ),
                   ],
-                ],
-              ),
-            );
+                ),
+              );
+            } else {
+              // --- BAŞKASININ GÖNDERİSİ İSE YENİ TASARIM MENÜ ---
+              _showOtherUserPostOptions(context);
+            }
           },
         ),
       ],
     );
   }
 
-  // --- CONTENT WIDGET ---
   Widget _buildContent(
     BuildContext context, {
     required List<String> mediaUrls,
@@ -458,8 +491,6 @@ class _PostCardState extends State<PostCard> {
             ),
           ),
         ),
-
-        // Interaction Overlay
         Positioned(
           bottom: 12.h,
           left: 12.w,
@@ -473,7 +504,6 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  //  INTERACTION OVERLAY
   Widget _buildInteractionsOverlay(
     BuildContext context, {
     required List<String> likedByAvatars,
@@ -483,7 +513,6 @@ class _PostCardState extends State<PostCard> {
       padding: EdgeInsets.symmetric(horizontal: 0.w),
       child: Row(
         children: [
-          // KALP
           EmojiChip(
             icon: Icons.favorite,
             text: '$_likeCount',
@@ -492,8 +521,6 @@ class _PostCardState extends State<PostCard> {
             onTap: () => _handleEmoteTap(EmoteEnum.heart),
           ),
           SizedBox(width: 12.w),
-
-          // ALKIŞ/CHAT
           EmojiChip(
             icon: Icons.chat_rounded,
             text: '$_clapCount',
@@ -502,8 +529,6 @@ class _PostCardState extends State<PostCard> {
             onTap: () => _handleEmoteTap(EmoteEnum.clap),
           ),
           SizedBox(width: 12.w),
-
-          // YUMURTA
           EmojiChip(
             icon: Icons.egg,
             text: '$_eggCount',
@@ -511,7 +536,6 @@ class _PostCardState extends State<PostCard> {
             isSelected: _isEggedByMe,
             onTap: () => _handleEmoteTap(EmoteEnum.egg),
           ),
-
           const Spacer(),
           SmallStackedAvatars(
             avatarUrls: likedByAvatars,
@@ -523,7 +547,6 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  // --- PAGE INDICATOR ---
   Widget _buildPageIndicator(int pageCount) {
     final activeColor = Theme.of(context).colorScheme.secondary;
     return Row(
@@ -539,23 +562,22 @@ class _PostCardState extends State<PostCard> {
             shape: BoxShape.circle,
             color: _currentPage == index
                 ? activeColor
-                : _kInactiveIndicatorColor, // Renk optimize edildi
+                : _kInactiveIndicatorColor,
           ),
         );
       }),
     );
   }
 
-  // --- FOOTER ---
   Widget _buildFooter(
     BuildContext context, {
     required String caption,
     required List<String> tags,
   }) {
     const timeStyle = TextStyle(
-      fontFamily: 'SF Pro Display', // Font değiştirildi
+      fontFamily: 'SF Pro Display',
       fontSize: 12,
-      color: _kTextGreyColor, // Renk optimize edildi
+      color: _kTextGreyColor,
     );
 
     return Padding(
@@ -574,7 +596,7 @@ class _PostCardState extends State<PostCard> {
                     caption,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      fontFamily: 'SF Pro Display', // Font değiştirildi
+                      fontFamily: 'SF Pro Display',
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
