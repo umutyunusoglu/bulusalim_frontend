@@ -24,6 +24,7 @@ class PostEntity extends FeedEntity with EquatableMixin {
     this.location,
     this.displayAddress,
     this.imageUrls,
+    this.isPinned = false,
   }) : super(feedType: FeedEntityTypeEnum.post, id: postID);
 
   PostEntity copyWith({
@@ -42,6 +43,7 @@ class PostEntity extends FeedEntity with EquatableMixin {
     DateTime? updatedAt,
     bool? showParticipants,
     bool? includeInDump,
+    bool? isPinned,
   }) {
     return PostEntity(
       postID: postID ?? this.postID,
@@ -58,6 +60,7 @@ class PostEntity extends FeedEntity with EquatableMixin {
       emoteCounts: emoteCounts ?? this.emoteCounts,
       showParticipants: showParticipants ?? this.showParticipants,
       includeInDump: includeInDump ?? this.includeInDump,
+      isPinned: isPinned ?? this.isPinned,
     );
   }
 
@@ -66,6 +69,7 @@ class PostEntity extends FeedEntity with EquatableMixin {
     postID,
     creator,
     eventID,
+    isPinned,
   ];
 
   final Identifier postID;
@@ -82,4 +86,5 @@ class PostEntity extends FeedEntity with EquatableMixin {
   final bool includeInDump;
   final List<CompactUserEntity> participants;
   final Map<EmoteEnum, int> emoteCounts;
+  final bool isPinned;
 }
