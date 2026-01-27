@@ -116,7 +116,7 @@ final router = GoRouter(
     GoRoute(
       path: '/debug',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const DebugVerificationScreen(),
+      builder: (context, state) => const HomePage(),
     ),
 
     // --- BOTTOM NAVIGATION BAR (SHELL) ---
