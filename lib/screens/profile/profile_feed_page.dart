@@ -1,9 +1,9 @@
-import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/components/post_card.dart';
-import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
-import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
-import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart';
-import 'package:bulusalim/domain/repositories/post_repository.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/components/post_card.dart';
+import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
+import 'package:outnest/domain/entities/feed/post/post_entity.dart';
+import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
+import 'package:outnest/domain/repositories/post_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 

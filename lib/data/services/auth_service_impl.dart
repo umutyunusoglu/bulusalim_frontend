@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:bulusalim/core/errors/exceptions/auth_exceptions.dart';
-import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/core/utils/types/types.dart';
-import 'package:bulusalim/core/utils/validators/masks.dart';
-import 'package:bulusalim/domain/services/auth_service.dart';
+import 'package:outnest/core/errors/exceptions/auth_exceptions.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/types.dart';
+import 'package:outnest/core/utils/validators/masks.dart';
+import 'package:outnest/domain/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthServiceImpl implements AuthService {
@@ -185,7 +185,8 @@ class AuthServiceImpl implements AuthService {
   Future<String> signInWithSms({
     required String verificationId,
     required String smsCode,
-  }) {
+  }) async {
+    // async ekledik
     _logger.debug('signInWithSms called verificationId=$verificationId');
     try {
       final credential = PhoneAuthProvider.credential(
@@ -193,13 +194,20 @@ class AuthServiceImpl implements AuthService {
         smsCode: smsCode,
       );
 
-      final uid = _firebaseAuth
-          .signInWithCredential(credential)
-          .then((userCredential) => userCredential.user!.uid);
+      final userCredential = await _firebaseAuth.signInWithCredential(
+        credential,
+      );
+      final user = userCredential.user;
 
-      _logger.info('signInWithSms: sign-in initiated');
-
-      return uid;
+      if (user != null) {
+        // KRİTİK NOKTA: Token'ı zorla yenileyerek backend'in (Functions)
+        // güncel session'ı tanımasını sağlıyoruz.
+        await user.getIdToken(true);
+        _logger.info('signInWithSms: success, userId=${user.uid}');
+        return user.uid;
+      } else {
+        throw AuthException('Kullanıcı bilgisi alınamadı.');
+      }
     } on FirebaseAuthException catch (e) {
       _logger.error('signInWithSms error: ${e.message}');
       throw AuthException(
@@ -274,4 +282,21 @@ class AuthServiceImpl implements AuthService {
   @override
   Stream<String?> get onAuthStateChanged =>
       _firebaseAuth.authStateChanges().map((user) => user?.uid);
+
+  @override
+  String getUserPhoneNumber() {
+    _logger.debug('getUserPhoneNumber called');
+
+    final user = _firebaseAuth.currentUser;
+    if (user == null) {
+      _logger.warn('getUserPhoneNumber: no current user');
+      throw AuthException('No user is currently signed in.');
+    }
+
+    final phoneNumber = user.phoneNumber;
+    _logger.info(
+      'getUserPhoneNumber: phone=${phoneNumber != null ? maskPhone(phoneNumber) : "null"}',
+    );
+    return phoneNumber ?? '';
+  }
 }

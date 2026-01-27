@@ -1,10 +1,10 @@
-import 'package:bulusalim/core/constants/configs/app_config.dart';
-import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
-import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
-import 'package:bulusalim/core/utils/types/types.dart';
-import 'package:bulusalim/data/models/model.dart';
-import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
-import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
+import 'package:outnest/core/constants/configs/app_config.dart';
+import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
+import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
+import 'package:outnest/core/utils/types/types.dart';
+import 'package:outnest/data/models/model.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_geohash/dart_geohash.dart';
 

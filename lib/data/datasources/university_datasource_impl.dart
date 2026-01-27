@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
-import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/data/models/organization/organization_model.dart';
-import 'package:bulusalim/domain/datasources/university_datasource.dart';
-import 'package:bulusalim/domain/entities/organization/organization_entity.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/data/models/organization/organization_model.dart';
+import 'package:outnest/domain/datasources/university_datasource.dart';
+import 'package:outnest/domain/entities/organization/organization_entity.dart';
 
 class UniversityDataSourceImpl implements UniversityDatasource {
   UniversityDataSourceImpl({required this.logger});

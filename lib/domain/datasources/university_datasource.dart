@@ -1,4 +1,4 @@
-import 'package:bulusalim/domain/entities/organization/organization_entity.dart';
+import 'package:outnest/domain/entities/organization/organization_entity.dart';
 
 abstract class UniversityDatasource {
   Future<List<OrganizationEntity>> getAllUniversitiesInCountry({

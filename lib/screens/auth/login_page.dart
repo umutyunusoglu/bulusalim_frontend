@@ -1,9 +1,11 @@
-import 'package:bulusalim/components/auth_button.dart';
-import 'package:bulusalim/components/auth_input.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/components/auth_button.dart';
+import 'package:outnest/components/auth_input.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:outnest/domain/services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -21,11 +23,42 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _handleLogin() {
-    final rawNumber = _phoneController.text.replaceAll(' ', '');
+  bool _isLoading = false; // Sayfada bir yükleniyor durumu tut
 
-    if (rawNumber.length == 10) {
-      context.push('/login-verification');
+  void _handleLogin() async {
+    if (_isLoading) return; // Çift tıklamayı engelle
+
+    setState(() => _isLoading = true);
+
+    try {
+      final rawNumber = _phoneController.text.replaceAll(' ', '');
+      final result = await getIt<AuthService>().sendSMS(
+        phoneNumber: '+90$rawNumber',
+      );
+
+      // Widget hala yerindeyse işlemleri yap
+      if (mounted) {
+        setState(() => _isLoading = false); // Yüklemeyi bitir
+
+        if (result.error != null) {
+          // Hata varsa kullanıcıya göster (hala sayfada olduğu için güvenli)
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Hata: ${result.error}')),
+          );
+        } else {
+          final verificationID = result.verificationId;
+
+          await context.push(
+            '/login-verification',
+            extra: {
+              'verificationID': verificationID,
+            },
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+      debugPrint('Beklenmedik hata: $e');
     }
   }
 

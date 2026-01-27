@@ -1,9 +1,9 @@
-import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/components/event_card.dart';
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
-import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
-import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
-import 'package:bulusalim/domain/services/session_service.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/components/event_card.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
+import 'package:outnest/domain/services/session_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 

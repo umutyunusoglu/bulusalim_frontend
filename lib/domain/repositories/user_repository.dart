@@ -1,12 +1,12 @@
-import 'package:bulusalim/core/utils/types/enums/user_event_status_enum.dart';
-import 'package:bulusalim/core/utils/types/types.dart';
-import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
-import 'package:bulusalim/domain/entities/user/friend_entity.dart';
-import 'package:bulusalim/domain/entities/user/index.dart';
-import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart';
-import 'package:bulusalim/domain/entities/user/user_entity.dart';
-import 'package:bulusalim/domain/entities/user/user_event_entity.dart';
-import 'package:bulusalim/domain/entities/user/user_hobby_entity.dart';
+import 'package:outnest/core/utils/types/enums/user_event_status_enum.dart';
+import 'package:outnest/core/utils/types/types.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/user/friend_entity.dart';
+import 'package:outnest/domain/entities/user/index.dart';
+import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
+import 'package:outnest/domain/entities/user/user_entity.dart';
+import 'package:outnest/domain/entities/user/user_event_entity.dart';
+import 'package:outnest/domain/entities/user/user_hobby_entity.dart';
 
 abstract class UserRepository {
   // === User CRUD ===

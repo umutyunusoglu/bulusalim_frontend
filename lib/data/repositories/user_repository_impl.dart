@@ -1,23 +1,23 @@
-import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/core/constants/configs/app_config.dart';
-import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart';
-import 'package:bulusalim/core/utils/types/enums/user_event_status_enum.dart';
-import 'package:bulusalim/core/utils/types/types.dart';
-import 'package:bulusalim/data/models/event/event_model.dart';
-import 'package:bulusalim/data/models/user/friend_model.dart';
-import 'package:bulusalim/data/models/user/pinned_post_model.dart';
-import 'package:bulusalim/data/models/user/user_event_model.dart';
-import 'package:bulusalim/data/models/user/user_hobby_model.dart';
-import 'package:bulusalim/data/models/user/user_model.dart';
-import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
-import 'package:bulusalim/domain/entities/user/friend_entity.dart';
-import 'package:bulusalim/domain/entities/user/index.dart';
-import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart';
-import 'package:bulusalim/domain/entities/user/user_event_entity.dart';
-import 'package:bulusalim/domain/entities/user/user_hobby_entity.dart';
-import 'package:bulusalim/domain/repositories/event_repository.dart';
-import 'package:bulusalim/domain/repositories/user_repository.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/constants/configs/app_config.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/enums/event_role_enum.dart';
+import 'package:outnest/core/utils/types/enums/user_event_status_enum.dart';
+import 'package:outnest/core/utils/types/types.dart';
+import 'package:outnest/data/models/event/event_model.dart';
+import 'package:outnest/data/models/user/friend_model.dart';
+import 'package:outnest/data/models/user/pinned_post_model.dart';
+import 'package:outnest/data/models/user/user_event_model.dart';
+import 'package:outnest/data/models/user/user_hobby_model.dart';
+import 'package:outnest/data/models/user/user_model.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/user/friend_entity.dart';
+import 'package:outnest/domain/entities/user/index.dart';
+import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
+import 'package:outnest/domain/entities/user/user_event_entity.dart';
+import 'package:outnest/domain/entities/user/user_hobby_entity.dart';
+import 'package:outnest/domain/repositories/event_repository.dart';
+import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 
@@ -206,7 +206,7 @@ class UserRepositoryImpl implements UserRepository {
           lowercaseUsername; // Veritabanına bu alanı ekliyoruz
 
       // 4. ADIM: Kaydı gerçekleştir
-      transaction.set(docRef, userData);
+      transaction.set(docRef, userData, SetOptions(merge: true));
 
       _logger.info('User successfully created with unique username');
     });

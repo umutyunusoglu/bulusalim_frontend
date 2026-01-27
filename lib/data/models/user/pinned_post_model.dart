@@ -1,7 +1,7 @@
-import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
-import 'package:bulusalim/data/models/model.dart';
-import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
-import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart';
+import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
+import 'package:outnest/data/models/model.dart';
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
+import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserPostModel extends Model<UserPostEntity> {

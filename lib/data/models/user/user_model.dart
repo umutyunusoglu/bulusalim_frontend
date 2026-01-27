@@ -1,17 +1,18 @@
-import 'package:bulusalim/core/constants/configs/app_config.dart';
-import 'package:bulusalim/core/utils/types/enums/account_type_enum.dart';
+import 'package:outnest/core/constants/configs/app_config.dart';
+import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
 // GenderEnum importunun doğru olduğundan emin ol
-import 'package:bulusalim/core/utils/types/enums/gender_enum.dart';
-import 'package:bulusalim/core/utils/types/types.dart';
-import 'package:bulusalim/data/models/model.dart';
-import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
-import 'package:bulusalim/domain/entities/user/user_entity.dart';
+import 'package:outnest/core/utils/types/enums/gender_enum.dart';
+import 'package:outnest/core/utils/types/types.dart';
+import 'package:outnest/data/models/model.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserModel extends Model<UserEntity> {
   UserModel({
     required this.userID,
     required this.username,
+    required this.nameSurname,
     required this.searchName,
     required this.email,
     required this.birthDate,
@@ -21,7 +22,6 @@ class UserModel extends Model<UserEntity> {
     required this.isUniversityVerified,
     required this.profileImageUrl,
     required this.bio,
-    required this.permissions,
     required this.createdAt,
     required this.updatedAt,
     required this.lastActiveAt,
@@ -41,6 +41,7 @@ class UserModel extends Model<UserEntity> {
     return UserModel(
       userID: entity.userID,
       email: entity.email,
+      nameSurname: entity.nameSurname,
       username: entity.username,
       searchName: entity.username.toLowerCase(),
       birthDate: entity.birthDate,
@@ -50,7 +51,6 @@ class UserModel extends Model<UserEntity> {
       isUniversityVerified: entity.isUniversityVerified,
       profileImageUrl: entity.profileImageUrl,
       bio: entity.bio,
-      permissions: entity.permissions,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
       lastActiveAt: entity.lastActiveAt,
@@ -88,6 +88,7 @@ class UserModel extends Model<UserEntity> {
     return UserModel(
       userID: doc['userID'] as String,
       email: doc['email'] as String? ?? '',
+      nameSurname: doc['nameSurname'] as String? ?? 'Bilinmeyen Kullanıcı',
       username: doc['username'] as String? ?? 'Bilinmeyen Kullanıcı',
       searchName: (doc['username'] as String? ?? 'Bilinmeyen Kullanıcı')
           .toLowerCase(),
@@ -98,9 +99,6 @@ class UserModel extends Model<UserEntity> {
       isUniversityVerified: doc['isUniversityVerified'] as bool? ?? false,
       profileImageUrl: doc['profileImageUrl'] as String? ?? '',
       bio: doc['bio'] as String?,
-      permissions: userPermissionsFromFirestore(
-        doc['permissions'] as Map<String, dynamic>? ?? {},
-      ),
       createdAt: createdAt,
       updatedAt: updatedAt,
       lastActiveAt: lastActiveAt,
@@ -120,16 +118,6 @@ class UserModel extends Model<UserEntity> {
     );
   }
 
-  static UserPermissions userPermissionsFromFirestore(
-    Map<String, dynamic> doc,
-  ) {
-    // Bu yardımcı metodu da daha güvenli hale getirelim
-    return UserPermissions(
-      locationEnabled: doc['locationEnabled'] as bool? ?? false,
-      notificationsEnabled: doc['notificationsEnabled'] as bool? ?? false,
-    );
-  }
-
   @override
   Map<String, dynamic> toFirestore() {
     final profileImageUrlFirestore = profileImageUrl.replaceAll(
@@ -140,6 +128,8 @@ class UserModel extends Model<UserEntity> {
       'userID': userID,
       'email': email,
       'username': username,
+      'nameSurname': nameSurname,
+      'searchName': searchName,
       'birthDate': Timestamp.fromDate(birthDate),
       'gender': gender.toString(),
       'universityName': university,
@@ -150,7 +140,6 @@ class UserModel extends Model<UserEntity> {
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       'lastActiveAt': Timestamp.fromDate(lastActiveAt),
-      'permissions': permissions.toMap(),
       'hobbies': hobbies,
       'followeeCount': followeeCount,
       'followerCount': followerCount,
@@ -169,6 +158,7 @@ class UserModel extends Model<UserEntity> {
       userID: userID,
       email: email,
       username: username,
+      nameSurname: nameSurname,
       birthDate: birthDate,
       gender: gender,
       university: university,
@@ -176,7 +166,6 @@ class UserModel extends Model<UserEntity> {
       isUniversityVerified: isUniversityVerified,
       profileImageUrl: profileImageUrl,
       bio: bio,
-      permissions: permissions,
       createdAt: createdAt,
       updatedAt: updatedAt,
       lastActiveAt: lastActiveAt,
@@ -195,6 +184,7 @@ class UserModel extends Model<UserEntity> {
   final Identifier userID;
   final String email;
   final String username;
+  final String nameSurname;
   final String searchName;
   final DateTime birthDate;
   final GenderEnum gender;
@@ -203,7 +193,6 @@ class UserModel extends Model<UserEntity> {
   final bool isUniversityVerified;
   final String profileImageUrl;
   final String? bio;
-  final UserPermissions permissions;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime lastActiveAt;

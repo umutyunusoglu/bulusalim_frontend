@@ -1,14 +1,14 @@
-import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/components/popup.dart';
-import 'package:bulusalim/components/stacked_avatars.dart';
-import 'package:bulusalim/core/constants/configs/app_config.dart'; // <--- 1. IMPORT EKLENDİ
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
-import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/core/utils/types/types.dart';
-import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
-import 'package:bulusalim/domain/repositories/event_repository.dart';
-import 'package:bulusalim/domain/services/session_service.dart';
-import 'package:bulusalim/screens/chat/event_avatar_badge.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/components/popup.dart';
+import 'package:outnest/components/stacked_avatars.dart';
+import 'package:outnest/core/constants/configs/app_config.dart'; // <--- 1. IMPORT EKLENDİ
+import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/types.dart';
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
+import 'package:outnest/domain/repositories/event_repository.dart';
+import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/screens/chat/event_avatar_badge.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_geohash/dart_geohash.dart';
 import 'package:flutter/material.dart';

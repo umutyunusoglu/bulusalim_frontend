@@ -1,5 +1,5 @@
-import 'package:bulusalim/data/models/model.dart';
-import 'package:bulusalim/domain/entities/organization/organization_entity.dart';
+import 'package:outnest/data/models/model.dart';
+import 'package:outnest/domain/entities/organization/organization_entity.dart';
 
 class OrganizationModel extends Model<OrganizationEntity> {
   OrganizationModel({required this.name, required this.mailExtension});

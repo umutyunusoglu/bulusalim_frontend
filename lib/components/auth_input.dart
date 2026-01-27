@@ -15,6 +15,7 @@ class AuthInput extends StatelessWidget {
     this.prefixText,
     this.inputFormatters,
     this.prefixIcon,
+    this.onChanged,
   });
 
   final TextEditingController controller;
@@ -27,6 +28,7 @@ class AuthInput extends StatelessWidget {
   final String? prefixText;
   final List<TextInputFormatter>? inputFormatters;
   final Widget? prefixIcon;
+  final Function(String)? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +102,7 @@ class AuthInput extends StatelessWidget {
       textInputAction: textInputAction,
       keyboardType: keyboardType,
       onSubmitted: onSubmitted,
+      onChanged: onChanged,
       inputFormatters: inputFormatters,
       cursorColor: const Color(0xFF1F4668),
       style: textStyle,
