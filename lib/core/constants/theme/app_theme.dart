@@ -1,7 +1,7 @@
 // lib/core/constants/theme/app_theme.dart
 
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
-import 'package:bulusalim/core/constants/theme/text_theme.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/core/constants/theme/text_theme.dart';
 import 'package:flutter/material.dart';
 
 class AppTheme {
@@ -123,8 +123,8 @@ class AppTheme {
 }
 // // lib/core/constants/theme/app_theme.dart
 
-// import 'package:bulusalim/core/constants/theme/color_themes.dart';
-// import 'package:bulusalim/core/constants/theme/text_theme.dart';
+// import 'package:outnest/core/constants/theme/color_themes.dart';
+// import 'package:outnest/core/constants/theme/text_theme.dart';
 // import 'package:flutter/material.dart';
 
 // class AppTheme {

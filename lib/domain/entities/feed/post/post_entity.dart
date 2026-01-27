@@ -1,11 +1,11 @@
-import 'package:bulusalim/core/utils/types/enums/emote_enum.dart';
-import 'package:bulusalim/core/utils/types/enums/feed_entity_type_enum.dart';
-import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
-import 'package:bulusalim/core/utils/types/types.dart';
-import 'package:bulusalim/domain/entities/feed/feed_entity.dart';
-import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
-import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
-import 'package:bulusalim/domain/entities/user/user_entity.dart';
+import 'package:outnest/core/utils/types/enums/emote_enum.dart';
+import 'package:outnest/core/utils/types/enums/feed_entity_type_enum.dart';
+import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
+import 'package:outnest/core/utils/types/types.dart';
+import 'package:outnest/domain/entities/feed/feed_entity.dart';
+import 'package:outnest/domain/entities/hobby/hobby_entity.dart';
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
+import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:equatable/equatable.dart';
 
 class PostEntity extends FeedEntity with EquatableMixin {

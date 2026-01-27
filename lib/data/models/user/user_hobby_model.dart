@@ -1,6 +1,6 @@
-import 'package:bulusalim/data/models/model.dart';
-import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
-import 'package:bulusalim/domain/entities/user/user_hobby_entity.dart';
+import 'package:outnest/data/models/model.dart';
+import 'package:outnest/domain/entities/hobby/hobby_entity.dart';
+import 'package:outnest/domain/entities/user/user_hobby_entity.dart';
 
 class UserHobbyModel extends Model<UserHobbyEntity> {
   UserHobbyModel({

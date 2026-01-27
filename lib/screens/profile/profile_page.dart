@@ -1,22 +1,22 @@
-import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/components/login_button.dart';
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
-import 'package:bulusalim/core/utils/types/enums/user_event_status_enum.dart';
-import 'package:bulusalim/core/utils/types/types.dart';
-import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
-import 'package:bulusalim/domain/entities/user/friend_entity.dart';
-import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart';
-import 'package:bulusalim/domain/entities/user/user_entity.dart';
-import 'package:bulusalim/domain/repositories/event_repository.dart';
-import 'package:bulusalim/domain/repositories/user_repository.dart';
-import 'package:bulusalim/domain/services/session_service.dart';
-import 'package:bulusalim/screens/home/post%20components/small_stacked_avatars.dart';
-import 'package:bulusalim/screens/profile/dump_tab.dart';
-import 'package:bulusalim/screens/profile/events_tab.dart';
-import 'package:bulusalim/screens/profile/grid_tab.dart';
-import 'package:bulusalim/screens/profile/profile_photo.dart';
-import 'package:bulusalim/screens/profile/profile_tab_bar.dart';
-import 'package:bulusalim/screens/settings/settings.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/components/login_button.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/core/utils/types/enums/user_event_status_enum.dart';
+import 'package:outnest/core/utils/types/types.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/user/friend_entity.dart';
+import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
+import 'package:outnest/domain/entities/user/user_entity.dart';
+import 'package:outnest/domain/repositories/event_repository.dart';
+import 'package:outnest/domain/repositories/user_repository.dart';
+import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/screens/home/post%20components/small_stacked_avatars.dart';
+import 'package:outnest/screens/profile/dump_tab.dart';
+import 'package:outnest/screens/profile/events_tab.dart';
+import 'package:outnest/screens/profile/grid_tab.dart';
+import 'package:outnest/screens/profile/profile_photo.dart';
+import 'package:outnest/screens/profile/profile_tab_bar.dart';
+import 'package:outnest/screens/settings/settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -179,7 +179,7 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         if (user != null) {
           _username = user.username;
-          _fullName = user.username;
+          _fullName = user.nameSurname;
           _bio = user.bio ?? '';
           _school = user.university ?? 'Üniversite Doğrulanmadı';
           // URL boş gelse bile boş string atıyoruz, null hatası almamak için
@@ -316,7 +316,9 @@ class _ProfilePageState extends State<ProfilePage> {
         ? (sessionUser!.university ?? 'Üniversite Doğrulanmadı')
         : _school;
     // fullName kodunda username'e eşitlemişsin, aynı mantığı korudum:
-    final displayFullName = isCurrentUser ? sessionUser!.username : _fullName;
+    final displayFullName = isCurrentUser
+        ? sessionUser!.nameSurname
+        : _fullName;
 
     return Padding(
       padding: EdgeInsets.only(left: 16.w, right: 16.w, top: 30, bottom: 20.h),

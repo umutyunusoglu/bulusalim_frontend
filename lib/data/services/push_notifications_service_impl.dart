@@ -1,5 +1,5 @@
-import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/domain/services/push_notifications_service.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/domain/services/push_notifications_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 @pragma('vm:entry-point')

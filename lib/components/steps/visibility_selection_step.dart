@@ -1,5 +1,5 @@
-import 'package:bulusalim/components/popup_next_button.dart';
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:outnest/components/popup_next_button.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 

@@ -1,9 +1,9 @@
 // lib/data/services/remote_config_service_impl.dart
 
 import 'dart:convert';
-import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/core/constants/configs/app_config.dart';
-import 'package:bulusalim/domain/services/remote_config_service.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/constants/configs/app_config.dart';
+import 'package:outnest/domain/services/remote_config_service.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/services.dart';
 
@@ -65,9 +65,9 @@ class RemoteConfigServiceImpl implements RemoteConfigService {
     throw UnsupportedError('Type $T is not supported');
   }
 } // import 'dart:convert';
-// import 'package:bulusalim/application/providers/get_it_init.dart';
-// import 'package:bulusalim/core/constants/configs/app_config.dart';
-// import 'package:bulusalim/domain/services/remote_config_service.dart';
+// import 'package:outnest/application/providers/get_it_init.dart';
+// import 'package:outnest/core/constants/configs/app_config.dart';
+// import 'package:outnest/domain/services/remote_config_service.dart';
 // import 'package:firebase_remote_config/firebase_remote_config.dart';
 // import 'package:flutter/services.dart';
 

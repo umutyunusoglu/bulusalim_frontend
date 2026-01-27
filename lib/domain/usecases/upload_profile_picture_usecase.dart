@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/domain/services/file_service.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/domain/services/file_service.dart';
 
 class UploadProfilePicture {
   const UploadProfilePicture({
@@ -13,7 +13,10 @@ class UploadProfilePicture {
   final FileService _fileService;
   final LoggingService _loggingService;
 
-  Future<String?> call(String userID, String filePath) async {
+  Future<String?> call({
+    required String userID,
+    required String filePath,
+  }) async {
     try {
       final file = File(filePath);
 

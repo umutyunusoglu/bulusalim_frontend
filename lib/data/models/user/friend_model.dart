@@ -1,5 +1,5 @@
-import 'package:bulusalim/data/models/model.dart';
-import 'package:bulusalim/domain/entities/user/friend_entity.dart';
+import 'package:outnest/data/models/model.dart';
+import 'package:outnest/domain/entities/user/friend_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FriendModel extends Model<FriendEntity> {
