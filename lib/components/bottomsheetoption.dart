@@ -39,7 +39,7 @@ class CustomActionBottomSheet extends StatelessWidget {
     return Container(
       height: height,
       width: double.infinity,
-      padding: EdgeInsets.only(bottom: 30.h),
+      padding: EdgeInsets.only(bottom: 36.h),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
@@ -49,6 +49,7 @@ class CustomActionBottomSheet extends StatelessWidget {
         children: [
           SizedBox(height: 12.h),
 
+          // Gri Tutamaç (Handle)
           Container(
             width: 32.w,
             height: 4.h,
@@ -59,6 +60,7 @@ class CustomActionBottomSheet extends StatelessWidget {
           ),
 
           SizedBox(height: 24.h),
+
           ...options.map((option) {
             final color = option.isDestructive
                 ? AppColors.primaryColor
@@ -93,7 +95,7 @@ class CustomActionBottomSheet extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Son eleman değilse araya boşluk koy
+                // Son eleman değilse araya 8 birim boşluk koy
                 if (option != options.last) SizedBox(height: 8.h),
               ],
             );
