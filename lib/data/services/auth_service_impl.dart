@@ -209,6 +209,33 @@ class AuthServiceImpl implements AuthService {
   }
 
   @override
+  Future<void> verifyAndChangePhoneNumber({
+    required String verificationId,
+    required String smsCode,
+  }) async {
+    _logger.debug('verifyAndChangePhoneNumber called');
+    try {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: verificationId,
+        smsCode: smsCode,
+      );
+
+      final user = _firebaseAuth.currentUser;
+      if (user == null)
+        throw AuthException('Oturum açmış kullanıcı bulunamadı.');
+
+      // Bu metod mevcut kullanıcının telefon numarasını Auth üzerinde günceller
+      await user.updatePhoneNumber(credential);
+
+      _logger.info('Telefon numarası başarıyla güncellendi: ${user.uid}');
+    } on FirebaseAuthException catch (e) {
+      _logger.error('updatePhoneNumber error: ${e.code} - ${e.message}');
+      // Örn: 'credential-already-in-use' hatası burada yakalanır
+      throw AuthException(e.message ?? 'Numara güncellenirken hata oluştu.');
+    }
+  }
+
+  @override
   Future<void> signOut() {
     _logger.debug('signOut called');
     try {
