@@ -1,10 +1,19 @@
 import 'package:bulusalim/core/utils/types/types.dart';
+import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 
 abstract class SecurityService {
   Future<void> sendReport(
     ReportData reportData,
   );
   Future<void> blockUser(ReportData reportData);
+
+  Future<void> unblockUser(Identifier ownerID, Identifier blockedUserID);
+
+  Future<List<CompactUserEntity>> getBlockedUsers(Identifier ownerID);
+  Future<bool> isUserBlocked(
+    Identifier ownerID,
+    Identifier queriedUserID,
+  );
 }
 
 class ReportData {

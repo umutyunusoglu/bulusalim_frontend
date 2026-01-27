@@ -1,7 +1,9 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
 import 'package:bulusalim/core/utils/logging/logging_service.dart';
 import 'package:bulusalim/domain/entities/notification/follow_notification_entity.dart';
+import 'package:bulusalim/domain/entities/user/friend_entity.dart';
 import 'package:bulusalim/domain/repositories/user_repository.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:flutter/material.dart';
@@ -104,7 +106,20 @@ class FollowRequestTile extends StatelessWidget {
           children: [
             GestureDetector(
               onTap: () {
-                // TODO: Kabul etme işlemi
+                final sessionService = getIt<SessionService>();
+                final userRepository = getIt<UserRepository>();
+
+                final targetUserID = item.userID;
+                final currentUser = sessionService.currentUser;
+
+                FriendEntity follower = FriendEntity(
+                  userID: targetUserID,
+                  username: item.username,
+                  profileImageUrl: item.profileImageUrl,
+                  createdAt: DateTime.now(),
+                );
+
+                userRepository.addFollower(currentUser!.userID, follower);
               },
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
@@ -160,7 +175,7 @@ class FollowRequestTile extends StatelessWidget {
           // 1. AVATAR
           CircleAvatar(
             radius: 16.r,
-            backgroundImage: NetworkImage(item.profileImageUrl),
+            backgroundImage: NetworkImage(fixEmulatorUrl(item.profileImageUrl)),
           ),
           SizedBox(width: 12.w),
 

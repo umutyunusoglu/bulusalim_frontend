@@ -1,7 +1,8 @@
 import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
-import 'package:bulusalim/screens/settings/acoount_settings_page.dart';
+import 'package:bulusalim/screens/settings/account_settings_page.dart';
 import 'package:bulusalim/screens/settings/blocked_users_page.dart';
 import 'package:bulusalim/screens/settings/delete_account_page.dart';
 import 'package:bulusalim/screens/settings/device_permissons_page.dart';
@@ -142,7 +143,7 @@ class SettingsPage extends StatelessWidget {
             // --- GENEL AYARLAR ---
             SettingsTile(
               title: 'Hesap Ayarları',
-              subtitle: 'Gizlilik, üniversite, şifre, iletişim bilgileri',
+              subtitle: 'Gizlilik, üniversite, iletişim bilgileri',
               onTap: () {
                 Navigator.push(
                   context,
@@ -243,6 +244,7 @@ class SettingsPage extends StatelessWidget {
                           'Outnest’te verilerinin nasıl toplandığını, kullanıldığını ve korunduğunu buradan öğrenebilirsin.',
                       linkText:
                           'Gizlilik ve veri kullanımı hakkında daha fazla bilgi al',
+                      linkUrl: 'https://outnest.app/yasal/gizlilik-politikasi',
                     ),
                   ),
                 );
@@ -260,6 +262,7 @@ class SettingsPage extends StatelessWidget {
                           'Outnest’i kullanırken geçerli olan kurallar ve sorumluluklar hakkında buradan bilgi edinebilirsin.',
                       linkText:
                           'Hizmet şartları ve kullanım koşulları hakkında daha fazla bilgi al',
+                      linkUrl: 'https://outnest.app/yasal/hizmet-kosullari',
                     ),
                   ),
                 );
@@ -267,7 +270,20 @@ class SettingsPage extends StatelessWidget {
             ),
             SettingsTile(
               title: 'Destek ve Yardım',
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const StaticInfoPage(
+                      title: 'Destek ve Yardım',
+                      content:
+                          'Outnest ile ilgili soruların mı var? Yardım almak ve destek talep etmek için buraya göz atabilirsin.',
+                      linkText: 'Destek ve yardım sayfasına git',
+                      linkUrl: 'https://outnest.app/',
+                    ),
+                  ),
+                );
+              },
             ),
 
             SizedBox(height: 12.h),
@@ -311,29 +327,28 @@ class SettingsPage extends StatelessWidget {
     BuildContext context,
     String profileImageUrl,
   ) {
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const EditProfilePage()),
-        );
-      },
-      // Tıklama efekti rengi
-      splashColor: Colors.grey.withOpacity(0.1),
-      highlightColor: Colors.grey.withOpacity(0.1),
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 10.h),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 20.r,
-              backgroundColor: AppColors.dividerColor,
-              backgroundImage: (profileImageUrl.isNotEmpty)
-                  ? NetworkImage(profileImageUrl)
-                  : null,
-              child: (profileImageUrl.isEmpty)
-                  ? Icon(Icons.person, color: AppColors.textGrey, size: 20.sp)
-                  : null,
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 24.r,
+            backgroundColor: AppColors.dividerColor,
+            backgroundImage: (profileImageUrl.isNotEmpty)
+                ? NetworkImage(fixEmulatorUrl(profileImageUrl))
+                : null,
+            child: (profileImageUrl.isEmpty)
+                ? Icon(Icons.person, color: AppColors.textGrey, size: 24.sp)
+                : null,
+          ),
+          SizedBox(width: 12.w),
+          Text(
+            'Profili Düzenle',
+            style: TextStyle(
+              fontFamily: 'SF Pro Display',
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w500,
+              color: AppColors.onBackgroundColor,
             ),
             SizedBox(width: 12.w),
             Text(

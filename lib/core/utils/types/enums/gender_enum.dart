@@ -1,7 +1,8 @@
 enum GenderEnum {
-  male._('male'),
-  female._('female'),
-  other._('other');
+  male._('Erkek'),
+  female._('Kadın'),
+  other._('Diğer'),
+  preferNotToSay._('Belirtmek İstemiyorum');
 
   const GenderEnum._(this.value);
 
@@ -18,6 +19,8 @@ enum GenderEnum {
         return female;
       case 'other':
         return other;
+      case 'preferNotToSay':
+        return preferNotToSay;
       default:
         throw ArgumentError('Unknown gender: $value');
     }
