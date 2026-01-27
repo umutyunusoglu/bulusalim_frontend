@@ -1,26 +1,29 @@
+import 'package:bulusalim/core/constants/theme/color_themes.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class LoginButton extends StatelessWidget {
   const LoginButton({
     required this.label,
     required this.onPress,
-    required this.height,
-    required this.width,
-    required this.borderRadius,
-    required this.borderWidth,
     super.key,
+
+    this.height,
+    this.width,
+    this.borderRadius = 40.0,
+    this.borderWidth = 0.0,
 
     this.backgroundColor,
     this.textColor,
     this.borderColor,
 
-    this.fontSize = 18.0,
+    this.fontSize = 16.0,
     this.fontWeight = FontWeight.w700,
   });
 
   final String label;
   final VoidCallback onPress;
-  final double height;
+  final double? height;
   final double? width;
   final double borderRadius;
   final double borderWidth;
@@ -33,41 +36,40 @@ class LoginButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final effectiveBackgroundColor = backgroundColor ?? const Color(0xFFF2F2F7);
+    final effectiveTextColor = textColor ?? AppColors.primaryColor;
+    final effectiveBorderColor = borderColor ?? Colors.transparent;
 
-    // Renkler null gelirse varsayılan tema renklerini kullan
-    final defaultColor = theme.colorScheme.secondary;
-
-    final effectiveBackgroundColor = backgroundColor ?? Colors.white;
-    final effectiveBorderColor = borderColor ?? defaultColor;
-    final effectiveTextColor = textColor ?? defaultColor;
+    final effectiveHeight = height ?? 40.h;
+    // Eğer parametre gelmezse varsayılan sonsuz genişlik olsun
+    final effectiveWidth = width ?? double.infinity;
 
     return SizedBox(
-      height: height,
-      width: width,
+      height: effectiveHeight,
+      width: effectiveWidth,
       child: Material(
         color: effectiveBackgroundColor,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(borderRadius),
-          side: BorderSide(
-            color: effectiveBorderColor,
-            width: borderWidth,
-          ),
+          borderRadius: BorderRadius.circular(borderRadius.r),
+          side: borderWidth > 0
+              ? BorderSide(color: effectiveBorderColor, width: borderWidth)
+              : BorderSide.none,
         ),
         child: InkWell(
           onTap: onPress,
-          borderRadius: BorderRadius.circular(borderRadius),
-          // Tıklama efekti rengi
+          borderRadius: BorderRadius.circular(borderRadius.r),
           splashColor: effectiveTextColor.withOpacity(0.1),
           highlightColor: effectiveTextColor.withOpacity(0.05),
           child: Center(
             child: Text(
               label,
               style: TextStyle(
-                fontFamily: 'Urbanist',
+                fontFamily: 'SF Pro Display',
                 color: effectiveTextColor,
-                fontSize: fontSize,
+                fontSize: fontSize.sp,
                 fontWeight: fontWeight,
+                letterSpacing: 0.5,
               ),
             ),
           ),

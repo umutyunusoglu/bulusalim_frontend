@@ -16,13 +16,13 @@ class SkipButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final effectiveColor = color ?? theme.colorScheme.tertiary;
+    final effectiveColor = color ?? Colors.grey.shade600;
 
     return TextButton(
       onPressed: onTap,
       style: TextButton.styleFrom(
         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-        foregroundColor: effectiveColor.withOpacity(0.1),
+        backgroundColor: effectiveColor.withOpacity(0.05),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20.r),
         ),
@@ -30,8 +30,8 @@ class SkipButton extends StatelessWidget {
       child: Text(
         text,
         style: TextStyle(
-          fontFamily: 'Urbanist',
-          fontSize: 16.sp,
+          fontFamily: 'SF Pro Display',
+          fontSize: 14.sp,
           fontWeight: FontWeight.w600,
           color: effectiveColor,
         ),
