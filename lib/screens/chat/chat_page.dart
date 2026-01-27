@@ -1,13 +1,13 @@
-import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/core/constants/configs/app_config.dart'; // <--- BU SATIR EKLENDİ
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
-import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
-import 'package:bulusalim/domain/entities/chat/message_entity.dart';
-import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
-import 'package:bulusalim/domain/repositories/chat_repository.dart';
-import 'package:bulusalim/screens/chat/chat_input_bar.dart';
-import 'package:bulusalim/screens/chat/chat_message_buble.dart';
-import 'package:bulusalim/screens/chat/chat_page_header.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/constants/configs/app_config.dart'; // <--- BU SATIR EKLENDİ
+import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
+import 'package:outnest/domain/entities/chat/message_entity.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/repositories/chat_repository.dart';
+import 'package:outnest/screens/chat/chat_input_bar.dart';
+import 'package:outnest/screens/chat/chat_message_buble.dart';
+import 'package:outnest/screens/chat/chat_page_header.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';

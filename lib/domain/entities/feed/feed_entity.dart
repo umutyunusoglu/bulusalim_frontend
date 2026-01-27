@@ -1,4 +1,4 @@
-import 'package:bulusalim/core/utils/types/enums/feed_entity_type_enum.dart';
+import 'package:outnest/core/utils/types/enums/feed_entity_type_enum.dart';
 
 abstract class FeedEntity {
   FeedEntity({

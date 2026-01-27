@@ -1,13 +1,14 @@
-import 'package:bulusalim/core/utils/types/enums/account_type_enum.dart';
-import 'package:bulusalim/core/utils/types/enums/gender_enum.dart';
-import 'package:bulusalim/core/utils/types/types.dart';
-import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
+import 'package:outnest/core/utils/types/enums/gender_enum.dart';
+import 'package:outnest/core/utils/types/types.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:equatable/equatable.dart';
 
 class UserEntity extends Equatable {
   const UserEntity({
     required this.userID,
     required this.username,
+    required this.nameSurname,
     required this.email,
     required this.birthDate,
     required this.gender,
@@ -16,7 +17,6 @@ class UserEntity extends Equatable {
     required this.isUniversityVerified,
     required this.profileImageUrl,
     required this.bio,
-    required this.permissions,
     required this.createdAt,
     required this.updatedAt,
     required this.lastActiveAt,
@@ -36,8 +36,7 @@ class UserEntity extends Equatable {
   UserEntity copyWith({
     Identifier? userID,
     String? email,
-    String? name,
-    String? surname,
+    String? nameSurname,
     String? username,
     DateTime? birthDate,
     GenderEnum? gender,
@@ -51,7 +50,6 @@ class UserEntity extends Equatable {
     String? instagram,
     AccountType? accountType,
 
-    UserPermissions? permissions,
     List<String>? hobbies,
     int? followeeCount,
     int? followerCount,
@@ -66,6 +64,7 @@ class UserEntity extends Equatable {
       userID: userID ?? this.userID,
       email: email ?? this.email,
       username: username ?? this.username,
+      nameSurname: nameSurname ?? this.nameSurname,
       birthDate: birthDate ?? this.birthDate,
       gender: gender ?? this.gender,
       university: university ?? this.university,
@@ -77,7 +76,6 @@ class UserEntity extends Equatable {
       instagram: instagram ?? this.instagram,
       accountType: accountType ?? this.accountType,
       lastActiveAt: lastActiveAt ?? this.lastActiveAt,
-      permissions: permissions ?? this.permissions,
       hobbies: hobbies ?? this.hobbies,
       followeeCount: followeeCount ?? this.followeeCount,
       followerCount: followerCount ?? this.followerCount,
@@ -91,6 +89,7 @@ class UserEntity extends Equatable {
   final Identifier userID;
   final String email;
   final String username;
+  final String nameSurname;
   final DateTime birthDate;
   final String? phoneNumber;
   final GenderEnum gender;
@@ -101,7 +100,6 @@ class UserEntity extends Equatable {
   final String? bio;
   final String? instagram;
   final AccountType accountType;
-  final UserPermissions permissions;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime lastActiveAt;
@@ -116,40 +114,4 @@ class UserEntity extends Equatable {
   List<Object?> get props => [
     userID,
   ];
-}
-
-class UserPermissions extends Equatable {
-  const UserPermissions({
-    required this.locationEnabled,
-    required this.notificationsEnabled,
-  });
-  factory UserPermissions.fromMap(Map<String, dynamic> map) {
-    final keys = ['locationEnabled', 'notificationsEnabled'];
-    for (final key in keys) {
-      if (!map.containsKey(key)) {
-        throw Exception('Missing key: $key');
-      }
-    }
-
-    return UserPermissions(
-      locationEnabled: map['locationEnabled'] as bool,
-      notificationsEnabled: map['notificationsEnabled'] as bool,
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'locationEnabled': locationEnabled,
-      'notificationsEnabled': notificationsEnabled,
-    };
-  }
-
-  @override
-  List<Object?> get props => [
-    locationEnabled,
-    notificationsEnabled,
-  ];
-
-  final bool locationEnabled;
-  final bool notificationsEnabled;
 }

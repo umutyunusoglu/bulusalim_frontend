@@ -1,6 +1,6 @@
-import 'package:bulusalim/core/constants/configs/logger_config.dart'
+import 'package:outnest/core/constants/configs/logger_config.dart'
     show loggerPrettyPrinterConfig;
-import 'package:bulusalim/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:logger/logger.dart';
 
 class LoggingServiceImpl implements LoggingService {

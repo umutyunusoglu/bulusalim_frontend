@@ -1,10 +1,7 @@
-import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/components/custom_tab_bar.dart';
-import 'package:bulusalim/components/header.dart';
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
-import 'package:bulusalim/core/utils/types/enums/feed_type.dart';
-import 'package:bulusalim/domain/services/session_service.dart';
-import 'package:bulusalim/screens/home/home_content_page.dart';
+import 'package:outnest/components/custom_tab_bar.dart';
+import 'package:outnest/components/header.dart';
+import 'package:outnest/core/utils/types/enums/feed_type.dart';
+import 'package:outnest/screens/home/home_content_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';

@@ -1,6 +1,6 @@
-import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/domain/datasources/university_datasource.dart';
-import 'package:bulusalim/domain/repositories/user_repository.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/domain/datasources/university_datasource.dart';
+import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:flutter/material.dart';
 
 class DebugVerificationScreen extends StatefulWidget {

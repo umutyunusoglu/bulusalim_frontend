@@ -2,12 +2,12 @@
 
 import 'dart:async';
 
-import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
-import 'package:bulusalim/domain/entities/user/user_entity.dart';
-import 'package:bulusalim/domain/repositories/user_repository.dart';
-import 'package:bulusalim/domain/services/auth_service.dart';
-import 'package:bulusalim/domain/services/session_service.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/user/user_entity.dart';
+import 'package:outnest/domain/repositories/user_repository.dart';
+import 'package:outnest/domain/services/auth_service.dart';
+import 'package:outnest/domain/services/session_service.dart';
 import 'package:flutter/foundation.dart';
 
 class SessionServiceImpl implements SessionService {

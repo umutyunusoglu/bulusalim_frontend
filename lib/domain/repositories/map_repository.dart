@@ -1,5 +1,5 @@
-import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
-import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 
 abstract class MapRepository {
   Future<List<EventEntity>> fetchEventsInBounds({

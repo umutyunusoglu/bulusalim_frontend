@@ -1,1 +1,1 @@
-export 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
+export 'package:outnest/domain/entities/hobby/hobby_entity.dart';

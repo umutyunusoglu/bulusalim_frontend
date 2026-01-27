@@ -1,6 +1,6 @@
 // lib/domain/repositories/auth_repository.dart
 
-import 'package:bulusalim/core/utils/types/types.dart';
+import 'package:outnest/core/utils/types/types.dart';
 
 abstract class AuthService {
   Future<PhoneAuthResult> sendSMS({required String phoneNumber});
@@ -26,6 +26,8 @@ abstract class AuthService {
 
   Future<void> signOut();
   Future<bool> isUserLoggedIn();
+
+  String getUserPhoneNumber();
 }
 
 class PhoneAuthResult {

@@ -1,5 +1,5 @@
-import 'package:bulusalim/core/utils/types/types.dart';
-import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
+import 'package:outnest/core/utils/types/types.dart';
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 
 abstract class SecurityService {
   Future<void> sendReport(

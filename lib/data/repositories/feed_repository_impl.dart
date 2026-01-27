@@ -1,18 +1,18 @@
 import 'dart:math';
 
-import 'package:bulusalim/core/constants/configs/app_config.dart';
-import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/core/utils/types/types.dart';
-import 'package:bulusalim/data/models/event/event_model.dart';
-import 'package:bulusalim/data/models/post/post_model.dart';
-import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
-import 'package:bulusalim/domain/repositories/event_repository.dart';
-import 'package:bulusalim/domain/services/global_content_cache.dart';
-import 'package:bulusalim/domain/services/in_memory_cache.dart';
-import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
-import 'package:bulusalim/domain/entities/feed/feed_entity.dart';
-import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
-import 'package:bulusalim/domain/repositories/feed_repository.dart';
+import 'package:outnest/core/constants/configs/app_config.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/types.dart';
+import 'package:outnest/data/models/event/event_model.dart';
+import 'package:outnest/data/models/post/post_model.dart';
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
+import 'package:outnest/domain/repositories/event_repository.dart';
+import 'package:outnest/domain/services/global_content_cache.dart';
+import 'package:outnest/domain/services/in_memory_cache.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/feed/feed_entity.dart';
+import 'package:outnest/domain/entities/feed/post/post_entity.dart';
+import 'package:outnest/domain/repositories/feed_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FeedRepositoryImpl implements FeedRepository {

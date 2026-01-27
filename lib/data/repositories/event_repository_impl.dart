@@ -1,20 +1,20 @@
-import 'package:bulusalim/core/constants/configs/app_config.dart';
-import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/core/utils/types/enums/event_role_enum.dart';
-import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
-import 'package:bulusalim/core/utils/types/enums/user_event_status_enum.dart';
-import 'package:bulusalim/core/utils/types/geolocation/geolocation.dart';
-import 'package:bulusalim/core/utils/types/types.dart';
-import 'package:bulusalim/data/models/event/event_messages_model.dart';
-import 'package:bulusalim/data/models/event/event_model.dart';
-import 'package:bulusalim/data/models/user/user_event_model.dart';
-import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
-import 'package:bulusalim/domain/entities/feed/event/event_messages_entity.dart';
-import 'package:bulusalim/domain/entities/hobby/hobby_entity.dart';
-import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
-import 'package:bulusalim/domain/entities/user/user_event_entity.dart';
-import 'package:bulusalim/domain/repositories/event_repository.dart';
-import 'package:bulusalim/domain/services/global_content_cache.dart';
+import 'package:outnest/core/constants/configs/app_config.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/enums/event_role_enum.dart';
+import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
+import 'package:outnest/core/utils/types/enums/user_event_status_enum.dart';
+import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
+import 'package:outnest/core/utils/types/types.dart';
+import 'package:outnest/data/models/event/event_messages_model.dart';
+import 'package:outnest/data/models/event/event_model.dart';
+import 'package:outnest/data/models/user/user_event_model.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/feed/event/event_messages_entity.dart';
+import 'package:outnest/domain/entities/hobby/hobby_entity.dart';
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
+import 'package:outnest/domain/entities/user/user_event_entity.dart';
+import 'package:outnest/domain/repositories/event_repository.dart';
+import 'package:outnest/domain/services/global_content_cache.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EventRepositoryImpl implements EventRepository {
@@ -46,7 +46,7 @@ class EventRepositoryImpl implements EventRepository {
       final userEvent = UserEventEntity(
         eventId: eventId,
         role: EventRoleEnum.creator,
-        status: UserEventStatusEnum.cancelled,
+        status: UserEventStatusEnum.upcoming,
         updatedAt: DateTime.now(),
       );
 

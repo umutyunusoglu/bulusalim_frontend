@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
-import 'package:bulusalim/screens/camera/new_post_page.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/screens/camera/new_post_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart'; // YENİ: GoRouter eklendi

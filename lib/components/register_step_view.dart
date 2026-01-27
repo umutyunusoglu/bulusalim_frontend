@@ -1,6 +1,7 @@
-import 'package:bulusalim/components/auth_button.dart';
-import 'package:bulusalim/components/auth_input.dart';
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:flutter/services.dart';
+import 'package:outnest/components/auth_button.dart';
+import 'package:outnest/components/auth_input.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -14,10 +15,13 @@ class RegisterStepView extends StatelessWidget {
     this.description,
     this.buttonText = 'devam',
     this.keyboardType,
+    this.inputFormatters,
     this.onSkip,
     this.customContent,
     this.readOnly = false,
     this.onTapInput,
+    this.validator,
+    this.onChanged,
   });
 
   final String title;
@@ -31,6 +35,32 @@ class RegisterStepView extends StatelessWidget {
   final Widget? customContent;
   final bool readOnly;
   final VoidCallback? onTapInput;
+  final List<TextInputFormatter>? inputFormatters;
+  final String? Function()? validator;
+  final Function(String)? onChanged; // Bunu ekle
+
+  void _handleNext(BuildContext context) {
+    if (validator != null) {
+      final String? error = validator!();
+      if (error != null) {
+        // Hata varsa SnackBar göster ve dur.
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              error,
+              style: TextStyle(fontFamily: 'SF Pro Display'),
+            ),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(milliseconds: 1500),
+          ),
+        );
+        return;
+      }
+    }
+    // Hata yoksa veya validator tanımlanmamışsa ilerle.
+    onNext();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,10 +101,12 @@ class RegisterStepView extends StatelessWidget {
                 absorbing: readOnly,
                 child: AuthInput(
                   controller: controller!,
+                  onChanged: onChanged, // Buraya bağla
                   hintText: hintText,
                   keyboardType: keyboardType,
                   textInputAction: TextInputAction.next,
-                  onSubmitted: (_) => onNext(),
+                  onSubmitted: (_) => _handleNext(context),
+                  inputFormatters: inputFormatters,
                 ),
               ),
             ),
@@ -104,7 +136,7 @@ class RegisterStepView extends StatelessWidget {
           // DEVAM / GÖNDER BUTONU
           AuthButton(
             text: buttonText,
-            onPressed: onNext,
+            onPressed: () => _handleNext(context),
           ),
 
           // ATLA BUTONU

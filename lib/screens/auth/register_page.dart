@@ -1,6 +1,8 @@
-import 'package:bulusalim/components/auth_button.dart';
-import 'package:bulusalim/components/auth_input.dart';
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/components/auth_button.dart';
+import 'package:outnest/components/auth_input.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/domain/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -22,15 +24,42 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  void _handleSendCode() {
-    final rawNumber = _phoneController.text.replaceAll(' ', '');
-    debugPrint('Telefon Numarası: +90$rawNumber');
+  bool _isLoading = false; // Sayfada bir yükleniyor durumu tut
 
-    // Sadece numara tam ise (10 hane) geçiş yap
-    if (rawNumber.length == 10) {
-      // --- DEĞİŞİKLİK BURADA ---
-      // VerificationCodeField sayfasına yönlendiriyoruz
-      context.push('/verification-code-field');
+  void _handleSendCode() async {
+    if (_isLoading) return; // Çift tıklamayı engelle
+
+    setState(() => _isLoading = true);
+
+    try {
+      final rawNumber = _phoneController.text.replaceAll(' ', '');
+      final result = await getIt<AuthService>().sendSMS(
+        phoneNumber: '+90$rawNumber',
+      );
+
+      // Widget hala yerindeyse işlemleri yap
+      if (mounted) {
+        setState(() => _isLoading = false); // Yüklemeyi bitir
+
+        if (result.error != null) {
+          // Hata varsa kullanıcıya göster (hala sayfada olduğu için güvenli)
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Hata: ${result.error}')),
+          );
+        } else {
+          final verificationID = result.verificationId;
+
+          await context.push(
+            '/verification-code-field',
+            extra: {
+              'verificationID': verificationID,
+            },
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+      debugPrint('Beklenmedik hata: $e');
     }
   }
 
