@@ -1,4 +1,7 @@
+import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:bulusalim/domain/repositories/user_repository.dart';
+import 'package:bulusalim/domain/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -16,6 +19,11 @@ class _ChangePhoneNumberPageState extends State<ChangePhoneNumberPage> {
   final TextEditingController _pinController = TextEditingController();
   final FocusNode _pinFocusNode = FocusNode();
 
+  final AuthService _authService = getIt<AuthService>();
+  final UserRepository _userRepository = getIt<UserRepository>();
+
+  String? _verificationId;
+  int? _resendToken;
   @override
   void initState() {
     super.initState();
@@ -112,18 +120,27 @@ class _ChangePhoneNumberPageState extends State<ChangePhoneNumberPage> {
             // Gönder Butonu
             _buildButton(
               text: 'gönder',
-              onPressed: () {
-                // +90 sonrası sadece rakamları al
-                String rawPhone = _phoneController.text
-                    .replaceAll('+90 ', '')
-                    .replaceAll(' ', '');
-                debugPrint('Ham Numara: $rawPhone');
-                debugPrint('Formatlı Numara: ${_phoneController.text}');
+              onPressed: () async {
+                String fullPhone = _phoneController.text.replaceAll(
+                  ' ',
+                  '',
+                ); // +905XXXXXXXXX
 
-                // Kullanıcıya kolaylık olsun diye butona basınca OTP alanına odaklan
-                Future.delayed(const Duration(milliseconds: 100), () {
+                // AuthService üzerinden SMS gönder
+                final result = await _authService.sendSMS(
+                  phoneNumber: fullPhone,
+                );
+
+                if (result.error != null) {
+                  // Hata göster (SnackBar)
+                } else {
+                  setState(() {
+                    _verificationId = result.verificationId;
+                    _resendToken = result.resendToken;
+                  });
+                  // OTP alanına odaklan
                   _pinFocusNode.requestFocus();
-                });
+                }
               },
             ),
 
@@ -170,22 +187,28 @@ class _ChangePhoneNumberPageState extends State<ChangePhoneNumberPage> {
             // Onayla Butonu
             _buildButton(
               text: 'onayla',
-              onPressed: () {
+              onPressed: () async {
+                if (_verificationId == null) return;
+
                 String code = _pinController.text;
-                if (code.length == 6) {
-                  debugPrint('Onaylanan Kod: $code');
-                  Navigator.pop(context, _phoneController.text);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text("Lütfen 6 haneli kodu giriniz."),
-                      backgroundColor: Colors.red.shade400,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10.r),
-                      ),
-                    ),
+                try {
+                  // Yeni eklediğimiz metodu çağırıyoruz
+                  await _authService.verifyAndChangePhoneNumber(
+                    verificationId: _verificationId!,
+                    smsCode: code,
                   );
+
+                  // İşlem başarılıysa Firestore'u güncelle ve geri dön
+                  await _userRepository.updateUser(
+                    _authService.getCurrentUserID(),
+                    {
+                      'phoneNumber': _phoneController.text,
+                    },
+                  );
+
+                  Navigator.pop(context, true);
+                } catch (e) {
+                  // Hata mesajı göster
                 }
               },
             ),

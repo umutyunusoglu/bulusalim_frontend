@@ -1,4 +1,7 @@
+import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:bulusalim/domain/datasources/university_datasource.dart';
+import 'package:bulusalim/domain/repositories/user_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:pinput/pinput.dart';
@@ -12,9 +15,13 @@ class ChangeUniversityPage extends StatefulWidget {
 
 class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
   final TextEditingController _emailController = TextEditingController();
-
   final TextEditingController _pinController = TextEditingController();
   final FocusNode _pinFocusNode = FocusNode();
+
+  bool _isLoading = false;
+  bool _isCodeSent = false;
+  String? _detectedUniversity;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -22,6 +29,100 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
     _pinController.dispose();
     _pinFocusNode.dispose();
     super.dispose();
+  }
+
+  Future<void> _onEmailChanged(String email) async {
+    // E-posta her değiştiğinde süreci resetliyoruz ki bug oluşmasın
+    if (_isCodeSent) {
+      setState(() {
+        _isCodeSent = false;
+        _pinController.clear();
+      });
+    }
+
+    if (!email.contains('@') || !email.contains('.')) {
+      setState(() {
+        _detectedUniversity = null;
+        _errorMessage = null;
+      });
+      return;
+    }
+
+    try {
+      final uniNames = await getIt<UniversityDatasource>().getUniversityOfMail(
+        email.trim(),
+        "Turkey",
+      );
+
+      setState(() {
+        if (uniNames.isNotEmpty) {
+          _detectedUniversity = uniNames.first;
+          _errorMessage = null;
+        } else {
+          _detectedUniversity = null;
+          _errorMessage = "Üniversite e-postası tanınamadı.";
+        }
+      });
+    } catch (e) {
+      debugPrint("Uni Check Error: $e");
+    }
+  }
+
+  Future<void> _handleSendCode() async {
+    if (_detectedUniversity == null) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await getIt<UserRepository>().sendVerificationEmail(
+        _emailController.text.trim(),
+      );
+      setState(() => _isCodeSent = true);
+      _pinFocusNode.requestFocus();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Doğrulama kodu gönderildi!")),
+        );
+      }
+    } catch (e) {
+      setState(
+        () => _errorMessage = e.toString().replaceAll('Exception: ', ''),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleVerifyOTP() async {
+    if (_pinController.text.length < 6) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await getIt<UserRepository>().verifyEmail(
+        _emailController.text.trim(),
+        _detectedUniversity!,
+        _pinController.text.trim(),
+      );
+
+      if (mounted) {
+        Navigator.pop(context, _detectedUniversity);
+      }
+    } catch (e) {
+      setState(
+        () => _errorMessage = e.toString().replaceAll('Exception: ', ''),
+      );
+      _pinController.clear(); // Hatalı kod girilirse temizle
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -42,18 +143,13 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
     );
 
     final focusedPinTheme = defaultPinTheme.copyDecorationWith(
-      border: Border.all(
-        color: AppColors.tertiaryColor,
-        width: 1.5,
-      ),
+      border: Border.all(color: AppColors.tertiaryColor, width: 1.5),
       borderRadius: BorderRadius.circular(8.r),
     );
 
     final submittedPinTheme = defaultPinTheme.copyWith(
       decoration: defaultPinTheme.decoration!.copyWith(
-        color: const Color(
-          0xFFEDF2F7,
-        ),
+        color: const Color(0xFFEDF2F7),
       ),
     );
 
@@ -67,9 +163,15 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
             SizedBox(height: 32.h),
             _buildEmailField(),
 
+            // Dinamik Durum Bilgisi
+            Padding(
+              padding: EdgeInsets.only(top: 8.h),
+              child: _buildStatusMessage(),
+            ),
+
             SizedBox(height: 16.h),
             Text(
-              'Üniversiteni doğruladığında, üniversite bilgin profilinde otomatik olarak görünür. Bu sayede diğer kullanıcılar için daha güvenilir bir profil oluşturur ve üniversitelere özel özelliklere erişebilirsin.',
+              'Üniversiteni doğruladığında, üniversite bilgin profilinde otomatik olarak görünür.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'SF Pro Display',
@@ -80,25 +182,14 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
               ),
             ),
 
-            SizedBox(height: 12.h),
-            Text(
-              'Doğrulama kodu bu maile gönderilecektir.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'SF Pro Display',
-                fontSize: 11.sp,
-                fontWeight: FontWeight.w400,
-                color: AppColors.textGrey,
-              ),
-            ),
-
             SizedBox(height: 24.h),
             _buildButton(
               text: 'gönder',
-              onPressed: () {
-                debugPrint('Kod gönderiliyor: ${_emailController.text}');
-                _pinFocusNode.requestFocus();
-              },
+              // Kod gönderildiyse butonu pasif yapıyoruz (tekrar basılmasın)
+              onPressed:
+                  (_isLoading || _detectedUniversity == null || _isCodeSent)
+                  ? null
+                  : _handleSendCode,
             ),
 
             SizedBox(height: 60.h),
@@ -118,9 +209,11 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
               length: 6,
               controller: _pinController,
               focusNode: _pinFocusNode,
+              enabled: _isCodeSent,
               defaultPinTheme: defaultPinTheme,
               focusedPinTheme: focusedPinTheme,
               submittedPinTheme: submittedPinTheme,
+              onCompleted: (_) => _handleVerifyOTP(),
               cursor: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -132,33 +225,47 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
                   ),
                 ],
               ),
-              onCompleted: (pin) {
-                debugPrint('Girilen tam kod: $pin');
-              },
             ),
 
             SizedBox(height: 24.h),
             _buildButton(
               text: 'onayla',
-              onPressed: () {
-                String code = _pinController.text;
-                if (code.length == 6) {
-                  debugPrint('Onaylanan Kod: $code');
-                  Navigator.pop(context, 'Yeni Üniversite İsmi');
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Lütfen 6 haneli kodu giriniz.'),
-                    ),
-                  );
-                }
-              },
+              onPressed: (_isLoading || !_isCodeSent) ? null : _handleVerifyOTP,
             ),
+
             SizedBox(height: 40.h),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildStatusMessage() {
+    if (_detectedUniversity != null && !_isCodeSent) {
+      return Text(
+        "Tespit Edildi: $_detectedUniversity",
+        style: TextStyle(
+          color: Colors.green,
+          fontSize: 12.sp,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    } else if (_isCodeSent) {
+      return Text(
+        "Kod şuraya gönderildi: ${_emailController.text}",
+        style: TextStyle(
+          color: AppColors.tertiaryColor,
+          fontSize: 12.sp,
+          fontWeight: FontWeight.w500,
+        ),
+      );
+    } else if (_errorMessage != null) {
+      return Text(
+        _errorMessage!,
+        style: TextStyle(color: Colors.red, fontSize: 12.sp),
+      );
+    }
+    return const SizedBox.shrink();
   }
 
   PreferredSizeWidget _buildAppBar() {
@@ -185,15 +292,17 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
   Widget _buildEmailField() {
     return TextField(
       controller: _emailController,
+      onChanged: _onEmailChanged,
       textAlign: TextAlign.center,
       cursorColor: AppColors.tertiaryColor,
+      keyboardType: TextInputType.emailAddress,
       style: TextStyle(
         fontSize: 14.sp,
         color: AppColors.onBackgroundColor,
         fontWeight: FontWeight.w500,
       ),
       decoration: InputDecoration(
-        hintText: '@edu.tr',
+        hintText: 'email@universite.edu.tr',
         hintStyle: TextStyle(
           color: AppColors.textGrey.withOpacity(0.7),
           fontSize: 14.sp,
@@ -207,17 +316,19 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(50.r),
-          borderSide: BorderSide.none,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(50.r),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(
+            color: AppColors.tertiaryColor.withOpacity(0.5),
+            width: 1,
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildButton({required String text, required VoidCallback onPressed}) {
+  Widget _buildButton({
+    required String text,
+    required VoidCallback? onPressed,
+  }) {
     return SizedBox(
       width: 180.w,
       height: 48.h,
@@ -225,20 +336,30 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF1F4668),
+          disabledBackgroundColor: Colors.grey.shade400,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24.r),
           ),
           elevation: 0,
         ),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontFamily: 'SF Pro Display',
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-          ),
-        ),
+        child: _isLoading
+            ? SizedBox(
+                height: 20.h,
+                width: 20.h,
+                child: const CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : Text(
+                text,
+                style: TextStyle(
+                  fontFamily: 'SF Pro Display',
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
+              ),
       ),
     );
   }

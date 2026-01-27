@@ -23,29 +23,11 @@ class _ConnectSocialMediaPageState extends State<ConnectSocialMediaPage> {
         padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
         child: Column(
           children: [
-            // X (Twitter)
-            _buildSocialItem(
-              platformName: 'X',
-              connectedValue: _xHandle,
-              onTap: () => _handleConnect('X'),
-            ),
-
-            SizedBox(height: 32.h),
-
             // Instagram
             _buildSocialItem(
               platformName: 'Instagram',
               connectedValue: _instagramHandle,
               onTap: () => _handleConnect('Instagram'),
-            ),
-
-            SizedBox(height: 32.h),
-
-            // Facebook
-            _buildSocialItem(
-              platformName: 'Facebook',
-              connectedValue: _facebookHandle,
-              onTap: () => _handleConnect('Facebook'),
             ),
           ],
         ),
