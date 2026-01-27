@@ -1,8 +1,8 @@
-import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
-import 'package:bulusalim/domain/entities/notification/follow_notification_entity.dart';
-import 'package:bulusalim/domain/repositories/inbox_repository.dart';
-import 'package:bulusalim/screens/notification/follow_request_tile.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/domain/entities/notification/follow_notification_entity.dart';
+import 'package:outnest/domain/repositories/inbox_repository.dart';
+import 'package:outnest/screens/notification/follow_request_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';

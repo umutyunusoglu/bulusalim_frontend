@@ -1,9 +1,9 @@
 import 'dart:io';
-import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/core/constants/configs/app_config.dart';
-import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
-import 'package:bulusalim/domain/services/session_service.dart';
-import 'package:bulusalim/domain/usecases/upload_post_usecase.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/constants/configs/app_config.dart';
+import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
+import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/domain/usecases/upload_post_usecase.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';

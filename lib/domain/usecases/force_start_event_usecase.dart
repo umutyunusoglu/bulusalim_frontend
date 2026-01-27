@@ -1,8 +1,8 @@
-import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/core/utils/types/enums/event_status_enum.dart';
-import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
-import 'package:bulusalim/domain/repositories/event_repository.dart';
-import 'package:bulusalim/domain/repositories/user_repository.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/repositories/event_repository.dart';
+import 'package:outnest/domain/repositories/user_repository.dart';
 
 class ForceStartEvent {
   ForceStartEvent({

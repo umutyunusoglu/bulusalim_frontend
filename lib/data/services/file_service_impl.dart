@@ -1,8 +1,8 @@
 import 'dart:io';
-import 'package:bulusalim/core/errors/exceptions/file_system_exceptions.dart';
-import 'package:bulusalim/core/errors/exceptions/security_exceptions.dart';
-import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/domain/services/file_service.dart';
+import 'package:outnest/core/errors/exceptions/file_system_exceptions.dart';
+import 'package:outnest/core/errors/exceptions/security_exceptions.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/domain/services/file_service.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
 class FileServiceImpl implements FileService {

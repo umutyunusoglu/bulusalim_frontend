@@ -1,8 +1,8 @@
-import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
-import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
-import 'package:bulusalim/domain/repositories/user_repository.dart';
-import 'package:bulusalim/domain/services/session_service.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
+import 'package:outnest/domain/repositories/user_repository.dart';
+import 'package:outnest/domain/services/session_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 

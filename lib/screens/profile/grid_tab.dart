@@ -1,6 +1,6 @@
-import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
-import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart';
-import 'package:bulusalim/screens/profile/profile_feed_page.dart';
+import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
+import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
+import 'package:outnest/screens/profile/profile_feed_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 

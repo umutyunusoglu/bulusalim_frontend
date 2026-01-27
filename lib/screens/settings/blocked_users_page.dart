@@ -1,8 +1,8 @@
-import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
-import 'package:bulusalim/domain/services/security_service.dart';
-import 'package:bulusalim/domain/services/session_service.dart';
-import 'package:bulusalim/screens/settings/blocked_user_tile.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
+import 'package:outnest/domain/services/security_service.dart';
+import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/screens/settings/blocked_user_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 

@@ -1,5 +1,5 @@
-import 'package:bulusalim/components/event_card.dart';
-import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/components/event_card.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 

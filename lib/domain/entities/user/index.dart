@@ -1,1 +1,1 @@
-export 'package:bulusalim/domain/entities/user/user_entity.dart';
+export 'package:outnest/domain/entities/user/user_entity.dart';

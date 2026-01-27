@@ -1,5 +1,5 @@
-import 'package:bulusalim/domain/entities/notification/follow_notification_entity.dart';
-import 'package:bulusalim/domain/entities/notification/notification_entity.dart';
+import 'package:outnest/domain/entities/notification/follow_notification_entity.dart';
+import 'package:outnest/domain/entities/notification/notification_entity.dart';
 
 abstract class InboxRepository {
   // Bildirimleri canlı dinlemek için Stream

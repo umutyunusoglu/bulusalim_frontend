@@ -1,27 +1,27 @@
-import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/components/stacked_avatars.dart';
-import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
-import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
-import 'package:bulusalim/domain/services/session_service.dart';
-import 'package:bulusalim/scaffold_with_navbar.dart';
-import 'package:bulusalim/screens/auth/login_page.dart';
-import 'package:bulusalim/screens/auth/otp_verification_page.dart';
-import 'package:bulusalim/screens/auth/register_info_page.dart';
-import 'package:bulusalim/screens/auth/register_page.dart';
-import 'package:bulusalim/screens/auth/welcome_page.dart';
-import 'package:bulusalim/screens/camera/camera_page.dart';
-import 'package:bulusalim/screens/chat/chat_page.dart';
-import 'package:bulusalim/screens/chat/event_settings_page.dart';
-import 'package:bulusalim/screens/chat/my_events_page.dart';
-import 'package:bulusalim/screens/debug/debug_verification_screen.dart';
-import 'package:bulusalim/screens/home/home_page.dart';
-import 'package:bulusalim/screens/map/map_page.dart';
-import 'package:bulusalim/screens/notification/follow_request.dart';
-import 'package:bulusalim/screens/notification/notification_page.dart';
-import 'package:bulusalim/screens/profile/profile_page.dart';
-import 'package:bulusalim/screens/search/search_page.dart';
-import 'package:bulusalim/screens/settings/edit_profile_page.dart';
-import 'package:bulusalim/screens/settings/settings.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/components/stacked_avatars.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
+import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/scaffold_with_navbar.dart';
+import 'package:outnest/screens/auth/login_page.dart';
+import 'package:outnest/screens/auth/otp_verification_page.dart';
+import 'package:outnest/screens/auth/register_info_page.dart';
+import 'package:outnest/screens/auth/register_page.dart';
+import 'package:outnest/screens/auth/welcome_page.dart';
+import 'package:outnest/screens/camera/camera_page.dart';
+import 'package:outnest/screens/chat/chat_page.dart';
+import 'package:outnest/screens/chat/event_settings_page.dart';
+import 'package:outnest/screens/chat/my_events_page.dart';
+import 'package:outnest/screens/debug/debug_verification_screen.dart';
+import 'package:outnest/screens/home/home_page.dart';
+import 'package:outnest/screens/map/map_page.dart';
+import 'package:outnest/screens/notification/follow_request.dart';
+import 'package:outnest/screens/notification/notification_page.dart';
+import 'package:outnest/screens/profile/profile_page.dart';
+import 'package:outnest/screens/search/search_page.dart';
+import 'package:outnest/screens/settings/edit_profile_page.dart';
+import 'package:outnest/screens/settings/settings.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -94,7 +94,15 @@ final router = GoRouter(
     // Login için OTP Rotası (isLogin: true)
     GoRoute(
       path: '/login-verification',
-      builder: (context, state) => const OtpVerificationPage(isLogin: true),
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final verificationID = extra?['verificationID'] as String?;
+
+        return OtpVerificationPage(
+          isLogin: true,
+          verificationID: verificationID,
+        );
+      },
     ),
 
     GoRoute(
@@ -104,7 +112,15 @@ final router = GoRouter(
     // Register için OTP Rotası (isLogin: false)
     GoRoute(
       path: '/verification-code-field',
-      builder: (context, state) => const OtpVerificationPage(isLogin: false),
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final verificationID = extra?['verificationID'] as String?;
+
+        return OtpVerificationPage(
+          isLogin: false,
+          verificationID: verificationID,
+        );
+      },
     ),
     // Kayıt Bilgileri Sihirbazı
     GoRoute(

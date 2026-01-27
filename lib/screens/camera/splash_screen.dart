@@ -1,5 +1,5 @@
-import 'package:bulusalim/components/skip_button.dart';
-import 'package:bulusalim/screens/camera/camera_page.dart';
+import 'package:outnest/components/skip_button.dart';
+import 'package:outnest/screens/camera/camera_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 

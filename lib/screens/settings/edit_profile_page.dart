@@ -1,14 +1,14 @@
 import 'dart:io';
 
-import 'package:bulusalim/application/providers/get_it_init.dart';
-import 'package:bulusalim/core/constants/theme/color_themes.dart';
-import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
-import 'package:bulusalim/core/utils/logging/logging_service.dart';
-import 'package:bulusalim/core/utils/types/enums/gender_enum.dart';
-import 'package:bulusalim/domain/repositories/user_repository.dart';
-import 'package:bulusalim/domain/services/session_service.dart';
-import 'package:bulusalim/domain/usecases/upload_profile_picture_usecase.dart';
-import 'package:bulusalim/screens/settings/profile_input_row.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/enums/gender_enum.dart';
+import 'package:outnest/domain/repositories/user_repository.dart';
+import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/domain/usecases/upload_profile_picture_usecase.dart';
+import 'package:outnest/screens/settings/profile_input_row.dart';
 import 'package:flutter/cupertino.dart'; // Carousel DatePicker için gerekli
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -623,20 +623,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     if (_profileImageChanged) {
       final newURL = await getIt<UploadProfilePicture>().call(
-        getIt<SessionService>().currentUser!.userID,
-        _profileImageUrl,
+        userID: getIt<SessionService>().currentUser!.userID,
+        filePath: _profileImageUrl,
       );
       updatedData['profileImageUrl'] = newURL;
     }
     if (_nameController.text != _previousName) {
-      updatedData['username'] = _nameController.text;
+      updatedData['username'] = _nameController.text.toLowerCase();
     }
     if (_bioController.text != _previousBio) {
       updatedData['bio'] = _bioController.text;
     }
     if (_genderController.text != _previousGender) {
       getIt<LoggingService>().info('Yeni cinsiyet seçildi: $_selectedGender');
-      updatedData['gender'] = _selectedGender.toString();
+      updatedData['gender'] = _selectedGender.toString().toLowerCase();
     }
     if (_dobController.text != _previousDob) {
       updatedData['birthDate'] = _selectedDob;

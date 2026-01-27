@@ -1,5 +1,5 @@
-import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
-import 'package:bulusalim/domain/entities/user/user_entity.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:flutter/foundation.dart';
 
 abstract class SessionService {
