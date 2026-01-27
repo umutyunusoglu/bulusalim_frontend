@@ -6,7 +6,6 @@ import 'package:bulusalim/core/utils/types/enums/emote_enum.dart';
 import 'package:bulusalim/domain/entities/feed/post/post_entity.dart';
 import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:bulusalim/domain/repositories/post_repository.dart';
-import 'package:bulusalim/domain/services/security_service.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/screens/home/post%20components/content_tag_chip.dart';
 import 'package:bulusalim/screens/home/post%20components/emoji_chip.dart';
@@ -32,19 +31,21 @@ class _PostCardState extends State<PostCard> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
+  // --- RENK SABİTLERİ ---
+  static const Color _kTextMainColor = Color(0xFF1A1A1A);
+  static const Color _kTextGreyColor = Color(0xFF8E8E93);
+  static const Color _kInactiveIndicatorColor = Color(0xFFD9D9D9);
+
   // --- STATE DEĞİŞKENLERİ ---
-  // Sayılar değişeceği için bunları state'te tutuyoruz
   late int _likeCount;
   late int _clapCount;
   late int _eggCount;
 
-  // Kullanıcının seçim durumları
   bool _isLikedByMe = false;
   bool _isClappedByMe = false;
   bool _isEggedByMe = false;
   bool isVisible = true;
 
-  // Servisler
   late final PostRepository _postRepository;
   late final SessionService _sessionService;
   late final String _myUserId;
@@ -56,21 +57,15 @@ class _PostCardState extends State<PostCard> {
     _sessionService = getIt<SessionService>();
     _myUserId = _sessionService.currentUser?.userID ?? '';
 
-    // 1. Sayıları PostEntity'den başlat
     _likeCount = widget.post.emoteCounts[EmoteEnum.heart] ?? 0;
     _clapCount = widget.post.emoteCounts[EmoteEnum.clap] ?? 0;
     _eggCount = widget.post.emoteCounts[EmoteEnum.egg] ?? 0;
 
-    // 2. Kullanıcı daha önce beğenmiş mi kontrol et
     _checkExistingEmotes();
   }
 
-  /// Kullanıcının bu post'a attığı eski reaksiyonları kontrol eder
   Future<void> _checkExistingEmotes() async {
     if (_myUserId.isEmpty) return;
-
-    // Performans notu: İdealde bu bilgi PostEntity içinde 'myReaction: ["heart"]' gibi gelmelidir.
-    // Şimdilik ayrı sorgularla yapıyoruz:
 
     final results = await Future.wait([
       _postRepository.isUserEmotedPost(
@@ -105,14 +100,10 @@ class _PostCardState extends State<PostCard> {
     super.dispose();
   }
 
-  // --- LOGIC: TIKLAMA YÖNETİMİ ---
   Future<void> _handleEmoteTap(EmoteEnum emote) async {
-    if (_myUserId.isEmpty) return; // Login olmamışsa işlem yapma
+    if (_myUserId.isEmpty) return;
 
-    // Hangi değişkenleri değiştireceğimizi belirleyelim
     bool isSelectedCurrent;
-
-    // Geçici değişkenler (Rollback için)
     int previousCount;
     bool previousState;
 
@@ -131,7 +122,6 @@ class _PostCardState extends State<PostCard> {
         previousState = _isEggedByMe;
     }
 
-    // 1. Optimistic Update (Ekranı hemen güncelle)
     setState(() {
       if (emote == EmoteEnum.heart) {
         if (_isLikedByMe) {
@@ -160,25 +150,17 @@ class _PostCardState extends State<PostCard> {
       }
     });
 
-    // 2. API İsteği
     try {
       if (isSelectedCurrent) {
-        // Zaten seçiliydi, kaldırmak istiyor
         await _postRepository.removeEmoteFromPost(
           widget.post.id,
           _myUserId,
           emote,
         );
       } else {
-        // Seçili değildi, eklemek istiyor
-        await _postRepository.addEmoteToPost(
-          widget.post.id,
-          _myUserId,
-          emote,
-        );
+        await _postRepository.addEmoteToPost(widget.post.id, _myUserId, emote);
       }
     } on Exception catch (e) {
-      // 3. Hata olursa geri al (Rollback)
       if (mounted) {
         setState(() {
           if (emote == EmoteEnum.heart) {
@@ -192,7 +174,6 @@ class _PostCardState extends State<PostCard> {
             _isEggedByMe = previousState;
           }
         });
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('İşlem başarısız: $e')),
         );
@@ -207,9 +188,110 @@ class _PostCardState extends State<PostCard> {
     }
   }
 
+  // --- YENİ EKLENEN: BAŞKASININ PROFİLİ İÇİN MENÜ ---
+  void _showOtherUserPostOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.symmetric(vertical: 12.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Gri Çizgi (Drag Handle)
+              Container(
+                width: 36.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
+              ),
+              SizedBox(height: 20.h),
+
+              // 1. Takibi Bırak
+              _buildOptionItem(
+                context,
+                icon: Icons.person_remove_outlined,
+                text: 'Takibi Bırak',
+                color: Colors.black,
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Takibi bırakma servisi
+                },
+              ),
+
+              // 2. Engelle (Kırmızı)
+              _buildOptionItem(
+                context,
+                icon: Icons.block_outlined,
+                text: 'Engelle',
+                color: const Color(0xFFFF3B30),
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Engelleme servisi
+                },
+              ),
+
+              // 3. Şikayet Et (Kırmızı)
+              _buildOptionItem(
+                context,
+                icon: Icons.report_gmailerrorred_outlined,
+                text: 'Şikayet Et',
+                color: const Color(0xFFFF3B30),
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Şikayet servisi
+                },
+              ),
+
+              SizedBox(height: 10.h),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Menü Yardımcı Widget'ı
+  Widget _buildOptionItem(
+    BuildContext context, {
+    required IconData icon,
+    required String text,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 14.h),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 24.sp),
+            SizedBox(width: 16.w),
+            Text(
+              text,
+              style: TextStyle(
+                fontFamily: 'SF Pro Display',
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w400,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Dynamic Data
+    if (!isVisible) return const SizedBox.shrink();
+
     final caption = widget.post.caption;
     final mediaUrls = widget.post.imageUrls ?? [];
     final tags = widget.post.hobbies.map((h) => h.name).toList();
@@ -219,7 +301,6 @@ class _PostCardState extends State<PostCard> {
         widget.user?.profileImageUrl ??
         'https://picsum.photos/seed/avatar_default/100/100';
 
-    // Static Data (Örnek)
     final staticLocationName =
         widget.post.displayAddress ?? 'Konum Bilgisi Yok';
     final participantAvatars = widget.post.participants
@@ -232,61 +313,38 @@ class _PostCardState extends State<PostCard> {
         ? mediaUrls
         : [defaultImageUrl];
 
-    return AnimatedCrossFade(
-      duration: const Duration(milliseconds: 500),
-      crossFadeState: isVisible
-          ? CrossFadeState.showFirst
-          : CrossFadeState.showSecond,
-      secondChild: const SizedBox(width: double.infinity),
-      firstChild: Center(
-        child: Container(
-          width: 361.w,
-          margin: EdgeInsets.only(bottom: 24.h, top: 12.h),
-          color: Colors.transparent,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. Header
-              _buildHeader(
-                context,
-                avatarUrl: userAvatarUrl,
-                username: username,
-                location: staticLocationName,
-              ),
-
-              SizedBox(height: 12.h),
-
-              // 2. Content (Image/PageView)
-              _buildContent(
-                context,
-                mediaUrls: effectiveMediaUrls,
-                likedByAvatars: participantAvatars,
-              ),
-
-              // Page Indicator
-              if (effectiveMediaUrls.length > 1) ...[
-                SizedBox(height: 10.h),
-                Center(
-                  child: _buildPageIndicator(effectiveMediaUrls.length),
-                ),
-              ],
-
-              SizedBox(height: 12.h),
-
-              // 3. Footer
-              _buildFooter(
-                context,
-                caption: caption,
-                tags: tags,
-              ),
+    return Center(
+      child: Container(
+        width: 361.w,
+        margin: EdgeInsets.only(bottom: 24.h, top: 12.h),
+        color: Colors.transparent,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(
+              context,
+              avatarUrl: userAvatarUrl,
+              username: username,
+              location: staticLocationName,
+            ),
+            SizedBox(height: 12.h),
+            _buildContent(
+              context,
+              mediaUrls: effectiveMediaUrls,
+              likedByAvatars: participantAvatars,
+            ),
+            if (effectiveMediaUrls.length > 1) ...[
+              SizedBox(height: 10.h),
+              Center(child: _buildPageIndicator(effectiveMediaUrls.length)),
             ],
-          ),
+            SizedBox(height: 12.h),
+            _buildFooter(context, caption: caption, tags: tags),
+          ],
         ),
       ),
     );
   }
 
-  // --- HEADER WIDGET ---
   Widget _buildHeader(
     BuildContext context, {
     required String avatarUrl,
@@ -295,6 +353,8 @@ class _PostCardState extends State<PostCard> {
   }) {
     final theme = Theme.of(context);
     final isPostMine = widget.post.creator.userID == _myUserId;
+    final isPinned = widget.post.isPinned;
+
     return Row(
       children: [
         GestureDetector(
@@ -314,10 +374,10 @@ class _PostCardState extends State<PostCard> {
                 child: Text(
                   username,
                   style: const TextStyle(
-                    fontFamily: 'Urbanist',
+                    fontFamily: 'SF Pro Display',
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: Color(0xFF1A1A1A),
+                    color: _kTextMainColor,
                   ),
                 ),
               ),
@@ -326,94 +386,57 @@ class _PostCardState extends State<PostCard> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontFamily: 'Urbanist',
+                  fontFamily: 'SF Pro Display',
                   fontSize: 12,
-                  color: Color(0xFF1A1A1A),
+                  color: _kTextMainColor,
                 ),
               ),
             ],
           ),
         ),
+        // --- 3 NOKTA MENÜSÜ ---
         IconButton(
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
           icon: Icon(Icons.more_vert, color: theme.colorScheme.secondary),
           onPressed: () {
-            showModalBottomSheet<void>(
-              context: context,
-              useRootNavigator: true,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (sheetContext) => CustomActionBottomSheet(
-                options: [
-                  if (!isPostMine)
+            if (isPostMine) {
+              // --- KENDİ GÖNDERİSİ İSE ESKİ MENÜ ---
+              showModalBottomSheet<void>(
+                context: context,
+                useRootNavigator: true,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (sheetContext) => CustomActionBottomSheet(
+                  options: [
+                    if (isPinned)
+                      BottomSheetOption(
+                        icon: Icons.push_pin_outlined,
+                        text: 'Sabitlemeyi Kaldır',
+                        onTap: () async {
+                          sheetContext.pop();
+                        },
+                      )
+                    else
+                      BottomSheetOption(
+                        icon: Icons.push_pin,
+                        text: 'Gönderiyi Profile Sabitle',
+                        onTap: () async {
+                          sheetContext.pop();
+                        },
+                      ),
                     BottomSheetOption(
-                      icon: Icons.person_off_outlined,
-                      text: 'Buluşma Sahibini Takibi Bırak',
+                      icon: Icons.share_outlined,
+                      text: 'Gönderiyi Paylaş',
                       onTap: () {
                         sheetContext.pop();
                       },
                     ),
-                  BottomSheetOption(
-                    icon: Icons.share_outlined,
-                    text: 'Paylaş',
-                    onTap: () {
-                      sheetContext.pop();
-                    },
-                  ),
-                  if (!isPostMine) ...[
                     BottomSheetOption(
-                      icon: Icons.block,
-                      text: 'Kullanıcıyı Engelle',
+                      icon: Icons.delete_outline,
+                      text: 'Gönderiyi Sil',
                       isDestructive: true,
                       onTap: () async {
-                        await getIt<SecurityService>().blockUser(
-                          ReportData(
-                            reportedEntityId: widget.post.id,
-                            reportedEntityType: 'post',
-                            reportedUserId: widget.post.creator.userID,
-                            requestOwnerId: _myUserId,
-                          ),
-                        );
-                        if (mounted) {
-                          setState(() {
-                            isVisible = false;
-                          });
-                        }
-                        if (sheetContext.mounted) {
-                          sheetContext.pop();
-                        }
-                      },
-                    ),
-                    BottomSheetOption(
-                      icon: Icons.report_gmailerrorred_outlined,
-                      text: 'Şikayet Et',
-                      isDestructive: true,
-                      onTap: () async {
-                        try {
-                          await getIt<SecurityService>().sendReport(
-                            ReportData(
-                              reportedEntityId: widget.post.id,
-                              reportedEntityType: 'post',
-                              reportedUserId: widget.post.creator.userID,
-                              requestOwnerId: _myUserId,
-                            ),
-                          );
-                        } catch (e) {
-                          if (sheetContext.mounted) {
-                            sheetContext.pop();
-                          }
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Rapor gönderilemedi. Lütfen tekrar deneyin.',
-                                ),
-                              ),
-                            );
-                          }
-                          return;
-                        }
                         if (mounted) {
                           setState(() {
                             isVisible = false;
@@ -425,22 +448,23 @@ class _PostCardState extends State<PostCard> {
                       },
                     ),
                   ],
-                ],
-              ),
-            );
+                ),
+              );
+            } else {
+              // --- BAŞKASININ GÖNDERİSİ İSE YENİ TASARIM MENÜ ---
+              _showOtherUserPostOptions(context);
+            }
           },
         ),
       ],
     );
   }
 
-  // --- CONTENT WIDGET ---
   Widget _buildContent(
     BuildContext context, {
     required List<String> mediaUrls,
     required List<String> likedByAvatars,
   }) {
-    // Burada likeCount vb. parametreleri kaldırdım çünkü artık state'ten okuyacağız
     return Stack(
       children: [
         ClipRRect(
@@ -467,8 +491,6 @@ class _PostCardState extends State<PostCard> {
             ),
           ),
         ),
-
-        // Interaction Overlay
         Positioned(
           bottom: 12.h,
           left: 12.w,
@@ -482,7 +504,6 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  // --- INTERACTION OVERLAY (GÜNCELLENDİ) ---
   Widget _buildInteractionsOverlay(
     BuildContext context, {
     required List<String> likedByAvatars,
@@ -492,35 +513,29 @@ class _PostCardState extends State<PostCard> {
       padding: EdgeInsets.symmetric(horizontal: 0.w),
       child: Row(
         children: [
-          // KALP
           EmojiChip(
             icon: Icons.favorite,
-            text: '$_likeCount', // State değişkeni
+            text: '$_likeCount',
             color: Colors.red,
-            isSelected: _isLikedByMe, // State değişkeni
-            onTap: () => _handleEmoteTap(EmoteEnum.heart), // Logic bağlantısı
+            isSelected: _isLikedByMe,
+            onTap: () => _handleEmoteTap(EmoteEnum.heart),
           ),
           SizedBox(width: 12.w),
-
-          // ALKIŞ/CHAT
           EmojiChip(
             icon: Icons.chat_rounded,
-            text: '$_clapCount', // State değişkeni
+            text: '$_clapCount',
             color: Colors.amber,
-            isSelected: _isClappedByMe, // State değişkeni
+            isSelected: _isClappedByMe,
             onTap: () => _handleEmoteTap(EmoteEnum.clap),
           ),
           SizedBox(width: 12.w),
-
-          // YUMURTA
           EmojiChip(
             icon: Icons.egg,
-            text: '$_eggCount', // State değişkeni
+            text: '$_eggCount',
             color: Colors.white,
-            isSelected: _isEggedByMe, // State değişkeni
+            isSelected: _isEggedByMe,
             onTap: () => _handleEmoteTap(EmoteEnum.egg),
           ),
-
           const Spacer(),
           SmallStackedAvatars(
             avatarUrls: likedByAvatars,
@@ -532,7 +547,6 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  // --- PAGE INDICATOR ---
   Widget _buildPageIndicator(int pageCount) {
     final activeColor = Theme.of(context).colorScheme.secondary;
     return Row(
@@ -548,23 +562,22 @@ class _PostCardState extends State<PostCard> {
             shape: BoxShape.circle,
             color: _currentPage == index
                 ? activeColor
-                : const Color(0xFFD9D9D9),
+                : _kInactiveIndicatorColor,
           ),
         );
       }),
     );
   }
 
-  // --- FOOTER ---
   Widget _buildFooter(
     BuildContext context, {
     required String caption,
     required List<String> tags,
   }) {
     const timeStyle = TextStyle(
-      fontFamily: 'Urbanist',
+      fontFamily: 'SF Pro Display',
       fontSize: 12,
-      color: Color(0xFF8E8E93),
+      color: _kTextGreyColor,
     );
 
     return Padding(
@@ -583,6 +596,7 @@ class _PostCardState extends State<PostCard> {
                     caption,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.bold,
+                      fontFamily: 'SF Pro Display',
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
