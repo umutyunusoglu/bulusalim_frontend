@@ -1,4 +1,5 @@
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:bulusalim/core/utils/debug/android_image_url_fixer.dart';
 import 'package:bulusalim/domain/entities/notification/notification_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -121,7 +122,7 @@ class NotificationTile extends StatelessWidget {
             shape: BoxShape.circle,
             color: Colors.grey.shade200,
             image: DecorationImage(
-              image: NetworkImage(notification.avatarUrl),
+              image: NetworkImage(fixEmulatorUrl(notification.avatarUrl)),
               fit: BoxFit.cover,
             ),
           ),

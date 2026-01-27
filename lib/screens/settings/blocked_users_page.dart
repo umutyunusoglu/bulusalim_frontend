@@ -1,3 +1,7 @@
+import 'package:bulusalim/application/providers/get_it_init.dart';
+import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
+import 'package:bulusalim/domain/services/security_service.dart';
+import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/screens/settings/blocked_user_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -10,82 +14,114 @@ class BlockedUsersPage extends StatefulWidget {
 }
 
 class _BlockedUsersPageState extends State<BlockedUsersPage> {
-  // --- MOCK DATA ---
-  final List<Map<String, String>> _blockedUsers = [
-    {
-      'id': '1',
-      'username': 'can.yildirim',
-      'image': 'https://i.pravatar.cc/150?u=1',
-    },
-    {
-      'id': '2',
-      'username': 'oyku.aslann',
-      'image': 'https://i.pravatar.cc/150?u=2',
-    },
-    {
-      'id': '3',
-      'username': 'asliiozturk',
-      'image': 'https://i.pravatar.cc/150?u=3',
-    },
-    {
-      'id': '4',
-      'username': 'ardadogan123',
-      'image': 'https://i.pravatar.cc/150?u=4',
-    },
-    {
-      'id': '5',
-      'username': 'umut.yunusoglu',
-      'image': 'https://i.pravatar.cc/150?u=5',
-    },
-    {
-      'id': '6',
-      'username': 'merttyıldırmmm',
-      'image': 'https://i.pravatar.cc/150?u=6',
-    },
-    {
-      'id': '7',
-      'username': 'emre_gur',
-      'image': 'https://i.pravatar.cc/150?u=7',
-    },
-    {
-      'id': '8',
-      'username': 'meriiikoc',
-      'image': 'https://i.pravatar.cc/150?u=8',
-    },
-  ];
+  final SecurityService _securityService = getIt<SecurityService>();
+  final SessionService _sessionService = getIt<SessionService>();
 
-  late List<Map<String, String>> _filteredUsers;
+  // HATA 1 ÇÖZÜMÜ: Late yerine boş liste ile başlatıyoruz.
+  List<CompactUserEntity> _blockedUsers = [];
+  List<CompactUserEntity> _filteredUsers = [];
+
+  // HATA 2 ÇÖZÜMÜ: Yüklenme durumu için değişken.
+  bool _isLoading = true;
+
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _filteredUsers = _blockedUsers;
+    _fetchBlockedUsers();
   }
 
-  void _handleUnblock(String id) {
+  // HATA 4 ÇÖZÜMÜ: Controller'ı dispose ediyoruz.
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // Veri çekme işlemini ayrı bir asenkron fonksiyona aldık
+  Future<void> _fetchBlockedUsers() async {
+    final currentUser = _sessionService.currentUser;
+
+    // HATA 3 ÇÖZÜMÜ: Kullanıcı null ise loading'i kapatıp boş liste gösteriyoruz.
+    if (currentUser == null) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      return;
+    }
+
+    try {
+      final users = await _securityService.getBlockedUsers(currentUser.userID);
+
+      if (mounted) {
+        setState(() {
+          _blockedUsers = users;
+          _filteredUsers = users;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      // Hata durumunda loading'i kapat
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        // İstersen burada bir SnackBar ile hata mesajı gösterebilirsin
+      }
+    }
+  }
+
+  Future<void> _handleUnblock(String id) async {
+    // Önce UI'dan silip kullanıcıya hızlı tepki veriyoruz (Optimistic Update)
+    final deletedUserIndex = _blockedUsers.indexWhere((u) => u.userID == id);
+    final deletedUser = _blockedUsers[deletedUserIndex];
+
     setState(() {
-      _blockedUsers.removeWhere((user) => user['id'] == id);
+      _blockedUsers.removeWhere((user) => user.userID == id);
       _filterUsers(_searchController.text);
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Kullanıcının engeli kaldırıldı."),
-        duration: Duration(seconds: 1),
-      ),
-    );
+    try {
+      // API çağrısını yapıyoruz
+      await _securityService.unblockUser(
+        _sessionService.currentUser!.userID,
+        id,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Kullanıcının engeli kaldırıldı."),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+    } catch (e) {
+      // HATA 5 ÇÖZÜMÜ: Eğer API hata verirse işlemi geri alıyoruz (Rollback)
+      if (mounted) {
+        setState(() {
+          _blockedUsers.insert(deletedUserIndex, deletedUser);
+          _filterUsers(_searchController.text);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Hata oluştu: $e")),
+        );
+      }
+    }
   }
 
   void _filterUsers(String query) {
     setState(() {
       if (query.isEmpty) {
-        _filteredUsers = _blockedUsers;
+        _filteredUsers = List.from(_blockedUsers);
       } else {
         _filteredUsers = _blockedUsers
             .where(
               (user) =>
-                  user['username']!.toLowerCase().contains(query.toLowerCase()),
+                  user.username.toLowerCase().contains(query.toLowerCase()),
             )
             .toList();
       }
@@ -116,99 +152,88 @@ class _BlockedUsersPageState extends State<BlockedUsersPage> {
           ),
         ),
       ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w),
-        child: Column(
-          children: [
-            SizedBox(height: 10.h),
-
-            // --- ARAMA ÇUBUĞU ---
-            TextField(
-              controller: _searchController,
-              onChanged: _filterUsers,
-              cursorColor: Colors.black,
-              style: TextStyle(
-                fontFamily: 'SF Pro Display',
-                fontSize: 14.sp,
-                color: Colors.black,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Ara',
-                hintStyle: TextStyle(
-                  color: Colors.grey.shade500,
-                  fontSize: 14.sp,
-                  fontFamily: 'SF Pro Display',
-                ),
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: Colors.grey.shade500,
-                  size: 20.sp,
-                ),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 16.w,
-                  vertical: 12.h,
-                ),
-
-                // --- ARKA PLAN VE RENK ---
-                filled: true,
-                fillColor: const Color(
-                  0xFFF2F4F7,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(
-                    30.r,
-                  ),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30.r),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30.r),
-                  borderSide: BorderSide.none,
-                ),
-                errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30.r),
-                  borderSide: BorderSide.none,
-                ),
-                disabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30.r),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-
-            SizedBox(height: 20.h),
-
-            // --- KULLANICI LİSTESİ ---
-            Expanded(
-              child: _filteredUsers.isEmpty
-                  ? Center(
-                      child: Text(
-                        'Engellenen kullanıcı yok',
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Display',
-                          color: Colors.grey,
-                          fontSize: 14.sp,
-                        ),
-                      ),
-                    )
-                  : ListView.builder(
-                      itemCount: _filteredUsers.length,
-                      itemBuilder: (context, index) {
-                        final user = _filteredUsers[index];
-                        return BlockedUserTile(
-                          username: user['username']!,
-                          profileImageUrl: user['image']!,
-                          onUnblockTap: () => _handleUnblock(user['id']!),
-                        );
-                      },
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(),
+            ) // Yükleniyor göstergesi
+          : Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: Column(
+                children: [
+                  SizedBox(height: 10.h),
+                  // --- ARAMA ÇUBUĞU ---
+                  TextField(
+                    controller: _searchController,
+                    onChanged: _filterUsers,
+                    cursorColor: Colors.black,
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Display',
+                      fontSize: 14.sp,
+                      color: Colors.black,
                     ),
+                    decoration: InputDecoration(
+                      hintText: 'Ara',
+                      hintStyle: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 14.sp,
+                        fontFamily: 'SF Pro Display',
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: Colors.grey.shade500,
+                        size: 20.sp,
+                      ),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 12.h,
+                      ),
+                      filled: true,
+                      fillColor: const Color(0xFFF2F4F7),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30.r),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30.r),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30.r),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: 20.h),
+
+                  // --- KULLANICI LİSTESİ ---
+                  Expanded(
+                    child: _filteredUsers.isEmpty
+                        ? Center(
+                            child: Text(
+                              'Engellenen kullanıcı yok',
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Display',
+                                color: Colors.grey,
+                                fontSize: 14.sp,
+                              ),
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: _filteredUsers.length,
+                            itemBuilder: (context, index) {
+                              final user = _filteredUsers[index];
+                              return BlockedUserTile(
+                                username: user.username,
+                                profileImageUrl: user.profileImageUrl,
+                                onUnblockTap: () => _handleUnblock(user.userID),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
     );
   }
 }

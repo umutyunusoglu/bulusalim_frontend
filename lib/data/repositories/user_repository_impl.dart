@@ -102,30 +102,206 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Future<void> createUser(
-    UserEntity user,
-  ) async {
-    _logger.info('Creating user: ${user.userID}');
+  Stream<UserEntity?> watchUser(Identifier userID) {
+    final uid = userID;
 
-    final doc = _firestore.collection('users').doc();
-    final userModel = UserModel.fromEntity(user.copyWith(userID: doc.id));
+    return _firestore
+        .collection('users')
+        .doc(uid)
+        .snapshots() // 1. Dinlemeyi başlatıyoruz
+        .asyncMap((userDocSnapshot) async {
+          // 2. Her update geldiğinde ASYNC işlem yapıyoruz
 
-    await doc.set(userModel.toFirestore());
+          try {
+            if (!userDocSnapshot.exists) return null;
+
+            // --- BURASI ESKİ KODUNUN AYNISI (Event Log Fetching) ---
+            final historySnapshot = await _firestore
+                .collection('users')
+                .doc(uid)
+                .collection('eventLog')
+                .where('status', whereIn: ['upcoming', 'ongoing'])
+                .orderBy('date')
+                .get(); // DİKKAT: Burası hala 'get', yani eventLog değişirse stream tetiklenmez!
+
+            final eventFutures = historySnapshot.docs.map((doc) async {
+              final historyData = doc.data();
+              final eventId = historyData['eventID'] as Identifier;
+
+              final eventDoc = await _firestore
+                  .collection('events')
+                  .doc(eventId)
+                  .get();
+
+              if (!eventDoc.exists) return null;
+
+              final eventEntity = EventModel.fromFirestore(
+                eventDoc.data()!,
+              ).toEntity();
+
+              return eventEntity.copyWith(
+                myStatus: historyData['status'].toString(),
+                myRole: historyData['role'].toString(),
+              );
+            }).toList();
+
+            final realActiveEvents = (await Future.wait(
+              eventFutures,
+            )).whereType<EventEntity>().toList();
+
+            // --- HOBBY LIST ---
+            final hobbyList =
+                (userDocSnapshot.data()?['hobbies'] as List<dynamic>?)
+                    ?.map((hobby) => hobby.toString())
+                    .toList() ??
+                [];
+
+            // --- MODEL OLUŞTURMA ---
+            final userModel = await UserModel.fromFirestore(
+              userDocSnapshot.data()!,
+            );
+
+            return userModel.toEntity().copyWith(
+              activeEvents: realActiveEvents,
+              hobbies: hobbyList,
+            );
+          } catch (e) {
+            // Stream içinde hata olursa logla ve null dön (veya hatayı fırlat)
+            _logger.error('User Repository Stream Error: $e');
+            return null;
+          }
+        });
   }
 
   @override
-  Future<void> deleteUser(Identifier userID) async {
-    _logger.info('Deleting user: $userID');
-    await _firestore.collection('users').doc(userID).delete();
+  Future<void> createUser(UserEntity user) async {
+    _logger.info(
+      'Creating user: ${user.userID} with username: ${user.username}',
+    );
+
+    // Sorgulama yapabilmek için username'in küçük harf versiyonu şart
+    final lowercaseUsername = user.username!.toLowerCase();
+
+    return await _firestore.runTransaction((transaction) async {
+      // 1. ADIM: Username daha önce alınmış mı kontrol et
+      final usernameQuery = await _firestore
+          .collection('users')
+          .where('username_lowercase', isEqualTo: lowercaseUsername)
+          .get();
+
+      if (usernameQuery.docs.isNotEmpty) {
+        _logger.warn('Username already taken: ${user.username}');
+        throw Exception('username-already-exists');
+        // UI tarafında bu hatayı yakalayıp "Bu isim alınmış" diyebilirsin.
+      }
+
+      // 2. ADIM: Yeni doküman referansını al
+      // Eğer Auth'tan gelen bir UID varsa onu kullanmak daha mantıklıdır (user.userID)
+      final docRef = _firestore.collection('users').doc(user.userID);
+
+      // 3. ADIM: Modelini hazırla (lowercase alanını eklemeyi unutma)
+      final userModel = UserModel.fromEntity(user);
+      final userData = userModel.toFirestore();
+      userData['username_lowercase'] =
+          lowercaseUsername; // Veritabanına bu alanı ekliyoruz
+
+      // 4. ADIM: Kaydı gerçekleştir
+      transaction.set(docRef, userData);
+
+      _logger.info('User successfully created with unique username');
+    });
+  }
+
+  @override
+  Future<bool> tryUpdateUsername(String newUsername, String userId) async {
+    final lowercaseName = newUsername.toLowerCase();
+
+    try {
+      return await _firestore.runTransaction((transaction) async {
+        // 1. ADIM: SORGULA (Transaction içinde)
+        final snapshot = await _firestore
+            .collection('users')
+            .where('username_lowercase', isEqualTo: lowercaseName)
+            .get();
+
+        // Eğer isim başkası tarafından alınmışsa işlemi iptal et
+        if (snapshot.docs.isNotEmpty && snapshot.docs.first.id != userId) {
+          return false;
+        }
+
+        // 2. ADIM: YAZ (Transaction içinde)
+        transaction.update(_firestore.collection('users').doc(userId), {
+          'username': newUsername,
+          'username_lowercase': lowercaseName,
+        });
+
+        return true; // İşlem başarılı, isim alındı ve güncellendi.
+      });
+    } catch (e) {
+      _logger.warn('İşlem hatası: $e');
+      return false;
+    }
+  }
+
+  @override
+  Future<void> deleteUser(String? reason) async {
+    final result = await _functions.httpsCallable('deleteAccount').call({
+      'reason': reason,
+    });
+
+    if (result.data['success'] == true) {
+      _logger.info(
+        'User deletion function executed successfully for user',
+      );
+    } else {
+      _logger.error(
+        'User deletion function failed for user with message: ${result.data['message']}',
+      );
+      throw Exception('User deletion failed: ${result.data['message']}');
+    }
   }
 
   @override
   Future<void> updateUser(
-    Identifier userID,
+    String userID,
     Map<String, dynamic> updates,
   ) async {
     _logger.info('Updating user: $userID');
-    await _firestore.collection('users').doc(userID).update(updates);
+    try {
+      await _firestore.runTransaction((transaction) async {
+        // 1. Eğer updates içinde 'username' alanı varsa benzersizlik kontrolü yap
+        if (updates.containsKey('username')) {
+          final newUsername = updates['username'] as String;
+          final lowercaseName = newUsername.toLowerCase();
+
+          // İsmin başkası tarafından alınıp alınmadığını kontrol et
+          final querySnapshot = await _firestore
+              .collection('users')
+              .where('username_lowercase', isEqualTo: lowercaseName)
+              .get();
+
+          // Eğer isim varsa VE bu isim bizim şu anki userID'mize ait değilse başkası kapmış demektir
+          if (querySnapshot.docs.isNotEmpty &&
+              querySnapshot.docs.first.id != userID) {
+            _logger.warn(
+              'Username $newUsername is already taken by another user.',
+            );
+            throw Exception('username-already-exists');
+          }
+
+          // Güncelleme paketine küçük harf versiyonunu da ekle (Sorgular için şart)
+          updates['username_lowercase'] = lowercaseName;
+        }
+
+        // 2. Güncelleme işlemini gerçekleştir
+        final docRef = _firestore.collection('users').doc(userID);
+        transaction.update(docRef, updates);
+
+        _logger.info('User $userID successfully updated');
+      });
+    } catch (e) {
+      _logger.warn('İşlem hatası: $e');
+    }
   }
 
   // === Hobbies Subcollection ===

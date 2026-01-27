@@ -11,12 +11,15 @@ import 'package:bulusalim/domain/entities/user/user_hobby_entity.dart';
 abstract class UserRepository {
   // === User CRUD ===
   Future<UserEntity?> getUser(Identifier userID);
+  Stream<UserEntity?> watchUser(String id);
   Future<void> createUser(UserEntity user);
   Future<void> updateUser(
     Identifier userID,
     Map<String, dynamic> updates,
   );
-  Future<void> deleteUser(Identifier userID);
+  Future<void> deleteUser(String? reason);
+
+  Future<bool> tryUpdateUsername(String newUsername, String userId);
 
   // === Hobbies Subcollection ===
   Future<void> addHobby(

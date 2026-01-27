@@ -1,4 +1,9 @@
+import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:bulusalim/core/utils/types/enums/account_type_enum.dart';
+import 'package:bulusalim/domain/repositories/user_repository.dart';
+import 'package:bulusalim/domain/services/auth_service.dart';
+import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/screens/settings/change_account_type_page.dart';
 import 'package:bulusalim/screens/settings/change_password_page.dart';
 import 'package:bulusalim/screens/settings/change_phone_number.dart'; // Dosya ismine dikkat
@@ -15,11 +20,55 @@ class AccountSettingsPage extends StatefulWidget {
 }
 
 class _AccountSettingsPageState extends State<AccountSettingsPage> {
-  String _university = 'İstanbul Teknik Üniversitesi';
-  String _phoneNumber = '+90 123 456 78 90';
-  String _socialMedia = 'instagram.com/elif_dogan';
-  String _accountType = 'Kişisel Hesap';
-  bool _isPrivateAccount = false;
+  late String _university;
+  late String _phoneNumber;
+  late String _socialMedia;
+  late AccountType _accountType;
+  late bool _isPrivateAccount;
+
+  final UserRepository _userRepository = getIt<UserRepository>();
+  final SessionService _sessionService = getIt<SessionService>();
+  final AuthService _authService = getIt<AuthService>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Sayfa açıldığında verileri yükle
+    _loadUserData();
+  }
+
+  // Verileri set ettiğimiz metod
+  void _loadUserData() {
+    // BURASI ÖNEMLİ: Gerçek uygulamada buradaki verileri
+    // UserProvider, Bloc veya API servisinden çekebilirsiniz.
+
+    // Şimdilik örnek olması için statik verileri burada set ediyoruz:
+    final currentUser = _sessionService.currentUser;
+    if (currentUser == null) {
+      setState(() {
+        _university = 'Üniversite Seçilmedi';
+        _phoneNumber = 'Telefon Numarası Eklenmedi';
+        _socialMedia = 'Sosyal Medya Bağlanmadı';
+        _accountType = AccountType.personal;
+        _isPrivateAccount = false;
+      });
+      return;
+    }
+
+    final university = currentUser.university ?? 'Üniversite Seçilmedi';
+    final phoneNumber = currentUser.phoneNumber ?? 'Telefon Numarası Eklenmedi';
+    final socialMedia = currentUser.instagram ?? 'Sosyal Medya Bağlanmadı';
+    final accountType = currentUser.accountType ?? AccountType.personal;
+    final isPrivateAccount = currentUser.isPrivate ?? false;
+
+    setState(() {
+      _university = university;
+      _phoneNumber = phoneNumber;
+      _socialMedia = socialMedia;
+      _accountType = accountType;
+      _isPrivateAccount = isPrivateAccount;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,8 +93,9 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
             _buildDivider(),
             SizedBox(height: 24.h),
             _buildAccountTypeSection(),
+            /*
             SizedBox(height: 28.h),
-            _buildPasswordSection(),
+            _buildPasswordSection(),*/
           ],
         ),
       ),
@@ -185,7 +235,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
   Widget _buildAccountTypeSection() {
     return _buildSettingItem(
       label: 'Hesap Türü',
-      value: _accountType,
+      value: _accountType.value,
       showArrow: true,
       valueColor: AppColors.textGrey,
       onTap: () async {
@@ -193,14 +243,14 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
           context,
           MaterialPageRoute(
             builder: (context) => ChangeAccountTypePage(
-              currentType: _accountType,
+              currentType: _accountType.value,
             ),
           ),
         );
 
         if (result != null && result is String) {
           setState(() {
-            _accountType = result;
+            _accountType = AccountType.fromString(result);
           });
         }
       },
@@ -264,6 +314,10 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
         inactiveThumbColor: Colors.white,
         inactiveTrackColor: AppColors.dividerColor,
         onChanged: (value) {
+          _userRepository.updateUser(
+            _sessionService.currentUser!.userID,
+            {'isPrivate': value},
+          );
           setState(() => _isPrivateAccount = value);
         },
       ),

@@ -6,6 +6,7 @@ import 'package:bulusalim/core/utils/types/types.dart';
 import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/friend_entity.dart';
 import 'package:bulusalim/domain/entities/user/pinned_post_entity.dart';
+import 'package:bulusalim/domain/entities/user/user_entity.dart';
 import 'package:bulusalim/domain/repositories/event_repository.dart';
 import 'package:bulusalim/domain/repositories/user_repository.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
@@ -50,7 +51,7 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isFollowing = false;
   bool _hasSentFollowRequest = false;
   bool _isLoadingEvents = true;
-  final bool _isPrivateAccount = false;
+  bool _isPrivateAccount = false;
   final PageController _pageController = PageController();
 
   List<UserPostEntity> _pinnedPosts = [];
@@ -171,6 +172,8 @@ class _ProfilePageState extends State<ProfilePage> {
         widget.profileUserID,
       );
 
+      final isPrivate = user.isPrivate;
+
       if (!mounted) return;
 
       setState(() {
@@ -184,6 +187,7 @@ class _ProfilePageState extends State<ProfilePage> {
         }
 
         _isFollowing = isFollowing;
+        _isPrivateAccount = isPrivate;
         _hasSentFollowRequest = hasSentFollowRequest;
 
         numberOfFollowers = followerCount;
@@ -297,8 +301,22 @@ class _ProfilePageState extends State<ProfilePage> {
     final secondaryColor = theme.colorScheme.secondary;
     final onSurface = theme.colorScheme.onSurface;
 
-    final isCurrentUser =
-        widget.profileUserID == getIt<SessionService>().currentUser?.userID;
+    // [DEĞİŞİKLİK 2]: Veri kaynağını belirleme
+    final sessionUser = getIt<SessionService>().currentUser;
+    final isCurrentUser = widget.profileUserID == sessionUser?.userID;
+
+    // Eğer kendi profilimse CANLI veriyi (session),
+    // başkasıysa FETCH edilen veriyi (_username vb.) kullan.
+    final displayUsername = isCurrentUser ? sessionUser!.username : _username;
+    final displayBio = isCurrentUser ? (sessionUser!.bio ?? '') : _bio;
+    final displayAvatar = isCurrentUser
+        ? sessionUser!.profileImageUrl
+        : _avatarUrl;
+    final displaySchool = isCurrentUser
+        ? (sessionUser!.university ?? 'Üniversite Doğrulanmadı')
+        : _school;
+    // fullName kodunda username'e eşitlemişsin, aynı mantığı korudum:
+    final displayFullName = isCurrentUser ? sessionUser!.username : _fullName;
 
     return Padding(
       padding: EdgeInsets.only(left: 16.w, right: 16.w, top: 30, bottom: 20.h),
@@ -311,7 +329,7 @@ class _ProfilePageState extends State<ProfilePage> {
               Padding(
                 padding: EdgeInsets.only(top: 25.h),
                 child: ProfilePhoto(
-                  profileImageUrl: _avatarUrl,
+                  profileImageUrl: displayAvatar, // Güncel veri
                   badgeUrls: _badges,
                 ),
               ),
@@ -331,7 +349,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               children: [
                                 Flexible(
                                   child: Text(
-                                    _fullName,
+                                    displayFullName, // Güncel veri
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontFamily: 'Urbanist',
@@ -348,7 +366,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   child: Row(
                                     children: [
                                       Text(
-                                        _username,
+                                        displayUsername, // Güncel veri
                                         style: TextStyle(
                                           fontFamily: 'Urbanist',
                                           fontWeight: FontWeight.w400,
@@ -404,7 +422,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     SizedBox(height: 13.h),
                     Text(
-                      _bio,
+                      displayBio, // Güncel veri
                       style: TextStyle(
                         fontFamily: 'Urbanist',
                         fontSize: 12.sp,
@@ -423,7 +441,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         SizedBox(width: 4.w),
                         Expanded(
                           child: Text(
-                            _school,
+                            displaySchool, // Güncel veri
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontFamily: 'Urbanist',
@@ -440,7 +458,6 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ],
           ),
-
           if (!isCurrentUser) ...[
             SizedBox(height: 12.h),
             Row(
@@ -554,61 +571,85 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     if (_isLoadingEvents) {
       return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(), // Dönen yükleme çubuğu
-        ),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
     final theme = Theme.of(context);
+    final sessionService = getIt<SessionService>(); // Servisi al
 
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: theme.colorScheme.surface,
-        body: NestedScrollView(
-          headerSliverBuilder: (context, innerBoxIsScrolled) {
-            return [
-              // 1. HEADER
-              SliverToBoxAdapter(child: _buildProfileHeader(context)),
-
-              // 2. TAB BAR (Sticky)
-              SliverPersistentHeader(
-                delegate: SectionHeaderDelegate(
-                  child: ProfileTabBar(
-                    currentIndex: _selectedTabIndex,
-                    onTabSelected: _onTabSelected,
+    // [DEĞİŞİKLİK 1]: Tüm sayfayı dinleyici ile sarmaladık
+    return ValueListenableBuilder<UserEntity?>(
+      valueListenable: sessionService.userListenable,
+      builder: (context, sessionUser, child) {
+        debugPrint('📺 PROFILE_UI: ValueListenableBuilder tetiklendi!');
+        debugPrint('📺 EKRANDAKİ USERNAME: ${sessionUser?.username}');
+        return SafeArea(
+          child: Scaffold(
+            backgroundColor: theme.colorScheme.surface,
+            body: NestedScrollView(
+              headerSliverBuilder: (context, innerBoxIsScrolled) {
+                return [
+                  SliverToBoxAdapter(
+                    child: _buildProfileHeader(context),
+                  ), // Header artık güncel veriyi alacak
+                  SliverPersistentHeader(
+                    delegate: SectionHeaderDelegate(
+                      child: ProfileTabBar(
+                        currentIndex: _selectedTabIndex,
+                        onTabSelected: _onTabSelected,
+                      ),
+                    ),
+                    pinned: true,
                   ),
-                ),
-                pinned: true,
+                ];
+              },
+              body: PageView(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() => _selectedTabIndex = index);
+                },
+                children: [
+                  if (!_isPrivateAccount || _isFollowing) ...[
+                    ProfileGridTab(
+                      pinnedPosts: _pinnedPosts,
+                      activePosts: _activePosts,
+                    ),
+                    ProfileEventsTab(
+                      currentEvents: _currentEvents,
+                      consideredEvents: _consideredEvents,
+                      isLoading: _isLoadingEvents,
+                    ),
+                    const ProfileDumpTab(),
+                  ] else
+                    Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.lock_outline,
+                            size: 40.sp,
+                            color: theme.disabledColor,
+                          ),
+                          SizedBox(height: 12.h),
+                          Text(
+                            'Bu hesap gizli',
+                            style: TextStyle(
+                              fontFamily: 'Urbanist',
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w500,
+                              color: theme.disabledColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
               ),
-            ];
-          },
-          // 3. İÇERİK (Modüler Yapı)
-          body: PageView(
-            controller: _pageController,
-            onPageChanged: (index) {
-              setState(() => _selectedTabIndex = index);
-            },
-            children: [
-              // TAB 1: Grid (Fotoğraflar)
-              ProfileGridTab(
-                pinnedPosts: _pinnedPosts,
-                activePosts: _activePosts,
-              ),
-
-              // TAB 2: Events (Etkinlikler)
-              ProfileEventsTab(
-                currentEvents: _currentEvents,
-                consideredEvents: _consideredEvents,
-                isLoading: _isLoadingEvents,
-              ),
-
-              // TAB 3: Dump (Kilitli)
-              const ProfileDumpTab(),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
