@@ -48,7 +48,7 @@ class RegisterStepView extends StatelessWidget {
           SnackBar(
             content: Text(
               error,
-              style: TextStyle(fontFamily: 'SF Pro Display'),
+              style: const TextStyle(fontFamily: 'SF Pro Display'),
             ),
             backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
