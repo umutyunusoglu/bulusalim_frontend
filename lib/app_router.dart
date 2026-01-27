@@ -4,22 +4,24 @@ import 'package:bulusalim/domain/entities/feed/event/event_entity.dart';
 import 'package:bulusalim/domain/entities/user/compact_user_entity.dart';
 import 'package:bulusalim/domain/services/session_service.dart';
 import 'package:bulusalim/scaffold_with_navbar.dart';
+import 'package:bulusalim/screens/auth/login_page.dart';
+import 'package:bulusalim/screens/auth/otp_verification_page.dart';
+import 'package:bulusalim/screens/auth/register_info_page.dart';
+import 'package:bulusalim/screens/auth/register_page.dart';
+import 'package:bulusalim/screens/auth/welcome_page.dart';
 import 'package:bulusalim/screens/camera/camera_page.dart';
 import 'package:bulusalim/screens/chat/chat_page.dart';
 import 'package:bulusalim/screens/chat/event_settings_page.dart';
 import 'package:bulusalim/screens/chat/my_events_page.dart';
 import 'package:bulusalim/screens/debug/debug_verification_screen.dart';
 import 'package:bulusalim/screens/home/home_page.dart';
-import 'package:bulusalim/screens/login/login_screen.dart';
 import 'package:bulusalim/screens/map/map_page.dart';
 import 'package:bulusalim/screens/notification/follow_request.dart';
 import 'package:bulusalim/screens/notification/notification_page.dart';
 import 'package:bulusalim/screens/profile/profile_page.dart';
-import 'package:bulusalim/screens/register_screen.dart';
 import 'package:bulusalim/screens/search/search_page.dart';
 import 'package:bulusalim/screens/settings/edit_profile_page.dart';
 import 'package:bulusalim/screens/settings/settings.dart';
-import 'package:bulusalim/screens/sign_in_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -38,9 +40,86 @@ List<AvatarInfo> _mapToAvatarInfo(List<dynamic> rawList) {
 
 final router = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: '/',
+
+  // 1. BAŞLANGIÇ ROTASI WELCOME
+  initialLocation: '/welcome',
+
+  // 2. OTURUM KONTROLÜ (REDIRECT)
+  redirect: (context, state) {
+    final sessionService = getIt<SessionService>();
+    final isLoggedIn = sessionService.currentUser != null;
+
+    final goingTo = state.uri.toString();
+
+    // Giriş sayfaları (Auth rotaları)
+    final isAuthRoute =
+        goingTo == '/welcome' ||
+        goingTo == '/login' ||
+        goingTo == '/register' ||
+        goingTo == '/verification-code-field' ||
+        goingTo == '/login-verification' ||
+        goingTo == '/register-info';
+
+    // Debug sayfasına izin ver
+    final isDebugRoute = goingTo == '/debug';
+
+    // SENARYO A: Kullanıcı giriş YAPMAMIŞSA
+    if (!isLoggedIn) {
+      // Auth rotalarındaysa veya debug daysa sorun yok
+      if (isAuthRoute || isDebugRoute) return null;
+
+      // İçerideki sayfalara girmeye çalışıyorsa Welcome'a at
+      return '/welcome';
+    }
+
+    // SENARYO B: Kullanıcı giriş YAPMIŞSA
+    if (isLoggedIn) {
+      // Auth sayfalarına girmeye çalışıyorsa Home'a at
+      if (isAuthRoute) return '/home';
+    }
+
+    return null;
+  },
+
   routes: [
-    // 1. BOTTOM NAVIGATION BAR OLAN SAYFALAR (SHELL)
+    // --- AUTH ROTALARI ---
+    GoRoute(
+      path: '/welcome',
+      builder: (context, state) => const WelcomePage(),
+    ),
+    GoRoute(
+      path: '/login',
+      builder: (context, state) => const LoginPage(),
+    ),
+    // Login için OTP Rotası (isLogin: true)
+    GoRoute(
+      path: '/login-verification',
+      builder: (context, state) => const OtpVerificationPage(isLogin: true),
+    ),
+
+    GoRoute(
+      path: '/register',
+      builder: (context, state) => const RegisterPage(),
+    ),
+    // Register için OTP Rotası (isLogin: false)
+    GoRoute(
+      path: '/verification-code-field',
+      builder: (context, state) => const OtpVerificationPage(isLogin: false),
+    ),
+    // Kayıt Bilgileri Sihirbazı
+    GoRoute(
+      path: '/register-info',
+      builder: (context, state) => const RegisterInfoPage(),
+    ),
+
+    // --- DEBUG ROTASI ---
+    GoRoute(
+      path: '/debug',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const DebugVerificationScreen(),
+    ),
+
+    // --- BOTTOM NAVIGATION BAR (SHELL) ---
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
         return ScaffoldWithNavbar(navigationShell: navigationShell);
@@ -107,15 +186,14 @@ final router = GoRouter(
       ],
     ),
 
-    // 2. NAVBARSIZ SAYFALAR (FULL SCREEN / ROOT ROUTES)
+    // --- FULL SCREEN (NAVBARSIZ) SAYFALAR ---
 
-    // --- AYARLAR VE PROFİL DÜZENLEME  ---
+    // AYARLAR
     GoRoute(
       path: '/settings',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const SettingsPage(),
       routes: [
-        // settings/edit-profile olarak erişilir
         GoRoute(
           path: 'edit-profile',
           parentNavigatorKey: _rootNavigatorKey,
@@ -124,7 +202,7 @@ final router = GoRouter(
       ],
     ),
 
-    // --- BİLDİRİMLER SAYFASI  ---
+    // BİLDİRİMLER
     GoRoute(
       path: '/notifications',
       parentNavigatorKey: _rootNavigatorKey,
@@ -136,6 +214,7 @@ final router = GoRouter(
       builder: (context, state) => const FollowRequestsPage(),
     ),
 
+    // HARİTA SEÇİCİLER
     GoRoute(
       path: '/pick-location-map',
       parentNavigatorKey: _rootNavigatorKey,
@@ -151,6 +230,13 @@ final router = GoRouter(
       },
     ),
 
+    // KAMERA
+    GoRoute(
+      path: '/camera',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const CameraPage(),
+    ),
+
     // SOHBET ODASI
     GoRoute(
       path: '/chat/room/:eventID',
@@ -164,9 +250,11 @@ final router = GoRouter(
 
         final eventDate = extra?['date'] as DateTime? ?? DateTime.now();
 
+        final eventEntity = extra?['event'] as EventEntity?;
+
         return ChatPage(
           eventID: eventID,
-          event: extra?['event'] as EventEntity,
+          event: eventEntity!,
           chatTitle: (extra?['title'] as String?) ?? 'Sohbet',
           participantAvatars: safeAvatars,
           location: (extra?['location'] as String?) ?? '',
@@ -200,33 +288,6 @@ final router = GoRouter(
           },
         ),
       ],
-    ),
-
-    // DİĞER SAYFALAR
-    GoRoute(
-      path: '/',
-      parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const SignInScreen(),
-    ),
-    GoRoute(
-      path: '/login',
-      parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const LoginScreen(),
-    ),
-    GoRoute(
-      path: '/register',
-      parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const RegisterScreen(),
-    ),
-    GoRoute(
-      path: '/camera',
-      parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const CameraPage(),
-    ),
-    GoRoute(
-      path: '/debug',
-      parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const DebugVerificationScreen(),
     ),
   ],
 );
