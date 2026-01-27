@@ -1,17 +1,22 @@
+import 'package:bulusalim/application/providers/get_it_init.dart';
 import 'package:bulusalim/components/auth_button.dart';
 import 'package:bulusalim/components/otp_row.dart';
 import 'package:bulusalim/core/constants/theme/color_themes.dart';
+import 'package:bulusalim/core/utils/logging/logging_service.dart';
+import 'package:bulusalim/domain/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
 class OtpVerificationPage extends StatefulWidget {
   const OtpVerificationPage({
+    this.verificationID,
     super.key,
     this.isLogin = false,
   });
 
   final bool isLogin;
+  final String? verificationID;
 
   @override
   State<OtpVerificationPage> createState() => _OtpVerificationPageState();
@@ -31,11 +36,31 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
     super.dispose();
   }
 
-  void _handleVerify() {
+  Future<void> _handleVerify() async {
     final otpCode = _controllers.map((e) => e.text).join();
 
     if (otpCode.length == 6) {
       // Not: Backend bağlandığında burada API isteği yapılacak.
+
+      try {
+        final LoggingService logger = getIt<LoggingService>()
+          ..info(
+            'Doğrulama kodu gönderiliyor: $otpCode,verificationID${widget.verificationID}',
+          );
+
+        final result = await getIt<AuthService>().signInWithSms(
+          verificationId: widget.verificationID ?? '',
+          smsCode: otpCode,
+        );
+        logger.info('Kullanıcı doğrulandı: $result');
+      } catch (e) {
+        debugPrint('Hata: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Doğrulama hatası: $e')),
+        );
+        return;
+      }
+
       if (widget.isLogin) {
         context.go('/home'); // Giriş başarılıysa Home'a
       } else {

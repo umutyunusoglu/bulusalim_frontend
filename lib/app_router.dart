@@ -94,7 +94,15 @@ final router = GoRouter(
     // Login için OTP Rotası (isLogin: true)
     GoRoute(
       path: '/login-verification',
-      builder: (context, state) => const OtpVerificationPage(isLogin: true),
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final verificationID = extra?['verificationID'] as String?;
+
+        return OtpVerificationPage(
+          isLogin: true,
+          verificationID: verificationID,
+        );
+      },
     ),
 
     GoRoute(
@@ -104,7 +112,15 @@ final router = GoRouter(
     // Register için OTP Rotası (isLogin: false)
     GoRoute(
       path: '/verification-code-field',
-      builder: (context, state) => const OtpVerificationPage(isLogin: false),
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final verificationID = extra?['verificationID'] as String?;
+
+        return OtpVerificationPage(
+          isLogin: false,
+          verificationID: verificationID,
+        );
+      },
     ),
     // Kayıt Bilgileri Sihirbazı
     GoRoute(
