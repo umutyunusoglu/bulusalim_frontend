@@ -19,10 +19,15 @@ class PostCard extends StatefulWidget {
   const PostCard({
     required this.post,
     required this.user,
+    this.onPinToggle, // Callback eklendi
     super.key,
   });
+
   final PostEntity post;
   final CompactUserEntity? user;
+
+  // Sabitleme durumu değişince üst widget'ı (Feed/Grid) haberdar edecek fonksiyon
+  final void Function(bool isPinned)? onPinToggle;
 
   @override
   State<PostCard> createState() => _PostCardState();
@@ -45,6 +50,10 @@ class _PostCardState extends State<PostCard> {
   bool _isLikedByMe = false;
   bool _isClappedByMe = false;
   bool _isEggedByMe = false;
+
+  // Pin durumunu yerel state'te tutuyoruz
+  bool _isPinned = false;
+
   bool isVisible = true;
 
   late final PostRepository _postRepository;
@@ -62,7 +71,19 @@ class _PostCardState extends State<PostCard> {
     _clapCount = widget.post.emoteCounts[EmoteEnum.clap] ?? 0;
     _eggCount = widget.post.emoteCounts[EmoteEnum.egg] ?? 0;
 
+    // Başlangıç değerini widget'tan al
+    _isPinned = widget.post.isPinned;
+
     _checkExistingEmotes();
+  }
+
+  // Parent widget güncellenirse (örneğin liste yenilenirse) state'i senkronize et
+  @override
+  void didUpdateWidget(covariant PostCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.post.isPinned != oldWidget.post.isPinned) {
+      _isPinned = widget.post.isPinned;
+    }
   }
 
   Future<void> _checkExistingEmotes() async {
@@ -189,7 +210,120 @@ class _PostCardState extends State<PostCard> {
     }
   }
 
-  // --- YENİ EKLENEN: BAŞKASININ PROFİLİ İÇİN MENÜ ---
+  // --- AKSİYON FONKSİYONLARI ---
+
+  Future<void> _handleReportPost() async {
+    Navigator.pop(context);
+    setState(() => isVisible = false);
+
+    final currentUser = _sessionService.currentUser;
+    if (currentUser == null) return;
+
+    try {
+      await getIt<SecurityService>().sendReport(
+        ReportData(
+          reportedEntityId: widget.post.id,
+          reportedEntityType: 'post',
+          reportedUserId: widget.post.creator.userID,
+          requestOwnerId: currentUser.userID,
+        ),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Bildiriniz alındı, içerik gizlendi.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Rapor gönderilirken bir hata oluştu.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleBlockUser() async {
+    Navigator.pop(context);
+    setState(() => isVisible = false);
+
+    final currentUser = _sessionService.currentUser;
+    if (currentUser == null) return;
+
+    try {
+      await getIt<SecurityService>().blockUser(
+        ReportData(
+          reportedEntityId: widget.post.id,
+          reportedEntityType: 'post',
+          reportedUserId: widget.post.creator.userID,
+          requestOwnerId: currentUser.userID,
+        ),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Kullanıcı engellendi.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Engelleme başarısız oldu.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleUnfollowUser() async {
+    Navigator.pop(context);
+    try {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Takip bırakıldı.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('İşlem başarısız.')),
+        );
+      }
+    }
+  }
+
+  // --- PIN MANTIĞI ---
+  Future<void> _togglePinStatus() async {
+    final newStatus = !_isPinned;
+
+    // 1. UI'ı hemen güncelle (Optimistic Update)
+    setState(() {
+      _isPinned = newStatus;
+    });
+
+    // 2. Üst katmana hemen haber ver
+    widget.onPinToggle?.call(newStatus);
+
+    try {
+      if (newStatus) {
+        await _postRepository.pinPost(widget.post.id, _myUserId);
+      } else {
+        await _postRepository.unpinPost(widget.post.id, _myUserId);
+      }
+    } catch (e) {
+      // 3. Hata olursa işlemi geri al
+      if (mounted) {
+        setState(() {
+          _isPinned = !newStatus;
+        });
+
+        // Hata durumunda üst katmana eski durumu bildir
+        widget.onPinToggle?.call(!newStatus);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('İşlem başarısız oldu.')),
+        );
+      }
+    }
+  }
+
   void _showOtherUserPostOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -203,7 +337,6 @@ class _PostCardState extends State<PostCard> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Gri Çizgi (Drag Handle)
               Container(
                 width: 36.w,
                 height: 4.h,
@@ -213,43 +346,27 @@ class _PostCardState extends State<PostCard> {
                 ),
               ),
               SizedBox(height: 20.h),
-
-              // 1. Takibi Bırak
               _buildOptionItem(
                 context,
                 icon: Icons.person_remove_outlined,
                 text: 'Takibi Bırak',
                 color: Colors.black,
-                onTap: () {
-                  Navigator.pop(context);
-                  // TODO: Takibi bırakma servisi
-                },
+                onTap: _handleUnfollowUser,
               ),
-
-              // 2. Engelle (Kırmızı)
               _buildOptionItem(
                 context,
                 icon: Icons.block_outlined,
                 text: 'Engelle',
                 color: const Color(0xFFFF3B30),
-                onTap: () {
-                  Navigator.pop(context);
-                  // TODO: Engelleme servisi
-                },
+                onTap: _handleBlockUser,
               ),
-
-              // 3. Şikayet Et (Kırmızı)
               _buildOptionItem(
                 context,
                 icon: Icons.report_gmailerrorred_outlined,
                 text: 'Şikayet Et',
                 color: const Color(0xFFFF3B30),
-                onTap: () {
-                  Navigator.pop(context);
-                  // TODO: Şikayet servisi
-                },
+                onTap: _handleReportPost,
               ),
-
               SizedBox(height: 10.h),
             ],
           ),
@@ -258,13 +375,13 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  // Menü Yardımcı Widget'ı
   Widget _buildOptionItem(
     BuildContext context, {
     required IconData icon,
     required String text,
     required Color color,
     required VoidCallback onTap,
+    bool isDestructive = false,
   }) {
     return InkWell(
       onTap: onTap,
@@ -354,7 +471,6 @@ class _PostCardState extends State<PostCard> {
   }) {
     final theme = Theme.of(context);
     final isPostMine = widget.post.creator.userID == _myUserId;
-    final isPinned = widget.post.isPinned;
 
     return Row(
       children: [
@@ -395,14 +511,12 @@ class _PostCardState extends State<PostCard> {
             ],
           ),
         ),
-        // --- 3 NOKTA MENÜSÜ ---
         IconButton(
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
           icon: Icon(Icons.more_vert, color: theme.colorScheme.secondary),
           onPressed: () {
             if (isPostMine) {
-              // --- KENDİ GÖNDERİSİ İSE ESKİ MENÜ ---
               showModalBottomSheet<void>(
                 context: context,
                 useRootNavigator: true,
@@ -410,20 +524,22 @@ class _PostCardState extends State<PostCard> {
                 backgroundColor: Colors.transparent,
                 builder: (sheetContext) => CustomActionBottomSheet(
                   options: [
-                    if (isPinned)
+                    if (_isPinned)
                       BottomSheetOption(
-                        icon: Icons.push_pin_outlined,
+                        icon: Icons.push_pin,
                         text: 'Sabitlemeyi Kaldır',
-                        onTap: () async {
+                        onTap: () {
                           sheetContext.pop();
+                          _togglePinStatus();
                         },
                       )
                     else
                       BottomSheetOption(
-                        icon: Icons.push_pin,
+                        icon: Icons.push_pin_outlined,
                         text: 'Gönderiyi Profile Sabitle',
-                        onTap: () async {
+                        onTap: () {
                           sheetContext.pop();
+                          _togglePinStatus();
                         },
                       ),
                     BottomSheetOption(
@@ -438,21 +554,21 @@ class _PostCardState extends State<PostCard> {
                       text: 'Gönderiyi Sil',
                       isDestructive: true,
                       onTap: () async {
+                        sheetContext.pop();
                         if (mounted) {
                           setState(() {
                             isVisible = false;
                           });
                         }
-                        if (sheetContext.mounted) {
-                          sheetContext.pop();
-                        }
+                        await getIt<PostRepository>().deletePost(
+                          widget.post.id,
+                        );
                       },
                     ),
                   ],
                 ),
               );
             } else {
-              // --- BAŞKASININ GÖNDERİSİ İSE YENİ TASARIM MENÜ ---
               _showOtherUserPostOptions(context);
             }
           },

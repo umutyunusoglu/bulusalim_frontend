@@ -8,25 +8,27 @@ class ProfileGridTab extends StatelessWidget {
   const ProfileGridTab({
     required this.pinnedPosts,
     required this.activePosts,
+    required this.onPinChanged, // Bu fonksiyonu Feed sayfasına taşıyacağız
     super.key,
   });
 
   final List<UserPostEntity> pinnedPosts;
   final List<UserPostEntity> activePosts;
+  final void Function(String postId, bool isPinned)? onPinChanged;
 
   void _openFeedPage(BuildContext context, int index) {
-    // 1. Aktif Postları İşaretle (isPinned: false)
-    final markedActivePosts = activePosts.map((post) {
-      return post.copyWith(isPinned: false);
-    }).toList();
-
-    // 2. Sabitlenmiş Postları İşaretle (isPinned: true)
+    // 1. Sabitlenmiş Postları İşaretle (isPinned: true)
     final markedPinnedPosts = pinnedPosts.map((post) {
       return post.copyWith(isPinned: true);
     }).toList();
 
-    // 3. Listeleri birleştir (Sıralama: Önce Active, Sonra Pinned)
-    final allPosts = [...markedActivePosts, ...markedPinnedPosts];
+    // 2. Aktif Postları İşaretle (isPinned: false)
+    final markedActivePosts = activePosts.map((post) {
+      return post.copyWith(isPinned: false);
+    }).toList();
+
+    // 3. Listeleri birleştir (Sıralama Düzeltildi: Önce Pinned, Sonra Active)
+    final allPosts = [...markedPinnedPosts, ...markedActivePosts];
 
     // Sayfayı Navbar'ın üzerinde aç (rootNavigator: true)
     Navigator.of(context, rootNavigator: true).push(
@@ -34,6 +36,8 @@ class ProfileGridTab extends StatelessWidget {
         builder: (context) => ProfilePostFeedPage(
           posts: allPosts,
           initialIndex: index,
+          // ÖNEMLİ: Callback fonksiyonunu detay sayfasına iletiyoruz
+          onPinChanged: onPinChanged,
         ),
       ),
     );
@@ -41,7 +45,8 @@ class ProfileGridTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final totalPosts = [...activePosts, ...pinnedPosts];
+    // Sıralama Düzeltildi: Önce Pinned, Sonra Active
+    final totalPosts = [...pinnedPosts, ...activePosts];
     final theme = Theme.of(context);
 
     return ColoredBox(
@@ -55,13 +60,20 @@ class ProfileGridTab extends StatelessWidget {
         ),
         itemCount: totalPosts.length,
         itemBuilder: (context, index) {
-          final isPinnedItem = index >= activePosts.length;
+          // Index kontrolü düzeltildi:
+          // Eğer index, pinned listesinin uzunluğundan küçükse o bir Pinned posttur.
+          final isPinnedItem = index < pinnedPosts.length;
 
           final iconData = isPinnedItem
               ? Icons.push_pin
-              : Icons.access_time_filled;
+              : Icons.access_time_filled; // İsteğe bağlı ikon değişimi
 
           final post = totalPosts[index];
+
+          // Güvenli resim URL'si
+          final imageUrl = (post.imageUrls.isNotEmpty)
+              ? post.imageUrls.first
+              : 'https://picsum.photos/200'; // Fallback
 
           return GestureDetector(
             onTap: () => _openFeedPage(context, index),
@@ -75,19 +87,23 @@ class ProfileGridTab extends StatelessWidget {
                     color: theme.colorScheme.surfaceContainerHighest,
                     image: DecorationImage(
                       image: NetworkImage(
-                        fixEmulatorUrl(post.imageUrls.first),
+                        fixEmulatorUrl(imageUrl),
                       ),
                       fit: BoxFit.cover,
                     ),
                   ),
                 ),
 
-                // 2. SAĞ ÜST İKON (Dinamik)
+                // 2. SAĞ ÜST İKON (Pinned ise Pin ikonu, değilse saat vb.)
                 Positioned(
                   top: 6.h,
                   right: 4.w,
                   child: Container(
                     padding: EdgeInsets.all(6.r),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.2), // Hafif arka plan
+                      shape: BoxShape.circle,
+                    ),
                     child: Icon(
                       iconData,
                       color: Colors.white,

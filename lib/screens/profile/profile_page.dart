@@ -75,6 +75,50 @@ class _ProfilePageState extends State<ProfilePage> {
     _fetchProfileData();
   }
 
+  // --- EKLENEN/DÜZELTİLEN MANTIK: LİSTE GÜNCELLEME ---
+  // Bu fonksiyon PostCard -> ProfileGridTab -> ProfilePage zinciriyle çağrılmalı
+  void _handlePinStatusChange(String postId, bool isPinned) {
+    setState(() {
+      UserPostEntity? targetPost;
+
+      // 1. Postu mevcut listesinden bul ve çıkar
+      final pinnedIndex = _pinnedPosts.indexWhere((p) => p.postID == postId);
+      if (pinnedIndex != -1) {
+        targetPost = _pinnedPosts.removeAt(pinnedIndex);
+      } else {
+        final activeIndex = _activePosts.indexWhere((p) => p.postID == postId);
+        if (activeIndex != -1) {
+          targetPost = _activePosts.removeAt(activeIndex);
+        }
+      }
+
+      if (targetPost == null) return; // Post bulunamazsa çık
+
+      // 2. Postun durumunu güncelle (Yeni bir entity kopyası oluşturuyoruz)
+      // Not: Entity'nizde copyWith varsa onu kullanın, yoksa manuel oluşturun:
+      final updatedPost = UserPostEntity(
+        postID: targetPost.postID,
+        caption: targetPost.caption,
+        location: targetPost.location,
+        imageUrls: targetPost.imageUrls,
+        participants: targetPost.participants,
+        emoteCounts: targetPost.emoteCounts,
+        isPinned: isPinned, // Yeni durum
+        createdAt: targetPost.createdAt,
+      );
+
+      // 3. Postu yeni listesine ekle
+      if (isPinned) {
+        // Pinlenenler listesinin başına ekle
+        _pinnedPosts.insert(0, updatedPost);
+      } else {
+        // Aktifler listesine ekle ve tarihe göre yeniden sırala
+        _activePosts.add(updatedPost);
+        _activePosts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      }
+    });
+  }
+
   Future<void> _fetchProfileData() async {
     if (!mounted) return;
 
@@ -87,6 +131,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
       final pinnedPosts = posts.where((post) => post.isPinned).toList();
       final activePosts = posts.where((post) => !post.isPinned).toList();
+      // Aktif postları tarihe göre sıralayalım
+      activePosts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
       final userEventsEnrolled = await userRepository.getUserEventLog(
         widget.profileUserID,
@@ -370,10 +416,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         },
                         itemBuilder: (context, index) {
                           final event = events[index] as EventEntity;
-                          // Veri yapısına göre burayı düzenle (event.name, event.imageUrl vb.)
                           final eventName =
                               (event.name ?? 'Buluşma ${index + 1}').toString();
-                          // EventEntity doesn't expose imageUrl; use a safe placeholder instead.
                           final imageUrl = 'https://picsum.photos/200';
 
                           return Column(
@@ -502,8 +546,6 @@ class _ProfilePageState extends State<ProfilePage> {
       _showNoShareableEventDialog(context);
     } else {
       // 1 veya Daha Fazla Etkinlik -> Seçim/Paylaşım Dialogu
-      // Not: Tek etkinlik olsa bile, hangi etkinliğin paylaşılacağını kullanıcıya
-      // teyit ettirmek için seçim ekranını gösteriyoruz.
       _showShareSelectionDialog(context, activeEvents);
     }
   }
@@ -535,7 +577,6 @@ class _ProfilePageState extends State<ProfilePage> {
     final displaySchool = isCurrentUser
         ? (sessionUser!.university ?? 'Üniversite Doğrulanmadı')
         : _school;
-    // fullName kodunda username'e eşitlemişsin, aynı mantığı korudum:
     final displayFullName = isCurrentUser
         ? sessionUser!.nameSurname
         : _fullName;
@@ -828,9 +869,13 @@ class _ProfilePageState extends State<ProfilePage> {
                 },
                 children: [
                   if (!_isPrivateAccount || _isFollowing) ...[
+                    // --- DÜZELTME: ProfileGridTab'e callback ekliyoruz ---
+                    // Lütfen ProfileGridTab widget'ınızı bu callback'i (onPinChanged)
+                    // kabul edecek şekilde güncelleyin.
                     ProfileGridTab(
                       pinnedPosts: _pinnedPosts,
                       activePosts: _activePosts,
+                      onPinChanged: _handlePinStatusChange, // <-- BÖYLE EKLEYİN
                     ),
                     ProfileEventsTab(
                       currentEvents: _currentEvents,
