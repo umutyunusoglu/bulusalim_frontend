@@ -19,6 +19,16 @@ abstract class PostRepository {
     double radiusInKm,
   );
 
+  Future<void> pinPost(
+    Identifier postId,
+    Identifier userId,
+  );
+
+  Future<void> unpinPost(
+    Identifier postId,
+    Identifier userId,
+  );
+
   Future<void> addEmoteToPost(
     Identifier postId,
     Identifier userId,

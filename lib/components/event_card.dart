@@ -203,6 +203,7 @@ class _EventCardState extends State<EventCard> {
               text: 'Şikayet Et',
               isDestructive: true,
               onTap: () async {
+                sheetContext.pop();
                 await _handleReportEvent(sheetContext);
               },
             ),
@@ -247,17 +248,18 @@ class _EventCardState extends State<EventCard> {
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Rapor gönderildi.')),
+          const SnackBar(content: Text('Şikayetiniz başarıyla gönderildi.')),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Bir hata oluştu.')),
+          const SnackBar(
+            content: Text('Şikayetiniz gönderilirken hata oluştu.'),
+          ),
         );
       }
     }
-    if (sheetContext.mounted) sheetContext.pop();
   }
 
   void _showParticipantsBottomSheet() {
@@ -570,6 +572,13 @@ class _EventCardState extends State<EventCard> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20.r),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x1A000000),
+                offset: Offset(0, 4),
+                blurRadius: 8,
+              ),
+            ],
           ),
           alignment: Alignment.center,
           child: Icon(
