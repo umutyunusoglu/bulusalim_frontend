@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>AIzaSyCEpgwdoe1eOsRc4LD5kMXchcK3qGOU2IE</string>
+	<string>AIzaSyDiYYg7yWFBp4RiFwkPyNJs6dZA55yLafA</string>
 	<key>GCM_SENDER_ID</key>
-	<string>951464135534</string>
+	<string>802871659996</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.example.loginPage</string>
+	<string>app.outnest</string>
 	<key>PROJECT_ID</key>
-	<string>loginpage-6dace</string>
+	<string>bulusalim-e8e7c</string>
 	<key>STORAGE_BUCKET</key>
-	<string>loginpage-6dace.appspot.com</string>
+	<string>bulusalim-e8e7c.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:951464135534:ios:a8157e132b4b52be08cf7f</string>
+	<string>1:802871659996:ios:4944ee3f77885e1fc11319</string>
 </dict>
 </plist>
