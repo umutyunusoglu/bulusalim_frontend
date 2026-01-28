@@ -572,6 +572,13 @@ class _EventCardState extends State<EventCard> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20.r),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x1A000000),
+                offset: Offset(0, 4),
+                blurRadius: 8,
+              ),
+            ],
           ),
           alignment: Alignment.center,
           child: Icon(

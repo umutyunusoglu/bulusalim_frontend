@@ -1,10 +1,13 @@
 import 'dart:ui';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart'; // Eklendi
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -67,7 +70,6 @@ Future<void> main() async {
       appleProvider: AppleProvider.debug,
     );
 
-
     FirebaseFirestore.instance.useFirestoreEmulator(
       AppConfig.host,
       8080,
@@ -102,8 +104,6 @@ Future<void> main() async {
         password: 'password123',
       );
     }
-
-    */
   } else {
     // Release Modu (Production)
     await FirebaseAppCheck.instance.activate(
