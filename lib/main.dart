@@ -62,6 +62,7 @@ Future<void> main() async {
 
   // 3. App Check ve Emülatör Ayarları
   if (kDebugMode) {
+    /*
     await FirebaseAppCheck.instance.activate(
       androidProvider: AndroidProvider.debug,
       appleProvider: AppleProvider.debug,
@@ -100,6 +101,7 @@ Future<void> main() async {
         password: 'password123',
       );
     }
+    */
   } else {
     // Release Modu (Production)
     await FirebaseAppCheck.instance.activate(
