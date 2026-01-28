@@ -780,6 +780,7 @@ class UserRepositoryImpl implements UserRepository {
   Future<void> sendFollowRequest(
     Identifier fromUserID,
     Identifier toUserID,
+    bool fromNotification,
   ) async {
     _logger.info(
       'Sending follow request from user: $fromUserID to user: $toUserID',
@@ -802,6 +803,18 @@ class UserRepositoryImpl implements UserRepository {
           'profileImageUrl': fromUser.profileImageUrl,
           'createdAt': FieldValue.serverTimestamp(),
         });
+
+    if (fromNotification) {
+      _firestore
+          .collection('users')
+          .doc(fromUserID)
+          .collection('followNotifications')
+          .doc(toUserID)
+          .set({
+            'status': 'sent',
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+    }
   }
 
   @override

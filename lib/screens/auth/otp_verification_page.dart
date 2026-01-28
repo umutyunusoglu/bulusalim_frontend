@@ -52,19 +52,23 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
           verificationId: widget.verificationID ?? '',
           smsCode: otpCode,
         );
-        
+
         logger.info('Kullanıcı doğrulandı: $result');
+
+        if (!mounted) return;
+
+        if (widget.isLogin) {
+          context.go('/home'); // Giriş başarılıysa Home'a
+        } else {
+          await context.push('/register-info'); // Kayıt ise bilgi formuna
+        }
       } catch (e) {
         debugPrint('Hata: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Doğrulama hatası: $e')),
-        );
-      }
-
-      if (widget.isLogin) {
-        context.go('/home'); // Giriş başarılıysa Home'a
-      } else {
-        context.push('/register-info'); // Kayıt ise bilgi formuna
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Doğrulama hatası: $e')),
+          );
+        }
       }
     }
   }
