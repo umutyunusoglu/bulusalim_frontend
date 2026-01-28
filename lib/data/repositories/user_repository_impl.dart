@@ -6,7 +6,7 @@ import 'package:outnest/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/data/models/event/event_model.dart';
 import 'package:outnest/data/models/user/friend_model.dart';
-import 'package:outnest/data/models/user/pinned_post_model.dart';
+import 'package:outnest/data/models/user/pinned_post_model.dart' hide getIt;
 import 'package:outnest/data/models/user/user_event_model.dart';
 import 'package:outnest/data/models/user/user_hobby_model.dart';
 import 'package:outnest/data/models/user/user_model.dart';
@@ -958,7 +958,9 @@ class UserRepositoryImpl implements UserRepository {
         return model.toEntity();
       },
     ).toList();
-
+    _logger.info(
+      'Found posts for user: $userID, posts count: ${posts.length}',
+    );
     return posts;
   }
 
