@@ -1,10 +1,12 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/bottomsheetoption.dart';
 import 'package:outnest/components/eventcardbackgroundpainter.dart';
 import 'package:outnest/components/stacked_avatars.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
-import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
@@ -16,9 +18,7 @@ import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/screens/home/eventcomponents/event_info_chip.dart';
 import 'package:outnest/screens/home/eventcomponents/event_location_chip.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
+import 'package:outnest/screens/home/eventcomponents/participant_bottom_sheet.dart';
 
 // 3 DURUM
 enum _EventJoinStatus {
@@ -261,155 +261,24 @@ class _EventCardState extends State<EventCard> {
   }
 
   void _showParticipantsBottomSheet() {
-    final creator = widget.event.creator as CompactUserEntity;
-    final otherParticipants = widget.participants
-        .where((p) => p.userID != creator.userID)
-        .toList();
+    print('🔥 DEBUG: Bottom sheet açılıyor...'); // Debug için
+
+    final creator = CompactUserEntity(
+      userID: widget.event.creator.userID,
+      username: widget.event.creator.username,
+      profileImageUrl: widget.event.creator.profileImageUrl,
+    );
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-      ),
+      backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      useSafeArea: true,
+      useRootNavigator: true,
+      useSafeArea: false,
       builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.5,
-          minChildSize: 0.3,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (context, scrollController) {
-            return Column(
-              children: [
-                SizedBox(height: 12.h),
-                Container(
-                  width: 36.w,
-                  height: 4.h,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2.r),
-                  ),
-                ),
-                SizedBox(height: 20.h),
-                // Başlık
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.w),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Buluşmaya Katılacak Kişiler',
-                      style: TextStyle(
-                        fontFamily: 'SF Pro Display',
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 16.h),
-                // Liste
-                Expanded(
-                  child: ListView.builder(
-                    controller: scrollController,
-                    itemCount: 1 + otherParticipants.length,
-                    itemBuilder: (context, index) {
-                      final isCreatorItem = index == 0;
-
-                      // Eğer ilk elemansa Creator verisini, değilse listeden al
-                      final user = isCreatorItem
-                          ? creator
-                          : otherParticipants[index - 1];
-
-                      // 1. GÜVENLİ URL KONTROLÜ (Çökme Önleyici)
-                      // Eğer profil resmi boşsa varsayılan bir resim ata
-                      final rawUrl = user.profileImageUrl.isNotEmpty
-                          ? user.profileImageUrl
-                          : 'https://picsum.photos/200'; // Placeholder
-
-                      // 2. EMULATOR FIX (Resim Görünmeme Önleyici)
-                      final safeImageUrl = fixEmulatorUrl(rawUrl);
-
-                      return InkWell(
-                        onTap: () =>
-                            context.push('/home/profile/${user.userID}'),
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFF9F9F9),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 8,
-                            ),
-                            child: Row(
-                              children: [
-                                // Avatar
-                                CircleAvatar(
-                                  radius: 24.r,
-                                  backgroundColor: Colors.grey.shade200,
-                                  backgroundImage: NetworkImage(safeImageUrl),
-                                  onBackgroundImageError: (_, __) {
-                                    // Resim yüklenemezse burası tetiklenir,
-                                    // app çökmez ama kullanıcı boş avatar görür.
-                                  },
-                                ),
-                                SizedBox(width: 20.w),
-                                // Kullanıcı Adı
-                                Expanded(
-                                  child: Text(
-                                    user.username,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontFamily: 'SF Pro Display',
-                                      fontSize: 16.sp,
-                                      fontWeight: FontWeight.w400,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                ),
-                                // Buluşma Sahibi Etiketi
-                                if (isCreatorItem) ...[
-                                  SizedBox(width: 8.w),
-                                  Container(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 8.w,
-                                      vertical: 4.h,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                        color: AppColors.primaryColor,
-                                      ),
-                                      color: AppColors.primaryColor.withOpacity(
-                                        0.05,
-                                      ),
-                                      borderRadius: BorderRadius.circular(20.r),
-                                    ),
-                                    child: Text(
-                                      'buluşma sahibi',
-                                      style: TextStyle(
-                                        fontFamily: 'SF Pro Display',
-                                        fontSize: 10.sp,
-                                        color: AppColors.primaryColor,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            );
-          },
+        return ParticipantsBottomSheet(
+          creator: creator,
+          participants: widget.participants,
         );
       },
     );
