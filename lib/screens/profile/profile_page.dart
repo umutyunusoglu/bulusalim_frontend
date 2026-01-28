@@ -200,6 +200,7 @@ class _ProfilePageState extends State<ProfilePage> {
         await userRepository.sendFollowRequest(
           currentUser.userID,
           widget.profileUserID,
+          false,
         );
       } else {
         await userRepository.cancelFollowRequest(

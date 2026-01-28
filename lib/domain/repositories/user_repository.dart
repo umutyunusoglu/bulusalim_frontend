@@ -122,6 +122,7 @@ abstract class UserRepository {
   Future<void> sendFollowRequest(
     Identifier fromUserID,
     Identifier toUserID,
+    bool fromNotification,
   );
   Future<void> cancelFollowRequest(
     Identifier fromUserID,

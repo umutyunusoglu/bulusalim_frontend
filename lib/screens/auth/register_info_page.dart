@@ -175,7 +175,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
         instagram: '',
       );
 
-      userRepository.createUser(
+      await userRepository.createUser(
         newUser,
       );
 
@@ -497,11 +497,12 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
                   await getIt<UserRepository>().sendVerificationEmail(
                     _universityController.text.trim(),
                   );
+                  if (!mounted) return;
                   _nextPage(); // Başarılıysa OTP sayfasına geç
                 } catch (e) {
-                  _showError(e.toString());
+                  if (mounted) _showError(e.toString());
                 } finally {
-                  setState(() => _isSendingEmail = false);
+                  if (mounted) setState(() => _isSendingEmail = false);
                 }
               },
               onSkip: () => _pageController.jumpToPage(5),
@@ -524,9 +525,10 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
                     _detectedUniversity!,
                     otpCode,
                   );
+                  if (!mounted) return;
                   _nextPage(); // Başarılıysa devam et
                 } catch (e) {
-                  _showError("Kod hatalı veya geçersiz: $e");
+                  if (mounted) _showError("Kod hatalı veya geçersiz: $e");
                 }
               },
             ),
@@ -766,13 +768,15 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
       );
 
       if (pickedFile != null) {
+        if (!mounted) return;
         setState(() {
           _selectedImage = File(pickedFile.path);
         });
+        if (!mounted) return;
         Navigator.pop(context); // Modal'ı kapat
       }
     } catch (e) {
-      _showError("Resim seçilirken bir hata oluştu: $e");
+      if (mounted) _showError("Resim seçilirken bir hata oluştu: $e");
     }
   }
 }
