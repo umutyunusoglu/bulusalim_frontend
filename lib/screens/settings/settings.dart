@@ -329,45 +329,42 @@ class SettingsPage extends StatelessWidget {
   ) {
     return Padding(
       padding: const EdgeInsets.only(top: 10),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 24.r,
-            backgroundColor: AppColors.dividerColor,
-            backgroundImage: (profileImageUrl.isNotEmpty)
-                ? NetworkImage(fixEmulatorUrl(profileImageUrl))
-                : null,
-            child: (profileImageUrl.isEmpty)
-                ? Icon(Icons.person, color: AppColors.textGrey, size: 24.sp)
-                : null,
-          ),
-          SizedBox(width: 12.w),
-          Text(
-            'Profili Düzenle',
-            style: TextStyle(
-              fontFamily: 'SF Pro Display',
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w500,
-              color: AppColors.onBackgroundColor,
+      child: GestureDetector(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const EditProfilePage()),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 24.r,
+              backgroundColor: AppColors.dividerColor,
+              backgroundImage: (profileImageUrl.isNotEmpty)
+                  ? NetworkImage(fixEmulatorUrl(profileImageUrl))
+                  : null,
+              child: (profileImageUrl.isEmpty)
+                  ? Icon(Icons.person, color: AppColors.textGrey, size: 24.sp)
+                  : null,
             ),
-          ),
-          SizedBox(width: 12.w),
-          Text(
-            'Profili Düzenle',
-            style: TextStyle(
-              fontFamily: 'SF Pro Display',
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w500,
-              color: AppColors.onBackgroundColor,
+            SizedBox(width: 12.w),
+            Text(
+              'Profili Düzenle',
+              style: TextStyle(
+                fontFamily: 'SF Pro Display',
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w500,
+                color: AppColors.onBackgroundColor,
+              ),
             ),
-          ),
-          const Spacer(),
-          Icon(
-            Icons.chevron_right,
-            color: AppColors.iconColor,
-            size: 24.sp,
-          ),
-        ],
+
+            const Spacer(),
+            Icon(
+              Icons.chevron_right,
+              color: AppColors.iconColor,
+              size: 24.sp,
+            ),
+          ],
+        ),
       ),
     );
   }

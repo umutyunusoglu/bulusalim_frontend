@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/services/draft_post_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/usecases/upload_post_usecase.dart';
 import 'package:flutter/material.dart';
@@ -10,10 +12,12 @@ import 'package:go_router/go_router.dart';
 
 class NewPostPage extends StatefulWidget {
   const NewPostPage({
+    required this.event,
     this.takenPhotos = const [],
     super.key,
   });
   final List<File> takenPhotos;
+  final EventEntity event;
 
   @override
   State<NewPostPage> createState() => _NewPostPageState();
@@ -25,8 +29,9 @@ class _NewPostPageState extends State<NewPostPage> {
 
   List<File> _selectedMedia = [];
   int _currentImageIndex = 0;
-  bool _showParticipants = false;
-  bool _addToDump = false;
+  bool _showParticipants = true;
+  bool _addToDump = true;
+  bool _pinPhoto = true;
 
   @override
   void initState() {
@@ -249,6 +254,18 @@ class _NewPostPageState extends State<NewPostPage> {
                 activeColor: actionColor,
               ),
 
+              SizedBox(height: 16.h),
+
+              _buildSwitchOption(
+                context,
+                title: 'Fotoğrafı sabitle',
+                subtitle:
+                    'Paylaştığın gönderi 1 gün sonra profilinden silinemeyecek.',
+                value: _pinPhoto,
+                onChanged: (val) => setState(() => _addToDump = val),
+                activeColor: actionColor,
+              ),
+
               const Spacer(),
 
               SizedBox(height: 10.h),
@@ -348,18 +365,23 @@ class _NewPostPageState extends State<NewPostPage> {
 
   Future<void> _sendPost() async {
     final uploadPost = getIt<UploadPost>();
+    final draftService = getIt<DraftPostService>(); // Servisi çağır
 
-    //TODO: Etkinlik seçimi eklendikten sonra burası güncellenecek
-    final currentEvent = getIt<SessionService>().ongoingEvents!.first;
+    final currentEvent = widget.event;
 
+    // 1. Sunucuya Gönderim İşlemi
     await uploadPost(
       currentEvent,
       _selectedMedia,
       _showParticipants,
       _addToDump,
-      false, //TODO
+      _pinPhoto,
       _captionController.text.trim(),
     );
+
+    // 2. Başarılı olduysa bu etkinliğe ait taslağı diskten sil
+    await draftService.clearDraft(currentEvent.id);
+
     if (!mounted) return;
     context.go('/home');
   }

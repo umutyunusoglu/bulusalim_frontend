@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/enums/emote_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/feed/post/post_entity.dart';
 import 'package:outnest/domain/entities/hobby/hobby_entity.dart';
@@ -55,30 +56,27 @@ class UploadPost {
     );
 
     final post = PostEntity(
-      postID: '',
+      postID: "",
       creator: creator,
       eventID: currentEvent.eventID,
       caption: caption,
-      hobbies: currentEvent.hobbies
-          .map((hobby) => HobbyEntity.fromString(hobby))
-          .toList(),
-
-      showParticipants: showParticipants,
-      includeInDump: addToDump,
-      participants: currentEvent.participants
-          .map(
-            (participant) => CompactUserEntity(
-              userID: participant.userID,
-              username: participant.username,
-              profileImageUrl: participant.profileImageUrl,
-            ),
-          )
-          .toList(),
-      emoteCounts: {},
-      imageUrls: uploadUrls,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
       location: currentEvent.location,
+      displayAddress: currentEvent.displayAddress,
+      hobbies: currentEvent.hobbies
+          .map((hobbyName) => HobbyEntity(name: hobbyName))
+          .toList(),
+      imageUrls: uploadUrls,
+      participants: currentEvent.participants,
+      emoteCounts: {
+        EmoteEnum.heart: 0,
+        EmoteEnum.clap: 0,
+        EmoteEnum.egg: 0,
+      },
+      showParticipants: showParticipants,
+      includeInDump: addToDump,
+      isPinned: isPinned,
     );
 
     _logger.info('Uploading post: ${post.postID}');

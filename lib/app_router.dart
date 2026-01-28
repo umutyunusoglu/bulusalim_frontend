@@ -249,7 +249,14 @@ final router = GoRouter(
     GoRoute(
       path: '/camera',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const CameraPage(),
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final event = extra?['event'] as EventEntity?;
+
+        return CameraPage(
+          event: event!,
+        );
+      },
     ),
 
     // SOHBET ODASI
