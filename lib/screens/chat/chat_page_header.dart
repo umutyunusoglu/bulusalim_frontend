@@ -4,6 +4,9 @@ import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/usecases/force_start_event_usecase.dart';
+import 'package:outnest/domain/usecases/force_stop_event_usecase.dart';
+// Note: You will likely need to import a ForceStopEventUseCase here
+// import 'package:outnest/domain/usecases/force_stop_event_usecase.dart';
 import 'package:outnest/screens/chat/chat_event_info_chip.dart';
 import 'package:outnest/screens/chat/event_avatar_badge.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -37,7 +40,7 @@ class ChatPageHeader extends StatelessWidget {
   final List<dynamic> participantAvatars;
   final String categoryIcon;
 
-  // --- 1. POPUP FONKSİYONU ---
+  // --- 1. START POPUP (FORCE START) ---
   void _showStartEventDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -65,7 +68,7 @@ class ChatPageHeader extends StatelessWidget {
               ),
               SizedBox(height: 12.h),
               Text(
-                'Katılımcılara buluşmayı başlattığınıza dair bildirim gönderilecektir ve Buluşma Kartındaki saat güncellenecektir.',
+                'Katılımcılara buluşmayı başlattığınıza dair bildirim gönderilecektir.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'SF Pro Display',
@@ -78,54 +81,26 @@ class ChatPageHeader extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: GestureDetector(
+                    child: _buildDialogButton(
+                      context,
+                      label: 'vazgeç',
+                      color: const Color(0xFFF3F4F6),
+                      textColor: Colors.black87,
                       onTap: () => context.pop(),
-                      child: Container(
-                        height: 44.h,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF3F4F6),
-                          borderRadius: BorderRadius.circular(30.r),
-                        ),
-                        child: Text(
-                          'vazgeç',
-                          style: TextStyle(
-                            fontFamily: 'SF Pro Display',
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
                     ),
                   ),
                   SizedBox(width: 12.w),
                   Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
+                    child: _buildDialogButton(
+                      context,
+                      label: 'başlat',
+                      color: AppColors.primaryColor,
+                      textColor: Colors.white,
+                      onTap: () {
                         final forceStartEvent = getIt<ForceStartEvent>();
-
                         forceStartEvent(event);
                         context.pop();
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30.r),
-                        ),
-                        elevation: 8,
-                        shadowColor: AppColors.primaryColor.withOpacity(0.3),
-                        minimumSize: Size.fromHeight(44.h),
-                      ),
-                      child: Text(
-                        'başlat',
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Display',
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white,
-                        ),
-                      ),
                     ),
                   ),
                 ],
@@ -137,8 +112,112 @@ class ChatPageHeader extends StatelessWidget {
     );
   }
 
-  // --- 2. KATILIMCI AYARLARI ---
+  // --- 2. STOP POPUP (FORCE STOP) ---
+  void _showStopEventDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        backgroundColor: Colors.white,
+        insetPadding: EdgeInsets.symmetric(horizontal: 16.w),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 36.w, vertical: 24.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Buluşmayı sonlandırmak istediğinize emin misiniz?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'SF Pro Display',
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                  height: 1.3,
+                ),
+              ),
+              SizedBox(height: 12.h),
+              Text(
+                'Etkinlik durumu "tamamlandı" olarak güncellenecektir.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'SF Pro Display',
+                  fontSize: 10.sp,
+                  color: Colors.grey.shade400,
+                  height: 1.4,
+                ),
+              ),
+              SizedBox(height: 24.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDialogButton(
+                      context,
+                      label: 'vazgeç',
+                      color: const Color(0xFFF3F4F6),
+                      textColor: Colors.black87,
+                      onTap: () => context.pop(),
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: _buildDialogButton(
+                      context,
+                      label: 'bitir',
+                      color: Colors.redAccent, // Red to indicate stopping
+                      textColor: Colors.white,
+                      onTap: () {
+                        // TODO: Inject and call ForceStopEvent usecase here
+                        final forceStopEvent = getIt<ForceStopEvent>();
+                        forceStopEvent(event);
+                        context.pop();
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Helper widget for Dialog Buttons to reduce code duplication
+  Widget _buildDialogButton(
+    BuildContext context, {
+    required String label,
+    required Color color,
+    required Color textColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 44.h,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(30.r),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'SF Pro Display',
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w500,
+            color: textColor,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- 3. KATILIMCI AYARLARI ---
   void _showParticipantSettingsSheet(BuildContext context) {
+    // ... (Existing code remains unchanged)
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -175,9 +254,7 @@ class ChatPageHeader extends StatelessWidget {
                     fontWeight: FontWeight.w400,
                   ),
                 ),
-                onTap: () {
-                  Navigator.pop(context);
-                },
+                onTap: () => Navigator.pop(context),
               ),
               ListTile(
                 leading: Icon(
@@ -194,9 +271,7 @@ class ChatPageHeader extends StatelessWidget {
                     fontWeight: FontWeight.w400,
                   ),
                 ),
-                onTap: () {
-                  Navigator.pop(context);
-                },
+                onTap: () => Navigator.pop(context),
               ),
               SizedBox(height: 35.h),
             ],
@@ -206,8 +281,9 @@ class ChatPageHeader extends StatelessWidget {
     );
   }
 
-  // --- 3. KONUM DETAY SHEET  ---
+  // --- 4. KONUM DETAY SHEET ---
   void _showLocationDetailSheet(BuildContext context) {
+    // ... (Existing code remains unchanged)
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -256,9 +332,7 @@ class ChatPageHeader extends StatelessWidget {
                 ),
                 SizedBox(height: 20.h),
                 GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
+                  onTap: () => Navigator.pop(context),
                   child: Row(
                     children: [
                       Icon(
@@ -307,7 +381,6 @@ class ChatPageHeader extends StatelessWidget {
       width: double.infinity,
       color: Colors.white,
       padding: EdgeInsets.only(top: topPadding + 50.h),
-
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -329,8 +402,8 @@ class ChatPageHeader extends StatelessWidget {
                     ),
                   ),
                 ),
-
                 SizedBox(width: 10.w),
+
                 // 2. Avatar
                 SizedBox(
                   width: 50.w,
@@ -340,10 +413,9 @@ class ChatPageHeader extends StatelessWidget {
                     categoryIcon: categoryIcon,
                   ),
                 ),
-
                 SizedBox(width: 12.w),
 
-                // 3. İçerik
+                // 3. İçerik ve Aksiyon Butonları
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -365,34 +437,45 @@ class ChatPageHeader extends StatelessWidget {
                               ),
                             ),
                           ),
-
                           SizedBox(width: 8.w),
 
-                          // Buton Grubu
+                          // --- ACTION BUTTON LOGIC START ---
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              if (isCreator &&
-                                  event.status != EventStatusEnum.ongoing) ...[
-                                GestureDetector(
-                                  onTap: () => _showStartEventDialog(context),
-                                  child: Container(
-                                    width: 22.w,
-                                    height: 22.w,
-                                    decoration: const BoxDecoration(
+                              // Only render action buttons if user is creator
+                              if (isCreator) ...[
+                                // STATUS: UPCOMING -> Show "Force Start" (Play)
+                                if (event.status ==
+                                    EventStatusEnum.upcoming) ...[
+                                  GestureDetector(
+                                    onTap: () => _showStartEventDialog(context),
+                                    child: _buildCircleActionButton(
+                                      icon: Icons.play_arrow,
                                       color: AppColors.primaryColor,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      Icons.play_arrow,
-                                      color: Colors.white,
-                                      size: 18.sp,
                                     ),
                                   ),
-                                ),
-                                SizedBox(width: 12.w),
+                                  SizedBox(width: 12.w),
+                                ],
+
+                                // STATUS: ONGOING -> Show "Force Stop" (Stop)
+                                if (event.status ==
+                                    EventStatusEnum.ongoing) ...[
+                                  GestureDetector(
+                                    onTap: () => _showStopEventDialog(context),
+                                    child: _buildCircleActionButton(
+                                      icon: Icons.stop_rounded,
+                                      color: Colors
+                                          .greenAccent, // Distinct color for stop
+                                    ),
+                                  ),
+                                  SizedBox(width: 12.w),
+                                ],
+
+                                // STATUS: COMPLETED -> Render Nothing (Hidden)
                               ],
 
+                              // Settings Button (Always visible)
                               GestureDetector(
                                 onTap: () {
                                   if (isCreator) {
@@ -421,9 +504,9 @@ class ChatPageHeader extends StatelessWidget {
                               ),
                             ],
                           ),
+                          // --- ACTION BUTTON LOGIC END ---
                         ],
                       ),
-
                       SizedBox(height: 4.h),
 
                       // INFO CHIP
@@ -445,15 +528,29 @@ class ChatPageHeader extends StatelessWidget {
               ],
             ),
           ),
-
           SizedBox(height: 12.h),
-
-          Divider(
-            height: 1,
-            thickness: 1,
-            color: Colors.grey.shade100,
-          ),
+          Divider(height: 1, thickness: 1, color: Colors.grey.shade100),
         ],
+      ),
+    );
+  }
+
+  // Helper for the circular action button
+  Widget _buildCircleActionButton({
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      width: 22.w,
+      height: 22.w,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        icon,
+        color: Colors.white,
+        size: 16.sp,
       ),
     );
   }
