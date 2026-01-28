@@ -1,6 +1,7 @@
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/post_card.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/domain/entities/feed/post/post_entity.dart';
 import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
 import 'package:outnest/domain/repositories/post_repository.dart';
@@ -11,11 +12,13 @@ class ProfilePostFeedPage extends StatefulWidget {
   const ProfilePostFeedPage({
     required this.posts,
     required this.initialIndex,
+    this.onPinChanged,
     super.key,
   });
 
   final List<UserPostEntity> posts;
   final int initialIndex;
+  final void Function(String postId, bool isPinned)? onPinChanged;
 
   @override
   State<ProfilePostFeedPage> createState() => _ProfilePostFeedPageState();
@@ -27,8 +30,8 @@ class _ProfilePostFeedPageState extends State<ProfilePostFeedPage> {
   @override
   void initState() {
     super.initState();
+    // Tahmini yükseklik üzerinden scroll
     final double initialOffset = widget.initialIndex * 580.h;
-
     _scrollController = ScrollController(initialScrollOffset: initialOffset);
   }
 
@@ -41,9 +44,7 @@ class _ProfilePostFeedPageState extends State<ProfilePostFeedPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(
-        0xFFF9FAFB,
-      ),
+      backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -65,9 +66,15 @@ class _ProfilePostFeedPageState extends State<ProfilePostFeedPage> {
         controller: _scrollController,
         padding: EdgeInsets.symmetric(vertical: 10.h),
         itemCount: widget.posts.length,
+        // ÖNEMLİ: addAutomaticKeepAlives: true varsayılandır ama listede durumu korumak önemlidir.
         itemBuilder: (context, index) {
           final pinnedPost = widget.posts[index];
-          return _PostLoaderItem(pinnedPost: pinnedPost);
+          return _PostLoaderItem(
+            // Key eklemek performans ve state karışıklığını önler
+            key: ValueKey(pinnedPost.postID),
+            pinnedPost: pinnedPost,
+            onPinChanged: widget.onPinChanged,
+          );
         },
       ),
     );
@@ -75,15 +82,22 @@ class _ProfilePostFeedPageState extends State<ProfilePostFeedPage> {
 }
 
 class _PostLoaderItem extends StatefulWidget {
-  const _PostLoaderItem({required this.pinnedPost});
+  const _PostLoaderItem({
+    required this.pinnedPost,
+    this.onPinChanged,
+    super.key, // Key parametresini buraya da ekledik
+  });
 
   final UserPostEntity pinnedPost;
+  final void Function(String, bool)? onPinChanged;
 
   @override
   State<_PostLoaderItem> createState() => _PostLoaderItemState();
 }
 
-class _PostLoaderItemState extends State<_PostLoaderItem> {
+// AutomaticKeepAliveClientMixin: Scroll edince postun yeniden yüklenmesini engeller
+class _PostLoaderItemState extends State<_PostLoaderItem>
+    with AutomaticKeepAliveClientMixin {
   bool _isLoading = true;
   PostEntity? _fullPost;
   String? _errorMessage;
@@ -99,28 +113,46 @@ class _PostLoaderItemState extends State<_PostLoaderItem> {
       final postRepo = getIt<PostRepository>();
       final post = await postRepo.getPostById(widget.pinnedPost.postID);
 
-      if (mounted) {
+      if (!mounted) return;
+
+      if (post == null) {
+        // Hata loglamasını BURADA yapıyoruz, build içinde değil.
+        const msg = "Post verisi null döndü (Veritabanında bulunamadı)";
+        getIt<LoggingService>().error(
+          'Post yükleme hatası ID: ${widget.pinnedPost.postID} -> $msg',
+        );
+
         setState(() {
-          _fullPost = post;
+          _errorMessage = "İçerik bulunamadı";
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _fullPost = post.copyWith(isPinned: widget.pinnedPost.isPinned);
           _isLoading = false;
         });
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = "Gönderi yüklenemedi.";
-          _isLoading = false;
-        });
-      }
+      if (!mounted) return;
+
+      // Exception loglamasını burada yapıyoruz
+      getIt<LoggingService>().error('Post yükleme exception: $e');
+
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // 1. Yükleniyor Durumu (Skeleton benzeri yapı)
+    super.build(context); // KeepAlive için gerekli
+
+    // 1. Yükleniyor Durumu
     if (_isLoading) {
       return Container(
-        height: 400.h, // Yüklenirken alan kaplaması için
+        height: 400.h,
         margin: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -136,9 +168,12 @@ class _PostLoaderItemState extends State<_PostLoaderItem> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8.r),
                   image: DecorationImage(
-                    // Yüklenirken bulanık şekilde küçük resmi göster
                     image: NetworkImage(
-                      fixEmulatorUrl(widget.pinnedPost.imageUrls.first),
+                      fixEmulatorUrl(
+                        widget.pinnedPost.imageUrls.isNotEmpty
+                            ? widget.pinnedPost.imageUrls.first
+                            : '',
+                      ), // Liste boşsa hata vermesin diye kontrol
                     ),
                     fit: BoxFit.cover,
                     opacity: 0.5,
@@ -155,9 +190,16 @@ class _PostLoaderItemState extends State<_PostLoaderItem> {
 
     // 2. Hata Durumu
     if (_errorMessage != null || _fullPost == null) {
+      // BURADAKİ LOGLAMA KALDIRILDI.
+      // Sadece UI gösteriyoruz.
       return SizedBox(
         height: 100.h,
-        child: Center(child: Text(_errorMessage ?? "Veri bulunamadı")),
+        child: Center(
+          child: Text(
+            _errorMessage ?? "Veri bulunamadı",
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+        ),
       );
     }
 
@@ -165,6 +207,15 @@ class _PostLoaderItemState extends State<_PostLoaderItem> {
     return PostCard(
       post: _fullPost!,
       user: _fullPost!.creator,
+      onPinToggle: (isPinned) {
+        setState(() {
+          _fullPost = _fullPost!.copyWith(isPinned: isPinned);
+        });
+        widget.onPinChanged?.call(_fullPost!.id, isPinned);
+      },
     );
   }
+
+  @override
+  bool get wantKeepAlive => true; // State'i koru
 }
