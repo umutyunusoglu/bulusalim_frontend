@@ -480,7 +480,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
               onChanged: _onUniversityEmailChanged,
               description: _detectedUniversity != null
                   ? 'Tespit Edilen: $_detectedUniversity'
-                  : 'Üniversiteni doğruladığında, üniversite bilgin profilinde otomatik olarak görünür.',
+                  : 'Üniversiteni doğruladığında, üniversite bilgin profilinde otomatik olarak görünür. Yalnızca Türkiye\'deki üniversiteler desteklenmektedir.',
 
               validator: () {
                 final email = _universityController.text.trim();

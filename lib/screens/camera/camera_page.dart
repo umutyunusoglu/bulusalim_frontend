@@ -1,5 +1,8 @@
 import 'dart:io';
+import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/services/draft_post_service.dart';
 import 'package:outnest/screens/camera/new_post_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -7,15 +10,41 @@ import 'package:go_router/go_router.dart'; // YENİ: GoRouter eklendi
 import 'package:image_picker/image_picker.dart';
 
 class CameraPage extends StatefulWidget {
-  const CameraPage({super.key});
+  const CameraPage({required this.event, super.key});
 
   @override
   State<CameraPage> createState() => _CameraPageState();
+  final EventEntity event;
 }
 
 class _CameraPageState extends State<CameraPage> {
   final ImagePicker _picker = ImagePicker();
-  final List<File> _takenPhotos = [];
+  List<File> _takenPhotos = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDrafts(); // Sayfa açılınca eski fotoları yükle
+  }
+
+  Future<void> _loadDrafts() async {
+    // Servisten veriyi çek
+    // NOT: event entity'nizde 'id' alanı olduğunu varsayıyorum (widget.event.id)
+    final savedPhotos = await getIt<DraftPostService>().getDraft(
+      widget.event.eventID,
+    );
+
+    // Eğer sayfa hala açıksa ve kayıtlı foto varsa listeyi güncelle
+    if (mounted && savedPhotos.isNotEmpty) {
+      setState(() {
+        _takenPhotos = List.from(savedPhotos);
+      });
+    }
+  }
+
+  Future<void> _updateDraft() async {
+    await getIt<DraftPostService>().saveDraft(widget.event.id, _takenPhotos);
+  }
 
   Future<void> _takePhoto() async {
     if (_takenPhotos.length >= 3) {
@@ -35,6 +64,8 @@ class _CameraPageState extends State<CameraPage> {
         setState(() {
           _takenPhotos.add(File(photo.path));
         });
+        // FOTOĞRAF ÇEKİLİNCE KAYDET
+        await _updateDraft();
       }
     } on Exception catch (e) {
       debugPrint('Kamera hatası: $e');
@@ -45,6 +76,7 @@ class _CameraPageState extends State<CameraPage> {
     setState(() {
       _takenPhotos.removeAt(index);
     });
+    _updateDraft();
   }
 
   void _navigateToNextPage() {
@@ -60,7 +92,8 @@ class _CameraPageState extends State<CameraPage> {
     Navigator.push(
       context,
       MaterialPageRoute<NewPostPage>(
-        builder: (context) => NewPostPage(takenPhotos: _takenPhotos),
+        builder: (context) =>
+            NewPostPage(takenPhotos: _takenPhotos, event: widget.event),
       ),
     );
   }
