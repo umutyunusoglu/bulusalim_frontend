@@ -67,6 +67,7 @@ Future<void> main() async {
       appleProvider: AppleProvider.debug,
     );
 
+
     FirebaseFirestore.instance.useFirestoreEmulator(
       AppConfig.host,
       8080,
@@ -77,6 +78,7 @@ Future<void> main() async {
       automaticHostMapping: false,
     );
     FirebaseFunctions.instance.useFunctionsEmulator(AppConfig.host, 5001);
+    FirebaseFirestore.instance.useFirestoreEmulator(AppConfig.host, 8080);
 
     final authInstance = FirebaseAuth.instance;
     await authInstance.useAuthEmulator(AppConfig.host, 9099);
@@ -100,6 +102,8 @@ Future<void> main() async {
         password: 'password123',
       );
     }
+
+    */
   } else {
     // Release Modu (Production)
     await FirebaseAppCheck.instance.activate(
@@ -107,11 +111,6 @@ Future<void> main() async {
       appleProvider: AppleProvider.appAttest, // iOS için standart
     );
   }
-
-  FirebaseFirestore.instance.settings = const Settings(
-    persistenceEnabled: true,
-    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
-  );
 
   // 5. Servisleri Başlatma
   await FirebaseMessaging.instance.setAutoInitEnabled(true);
@@ -134,7 +133,7 @@ Future<void> main() async {
     await feedRepository.warmup();
   } catch (e, stack) {
     if (kDebugMode) debugPrint('Feed warmup hatası: $e');
-    FirebaseCrashlytics.instance.recordError(e, stack);
+    await FirebaseCrashlytics.instance.recordError(e, stack);
   }
 
   getIt<UniversityDatasource>().initialize();
