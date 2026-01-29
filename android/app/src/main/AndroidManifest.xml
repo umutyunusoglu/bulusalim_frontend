@@ -17,7 +17,7 @@
 
 
     <application
-        android:label="bulusalim"
+        android:label="Outnest"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 

@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:outnest/app_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/auth_button.dart';
 import 'package:outnest/components/auth_input.dart';
@@ -190,6 +193,112 @@ class _RegisterPageState extends State<RegisterPage> {
                 text: 'gönder',
                 onPressed: _handleSendCode,
               ),
+              SizedBox(height: 24.h),
+
+              // AYRAÇ (VEYA)
+              Row(
+                children: [
+                  Expanded(child: Divider(color: Colors.grey.shade300)),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12.w),
+                    child: Text(
+                      "veya",
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 12.sp,
+                        fontFamily: 'SF Pro Display',
+                      ),
+                    ),
+                  ),
+                  Expanded(child: Divider(color: Colors.grey.shade300)),
+                ],
+              ),
+
+              SizedBox(height: 24.h),
+
+              // GOOGLE İLE KAYIT
+              SizedBox(
+                width: double.infinity,
+                height: 48.h,
+                child: OutlinedButton.icon(
+                  onPressed: _isLoading
+                      ? null
+                      : () async {
+                          setState(() => _isLoading = true);
+                          try {
+                            await getIt<AuthService>().signInWithGoogle(
+                              isLogin: false,
+                            );
+                            if (mounted) context.push('/register-info');
+                          } catch (e) {
+                            _showErrorSnackBar(
+                              e.toString().replaceAll('Exception: ', ''),
+                            );
+                          } finally {
+                            if (mounted) setState(() => _isLoading = false);
+                          }
+                        },
+                  icon: Image.asset('assets/google.png', height: 22.h),
+                  label: Text(
+                    'Google ile devam et',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.grey.shade300),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                  ),
+                ),
+              ),
+
+              // APPLE İLE KAYIT (Sadece iOS ise)
+              if (Platform.isIOS) ...[
+                SizedBox(height: 12.h),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48.h,
+                  child: ElevatedButton.icon(
+                    onPressed: _isLoading
+                        ? null
+                        : () async {
+                            setState(() => _isLoading = true);
+                            try {
+                              await getIt<AuthService>().signInWithApple(
+                                isLogin: false,
+                              );
+                              if (mounted) context.push('/register-info');
+                            } catch (e) {
+                              _showErrorSnackBar(
+                                e.toString().replaceAll('Exception: ', ''),
+                              );
+                            } finally {
+                              if (mounted) setState(() => _isLoading = false);
+                            }
+                          },
+                    icon: Icon(Icons.apple, color: Colors.white, size: 24.sp),
+                    label: Text(
+                      'Apple ile devam et',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               SizedBox(height: 60.h),
             ],
           ),

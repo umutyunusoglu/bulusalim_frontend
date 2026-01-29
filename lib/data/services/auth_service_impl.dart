@@ -1,11 +1,12 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:outnest/core/errors/exceptions/auth_exceptions.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/core/utils/validators/masks.dart';
 import 'package:outnest/domain/services/auth_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthServiceImpl implements AuthService {
   AuthServiceImpl({
@@ -185,9 +186,9 @@ class AuthServiceImpl implements AuthService {
   Future<String> signInWithSms({
     required String verificationId,
     required String smsCode,
+    required bool isLogin,
   }) async {
-    // async ekledik
-    _logger.debug('signInWithSms called verificationId=$verificationId');
+    _logger.debug('signInWithSms called (isLogin: $isLogin)');
     try {
       final credential = PhoneAuthProvider.credential(
         verificationId: verificationId,
@@ -200,19 +201,28 @@ class AuthServiceImpl implements AuthService {
       final user = userCredential.user;
 
       if (user != null) {
-        // KRİTİK NOKTA: Token'ı zorla yenileyerek backend'in (Functions)
-        // güncel session'ı tanımasını sağlıyoruz.
+        final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
+
+        // Login'de yeni kullanıcıyı engelle
+        if (isLogin && isNewUser) {
+          await user.delete();
+          throw AuthException('Bu numara ile kayıtlı bir hesap bulunamadı.');
+        }
+
+        // Kayıtta eski kullanıcıyı engelle
+        if (!isLogin && !isNewUser) {
+          throw AuthException(
+            'Bu telefon numarası zaten kullanımda. Giriş yapmayı deneyin.',
+          );
+        }
+
         await user.getIdToken(true);
-        _logger.info('signInWithSms: success, userId=${user.uid}');
         return user.uid;
-      } else {
-        throw AuthException('Kullanıcı bilgisi alınamadı.');
       }
+      throw AuthException('Kullanıcı doğrulanamadı.');
     } on FirebaseAuthException catch (e) {
       _logger.error('signInWithSms error: ${e.message}');
-      throw AuthException(
-        e.message ?? 'An unknown error occurred during SMS sign-in.',
-      );
+      throw AuthException(e.message ?? 'Doğrulama hatası.');
     }
   }
 
@@ -229,8 +239,9 @@ class AuthServiceImpl implements AuthService {
       );
 
       final user = _firebaseAuth.currentUser;
-      if (user == null)
+      if (user == null) {
         throw AuthException('Oturum açmış kullanıcı bulunamadı.');
+      }
 
       // Bu metod mevcut kullanıcının telefon numarasını Auth üzerinde günceller
       await user.updatePhoneNumber(credential);
@@ -262,20 +273,88 @@ class AuthServiceImpl implements AuthService {
   }
 
   @override
-  Future<String> signInWithApple() async {
-    final appleProvider = AppleAuthProvider();
-    _logger.debug('signInWithApple called');
+  Future<String> signInWithApple({required bool isLogin}) async {
+    _logger.debug('signInWithApple called (isLogin: $isLogin)');
     try {
-      final result = await _firebaseAuth.signInWithProvider(appleProvider);
-      final uid = result.user!.uid;
-      _logger.info('signInWithApple: userId=$uid');
-
-      return uid;
-    } on FirebaseAuthException catch (e) {
-      _logger.error('signInWithApple error: ${e.message}');
-      throw AuthException(
-        e.message ?? 'An unknown error occurred during Apple sign-in.',
+      final appleProvider = AppleAuthProvider();
+      final userCredential = await _firebaseAuth.signInWithProvider(
+        appleProvider,
       );
+      final user = userCredential.user;
+
+      if (user != null) {
+        final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
+
+        if (isLogin && isNewUser) {
+          await user.delete();
+          throw AuthException('Apple hesabınızla ilişkili kayıt bulunamadı.');
+        }
+
+        if (!isLogin && !isNewUser) {
+          throw AuthException('Bu Apple hesabı zaten kayıtlı. Giriş yapın.');
+        }
+
+        return user.uid;
+      }
+      throw AuthException('Apple girişi başarısız.');
+    } catch (e) {
+      _logger.error('signInWithApple error: $e');
+      if (e is AuthException) rethrow;
+      throw AuthException('Apple ile işlem başarısız.');
+    }
+  }
+
+  @override
+  Future<String> signInWithGoogle({required bool isLogin}) async {
+    _logger.debug('signInWithGoogle called (isLogin: $isLogin)');
+    try {
+      // --- SENİN VERDİĞİN TASLAK ---
+      // Trigger the authentication flow
+
+      final googleUser = await GoogleSignIn.instance.authenticate();
+
+      if (googleUser == null) throw AuthException('Giriş iptal edildi.');
+
+      // Obtain the auth details from the request
+      final googleAuth = googleUser.authentication;
+
+      // Create a new credential
+      final credential = GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+      );
+
+      // Once signed in, get the UserCredential
+      final userCredential = await _firebaseAuth.signInWithCredential(
+        credential,
+      );
+      // --- TASLAK SONU ---
+
+      final user = userCredential.user;
+
+      if (user != null) {
+        final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
+
+        // 1. Giriş sayfasında yeni kullanıcı engelleme
+        if (isLogin && isNewUser) {
+          _logger.warn('Login attempt with new account. Deleting...');
+          await user.delete();
+          throw AuthException('Hesabınız bulunamadı. Lütfen kayıt olun.');
+        }
+
+        // 2. Kayıt sayfasında eski kullanıcı engelleme
+        if (!isLogin && !isNewUser) {
+          _logger.info('Register attempt with existing account.');
+          throw AuthException('Bu hesap zaten kayıtlı. Lütfen giriş yapın.');
+        }
+
+        _logger.info('signInWithGoogle success: ${user.uid}');
+        return user.uid;
+      }
+      throw AuthException('Kullanıcı verisi alınamadı.');
+    } catch (e) {
+      _logger.error('signInWithGoogle error: $e');
+      if (e is AuthException) rethrow;
+      throw AuthException('Google işlemi başarısız.: $e');
     }
   }
 
