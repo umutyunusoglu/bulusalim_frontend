@@ -12,6 +12,7 @@ abstract class AuthService {
   Future<String> signInWithSms({
     required String verificationId,
     required String smsCode,
+    required bool isLogin,
   });
 
   Future<void> verifyAndChangePhoneNumber({
@@ -19,7 +20,8 @@ abstract class AuthService {
     required String smsCode,
   });
 
-  Future<String> signInWithApple();
+  Future<String> signInWithApple({required bool isLogin});
+  Future<String> signInWithGoogle({required bool isLogin});
 
   Identifier getCurrentUserID();
   Stream<String?> get onAuthStateChanged;

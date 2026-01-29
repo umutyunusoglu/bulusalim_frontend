@@ -51,6 +51,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
         final result = await getIt<AuthService>().signInWithSms(
           verificationId: widget.verificationID ?? '',
           smsCode: otpCode,
+          isLogin: widget.isLogin,
         );
 
         logger.info('Kullanıcı doğrulandı: $result');
