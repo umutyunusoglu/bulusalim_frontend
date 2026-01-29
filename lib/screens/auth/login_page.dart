@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/auth_button.dart';
 import 'package:outnest/components/auth_input.dart';
@@ -175,6 +177,116 @@ class _LoginPageState extends State<LoginPage> {
                 text: 'gönder',
                 onPressed: _handleLogin,
               ),
+
+              // ... AuthButton'dan sonrası
+              SizedBox(height: 24.h),
+
+              // 1. AYRAÇ (Row burada bitmeli)
+              Row(
+                children: [
+                  Expanded(
+                    child: Divider(color: Colors.grey.shade300, thickness: 1),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12.w),
+                    child: Text(
+                      "veya",
+                      style: TextStyle(color: Colors.grey, fontSize: 12.sp),
+                    ),
+                  ),
+                  Expanded(
+                    child: Divider(color: Colors.grey.shade300, thickness: 1),
+                  ),
+                ], // Row burada kapandı!
+              ),
+
+              SizedBox(height: 24.h),
+
+              // 2. GOOGLE BUTONU (Row'un dışında, direkt Column'un içinde)
+              Container(
+                width: double.infinity,
+                height: 48.h,
+                child: OutlinedButton.icon(
+                  onPressed: _isLoading
+                      ? null
+                      : () async {
+                          setState(() => _isLoading = true);
+                          try {
+                            await getIt<AuthService>().signInWithGoogle(
+                              isLogin: true,
+                            );
+
+                            if (mounted) {
+                              context.go('/home');
+                            }
+                          } catch (e) {
+                            // Only reset loading if there was an error
+                            // If successful, the navigation handles the UI transition
+                            if (mounted) {
+                              setState(() => _isLoading = false);
+                              _showErrorSnackBar(
+                                e.toString().replaceAll('Exception: ', ''),
+                              );
+                            }
+                          }
+                          // Removed 'finally' to prevent setState during/after navigation
+                        },
+                  icon: _isLoading
+                      ? SizedBox(
+                          height: 20.h,
+                          width: 20.h,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Image.asset('assets/google.png', height: 24.h),
+                  label: const Text('Google ile devam et'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.black,
+                    side: const BorderSide(color: Colors.black12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Google butonundan sonra gelen kısım...
+              if (Platform.isIOS) ...[
+                SizedBox(height: 12.h), // Google butonuyla aradaki mesafe
+                Container(
+                  width: double.infinity,
+                  height: 48.h,
+                  child: ElevatedButton.icon(
+                    onPressed: _isLoading
+                        ? null
+                        : () async {
+                            setState(() => _isLoading = true);
+                            try {
+                              await getIt<AuthService>().signInWithApple(
+                                isLogin: true,
+                              );
+                              // Başarılı girişte GoRouter zaten auth state'e göre yönlendirme yapacaktır
+                              if (mounted) context.go('/home');
+                            } catch (e) {
+                              _showErrorSnackBar(
+                                e.toString().replaceAll('Exception: ', ''),
+                              );
+                            }
+                          },
+                    icon: Icon(Icons.apple, color: Colors.white, size: 24.sp),
+                    label: const Text('Apple ile devam et'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               SizedBox(height: 60.h),
             ],
           ),

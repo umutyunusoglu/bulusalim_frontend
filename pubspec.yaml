@@ -1,7 +1,7 @@
 name: outnest
 description: "A social Media App For Future of Socialising."
 publish_to: "none"
-version: 0.1.0
+version: 0.1.1
 
 environment:
   sdk: ^3.8.1
@@ -15,7 +15,7 @@ dependencies:
   collection: ^1.15.0
   equatable: ^2.0.7
   faker: ^2.2.0
-  firebase_analytics: ^12.0.4
+  firebase_analytics: ^12.1.1
   firebase_app_check: ^0.4.0
   firebase_auth: ^6.0.1
   firebase_core: ^4.0.0
@@ -60,6 +60,7 @@ dependencies:
   url_launcher: ^6.3.2
   google_api_availability: ^5.0.1
   shared_preferences: ^2.5.4
+  google_sign_in: ^7.2.0
 
 dev_dependencies:
   build_runner: ^2.7.1

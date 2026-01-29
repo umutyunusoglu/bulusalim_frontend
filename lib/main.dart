@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart'
     show MapboxOptions;
 import 'package:outnest/app_router.dart';
@@ -121,6 +122,7 @@ Future<void> main() async {
   final pushService = getIt<PushNotificationsService>();
   await pushService.initialize();
   await sessionService.init();
+  await GoogleSignIn.instance.initialize();
 
   // Session logunu sadece debug'da görelim, production loglarını kirletmeyelim
   if (kDebugMode) {
