@@ -1064,4 +1064,53 @@ class UserRepositoryImpl implements UserRepository {
       'email': email,
     });
   }
+
+  @override
+  Stream<List<Identifier>> watchFollowees(Identifier userID) {
+    // TODO: implement watchFollowees
+    final snapshot = _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('followees')
+        .snapshots();
+
+    return snapshot.map((querySnapshot) {
+      return querySnapshot.docs.map((doc) {
+        final data = doc.data();
+        return data['userID'] as Identifier;
+      }).toList();
+    });
+  }
+
+  @override
+  Stream<List<Identifier>> watchFollowers(Identifier userID) {
+    final snapshot = _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('followers')
+        .snapshots();
+
+    return snapshot.map((querySnapshot) {
+      return querySnapshot.docs.map((doc) {
+        final data = doc.data();
+        return data['userID'] as Identifier;
+      }).toList();
+    });
+  }
+
+  @override
+  Stream<List<UserEventEntity>> watchUserEventLog(Identifier userID) {
+    return _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('eventLog')
+        .snapshots()
+        .map((querySnapshot) {
+          return querySnapshot.docs.map((doc) {
+            final data = doc.data();
+            final model = UserEventModel.fromFirestore(data);
+            return model.toEntity();
+          }).toList();
+        });
+  }
 }

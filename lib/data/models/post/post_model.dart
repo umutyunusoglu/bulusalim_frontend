@@ -64,9 +64,11 @@ class PostModel extends Model<PostEntity> {
       var parsedParticipants = <CompactUserEntity>[];
       if (doc['participants'] != null && doc['participants'] is List) {
         try {
-          parsedParticipants = (doc['participants'] as List).map((p) {
-            return CompactUserEntity.fromMap(p as Map<String, dynamic>);
-          }).toList();
+          parsedParticipants =
+              List<dynamic>.from(doc['participants'] as List<Map>).map((p) {
+                final map = Map<String, dynamic>.from(p as Map);
+                return CompactUserEntity.fromMap(map);
+              }).toList();
         } catch (e) {
           logger.warn(
             'PostModel: Error parsing participants list. Defaulting to empty.',
@@ -74,17 +76,42 @@ class PostModel extends Model<PostEntity> {
         }
       }
 
-      // 3. Safe Creator Parsing
+      // 3. Safe Creator Parsing [DÜZELTİLEN KISIM]
       CompactUserEntity parsedCreator;
       try {
-        parsedCreator = CompactUserEntity.fromMap(
-          doc['creator'] as Map<String, dynamic>? ?? {},
-        );
+        final rawCreator = doc['creator'];
+        if (rawCreator != null && rawCreator is Map) {
+          // Gelen veriyi kopyala (Mutable hale getir)
+          final creatorMap = Map<String, dynamic>.from(rawCreator);
+
+          // EĞER UNIVERSITY YOKSA BOŞ EKLE
+          // Bu sayede CompactUserEntity.fromMap içinde "university" aradığında null almaz.
+          if (!creatorMap.containsKey('university') ||
+              creatorMap['university'] == null) {
+            creatorMap['university'] = '';
+          }
+
+          // Diğer kritik alanlar için de aynısını yapabilirsin
+          if (!creatorMap.containsKey('displayName')) {
+            creatorMap['displayName'] = 'Unknown';
+          }
+          if (!creatorMap.containsKey('username')) {
+            creatorMap['username'] = 'unknown';
+          }
+
+          parsedCreator = CompactUserEntity.fromMap(creatorMap);
+        } else {
+          throw Exception("Creator data is null/invalid");
+        }
       } catch (e) {
-        logger.error(
-          'PostModel: Critical error parsing creator. Cannot create PostModel.',
-        );
-        rethrow;
+        // ... Fallback logic ...
+        // Fallback kullanıcında da university'i boş ver
+        parsedCreator = CompactUserEntity.fromMap({
+          'userID': 'unknown',
+          'username': 'Unknown',
+          'university': '',
+          'profileImageUrl': '',
+        });
       }
 
       // 4. Safe Location Parsing
@@ -101,13 +128,11 @@ class PostModel extends Model<PostEntity> {
       var parsedHobbies = <HobbyEntity>[];
       if (doc['hobbies'] != null && doc['hobbies'] is List) {
         try {
-          parsedHobbies = (doc['hobbies'] as List)
-              .map((h) => HobbyEntity.fromString(h.toString()))
-              .toList();
+          parsedHobbies = List<dynamic>.from(
+            doc['hobbies'] as List,
+          ).map((h) => HobbyEntity.fromString(h.toString())).toList();
         } catch (e) {
-          logger.warn(
-            'PostModel: Error parsing hobbies. Defaulting to empty.',
-          );
+          logger.warn('PostModel: Error parsing hobbies.');
         }
       }
 
@@ -115,7 +140,9 @@ class PostModel extends Model<PostEntity> {
       var parsedEmoteCounts = <EmoteEnum, int>{};
       if (doc['emoteCounts'] != null && doc['emoteCounts'] is Map) {
         try {
-          final rawEmotes = doc['emoteCounts'] as Map<String, dynamic>;
+          final rawEmotes = Map<String, dynamic>.from(
+            doc['emoteCounts'] as Map,
+          );
           parsedEmoteCounts = rawEmotes.map(
             (key, value) => MapEntry(
               EmoteEnum.fromString(key),
@@ -123,16 +150,13 @@ class PostModel extends Model<PostEntity> {
             ),
           );
         } catch (e) {
-          logger.warn(
-            'PostModel: Error parsing emoteCounts. Defaulting to empty map.',
-          );
+          logger.warn('PostModel: Error parsing emoteCounts.');
         }
       }
 
       // 7. Safe Date Parsing
       var parsedCreatedAt = DateTime.now();
       var parsedUpdatedAt = DateTime.now();
-
       try {
         if (doc['createdAt'] is Timestamp) {
           parsedCreatedAt = (doc['createdAt'] as Timestamp).toDate();
@@ -141,9 +165,7 @@ class PostModel extends Model<PostEntity> {
           parsedUpdatedAt = (doc['updatedAt'] as Timestamp).toDate();
         }
       } catch (e) {
-        logger.warn(
-          'PostModel: Error parsing timestamps. Defaulting to now().',
-        );
+        logger.warn('PostModel: Error parsing timestamps.');
       }
 
       return PostModel(
@@ -162,9 +184,10 @@ class PostModel extends Model<PostEntity> {
         showParticipants: doc['showParticipants'] as bool? ?? true,
         includeInDump: doc['includeInDump'] as bool? ?? false,
       );
-    } catch (e) {
+    } catch (e, stack) {
+      // Burası sadece en kötü senaryoda (PostModel'in kendisi oluşamazsa) çalışır.
       logger.error(
-        'PostModel: Critical failure in fromFirestore factory.',
+        'PostModel: Critical failure in fromFirestore factory. error: $e',
       );
       rethrow;
     }
