@@ -22,6 +22,8 @@ dependencies {
     // When using the BoM, you don't specify versions in Firebase library dependencies
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-appcheck-playintegrity")
+    implementation ("com.google.android.recaptcha:recaptcha:18.5.1")
+
 }
 
 val keystoreProperties = Properties()
@@ -61,8 +63,8 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 26
         targetSdk = 35
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        versionCode = 3
+        versionName = "1.0.2"
     }
 
     buildTypes {

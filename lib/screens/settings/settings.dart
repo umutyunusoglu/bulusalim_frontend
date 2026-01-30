@@ -1,6 +1,7 @@
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
+import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/screens/settings/account_settings_page.dart';
 import 'package:outnest/screens/settings/blocked_users_page.dart';
@@ -68,9 +69,20 @@ class SettingsPage extends StatelessWidget {
                   height: 40.h,
 
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
+                      // 1. Close the dialog/drawer first
                       Navigator.pop(context);
-                      // Navigator.pushReplacementNamed(context, '/login'); // Login sayfasına at
+
+                      // 2. Perform the sign out
+                      await getIt<AuthService>().signOut();
+
+                      // 3. Check if the widget is still in the tree before navigating
+                      if (context.mounted) {
+                        await Navigator.pushReplacementNamed(
+                          context,
+                          '/welcome',
+                        );
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryColor,
@@ -329,45 +341,42 @@ class SettingsPage extends StatelessWidget {
   ) {
     return Padding(
       padding: const EdgeInsets.only(top: 10),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 24.r,
-            backgroundColor: AppColors.dividerColor,
-            backgroundImage: (profileImageUrl.isNotEmpty)
-                ? NetworkImage(fixEmulatorUrl(profileImageUrl))
-                : null,
-            child: (profileImageUrl.isEmpty)
-                ? Icon(Icons.person, color: AppColors.textGrey, size: 24.sp)
-                : null,
-          ),
-          SizedBox(width: 12.w),
-          Text(
-            'Profili Düzenle',
-            style: TextStyle(
-              fontFamily: 'SF Pro Display',
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w500,
-              color: AppColors.onBackgroundColor,
+      child: GestureDetector(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const EditProfilePage()),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 24.r,
+              backgroundColor: AppColors.dividerColor,
+              backgroundImage: (profileImageUrl.isNotEmpty)
+                  ? NetworkImage(fixEmulatorUrl(profileImageUrl))
+                  : null,
+              child: (profileImageUrl.isEmpty)
+                  ? Icon(Icons.person, color: AppColors.textGrey, size: 24.sp)
+                  : null,
             ),
-          ),
-          SizedBox(width: 12.w),
-          Text(
-            'Profili Düzenle',
-            style: TextStyle(
-              fontFamily: 'SF Pro Display',
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w500,
-              color: AppColors.onBackgroundColor,
+            SizedBox(width: 12.w),
+            Text(
+              'Profili Düzenle',
+              style: TextStyle(
+                fontFamily: 'SF Pro Display',
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w500,
+                color: AppColors.onBackgroundColor,
+              ),
             ),
-          ),
-          const Spacer(),
-          Icon(
-            Icons.chevron_right,
-            color: AppColors.iconColor,
-            size: 24.sp,
-          ),
-        ],
+
+            const Spacer(),
+            Icon(
+              Icons.chevron_right,
+              color: AppColors.iconColor,
+              size: 24.sp,
+            ),
+          ],
+        ),
       ),
     );
   }

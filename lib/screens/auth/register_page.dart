@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:outnest/app_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/auth_button.dart';
 import 'package:outnest/components/auth_input.dart';
@@ -24,28 +27,57 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  bool _isLoading = false; // Sayfada bir yükleniyor durumu tut
+  bool _isLoading = false;
+
+  // --- HATA GÖSTERME YARDIMCISI ---
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.redAccent,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 
   void _handleSendCode() async {
-    if (_isLoading) return; // Çift tıklamayı engelle
+    if (_isLoading) return;
 
+    // 1. FORMATI TEMİZLE
+    final rawNumber = _phoneController.text.replaceAll(' ', '');
+
+    // 2. VALIDASYON KONTROLLERİ
+    if (rawNumber.isEmpty) {
+      _showErrorSnackBar('Lütfen telefon numaranızı giriniz.');
+      return;
+    }
+
+    if (!rawNumber.startsWith('5')) {
+      _showErrorSnackBar('Telefon numarası 5 ile başlamalıdır.');
+      return;
+    }
+
+    if (rawNumber.length != 10) {
+      _showErrorSnackBar('Lütfen numaranızı eksiksiz giriniz (10 hane).');
+      return;
+    }
+
+    // Her şey yolundaysa işlemi başlat
     setState(() => _isLoading = true);
 
     try {
-      final rawNumber = _phoneController.text.replaceAll(' ', '');
       final result = await getIt<AuthService>().sendSMS(
         phoneNumber: '+90$rawNumber',
       );
 
-      // Widget hala yerindeyse işlemleri yap
       if (mounted) {
-        setState(() => _isLoading = false); // Yüklemeyi bitir
+        setState(() => _isLoading = false);
 
         if (result.error != null) {
-          // Hata varsa kullanıcıya göster (hala sayfada olduğu için güvenli)
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Hata: ${result.error}')),
-          );
+          _showErrorSnackBar('Hata: ${result.error}');
         } else {
           final verificationID = result.verificationId;
 
@@ -58,7 +90,10 @@ class _RegisterPageState extends State<RegisterPage> {
         }
       }
     } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _showErrorSnackBar('Beklenmedik bir hata oluştu.');
+      }
       debugPrint('Beklenmedik hata: $e');
     }
   }
@@ -128,7 +163,8 @@ class _RegisterPageState extends State<RegisterPage> {
                 onSubmitted: (_) => _handleSendCode(),
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(10),
+                  // DİKKAT: Boşluklar dahil 14 karaktere izin veriyoruz
+                  LengthLimitingTextInputFormatter(14),
                   _PhoneInputFormatter(),
                 ],
               ),
@@ -157,6 +193,112 @@ class _RegisterPageState extends State<RegisterPage> {
                 text: 'gönder',
                 onPressed: _handleSendCode,
               ),
+              SizedBox(height: 24.h),
+
+              // AYRAÇ (VEYA)
+              Row(
+                children: [
+                  Expanded(child: Divider(color: Colors.grey.shade300)),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12.w),
+                    child: Text(
+                      "veya",
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 12.sp,
+                        fontFamily: 'SF Pro Display',
+                      ),
+                    ),
+                  ),
+                  Expanded(child: Divider(color: Colors.grey.shade300)),
+                ],
+              ),
+
+              SizedBox(height: 24.h),
+
+              // GOOGLE İLE KAYIT
+              SizedBox(
+                width: double.infinity,
+                height: 48.h,
+                child: OutlinedButton.icon(
+                  onPressed: _isLoading
+                      ? null
+                      : () async {
+                          setState(() => _isLoading = true);
+                          try {
+                            await getIt<AuthService>().signInWithGoogle(
+                              isLogin: false,
+                            );
+                            if (mounted) context.push('/register-info');
+                          } catch (e) {
+                            _showErrorSnackBar(
+                              e.toString().replaceAll('Exception: ', ''),
+                            );
+                          } finally {
+                            if (mounted) setState(() => _isLoading = false);
+                          }
+                        },
+                  icon: Image.asset('assets/google.png', height: 22.h),
+                  label: Text(
+                    'Google ile devam et',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.grey.shade300),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                  ),
+                ),
+              ),
+
+              // APPLE İLE KAYIT (Sadece iOS ise)
+              if (Platform.isIOS) ...[
+                SizedBox(height: 12.h),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48.h,
+                  child: ElevatedButton.icon(
+                    onPressed: _isLoading
+                        ? null
+                        : () async {
+                            setState(() => _isLoading = true);
+                            try {
+                              await getIt<AuthService>().signInWithApple(
+                                isLogin: false,
+                              );
+                              if (mounted) context.push('/register-info');
+                            } catch (e) {
+                              _showErrorSnackBar(
+                                e.toString().replaceAll('Exception: ', ''),
+                              );
+                            } finally {
+                              if (mounted) setState(() => _isLoading = false);
+                            }
+                          },
+                    icon: Icon(Icons.apple, color: Colors.white, size: 24.sp),
+                    label: Text(
+                      'Apple ile devam et',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               SizedBox(height: 60.h),
             ],
           ),
@@ -172,15 +314,20 @@ class _PhoneInputFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    final text = newValue.text;
+    // 1. Önce sadece rakamları al
+    final text = newValue.text.replaceAll(' ', '');
 
     if (text.isEmpty) return newValue;
 
+    // 2. Eğer 10 karakterden uzunsa kes (güvenlik)
+    final truncatedText = text.length > 10 ? text.substring(0, 10) : text;
+
     final buffer = StringBuffer();
-    for (int i = 0; i < text.length; i++) {
-      buffer.write(text[i]);
+    for (int i = 0; i < truncatedText.length; i++) {
+      buffer.write(truncatedText[i]);
+      // 2., 5. ve 7. karakterden sonra boşluk ekle
       if (i == 2 || i == 5 || i == 7) {
-        if (i != text.length - 1) {
+        if (i != truncatedText.length - 1) {
           buffer.write(' ');
         }
       }
