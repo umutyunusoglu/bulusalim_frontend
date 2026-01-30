@@ -122,6 +122,8 @@ class AuthServiceImpl implements AuthService {
     try {
       _firebaseAuth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
+        timeout: const Duration(seconds: 180),
+
         verificationCompleted: (PhoneAuthCredential credential) async {
           _logger.info('sendSMS verificationCompleted');
           // Auto-retrieval or instant verification completed
