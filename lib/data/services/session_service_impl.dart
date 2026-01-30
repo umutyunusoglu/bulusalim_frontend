@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
@@ -32,6 +33,8 @@ class SessionServiceImpl implements SessionService {
   StreamSubscription<List<EventEntity>>? _eventsSubscription;
   // [YENİ]: Kullanıcıyı canlı dinlemek için subscription
   StreamSubscription<UserEntity?>? _userSubscription;
+  StreamSubscription<List<Identifier>>? _followersSubscription;
+  StreamSubscription<List<Identifier>>? _followeesSubscription;
 
   // --- GETTERS (Interface Implementation) ---
   @override
@@ -60,50 +63,65 @@ class SessionServiceImpl implements SessionService {
     // 1. Önceki tüm dinleyicileri temizle
     await _userSubscription?.cancel();
     await _eventsSubscription?.cancel();
+    await _followersSubscription?.cancel(); // [YENİ]
+    await _followeesSubscription?.cancel(); // [YENİ]
+
     _userSubscription = null;
     _eventsSubscription = null;
+    _followersSubscription = null; // [YENİ]
+    _followeesSubscription = null; // [YENİ]
 
     if (userId == null) {
-      // CASE: LOGOUT
-      _logger.info('SessionService: Kullanıcı çıkış yaptı.');
       _userNotifier.value = null;
       _eventsNotifier.value = null;
     } else {
-      // CASE: LOGIN
-      _logger.info(
-        'SessionService: Kullanıcı giriş yaptı. Canlı takipler başlatılıyor...',
-      );
+      // 2. Kullanıcıyı canlı izlemeye başla
+      _userSubscription = _userRepository.watchUser(userId).listen((
+        userEntity,
+      ) {
+        // Notifier'ı yeni gelen temel verilerle güncelle
+        _userNotifier.value = userEntity;
 
-      // 2. Kullanıcıyı canlı izlemeye başla (Stream)
-      _userSubscription = _userRepository
-          .watchUser(userId)
-          .listen(
-            (userEntity) {
-              debugPrint('🔥 SESSION_SERVICE: Firebaseden yeni veri geldi!');
-              // Stream her yeni veri attığında burası çalışır
-              _userNotifier.value =
-                  null; // Önce null yaparak "değişimi" garanti et
-              _userNotifier.value = userEntity;
-              debugPrint('🔥 NOTIFIER TETİKLENDİ: ValueNotifier güncellendi.');
-              if (userEntity != null) {
-                // Kullanıcı verisi başarıyla geldiyse ve Events henüz dinlenmiyorsa başlat.
-                // Not: Events dinleyicisini if içine koymamızın sebebi, user null ise (db'de yoksa) event çekmemektir.
-                // Ayrıca _eventsSubscription == null kontrolü yapıyoruz ki;
-                // kullanıcı sadece adını güncellediğinde event stream'i tekrar tekrar başlatılmasın.
-                if (_eventsSubscription == null) {
-                  _startListeningEvents(userId);
-                }
-              } else {
-                _logger.warn(
-                  'SessionService: Auth ID var ama User DB kaydı (Stream) boş geldi.',
-                );
-              }
-            },
-            onError: (error) {
-              _logger.error('SessionService: User Stream Hatası - $error');
-            },
-          );
+        if (userEntity != null) {
+          // Eventleri dinle
+          if (_eventsSubscription == null) _startListeningEvents(userId);
+
+          // [YENİ]: Takipçileri ve Takip Edilenleri dinle
+          if (_followersSubscription == null) _startListeningFollowers(userId);
+          if (_followeesSubscription == null) _startListeningFollowees(userId);
+        }
+      });
     }
+  }
+
+  void _startListeningFollowers(String userId) {
+    _followersSubscription = _userRepository.watchFollowers(userId).listen(
+      (followerIds) {
+        final currentUser = _userNotifier.value;
+        if (currentUser != null) {
+          _userNotifier.value = currentUser.copyWith(
+            followerIds: followerIds,
+            followerCount: followerIds.length, // Dinamik count güncellemesi
+          );
+        }
+      },
+      onError: (e) => _logger.error('Followers Stream Hatası: $e'),
+    );
+  }
+
+  void _startListeningFollowees(String userId) {
+    _followeesSubscription = _userRepository.watchFollowees(userId).listen(
+      (followeeIds) {
+        final currentUser = _userNotifier.value;
+        if (currentUser != null) {
+          _userNotifier.value = currentUser.copyWith(
+            followeeIds: followeeIds,
+            followeeCount: followeeIds.length, // Dinamik count güncellemesi
+          );
+        }
+      },
+      onError: (e) => _logger.error('Followees Stream Hatası: $e'),
+    );
   }
 
   void _startListeningEvents(String userId) {
@@ -137,7 +155,9 @@ class SessionServiceImpl implements SessionService {
   void dispose() {
     _authSubscription?.cancel();
     _eventsSubscription?.cancel();
-    _userSubscription?.cancel(); // [YENİ]: User dinleyicisini kapat
+    _userSubscription?.cancel();
+    _followersSubscription?.cancel(); // [EKLE]
+    _followeesSubscription?.cancel(); // [EKLE]
     _userNotifier.dispose();
     _eventsNotifier.dispose();
   }
