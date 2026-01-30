@@ -1,8 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get_it/get_it.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/data/models/model.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
+final getIt = GetIt.instance;
 
 class UserPostModel extends Model<UserPostEntity> {
   UserPostModel({
@@ -30,30 +34,85 @@ class UserPostModel extends Model<UserPostEntity> {
   }
 
   factory UserPostModel.fromFirestore(Map<String, dynamic> doc) {
-    final geolocation = doc['location'] as GeoPoint;
-    final location = Geolocation(
-      latitude: geolocation.latitude,
-      longitude: geolocation.longitude,
-    );
+    final logger = getIt<LoggingService>();
 
-    final participants = (doc['participants'] as List<dynamic>)
-        .map((e) => CompactUserEntity.fromMap(e as Map<String, dynamic>))
-        .toList();
+    try {
+      // 1. Safe Location Parsing
+      Geolocation parsedLocation = Geolocation(latitude: 0, longitude: 0);
+      if (doc['location'] != null && doc['location'] is GeoPoint) {
+        try {
+          final geoPoint = doc['location'] as GeoPoint;
+          parsedLocation = Geolocation(
+            latitude: geoPoint.latitude,
+            longitude: geoPoint.longitude,
+          );
+        } catch (e) {
+          logger.warn(
+            'UserPostModel: Error parsing GeoPoint. Defaulting to (0,0).',
+          );
+        }
+      }
 
-    final emoteCounts = (doc['emoteCounts'] as Map<String, dynamic>).map(
-      (key, value) => MapEntry(key, (value as num).toInt()),
-    );
+      // 2. Safe Participants Parsing
+      List<CompactUserEntity> parsedParticipants = [];
+      if (doc['participants'] != null && doc['participants'] is List) {
+        try {
+          parsedParticipants = (doc['participants'] as List).map((e) {
+            return CompactUserEntity.fromMap(e as Map<String, dynamic>);
+          }).toList();
+        } catch (e) {
+          logger.warn(
+            'UserPostModel: Error parsing participants. Defaulting to [].',
+          );
+        }
+      }
 
-    return UserPostModel(
-      postID: doc['postID'] as String? ?? '',
-      caption: doc['caption'] as String? ?? '',
-      location: location,
-      imageUrls: (doc['imageUrls'] as List?)?.cast<String>().toList() ?? [],
-      participants: participants,
-      emoteCounts: emoteCounts,
-      isPinned: doc['isPinned'] as bool? ?? false,
-      createdAt: (doc['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-    );
+      // 3. Safe EmoteCounts Parsing
+      Map<String, int> parsedEmoteCounts = {};
+      if (doc['emoteCounts'] != null && doc['emoteCounts'] is Map) {
+        try {
+          final rawMap = doc['emoteCounts'] as Map<String, dynamic>;
+          parsedEmoteCounts = rawMap.map(
+            (key, value) => MapEntry(key, (value as num?)?.toInt() ?? 0),
+          );
+        } catch (e) {
+          logger.warn(
+            'UserPostModel: Error parsing emoteCounts. Defaulting to {}.',
+          );
+        }
+      }
+
+      // 4. Safe Image URLs Parsing
+      List<String> parsedImageUrls = [];
+      if (doc['imageUrls'] != null && doc['imageUrls'] is List) {
+        parsedImageUrls = (doc['imageUrls'] as List)
+            .map((e) => e.toString())
+            .toList();
+      }
+
+      // 5. Safe Date Parsing
+      DateTime parsedCreatedAt = DateTime.now();
+      if (doc['createdAt'] is Timestamp) {
+        parsedCreatedAt = (doc['createdAt'] as Timestamp).toDate();
+      }
+
+      return UserPostModel(
+        postID: doc['postID']?.toString() ?? '',
+        caption: doc['caption']?.toString() ?? '',
+        location: parsedLocation,
+        imageUrls: parsedImageUrls,
+        participants: parsedParticipants,
+        emoteCounts: parsedEmoteCounts,
+        isPinned: doc['isPinned'] as bool? ?? false,
+        createdAt: parsedCreatedAt,
+      );
+    } catch (e) {
+      logger.error(
+        'UserPostModel: Critical failure in fromFirestore factory.',
+      );
+      // Depending on your app flow, you might want to return a dummy object or rethrow.
+      rethrow;
+    }
   }
 
   @override
@@ -75,7 +134,8 @@ class UserPostModel extends Model<UserPostEntity> {
     return {
       'postID': postID,
       'caption': caption,
-      'geolocation': location.toMap(),
+      // Fixed: Converted back to GeoPoint to match fromFirestore expectation
+      'location': GeoPoint(location.latitude, location.longitude),
       'imageUrls': imageUrls,
       'participants': participants.map((e) => e.toMap()).toList(),
       'emoteCounts': emoteCounts,
