@@ -352,8 +352,10 @@ class _HomePageState extends State<HomePage> {
                       setState(() => _currentPage = index);
                     },
                     children: const [
-                      HomeContentPage(feedType: FeedType.forYou),
+                      HomeContentPage(feedType: FeedType.all),
                       HomeContentPage(feedType: FeedType.friendsOnly),
+                      HomeContentPage(feedType: FeedType.university),
+
                       Center(child: Text('Okul Akışı Yakında...')),
                     ],
                   ),
