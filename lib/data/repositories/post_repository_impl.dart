@@ -91,6 +91,52 @@ class PostRepositoryImpl implements PostRepository {
   }
 
   @override
+  Future<void> pinPost(Identifier postId, Identifier userId) async {
+    final postRef = _firestore.collection('posts').doc(postId);
+    try {
+      await postRef.update({'isPinned': true});
+    } catch (e) {
+      _logger.error('Failed to pin post: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> unpinPost(Identifier postId, Identifier userId) async {
+    final userPostRef = _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('posts')
+        .doc(postId);
+
+    final userPostSnapshot = await userPostRef.get();
+    if (!userPostSnapshot.exists) {
+      _logger.error('Post not found for unpinning: $postId');
+      throw Exception('Post not found for unpinning');
+    }
+    final UserPostModel userPostModel = UserPostModel.fromFirestore(
+      userPostSnapshot.data()!,
+    );
+    final userPostEntity = userPostModel.toEntity();
+
+    if (userPostEntity.createdAt.isBefore(
+      DateTime.now().subtract(const Duration(days: 1)),
+    )) {
+      await deletePost(postId);
+      return;
+    }
+
+    final postRef = _firestore.collection('posts').doc(postId);
+
+    try {
+      await postRef.update({'isPinned': false});
+    } catch (e) {
+      _logger.error('Failed to unpin post: $e');
+      rethrow;
+    }
+  }
+
+  @override
   Future<PostEntity?> getPostById(Identifier postId) async {
     try {
       final docRef = _firestore.collection('posts').doc(postId);

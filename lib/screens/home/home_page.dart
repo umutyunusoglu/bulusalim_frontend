@@ -2,7 +2,10 @@ import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/custom_tab_bar.dart';
 import 'package:outnest/components/header.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
+import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/core/utils/types/enums/feed_type.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/screens/home/home_content_page.dart';
 import 'package:flutter/material.dart';
@@ -126,26 +129,28 @@ class _HomePageState extends State<HomePage> {
                           setState(() => selectedIndex = index);
                         },
                         itemBuilder: (context, index) {
-                          final event = activeEvents[index];
+                          final event = activeEvents[index] as EventEntity;
+
                           // Mock veriyi de gerçek veriyi de karşılayacak şekilde
-                          final String eventName =
+                          final eventName =
                               event.name?.toString() ?? 'Buluşma ${index + 1}';
 
+                          final participants = event.participants;
                           // Mock listede veya gerçek entity'de imageUrls erişimi
-                          final List<dynamic>? urls = (event.imageUrls == null)
-                              ? null
-                              : List<dynamic>.from(event.imageUrls as List);
+
                           final String eventImage =
-                              (urls != null && urls.isNotEmpty)
-                              ? urls.first.toString()
-                              : 'https://picsum.photos/200';
+                              event.creator.profileImageUrl.isNotEmpty
+                              ? event.creator.profileImageUrl
+                              : 'https://picsum.photos/seed/event$index/200';
 
                           return Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               CircleAvatar(
                                 radius: 24.r,
-                                backgroundImage: NetworkImage(eventImage),
+                                backgroundImage: NetworkImage(
+                                  fixEmulatorUrl(eventImage),
+                                ),
                               ),
                               SizedBox(height: 8.h),
                               Text(
@@ -238,7 +243,7 @@ class _HomePageState extends State<HomePage> {
                                 ..pop()
                                 ..push(
                                   '/camera',
-                                  extra: activeEvents[selectedIndex],
+                                  extra: {'event': activeEvents[selectedIndex]},
                                 );
                             },
                             style: TextButton.styleFrom(
@@ -276,9 +281,9 @@ class _HomePageState extends State<HomePage> {
   void _navigateToCamera() {
     // A) Kullanıcı verisini al
     final sessionService = getIt<SessionService>();
-    final currentUser = sessionService.currentUser;
+    final activeEvents = sessionService.ongoingEvents;
 
-    if (currentUser == null) return;
+    if (activeEvents == null) return;
 
     // **********************************************************
     // TEST ALANI BAŞLANGIÇ
@@ -302,13 +307,13 @@ class _HomePageState extends State<HomePage> {
 
     // **********************************************************
     // TEST ALANI BİTİŞ (Normalde aşağıdaki satır kullanılır)
-    final activeEvents = currentUser.activeEvents;
+
     // **********************************************************
 
     if (activeEvents.isEmpty) {
       _showNoMeetingDialog(context);
     } else if (activeEvents.length == 1) {
-      context.push('/camera', extra: activeEvents.first);
+      context.push('/camera', extra: {'event': activeEvents.first});
     } else {
       _showMultipleEventsSelectionDialog(context, activeEvents);
     }
