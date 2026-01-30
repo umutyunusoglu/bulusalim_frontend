@@ -6,12 +6,21 @@ class CompactUserEntity extends Equatable {
     required this.userID,
     required this.username,
     required this.profileImageUrl,
+    required this.university,
   });
   factory CompactUserEntity.fromMap(Map<String, dynamic> map) {
+    var universityValue = map['university'];
+    if (universityValue != null && universityValue is String) {
+      if (universityValue.isEmpty) {
+        universityValue = null;
+      }
+    }
+
     return CompactUserEntity(
       userID: map['userID'] as Identifier,
       username: map['username'] as String,
       profileImageUrl: map['profileImageUrl'] as String,
+      university: universityValue as String?,
     );
   }
 
@@ -19,11 +28,13 @@ class CompactUserEntity extends Equatable {
     Identifier? userID,
     String? username,
     String? profileImageUrl,
+    String? university,
   }) {
     return CompactUserEntity(
       userID: userID ?? this.userID,
       username: username ?? this.username,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      university: university ?? this.university,
     );
   }
 
@@ -32,6 +43,7 @@ class CompactUserEntity extends Equatable {
       'userID': userID,
       'username': username,
       'profileImageUrl': profileImageUrl,
+      'university': university ?? '',
     };
   }
 
@@ -41,4 +53,5 @@ class CompactUserEntity extends Equatable {
   final Identifier userID;
   final String username;
   final String profileImageUrl;
+  final String? university;
 }
