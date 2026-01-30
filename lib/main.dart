@@ -1,15 +1,19 @@
 import 'dart:ui';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart'; // Eklendi
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart'
     show MapboxOptions;
 import 'package:outnest/app_router.dart';
@@ -62,6 +66,7 @@ Future<void> main() async {
 
   // 3. App Check ve Emülatör Ayarları
   if (kDebugMode) {
+    /*
     await FirebaseAppCheck.instance.activate(
       androidProvider: AndroidProvider.debug,
       appleProvider: AppleProvider.debug,
@@ -77,6 +82,7 @@ Future<void> main() async {
       automaticHostMapping: false,
     );
     FirebaseFunctions.instance.useFunctionsEmulator(AppConfig.host, 5001);
+    FirebaseFirestore.instance.useFirestoreEmulator(AppConfig.host, 8080);
 
     final authInstance = FirebaseAuth.instance;
     await authInstance.useAuthEmulator(AppConfig.host, 9099);
@@ -100,6 +106,7 @@ Future<void> main() async {
         password: 'password123',
       );
     }
+    */
   } else {
     // Release Modu (Production)
     await FirebaseAppCheck.instance.activate(
@@ -108,11 +115,6 @@ Future<void> main() async {
     );
   }
 
-  FirebaseFirestore.instance.settings = const Settings(
-    persistenceEnabled: true,
-    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
-  );
-
   // 5. Servisleri Başlatma
   await FirebaseMessaging.instance.setAutoInitEnabled(true);
 
@@ -120,6 +122,7 @@ Future<void> main() async {
   final pushService = getIt<PushNotificationsService>();
   await pushService.initialize();
   await sessionService.init();
+  await GoogleSignIn.instance.initialize();
 
   // Session logunu sadece debug'da görelim, production loglarını kirletmeyelim
   if (kDebugMode) {
@@ -134,7 +137,7 @@ Future<void> main() async {
     await feedRepository.warmup();
   } catch (e, stack) {
     if (kDebugMode) debugPrint('Feed warmup hatası: $e');
-    FirebaseCrashlytics.instance.recordError(e, stack);
+    await FirebaseCrashlytics.instance.recordError(e, stack);
   }
 
   getIt<UniversityDatasource>().initialize();

@@ -1,6 +1,7 @@
 import 'dart:async'; // Timer için gerekli
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/screens/profile/profile_page.dart';
 
 class SearchPage extends StatefulWidget {
@@ -136,11 +137,17 @@ class _SearchPageState extends State<SearchPage> {
                     ..._userResults.map((doc) {
                       final data = doc.data()! as Map<String, dynamic>;
                       return ListTile(
-                        leading: const CircleAvatar(child: Icon(Icons.person)),
+                        leading: CircleAvatar(
+                          backgroundImage: NetworkImage(
+                            fixEmulatorUrl(
+                              data['profileImageUrl'] as String? ?? '',
+                            ),
+                          ),
+                        ),
                         title: Text(
                           data['search_name'] as String? ?? 'İsimsiz',
                         ),
-                        subtitle: Text(doc.id),
+
                         onTap: () {
                           // Klavye açıksa kapat
                           FocusScope.of(context).unfocus();

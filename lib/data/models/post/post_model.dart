@@ -1,4 +1,6 @@
-import 'package:outnest/core/constants/configs/app_config.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get_it/get_it.dart'; // Import GetIt
+import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/emote_enum.dart';
 import 'package:outnest/core/utils/types/enums/feed_entity_type_enum.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
@@ -7,8 +9,8 @@ import 'package:outnest/data/models/model.dart';
 import 'package:outnest/domain/entities/feed/post/post_entity.dart';
 import 'package:outnest/domain/entities/hobby/hobby_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
+
+final GetIt getIt = GetIt.instance;
 
 class PostModel extends Model<PostEntity> {
   PostModel({
@@ -42,64 +44,130 @@ class PostModel extends Model<PostEntity> {
       imageUrls: entity.imageUrls,
       participants: entity.participants,
       emoteCounts: entity.emoteCounts,
-
       showParticipants: entity.showParticipants,
       includeInDump: entity.includeInDump,
     );
   }
 
   factory PostModel.fromFirestore(Map<String, dynamic> doc) {
-    late final List<String>? imageUrls;
-    late final List<CompactUserEntity> participants;
-    late final CompactUserEntity creator;
+    final logger = getIt<LoggingService>();
 
-    imageUrls = (doc['imageUrls'] as List<dynamic>?)
-        ?.map((path) => path as String)
-        .toList();
+    try {
+      // 1. Safe Image URLs Parsing
+      final parsedImageUrls =
+          (doc['imageUrls'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [];
 
-    participants = (doc['participants'] as List<dynamic>)
-        .map(
-          (participant) => CompactUserEntity.fromMap(
-            participant as Map<String, dynamic>,
-          ),
-        )
-        .toList();
-    final creatorMap = doc['creator'] as Map<String, dynamic>;
+      // 2. Safe Participants Parsing
+      var parsedParticipants = <CompactUserEntity>[];
+      if (doc['participants'] != null && doc['participants'] is List) {
+        try {
+          parsedParticipants = (doc['participants'] as List).map((p) {
+            return CompactUserEntity.fromMap(p as Map<String, dynamic>);
+          }).toList();
+        } catch (e) {
+          logger.warn(
+            'PostModel: Error parsing participants list. Defaulting to empty.',
+          );
+        }
+      }
 
-    creator = CompactUserEntity.fromMap(
-      creatorMap,
-    );
+      // 3. Safe Creator Parsing
+      CompactUserEntity parsedCreator;
+      try {
+        parsedCreator = CompactUserEntity.fromMap(
+          doc['creator'] as Map<String, dynamic>? ?? {},
+        );
+      } catch (e) {
+        logger.error(
+          'PostModel: Critical error parsing creator. Cannot create PostModel.',
+        );
+        rethrow;
+      }
 
-    final geolocation = doc['location'] as GeoPoint;
-    final location = Geolocation(
-      latitude: geolocation.latitude,
-      longitude: geolocation.longitude,
-    );
+      // 4. Safe Location Parsing
+      Geolocation? parsedLocation;
+      if (doc['location'] != null && doc['location'] is GeoPoint) {
+        final geoPoint = doc['location'] as GeoPoint;
+        parsedLocation = Geolocation(
+          latitude: geoPoint.latitude,
+          longitude: geoPoint.longitude,
+        );
+      }
 
-    return PostModel(
-      postID: doc['postID'] as String,
-      creator: creator,
-      eventID: doc['eventID'] as String,
-      caption: doc['caption'] as String,
-      createdAt: (doc['createdAt'] as Timestamp).toDate(),
-      updatedAt: (doc['updatedAt'] as Timestamp).toDate(),
-      location: location,
-      address: doc['address'] as String?,
-      hobbies: (doc['hobbies'] as List<dynamic>)
-          .map((hobby) => HobbyEntity.fromString(hobby as String))
-          .toList(),
-      imageUrls: imageUrls,
-      participants: participants,
-      emoteCounts: (doc['emoteCounts'] as Map<String, dynamic>).map(
-        (key, value) => MapEntry(
-          EmoteEnum.fromString(key),
-          value as int,
-        ),
-      ),
+      // 5. Safe Hobbies Parsing
+      var parsedHobbies = <HobbyEntity>[];
+      if (doc['hobbies'] != null && doc['hobbies'] is List) {
+        try {
+          parsedHobbies = (doc['hobbies'] as List)
+              .map((h) => HobbyEntity.fromString(h.toString()))
+              .toList();
+        } catch (e) {
+          logger.warn(
+            'PostModel: Error parsing hobbies. Defaulting to empty.',
+          );
+        }
+      }
 
-      showParticipants: doc['showParticipants'] as bool,
-      includeInDump: doc['includeInDump'] as bool,
-    );
+      // 6. Safe Emote Counts Parsing
+      var parsedEmoteCounts = <EmoteEnum, int>{};
+      if (doc['emoteCounts'] != null && doc['emoteCounts'] is Map) {
+        try {
+          final rawEmotes = doc['emoteCounts'] as Map<String, dynamic>;
+          parsedEmoteCounts = rawEmotes.map(
+            (key, value) => MapEntry(
+              EmoteEnum.fromString(key),
+              (value as num?)?.toInt() ?? 0,
+            ),
+          );
+        } catch (e) {
+          logger.warn(
+            'PostModel: Error parsing emoteCounts. Defaulting to empty map.',
+          );
+        }
+      }
+
+      // 7. Safe Date Parsing
+      var parsedCreatedAt = DateTime.now();
+      var parsedUpdatedAt = DateTime.now();
+
+      try {
+        if (doc['createdAt'] is Timestamp) {
+          parsedCreatedAt = (doc['createdAt'] as Timestamp).toDate();
+        }
+        if (doc['updatedAt'] is Timestamp) {
+          parsedUpdatedAt = (doc['updatedAt'] as Timestamp).toDate();
+        }
+      } catch (e) {
+        logger.warn(
+          'PostModel: Error parsing timestamps. Defaulting to now().',
+        );
+      }
+
+      return PostModel(
+        postID: doc['postID']?.toString() ?? '',
+        creator: parsedCreator,
+        eventID: doc['eventID']?.toString() ?? '',
+        caption: doc['caption']?.toString() ?? '',
+        createdAt: parsedCreatedAt,
+        updatedAt: parsedUpdatedAt,
+        location: parsedLocation,
+        address: doc['address']?.toString(),
+        hobbies: parsedHobbies,
+        imageUrls: parsedImageUrls,
+        participants: parsedParticipants,
+        emoteCounts: parsedEmoteCounts,
+        showParticipants: doc['showParticipants'] as bool? ?? true,
+        includeInDump: doc['includeInDump'] as bool? ?? false,
+      );
+    } catch (e) {
+      logger.error(
+        'PostModel: Critical failure in fromFirestore factory.',
+      );
+      rethrow;
+    }
   }
 
   @override
@@ -129,18 +197,15 @@ class PostModel extends Model<PostEntity> {
       'creator': creator.toMap(),
       'eventID': eventID,
       'caption': caption,
-      'location': GeoPoint(
-        location?.latitude ?? 0.0,
-        location?.longitude ?? 0.0,
-      ),
+      'location': location != null
+          ? GeoPoint(location!.latitude, location!.longitude)
+          : null,
       'address': address,
       'hobbies': hobbies.map((hobby) => hobby.name).toList(),
-      'imageUrls': imageUrls,
-      'participants': participants
-          .map((participant) => participant.toMap())
-          .toList(),
+      'imageUrls': imageUrls ?? [],
+      'participants': participants.map((p) => p.toMap()).toList(),
       'emoteCounts': emoteCounts.map(
-        (key, value) => MapEntry(key.index.toString(), value),
+        (key, value) => MapEntry(key.toString(), value),
       ),
       'createdAt': createdAt,
       'updatedAt': updatedAt,
