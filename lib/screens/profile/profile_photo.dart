@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -46,12 +47,13 @@ class ProfilePhoto extends StatelessWidget {
             ],
           ),
           child: ClipOval(
-            child: Image.network(
-              fixEmulatorUrl(profileImageUrl),
+            child: CachedNetworkImage(
+              imageUrl: fixEmulatorUrl(profileImageUrl),
+              fadeInDuration: Duration.zero,
               fit: BoxFit.cover,
               width: photoSize,
               height: photoSize,
-              errorBuilder: (context, error, stackTrace) =>
+              errorWidget: (context, error, stackTrace) =>
                   Icon(Icons.person, color: Colors.grey, size: 24.w),
             ),
           ),

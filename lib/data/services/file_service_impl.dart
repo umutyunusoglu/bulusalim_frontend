@@ -1,9 +1,12 @@
 import 'dart:io';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:outnest/core/errors/exceptions/file_system_exceptions.dart';
 import 'package:outnest/core/errors/exceptions/security_exceptions.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
 class FileServiceImpl implements FileService {
   FileServiceImpl({
@@ -15,30 +18,49 @@ class FileServiceImpl implements FileService {
   final FirebaseStorage _storage;
   final LoggingService _logger;
 
+  Future<File> _compressImageIfNeeded(File file) async {
+    final path = file.absolute.path;
+    final extension = p.extension(path).toLowerCase();
+
+    // Sadece görselleri sıkıştırıyoruz
+    if (!(extension == '.jpg' || extension == '.jpeg' || extension == '.png')) {
+      _logger.info('No compression needed for file: $path');
+      return file;
+    }
+
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final targetPath = p.join(
+        tempDir.path,
+        "${DateTime.now().millisecondsSinceEpoch}${extension}",
+      );
+
+      _logger.info('Compressing image: $path');
+
+      final result = await FlutterImageCompress.compressAndGetFile(
+        path,
+        targetPath,
+        quality: 80,
+        minWidth: 1080,
+        minHeight: 1080,
+      );
+
+      if (result == null) return file;
+
+      // XFile'ı dart:io File nesnesine dönüştürüyoruz (Type inconsistency çözümü)
+      return File(result.path);
+    } catch (e) {
+      _logger.error('Compression failed, using original file: $e');
+      return file;
+    }
+  }
+
   @override
   Future<String> uploadFileFromPath(
     String absoluteSourcePath,
     String absoluteTargetPath,
   ) async {
-    final file = File(absoluteSourcePath);
-    if (!file.existsSync()) {
-      throw FileNotFoundException('File not found', absoluteSourcePath);
-    }
-
-    try {
-      final storageRef = _storage.ref().child(absoluteTargetPath);
-
-      final uploadTask = storageRef.putFile(file);
-      await uploadTask.whenComplete(() => null);
-      return storageRef.getDownloadURL().then((downloadUrl) {
-        return downloadUrl;
-      });
-    } on FirebaseException catch (e) {
-      throw _handleFirebaseStorageException(e, absoluteTargetPath);
-    } on Exception catch (e) {
-      _logger.error('File Upload Exception: $e');
-      throw FileSystemException('File Upload Exception: $e');
-    }
+    return uploadFile(File(absoluteSourcePath), absoluteTargetPath);
   }
 
   @override
@@ -48,13 +70,23 @@ class FileServiceImpl implements FileService {
     }
 
     try {
-      final storageRef = _storage.ref().child(absoluteTargetPath);
+      // 1. Sıkıştırma işlemi (TODO çözüldü)
+      final fileToUpload = await _compressImageIfNeeded(file);
 
-      final uploadTask = storageRef.putFile(file);
-      await uploadTask.whenComplete(() => null);
-      return storageRef.getDownloadURL().then((downloadUrl) {
-        return downloadUrl;
-      });
+      // 2. Upload işlemi
+      final storageRef = _storage.ref().child(absoluteTargetPath);
+      final uploadTask = storageRef.putFile(fileToUpload);
+
+      await uploadTask;
+
+      final downloadUrl = await storageRef.getDownloadURL();
+
+      // Geçici dosyayı temizleme (opsiyonel ama iyi bir pratik)
+      if (fileToUpload.path != file.path) {
+        await fileToUpload.delete();
+      }
+
+      return downloadUrl;
     } on FirebaseException catch (e) {
       throw _handleFirebaseStorageException(e, absoluteTargetPath);
     } on Exception catch (e) {

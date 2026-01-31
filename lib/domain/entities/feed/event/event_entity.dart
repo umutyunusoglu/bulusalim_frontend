@@ -2,6 +2,7 @@ import 'package:outnest/core/utils/types/enums/event_role_enum.dart';
 import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:outnest/core/utils/types/enums/feed_entity_type_enum.dart';
+import 'package:outnest/core/utils/types/enums/visibility_enum.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/feed/feed_entity.dart';
@@ -103,6 +104,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
   final DateTime updatedAt;
   final bool isLocked;
   final String geohash;
+  final VisibilityEnum visibility = VisibilityEnum.everyone;
 
   @override
   List<Object?> get props => [eventID];
@@ -115,6 +117,7 @@ class EventParticipantEntity extends Equatable {
     required this.profileImageUrl,
     required this.role,
     required this.eventScore,
+    required this.university,
   });
   factory EventParticipantEntity.fromMap(Map<String, dynamic> map) {
     return EventParticipantEntity(
@@ -123,6 +126,7 @@ class EventParticipantEntity extends Equatable {
       profileImageUrl: map['profileImageUrl'] as String,
       role: EventRoleEnum.fromString(map['role'] as String),
       eventScore: 0,
+      university: map['university'] as String?,
     );
   }
 
@@ -132,6 +136,7 @@ class EventParticipantEntity extends Equatable {
     String? profileImageUrl,
     EventRoleEnum? role,
     double? eventScore,
+    String? university,
   }) {
     return EventParticipantEntity(
       userID: userID ?? this.userID,
@@ -139,6 +144,7 @@ class EventParticipantEntity extends Equatable {
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       role: role ?? this.role,
       eventScore: eventScore ?? this.eventScore,
+      university: university ?? this.university,
     );
   }
 
@@ -149,6 +155,7 @@ class EventParticipantEntity extends Equatable {
       'profileImageUrl': profileImageUrl,
       'role': role.toString(),
       'eventScore': eventScore,
+      'university': university,
     };
   }
 
@@ -160,4 +167,5 @@ class EventParticipantEntity extends Equatable {
   final String profileImageUrl;
   final EventRoleEnum role;
   final double eventScore;
+  final String? university;
 }
