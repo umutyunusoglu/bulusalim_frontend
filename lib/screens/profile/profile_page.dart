@@ -9,6 +9,7 @@ import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/friend_entity.dart';
 import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
+import 'package:outnest/domain/entities/user/session_state.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
@@ -839,9 +840,9 @@ class _ProfilePageState extends State<ProfilePage> {
     final theme = Theme.of(context);
     final sessionService = getIt<SessionService>();
 
-    return ValueListenableBuilder<UserEntity?>(
-      valueListenable: sessionService.userListenable,
-      builder: (context, sessionUser, child) {
+    return ValueListenableBuilder<SessionState?>(
+      valueListenable: sessionService.stateListenable,
+      builder: (context, state, child) {
         return SafeArea(
           child: Scaffold(
             backgroundColor: theme.colorScheme.surface,

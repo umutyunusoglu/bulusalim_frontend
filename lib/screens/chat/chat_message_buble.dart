@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -83,10 +84,11 @@ class ChatMessageBubble extends StatelessWidget {
               width: 24.w,
               height: 24.w,
               child: userAvatarUrl != null && userAvatarUrl!.isNotEmpty
-                  ? Image.network(
-                      userAvatarUrl!,
+                  ? CachedNetworkImage(
+                      imageUrl: userAvatarUrl!,
+                      fadeInDuration: Duration.zero,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
+                      errorWidget: (context, error, stackTrace) =>
                           Container(color: Colors.grey.shade300),
                     )
                   : Container(
