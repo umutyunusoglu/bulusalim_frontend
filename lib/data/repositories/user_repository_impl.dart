@@ -1067,7 +1067,6 @@ class UserRepositoryImpl implements UserRepository {
 
   @override
   Stream<List<Identifier>> watchFollowees(Identifier userID) {
-    // TODO: implement watchFollowees
     final snapshot = _firestore
         .collection('users')
         .doc(userID)

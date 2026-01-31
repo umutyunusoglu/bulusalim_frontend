@@ -40,13 +40,12 @@ class FeedRepositoryImpl implements FeedRepository {
   FeedType _currentFeedType = FeedType.all;
   bool _isLoading = false;
 
-  // Pagination Referansları
   DocumentSnapshot? _lastPostDoc;
   DocumentSnapshot? _lastEventDoc;
 
-  // Desen: 1 Post, 2 Event
+  // Karıştırma paterni (P: Post, E: Event)
   int _patternIndex = 0;
-  final List<String> _flatPattern = [
+  static const List<String> _flatPattern = [
     'P',
     'E',
     'E',
@@ -68,7 +67,7 @@ class FeedRepositoryImpl implements FeedRepository {
   @override
   Stream<List<FeedEntity>> get feedStream => _feedController.stream;
 
-  // --- PUBLIC METOTLAR ---
+  // --- PUBLIC METHODS ---
 
   @override
   Future<void> switchFeedType(FeedType type) async {
@@ -87,70 +86,55 @@ class FeedRepositoryImpl implements FeedRepository {
 
   @override
   Future<void> loadMore() async {
-    if (_isLoading) {
-      _logger.info('⚠️ loadMore skipped: Already loading.');
-      return;
-    }
+    if (_isLoading) return;
     _isLoading = true;
 
     try {
-      final currentUser = getIt<SessionService>().currentUser;
+      final sessionService = getIt<SessionService>();
+      final currentUser = sessionService.currentState.user;
+      final followeeIds = sessionService.currentState.followeeIds;
+
       if (currentUser == null) {
         _logger.error('❌ loadMore failed: Current user is null.');
-        _isLoading = false;
         return;
       }
 
-      _logger.info(
-        '🚀 loadMore started. User: ${currentUser.userID}, Uni: ${currentUser.university}, FeedType: $_currentFeedType',
-      );
+      const int fetchLimit = AppConfig.feedBatchSize;
 
-      // [MALİYET KORUMASI]
-      const fetchLimit = AppConfig.feedBatchSize;
+      // 1. Verileri Çek
+      final results = await Future.wait([
+        _fetchPosts(fetchLimit, currentUser, followeeIds),
+        _fetchEvents(fetchLimit, currentUser, followeeIds),
+      ]);
 
-      // 1. Veri Çekme
-      final postsFuture = _fetchTargetedPosts(fetchLimit, currentUser);
-      final eventsFuture = _fetchTargetedEvents(fetchLimit, currentUser);
+      final List<DocumentSnapshot> postDocs = results[0];
+      final List<DocumentSnapshot> eventDocs = results[1];
 
-      final results = await Future.wait([postsFuture, eventsFuture]);
-      final postDocs = results[0];
-      final eventDocs = results[1];
-
-      _logger.info(
-        '📥 Firestore Raw Result: ${postDocs.length} Posts, ${eventDocs.length} Events fetched.',
-      );
-
-      if (postDocs.isEmpty && eventDocs.isEmpty) {
-        _logger.info('⚠️ Both sources empty. Stopping.');
-        _isLoading = false;
-        return;
-      }
-
-      // 2. Cursor Güncelleme
+      // 2. Pagination State Güncelle
       if (postDocs.isNotEmpty) _lastPostDoc = postDocs.last;
       if (eventDocs.isNotEmpty) _lastEventDoc = eventDocs.last;
 
-      // 3. Filtreleme ve Birleştirme
-      final newBatch = await _mergeAndFilterResults(
+      if (postDocs.isEmpty && eventDocs.isEmpty) {
+        _logger.info('⚠️ Both sources empty. No more data.');
+        return;
+      }
+
+      // 3. Verileri Birleştir ve İşle
+      final newBatch = await _mergeAndProcessResults(
         postDocs,
         eventDocs,
         currentUser,
+        followeeIds,
       );
 
-      _logger.info(
-        '✅ Merge complete. ${newBatch.length} items survived filtering out of ${postDocs.length + eventDocs.length}.',
-      );
-
-      // 4. Stream Güncelleme
+      // 4. Listeye Ekle ve Cache'le
       final currentList = _feedController.value;
-      final updatedList = [...currentList, ...newBatch];
-      _feedController.add(updatedList);
+      _feedController.add([...currentList, ...newBatch]);
 
-      // 5. Cacheleme
       for (final item in newBatch) {
         _cache.cacheEntity(item);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       _logger.error('❌ Feed Load Error: $e');
     } finally {
       _isLoading = false;
@@ -159,171 +143,160 @@ class FeedRepositoryImpl implements FeedRepository {
 
   // --- FETCHING LOGIC ---
 
-  Future<List<DocumentSnapshot>> _fetchTargetedPosts(
-    int limit,
-    UserEntity user,
-  ) async {
-    try {
-      if (_currentFeedType != FeedType.friendsOnly) {
-        Query query = _firestore.collection('posts');
+  /// Firestore Query mantığını FeedType'a göre oluşturur.
+  /// Not: University filtresini burada yaparak performansı artırıyoruz.
+  Query _buildBaseQuery(CollectionReference collection, UserEntity user) {
+    Query query = collection.orderBy('createdAt', descending: true);
 
-        if (_currentFeedType == FeedType.all) {
-          query = query.orderBy('createdAt', descending: true);
-        } else {
-          // School
-          query = query.orderBy('createdAt', descending: true);
-        }
-
-        if (_lastPostDoc != null) {
-          query = query.startAfterDocument(_lastPostDoc!);
-        }
-        return (await query.limit(limit).get()).docs;
-      }
-
-      // Friends Modu
-      final following = user.followeeIds;
-      if (following == null || following.isEmpty) {
-        _logger.info('ℹ️ Friends feed requested but followeeIds is empty.');
-        return [];
-      }
-
-      final chunks = _chunkList(following, 30);
-      DateTime? lastDate;
-      if (_lastPostDoc != null) {
-        final data = _lastPostDoc!.data()! as Map<String, dynamic>;
-        lastDate = (data['createdAt'] as Timestamp).toDate();
-      }
-
-      final futures = chunks.map((chunk) {
-        Query query = _firestore
-            .collection('posts')
-            .where('creator.userID', whereIn: chunk)
-            .orderBy('createdAt', descending: true);
-
-        if (lastDate != null) {
-          query = query.startAfter([Timestamp.fromDate(lastDate)]);
-        }
-        return query.limit(limit).get();
-      }).toList();
-
-      final snapshots = await Future.wait(futures);
-      final allDocs = snapshots.expand((s) => s.docs).toList()
-        ..sort((a, b) {
-          final tA =
-              (a.data()! as Map<String, dynamic>)['createdAt'] as Timestamp;
-          final tB =
-              (b.data()! as Map<String, dynamic>)['createdAt'] as Timestamp;
-          return tB.compareTo(tA);
-        });
-
-      if (allDocs.length > limit) return allDocs.sublist(0, limit);
-      return allDocs;
-    } catch (e) {
-      _logger.error('❌ Error fetching posts: $e');
-      return [];
+    if (_currentFeedType == FeedType.university) {
+      // Buradaki null kontrolünü kaldırdık, çünkü yukarıda (fetch metodunda) engelleyeceğiz.
+      // Artık buraya geldiğinde user.university'nin dolu olduğundan eminiz.
+      query = query.where('creator.university', isEqualTo: user.university);
     }
+
+    return query;
   }
 
-  Future<List<DocumentSnapshot>> _fetchTargetedEvents(
+  Future<List<DocumentSnapshot>> _fetchPosts(
     int limit,
     UserEntity user,
+    List<String> followeeIds,
   ) async {
-    try {
-      if (_currentFeedType != FeedType.friendsOnly) {
-        Query query = _firestore.collection('events');
-
-        if (_currentFeedType == FeedType.all) {
-          query = query.orderBy('createdAt', descending: true);
-        } else {
-          query = query.orderBy('createdAt', descending: true);
-        }
-
-        if (_lastEventDoc != null) {
-          query = query.startAfterDocument(_lastEventDoc!);
-        }
-        return (await query.limit(limit).get()).docs;
-      }
-
-      // Friends Modu
-      final following = user.followeeIds;
-      if (following == null || following.isEmpty) return [];
-
-      final chunks = _chunkList(following, 30);
-      DateTime? lastDate;
-      if (_lastEventDoc != null) {
-        final data = _lastEventDoc!.data()! as Map<String, dynamic>;
-        lastDate = (data['createdAt'] as Timestamp).toDate();
-      }
-
-      final futures = chunks.map((chunk) {
-        Query query = _firestore
-            .collection('events')
-            .where('creator.userID', whereIn: chunk)
-            .orderBy('createdAt', descending: true);
-
-        if (lastDate != null) {
-          query = query.startAfter([Timestamp.fromDate(lastDate)]);
-        }
-        return query.limit(limit).get();
-      }).toList();
-
-      final snapshots = await Future.wait(futures);
-      final allDocs = snapshots.expand((s) => s.docs).toList()
-        ..sort((a, b) {
-          final tA =
-              (a.data()! as Map<String, dynamic>)['createdAt'] as Timestamp;
-          final tB =
-              (b.data()! as Map<String, dynamic>)['createdAt'] as Timestamp;
-          return tB.compareTo(tA);
-        });
-
-      if (allDocs.length > limit) return allDocs.sublist(0, limit);
-      return allDocs;
-    } catch (e) {
-      _logger.error('❌ Error fetching events: $e');
+    // DÜZELTME: Eğer FeedType University ise VE kullanıcının üniversitesi yoksa BOŞ LİSTE dön.
+    if (_currentFeedType == FeedType.university && user.university == null) {
+      _logger.info(
+        '⚠️ University Feed requested but user has no university. Returning empty.',
+      );
       return [];
     }
+
+    final collection = _firestore.collection('posts');
+
+    if (_currentFeedType == FeedType.friendsOnly) {
+      return _fetchFriendsContent(collection, followeeIds, limit, _lastPostDoc);
+    }
+
+    Query query = _buildBaseQuery(collection, user);
+    if (_lastPostDoc != null) {
+      query = query.startAfterDocument(_lastPostDoc!);
+    }
+    return (await query.limit(limit).get()).docs;
   }
 
-  // --- MERGE & FILTER ---
+  Future<List<DocumentSnapshot>> _fetchEvents(
+    int limit,
+    UserEntity user,
+    List<String> followeeIds,
+  ) async {
+    // DÜZELTME: Aynı kontrolü burada da yapıyoruz.
+    if (_currentFeedType == FeedType.university && user.university == null) {
+      return [];
+    }
 
-  Future<List<FeedEntity>> _mergeAndFilterResults(
+    final collection = _firestore.collection('events');
+
+    if (_currentFeedType == FeedType.friendsOnly) {
+      return _fetchFriendsContent(
+        collection,
+        followeeIds,
+        limit,
+        _lastEventDoc,
+      );
+    }
+
+    Query query = _buildBaseQuery(collection, user);
+    if (_lastEventDoc != null) {
+      query = query.startAfterDocument(_lastEventDoc!);
+    }
+    return (await query.limit(limit).get()).docs;
+  }
+
+  /// Arkadaş içeriklerini çekmek için yardımcı metod (DRY prensibi)
+  Future<List<DocumentSnapshot>> _fetchFriendsContent(
+    CollectionReference collection,
+    List<String> followeeIds,
+    int limit,
+    DocumentSnapshot? lastDoc,
+  ) async {
+    if (followeeIds.isEmpty) return [];
+
+    final chunks = _chunkList(followeeIds, 30); // Firestore `whereIn` limiti
+    DateTime? lastDate;
+
+    if (lastDoc != null) {
+      final data = lastDoc.data() as Map<String, dynamic>;
+      lastDate = (data['createdAt'] as Timestamp).toDate();
+    }
+
+    final futures = chunks.map((chunk) {
+      Query query = collection
+          .where('creator.userID', whereIn: chunk)
+          .orderBy('createdAt', descending: true);
+
+      if (lastDate != null) {
+        query = query.startAfter([Timestamp.fromDate(lastDate)]);
+      }
+      return query.limit(limit).get();
+    }).toList();
+
+    final snapshots = await Future.wait(futures);
+
+    // Tüm chunk'ları birleştir ve yeniden sırala
+    final allDocs = snapshots.expand((s) => s.docs).toList()
+      ..sort((a, b) {
+        final tA = (a.data() as Map<String, dynamic>)['createdAt'] as Timestamp;
+        final tB = (b.data() as Map<String, dynamic>)['createdAt'] as Timestamp;
+        return tB.compareTo(tA);
+      });
+
+    return allDocs.length > limit ? allDocs.sublist(0, limit) : allDocs;
+  }
+
+  // --- MERGE & PROCESS ---
+
+  Future<List<FeedEntity>> _mergeAndProcessResults(
     List<DocumentSnapshot> postDocs,
     List<DocumentSnapshot> eventDocs,
     UserEntity user,
+    List<String> followeeIds,
   ) async {
     final resultBatch = <FeedEntity>[];
-    final postQueue = postDocs.toList();
-    final eventQueue = eventDocs.toList();
+    final postQueue = List<DocumentSnapshot>.from(postDocs);
+    final eventQueue = List<DocumentSnapshot>.from(eventDocs);
 
+    // Kuyruklar bitene veya limit dolana kadar dön
     while ((postQueue.isNotEmpty || eventQueue.isNotEmpty) &&
         resultBatch.length < AppConfig.feedBatchSize) {
       final type = _flatPattern[_patternIndex % _flatPattern.length];
+      bool added = false;
 
-      bool added = false; // Ekleme başarılı mı kontrolü için
-
+      // Patern 'P' ise önce Post eklemeyi dene, yoksa Event dene (ve tam tersi)
       if (type == 'P') {
         if (postQueue.isNotEmpty) {
-          // DEĞİŞİKLİK: Sonucu bir değişkene atadık
-          added = await _tryAddPost(postQueue, resultBatch, user);
+          added = await _tryAddPost(postQueue, resultBatch);
         } else if (eventQueue.isNotEmpty) {
-          // Post bittiyse Event dene (Fallback)
-          added = await _tryAddEvent(eventQueue, resultBatch, user);
+          added = await _tryAddEvent(
+            eventQueue,
+            resultBatch,
+            user,
+            followeeIds,
+          );
         }
       } else {
-        // Type E
+        // Type == 'E'
         if (eventQueue.isNotEmpty) {
-          added = await _tryAddEvent(eventQueue, resultBatch, user);
+          added = await _tryAddEvent(
+            eventQueue,
+            resultBatch,
+            user,
+            followeeIds,
+          );
         } else if (postQueue.isNotEmpty) {
-          // Event bittiyse Post dene (Fallback)
-          added = await _tryAddPost(postQueue, resultBatch, user);
+          added = await _tryAddPost(postQueue, resultBatch);
         }
       }
 
-      // DEĞİŞİKLİK: Eğer listeye bir şey eklendiyse deseni ilerlet
-      if (added) {
-        _patternIndex++;
-      }
+      if (added) _patternIndex++;
     }
     return resultBatch;
   }
@@ -331,97 +304,95 @@ class FeedRepositoryImpl implements FeedRepository {
   Future<bool> _tryAddPost(
     List<DocumentSnapshot> queue,
     List<FeedEntity> result,
-    UserEntity user,
   ) async {
-    while (queue.isNotEmpty) {
-      final doc = queue.removeAt(0);
-      final data = doc.data()! as Map<String, dynamic>;
-      final model = PostModel.fromFirestore(data);
+    if (queue.isEmpty) return false;
 
-      // --- LOGGING ---
-      final creatorUni = model.creator.university;
-      final userUni = user.university;
-      // ---------------
+    final doc = queue.removeAt(0);
+    final model = PostModel.fromFirestore(doc.data() as Map<String, dynamic>);
 
-      // Okul Modu Kontrolü
-      if (_currentFeedType == FeedType.university) {
-        if (creatorUni != userUni) {
-          _logger.info(
-            '🚫 Post Filtered (Uni Mismatch): PostCreatorUni($creatorUni) != UserUni($userUni)',
-          );
-          continue;
-        }
-      }
-
-      result.add(model.toEntity());
-      return true;
-    }
-    return false;
+    // Not: University kontrolü artık Query seviyesinde yapıldığı için burada tekrar etmeye gerek yok.
+    result.add(model.toEntity());
+    return true;
   }
 
   Future<bool> _tryAddEvent(
     List<DocumentSnapshot> queue,
     List<FeedEntity> result,
     UserEntity user,
+    List<String> followeeIds,
   ) async {
-    while (queue.isNotEmpty) {
-      final doc = queue.removeAt(0);
-      final data = doc.data()! as Map<String, dynamic>;
-      final model = EventModel.fromFirestore(data);
-      final entity = model.toEntity();
+    if (queue.isEmpty) return false;
 
-      // 1. Okul Feed Kontrolü
-      if (_currentFeedType == FeedType.university) {
-        if (entity.creator.university != user.university) {
-          _logger.info(
-            '🚫 Event Filtered (Uni Mismatch): EventCreatorUni(${entity.creator.university}) != UserUni(${user.university})',
-          );
-          continue;
-        }
-      }
+    final doc = queue.removeAt(0);
+    final model = EventModel.fromFirestore(doc.data() as Map<String, dynamic>);
+    final entity = model.toEntity();
 
-      // 2. Visibility Kontrolü
-      if (_canUserSeeEvent(entity, user)) {
-        final enriched = await _eventRepository.enrichEventWithDetails(entity);
-        result.add(enriched);
-        return true;
-      } else {
-        _logger.info(
-          '🚫 Event Filtered (Visibility): User cannot see Event ${entity.eventID}. Visibility: ${entity.visibility}',
-        );
-      }
+    if (_canUserSeeEvent(entity, user, followeeIds)) {
+      final enriched = await _eventRepository.enrichEventWithDetails(entity);
+      result.add(enriched);
+      return true;
     }
-    return false;
+
+    return false; // Görünür değilse eklenmedi
   }
 
-  bool _canUserSeeEvent(EventEntity event, UserEntity currentUser) {
+  bool _canUserSeeEvent(
+    EventEntity event,
+    UserEntity currentUser,
+    List<String> followeeIds,
+  ) {
+    // Kendi etkinliği ise her zaman gör
     if (event.creator.userID == currentUser.userID) return true;
 
-    if (event.visibility == null) return true;
-
-    if (_currentFeedType == FeedType.all &&
-        event.visibility == VisibilityEnum.university) {
-      if (event.creator.university != currentUser.university) {
-        return false;
-      }
+    // DÜZELTME 3: Visibility null kontrolü ve loglama
+    if (event.visibility == null) {
+      _logger.warn(
+        '⚠️ Event ${event.id} has NO VISIBILITY defined. Defaulting to true.',
+      );
+      return true;
     }
 
-    switch (event.visibility) {
+    // Üniversite feed'inde dışarıdan gelen ama 'university' visibility olan event kontrolü
+    if (_currentFeedType == FeedType.all &&
+        event.visibility == VisibilityEnum.university) {
+      if (event.creator.university != currentUser.university) return false;
+    }
+
+    switch (event.visibility!) {
       case VisibilityEnum.everyone:
         return true;
       case VisibilityEnum.university:
         return event.creator.university == currentUser.university;
       case VisibilityEnum.onlyFriends:
-        if (currentUser.followeeIds == null) return false;
-        return currentUser.followeeIds!.contains(event.creator.userID);
+        return followeeIds.contains(event.creator.userID);
       case VisibilityEnum.custom:
-        return true;
+        return true; // Özel mantık eklenebilir
       default:
         return true;
     }
   }
 
-  // --- LIVE UPDATES & UTILS ---
+  // --- UTILS & HELPERS ---
+
+  List<List<T>> _chunkList<T>(List<T> list, int chunkSize) {
+    return List.generate(
+      (list.length / chunkSize).ceil(),
+      (i) => list.sublist(
+        i * chunkSize,
+        (i + 1) * chunkSize > list.length ? list.length : (i + 1) * chunkSize,
+      ),
+    );
+  }
+
+  void _resetState() {
+    _lastPostDoc = null;
+    _lastEventDoc = null;
+    _patternIndex = 0;
+    _feedController.add([]);
+    _isLoading = false;
+  }
+
+  // --- OTHER OVERRIDES ---
   @override
   Stream<FeedEntity> getLiveEventStream(String eventId) {
     return _firestore.collection('events').doc(eventId).snapshots().asyncMap((
@@ -435,27 +406,6 @@ class FeedRepositoryImpl implements FeedRepository {
       final model = EventModel.fromFirestore(doc.data()!);
       return _eventRepository.enrichEventWithDetails(model.toEntity());
     });
-  }
-
-  List<List<T>> _chunkList<T>(List<T> list, int chunkSize) {
-    List<List<T>> chunks = [];
-    for (var i = 0; i < list.length; i += chunkSize) {
-      chunks.add(
-        list.sublist(
-          i,
-          i + chunkSize > list.length ? list.length : i + chunkSize,
-        ),
-      );
-    }
-    return chunks;
-  }
-
-  void _resetState() {
-    _lastPostDoc = null;
-    _lastEventDoc = null;
-    _patternIndex = 0;
-    _feedController.add([]);
-    _isLoading = false;
   }
 
   @override

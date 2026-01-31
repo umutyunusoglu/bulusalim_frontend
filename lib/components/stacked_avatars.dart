@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -72,10 +73,10 @@ class StackedAvatars extends StatelessWidget {
                             shape: BoxShape.circle,
                           ),
                           child: ClipOval(
-                            child: Image.network(
-                              fixEmulatorUrl(currentUser.imageUrl),
+                            child: CachedNetworkImage(
+                              imageUrl: fixEmulatorUrl(currentUser.imageUrl),
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
+                              errorWidget: (context, error, stackTrace) {
                                 return ColoredBox(
                                   color: Colors.grey.shade300,
                                   child: Icon(
@@ -177,7 +178,7 @@ class StackedAvatars extends StatelessWidget {
 //                   width: currentSize,
 //                   height: currentSize,
 //                   child: ClipOval(
-//                     child: Image.network(
+//                     child: CachedNetworkImage(
 //                       currentUser.imageUrl,
 //                       fit: BoxFit.cover,
 //                       errorBuilder: (context, error, stackTrace) {

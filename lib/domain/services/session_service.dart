@@ -1,27 +1,29 @@
-import 'package:outnest/domain/entities/feed/event/event_entity.dart';
-import 'package:outnest/domain/entities/user/user_entity.dart';
+// lib/domain/services/session_service.dart
+
 import 'package:flutter/foundation.dart';
+import 'package:outnest/domain/entities/user/session_state.dart';
+import 'package:outnest/domain/entities/user/user_entity.dart';
 
 abstract class SessionService {
-  // --- OKUMA (READ - UI bunları dinler) ---
-  /// Kullanıcı durumu değiştiğinde (Giriş/Çıkış/Güncelleme) tetiklenir
-  ValueListenable<UserEntity?> get userListenable;
+  // --- STATE ACCESS (READ) ---
 
-  /// Etkinlikler durumu değiştiğinde (Güncelleme) tetiklenir
-  ValueListenable<List<EventEntity>?> get ongoingEventsListenable;
+  /// Tüm session verisini (User, Events, Followers, Followees) barındıran
+  /// ve UI'ın dinlemesi gereken tek kaynak.
+  ValueListenable<SessionState> get stateListenable;
 
-  /// Anlık değerlere senkron erişim (Snapshots)
+  /// Anlık state değerine senkron erişim (Snapshot).
+  SessionState get currentState;
+
+  // --- CONVENIENCE GETTERS (Kolay Erişim) ---
+
+  /// currentState.user için kısayol
   UserEntity? get currentUser;
-  List<EventEntity>? get ongoingEvents;
-
-  // --- YAZMA (WRITE - State güncellemeleri) ---
-  /// Kullanıcı verisi manuel güncellenirse (Örn: Profil düzenleme sonrası)
-  void updateUser(UserEntity? user);
 
   // --- YAŞAM DÖNGÜSÜ ---
-  /// Servisi başlatır ve Auth dinleyicisini kurar
+
+  /// Servisi başlatır ve Auth/User dinleyicilerini kurar.
   Future<void> init();
 
-  /// Servisi kapatır
+  /// Servisi ve streamleri kapatır.
   void dispose();
 }

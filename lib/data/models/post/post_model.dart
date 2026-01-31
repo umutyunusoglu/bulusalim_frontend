@@ -64,14 +64,15 @@ class PostModel extends Model<PostEntity> {
       var parsedParticipants = <CompactUserEntity>[];
       if (doc['participants'] != null && doc['participants'] is List) {
         try {
-          parsedParticipants =
-              List<dynamic>.from(doc['participants'] as List<Map>).map((p) {
+          parsedParticipants = List<dynamic>.from(doc['participants'] as List)
+              .map((p) {
                 final map = Map<String, dynamic>.from(p as Map);
                 return CompactUserEntity.fromMap(map);
-              }).toList();
+              })
+              .toList();
         } catch (e) {
           logger.warn(
-            'PostModel: Error parsing participants list. Defaulting to empty.',
+            'PostModel: Error parsing participants list. Defaulting to empty: $e',
           );
         }
       }

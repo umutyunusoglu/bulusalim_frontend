@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
@@ -55,20 +56,49 @@ class _CameraPageState extends State<CameraPage> {
     }
 
     try {
-      final photo = await _picker.pickImage(
+      // 1. Fotoğrafı Çek
+      final XFile? photo = await _picker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 80,
+        imageQuality: 100, // Kırpma yapacağımız için önce yüksek kalite alalım
       );
 
       if (photo != null) {
-        setState(() {
-          _takenPhotos.add(File(photo.path));
-        });
-        // FOTOĞRAF ÇEKİLİNCE KAYDET
-        await _updateDraft();
+        // 2. Fotoğrafı Kare (1:1) Kırp
+        final croppedFile = await ImageCropper().cropImage(
+          sourcePath: photo.path,
+          aspectRatio: const CropAspectRatio(
+            ratioX: 1,
+            ratioY: 1,
+          ), // KARE ZORLAMASI
+          compressQuality:
+              70, // Sıkıştırmayı burada yapıyoruz (700KB -> ~150KB)
+          maxWidth: 1080, // Sosyal medya standardı (Genişlik)
+          maxHeight: 1080, // Sosyal medya standardı (Yükseklik)
+          uiSettings: [
+            AndroidUiSettings(
+              toolbarTitle: 'Fotoğrafı Düzenle',
+              toolbarColor: AppColors.primaryColor,
+              toolbarWidgetColor: Colors.white,
+              initAspectRatio: CropAspectRatioPreset.square,
+              lockAspectRatio: true, // Kullanıcı oranı değiştiremesin
+            ),
+            IOSUiSettings(
+              title: 'Fotoğrafı Düzenle',
+              aspectRatioLockEnabled: true,
+              resetAspectRatioEnabled: false,
+            ),
+          ],
+        );
+
+        if (croppedFile != null) {
+          setState(() {
+            _takenPhotos.add(File(croppedFile.path));
+          });
+          await _updateDraft();
+        }
       }
     } on Exception catch (e) {
-      debugPrint('Kamera hatası: $e');
+      debugPrint('Kamera veya Kırpma hatası: $e');
     }
   }
 
