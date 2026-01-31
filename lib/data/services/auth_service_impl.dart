@@ -118,7 +118,6 @@ class AuthServiceImpl implements AuthService {
   Future<PhoneAuthResult> sendSMS({required String phoneNumber}) {
     final completer = Completer<PhoneAuthResult>();
     _logger.debug('sendSMS called for phone=${maskPhone(phoneNumber)}');
-
     try {
       _firebaseAuth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
