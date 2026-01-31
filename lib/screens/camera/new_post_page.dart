@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
@@ -50,13 +51,14 @@ class _NewPostPageState extends State<NewPostPage> {
     if (media is File) {
       return Image.file(media, fit: fit);
     } else {
-      return Image.network(
-        fixEmulatorUrl(media as String),
+      return CachedNetworkImage(
+        imageUrl: fixEmulatorUrl(media as String),
+        fadeInDuration: Duration.zero,
         fit: fit,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
+        progressIndicatorBuilder: (context, url, downloadProgress) {
           return Center(
             child: CircularProgressIndicator(
+              value: downloadProgress.progress,
               color: Theme.of(context).colorScheme.secondary,
             ),
           );
