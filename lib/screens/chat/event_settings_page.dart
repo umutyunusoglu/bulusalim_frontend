@@ -1,3 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dart_geohash/dart_geohash.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/popup.dart';
 import 'package:outnest/components/stacked_avatars.dart';
@@ -9,12 +15,6 @@ import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/screens/chat/event_avatar_badge.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dart_geohash/dart_geohash.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 class EventSettingsPage extends StatefulWidget {
   const EventSettingsPage({
@@ -66,14 +66,12 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
       if (data != null && mounted) {
         setState(() {
           // Tarih Güncelleme
-          if (data.startTime != null) {
-            _currentDate = data.startTime;
-          }
+          _currentDate = data.startTime;
 
           // 3. KATEGORİ İKONU GÜNCELLEME
-          if (data.hobbies != null && data.hobbies!.isNotEmpty) {
+          if (data.hobbies.isNotEmpty) {
             final hobbies = data.hobbies;
-            if (hobbies != null && hobbies.isNotEmpty) {
+            if (hobbies.isNotEmpty) {
               final category = hobbies.first;
               _categoryIcon = AppConfig.categories[category] ?? '🎉';
             }
@@ -111,10 +109,10 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     );
 
     if (result != null) {
-      _logger.debug("Yeni konum seçildi: $result");
+      _logger.debug('Yeni konum seçildi: $result');
       final newDisplayAddress = result['displayAddress'] as String;
       final newAddress = result['address'] as String;
-      final newLocation = result['location'];
+      final newLocation = result['location'] as GeoPoint;
 
       if (!mounted) return;
       setState(() {
@@ -138,9 +136,9 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
             ),
           },
         );
-        _logger.debug("Konum güncellendi: $newDisplayAddress");
+        _logger.debug('Konum güncellendi: $newDisplayAddress');
       } catch (e) {
-        _logger.error("Konum güncelleme hatası: $e");
+        _logger.error('Konum güncelleme hatası: $e');
         if (mounted) {
           setState(() {
             _currentLocation = widget.location;
@@ -181,16 +179,16 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
             'endTime': newStartTime.add(const Duration(hours: 2)),
           },
         );
-        _logger.debug("Zaman güncellendi: $newStartTime");
+        _logger.debug('Zaman güncellendi: $newStartTime');
       } catch (e) {
-        _logger.error("Zaman güncelleme hatası: $e");
+        _logger.error('Zaman güncelleme hatası: $e');
       }
     }
   }
 
   // 3. AYRILMA VE İPTAL İŞLEMLERİ
   void _onLeaveEventTap() {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => Popup(
         title:
@@ -212,7 +210,8 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
       final compactUser = CompactUserEntity(
         userID: currentUser.userID,
         username: currentUser.username,
-        profileImageUrl: currentUser.profileImageUrl ?? '',
+        profileImageUrl: currentUser.profileImageUrl,
+        university: currentUser.university,
       );
       eventRepository.removeParticipant(widget.eventID, compactUser);
     }
@@ -221,7 +220,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
   }
 
   void _onCancelEventTap() {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => Popup(
         title:
@@ -231,8 +230,9 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
         confirmButtonText: 'iptal et',
         confirmButtonColor: const Color(0xFF1F415B),
         onConfirm: () async {
-          await eventRepository.deleteEvent(widget.eventID);
           if (mounted) context.pop();
+
+          await eventRepository.deleteEvent(widget.eventID);
         },
       ),
     );
