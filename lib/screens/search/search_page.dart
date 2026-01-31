@@ -58,12 +58,12 @@ class _SearchPageState extends State<SearchPage> {
       // İki tabloyu paralel (aynı anda) sorguluyoruz
       final results = await Future.wait([
         userRef
-            .orderBy('search_name') // Varsa 'search_name' kullan
+            .orderBy('username') // Varsa 'search_name' kullan
             .startAt([searchTerm])
             .endAt(['$searchTerm\uf8ff'])
             .get(),
         eventRef
-            .orderBy('search_name') // Varsa 'search_name' kullan
+            .orderBy('username') // Varsa 'search_name' kullan
             .startAt([searchTerm])
             .endAt(['$searchTerm\uf8ff'])
             .get(),
@@ -145,7 +145,7 @@ class _SearchPageState extends State<SearchPage> {
                           ),
                         ),
                         title: Text(
-                          data['search_name'] as String? ?? 'İsimsiz',
+                          data['username'] as String? ?? 'İsimsiz',
                         ),
 
                         onTap: () {
@@ -182,7 +182,7 @@ class _SearchPageState extends State<SearchPage> {
                       return ListTile(
                         leading: const Icon(Icons.event, color: Colors.purple),
                         title: Text(
-                          data['search_name'] as String? ?? 'Adsız Etkinlik',
+                          data['username'] as String? ?? 'Adsız Etkinlik',
                         ),
                         onTap: () => debugPrint('Tıklandı: Event ${doc.id}'),
                       );
