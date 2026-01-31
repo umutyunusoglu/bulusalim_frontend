@@ -428,6 +428,7 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
       child: ClipOval(
         child: CachedNetworkImage(
           imageUrl: fixEmulatorUrl(url),
+          fadeInDuration: Duration.zero,
           fit: BoxFit.cover,
           memCacheHeight: 100,
           memCacheWidth: 100,

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/bottomsheetoption.dart';
 import 'package:outnest/components/countdown_timer.dart';
@@ -598,10 +599,11 @@ class _PostCardState extends State<PostCard> {
                 });
               },
               itemBuilder: (context, index) {
-                return Image.network(
-                  fixEmulatorUrl(mediaUrls[index]),
+                return CachedNetworkImage(
+                  fadeInDuration: Duration.zero,
+                  imageUrl: (mediaUrls[index]),
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
+                  errorWidget: (context, error, stackTrace) =>
                       Container(color: Colors.grey.shade200),
                 );
               },

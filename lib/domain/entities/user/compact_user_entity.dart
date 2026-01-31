@@ -9,18 +9,15 @@ class CompactUserEntity extends Equatable {
     required this.university,
   });
   factory CompactUserEntity.fromMap(Map<String, dynamic> map) {
-    var universityValue = map['university'];
-    if (universityValue != null && universityValue is String) {
-      if (universityValue.isEmpty) {
-        universityValue = null;
-      }
+    if (map.containsKey('university') == false) {
+      map['university'] = null;
     }
 
     return CompactUserEntity(
       userID: map['userID'] as Identifier,
       username: map['username'] as String,
       profileImageUrl: map['profileImageUrl'] as String,
-      university: universityValue as String?,
+      university: map['university'] as String?,
     );
   }
 
