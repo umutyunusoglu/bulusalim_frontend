@@ -1,5 +1,13 @@
 import 'dart:async';
 import 'dart:ui' as ui;
+
+import 'package:dart_geohash/dart_geohash.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/create_event_popup.dart';
 import 'package:outnest/components/event_card.dart';
@@ -22,13 +30,6 @@ import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/map_repository.dart';
 import 'package:outnest/domain/services/session_service.dart';
-import 'package:dart_geohash/dart_geohash.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
-import 'package:http/http.dart' as http;
-import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({
@@ -881,6 +882,7 @@ class _MapPageState extends State<MapPage> {
         profileImageUrl: currentUser.profileImageUrl,
         role: EventRoleEnum.creator,
         eventScore: 5,
+        university: currentUser.university,
       ),
       status: EventStatusEnum.upcoming,
       capacity: 5,
@@ -920,6 +922,7 @@ class _MapPageState extends State<MapPage> {
       userID: currentUser.userID,
       username: currentUser.username,
       profileImageUrl: currentUser.profileImageUrl,
+      university: currentUser.university,
     );
     final geohash = GeoHasher().encode(
       _tempLocation!.longitude,
@@ -936,6 +939,7 @@ class _MapPageState extends State<MapPage> {
         profileImageUrl: currentUser.profileImageUrl,
         role: EventRoleEnum.creator,
         eventScore: 0,
+        university: currentUser.university,
       ),
       capacity: AppConfig.eventCapacity,
       participants: [currentUserCompact],

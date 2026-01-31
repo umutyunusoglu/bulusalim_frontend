@@ -3,7 +3,6 @@ import 'package:outnest/components/custom_tab_bar.dart';
 import 'package:outnest/components/header.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
-import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/core/utils/types/enums/feed_type.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/services/session_service.dart';
@@ -281,7 +280,7 @@ class _HomePageState extends State<HomePage> {
   void _navigateToCamera() {
     // A) Kullanıcı verisini al
     final sessionService = getIt<SessionService>();
-    final activeEvents = sessionService.ongoingEvents;
+    final activeEvents = sessionService.currentState.ongoingEvents;
 
     if (activeEvents == null) return;
 
@@ -352,8 +351,10 @@ class _HomePageState extends State<HomePage> {
                       setState(() => _currentPage = index);
                     },
                     children: const [
-                      HomeContentPage(feedType: FeedType.forYou),
+                      HomeContentPage(feedType: FeedType.all),
                       HomeContentPage(feedType: FeedType.friendsOnly),
+                      HomeContentPage(feedType: FeedType.university),
+
                       Center(child: Text('Okul Akışı Yakında...')),
                     ],
                   ),

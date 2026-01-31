@@ -1,7 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/event_role_enum.dart';
-import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/core/utils/types/types.dart';
@@ -15,7 +15,6 @@ import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/entities/user/user_event_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/services/global_content_cache.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EventRepositoryImpl implements EventRepository {
   EventRepositoryImpl({
@@ -59,6 +58,7 @@ class EventRepositoryImpl implements EventRepository {
             userID: event.creator.userID,
             username: event.creator.username,
             profileImageUrl: event.creator.profileImageUrl,
+            university: event.creator.university,
           ),
         ], // DÜZELTME: Creator listeye eklendi
       );
@@ -125,7 +125,7 @@ class EventRepositoryImpl implements EventRepository {
         // "Veri Tam mı?" kontrolü:
         // Eğer katılımcı listesi doluysa VEYA katılımcı sayısı 0 ise (kimse yok demektir)
         // veriyi tam kabul edip cache'den dönüyoruz. Firestore'a gitmiyoruz.
-        final bool isDataComplete =
+        final isDataComplete =
             cachedItem.participants.isNotEmpty ||
             cachedItem.participantCount == 0;
 
@@ -186,8 +186,7 @@ class EventRepositoryImpl implements EventRepository {
       return fullEvent;
     } catch (e) {
       _logger.error('Failed to enrich event details for ${event.eventID}: $e');
-      // Hata durumunda akışı bozmamak için elimizdeki (yarım) veriyi dönüyoruz.
-      // Kullanıcı detayları göremese de event'i görür.
+
       return event;
     }
   }
@@ -209,7 +208,6 @@ class EventRepositoryImpl implements EventRepository {
 
           final enrichedEvents = await getEventsByIds(
             eventIds,
-            loadDetails: true,
           );
           return enrichedEvents;
         });
@@ -369,6 +367,7 @@ class EventRepositoryImpl implements EventRepository {
       profileImageUrl: user.profileImageUrl,
       role: EventRoleEnum.participant,
       eventScore: 0,
+      university: user.university,
     );
 
     await _firestore.runTransaction((transaction) async {
@@ -595,7 +594,6 @@ class EventRepositoryImpl implements EventRepository {
     throw UnimplementedError();
   }
 
-  @override
   Stream<List<UserEventEntity>> getUserEventsStream(Identifier userId) {
     return _firestore
         .collection('users')

@@ -1,5 +1,9 @@
 import 'dart:async';
-import 'dart:convert';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dart_geohash/dart_geohash.dart';
+import 'package:dio/dio.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 // min, max, clamp için
 
 import 'package:outnest/core/constants/configs/app_config.dart';
@@ -10,11 +14,6 @@ import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/repositories/map_repository.dart';
 import 'package:outnest/domain/services/global_content_cache.dart';
 import 'package:outnest/domain/services/in_memory_cache.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dart_geohash/dart_geohash.dart';
-import 'package:dio/dio.dart';
-import 'package:http/http.dart' as http;
-import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 // FIX: Magic Numbers Lookup Table'a taşındı.
 // Her precision seviyesi için yaklaşık derece (lat, lon) boyutları.
@@ -280,7 +279,7 @@ class MapRepositoryImpl implements MapRepository {
   ) async {
     final accessToken = AppConfig.mapBoxAccessTokenKey;
     // Access token veya query boş ise direkt boş dön
-    if (accessToken == null || accessToken.isEmpty) return null;
+    if (accessToken.isEmpty) return null;
 
     try {
       // 1. DÜZELTME: Uri yapısı ve query parametresi
@@ -335,7 +334,7 @@ class MapRepositoryImpl implements MapRepository {
   Future<List<Place>> searchPlaces(String query, String sessionToken) async {
     final accessToken = AppConfig.mapBoxAccessTokenKey;
     // Access token veya query boş ise direkt boş dön
-    if (accessToken == null || accessToken.isEmpty || query.isEmpty) return [];
+    if (accessToken.isEmpty || query.isEmpty) return [];
 
     try {
       // 1. DÜZELTME: Uri yapısı ve query parametresi
@@ -416,7 +415,7 @@ class MapRepositoryImpl implements MapRepository {
     Geolocation location,
   ) async {
     final accessToken = AppConfig.mapBoxAccessTokenKey;
-    if (accessToken == null || accessToken.isEmpty) return null;
+    if (accessToken.isEmpty) return null;
 
     try {
       final response = await dio.get(
