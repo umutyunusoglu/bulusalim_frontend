@@ -1,5 +1,5 @@
 enum FeedType {
-  forYou._('forYou'),
+  university._('university'),
   friendsOnly._('friendsOnly'),
   all._('all');
 
@@ -11,8 +11,8 @@ enum FeedType {
 
   static FeedType fromString(String value) {
     switch (value) {
-      case 'forYou':
-        return forYou;
+      case 'university':
+        return university;
       case 'friendsOnly':
         return friendsOnly;
       case 'all':
