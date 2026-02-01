@@ -1,7 +1,9 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/domain/services/auth_service.dart';
+import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/screens/settings/account_settings_page.dart';
 import 'package:outnest/screens/settings/blocked_users_page.dart';
@@ -339,6 +341,9 @@ class SettingsPage extends StatelessWidget {
     BuildContext context,
     String profileImageUrl,
   ) {
+    final bool hasUrl =
+        profileImageUrl.isNotEmpty && profileImageUrl.startsWith('http');
+
     return Padding(
       padding: const EdgeInsets.only(top: 10),
       child: GestureDetector(
@@ -348,15 +353,21 @@ class SettingsPage extends StatelessWidget {
         ),
         child: Row(
           children: [
+            // URL'nin ağdan mı yoksa boş mu olduğunu kontrol et
             CircleAvatar(
               radius: 24.r,
               backgroundColor: AppColors.dividerColor,
-              backgroundImage: (profileImageUrl.isNotEmpty)
-                  ? NetworkImage(fixEmulatorUrl(profileImageUrl))
-                  : null,
-              child: (profileImageUrl.isEmpty)
-                  ? Icon(Icons.person, color: AppColors.textGrey, size: 24.sp)
-                  : null,
+              // URL varsa CachedNetworkImageProvider + Fix, yoksa varsayılan asset resmi
+              backgroundImage: hasUrl
+                  ? CachedNetworkImageProvider(
+                      fixEmulatorUrl(profileImageUrl),
+                    )
+                  : AssetImage(FileService.defaultProfileImageUrl())
+                        as ImageProvider,
+              onBackgroundImageError: (_, __) =>
+                  debugPrint('Avatar Load Error'),
+              // İkon yerine artık arka planda asset resmi var, o yüzden child null
+              child: null,
             ),
             SizedBox(width: 12.w),
             Text(
