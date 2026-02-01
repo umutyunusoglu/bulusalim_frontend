@@ -27,6 +27,8 @@ enum _EventJoinStatus {
   joined, // 3. Katıldın
 }
 
+//TODO: Participants!
+
 class EventCard extends StatefulWidget {
   const EventCard({
     required this.event,
@@ -269,6 +271,7 @@ class _EventCardState extends State<EventCard> {
       userID: widget.event.creator.userID,
       username: widget.event.creator.username,
       profileImageUrl: widget.event.creator.profileImageUrl,
+      university: widget.event.creator.university,
     );
 
     showModalBottomSheet(
@@ -303,6 +306,7 @@ class _EventCardState extends State<EventCard> {
           userID: currentUser.userID,
           username: currentUser.username,
           profileImageUrl: currentUser.profileImageUrl,
+          university: currentUser.university,
         ),
       );
 
@@ -311,6 +315,7 @@ class _EventCardState extends State<EventCard> {
           userID: currentUser.userID,
           username: currentUser.username,
           profileImageUrl: currentUser.profileImageUrl,
+          university: currentUser.university,
         ),
       );
     } catch (e) {

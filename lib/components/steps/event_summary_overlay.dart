@@ -27,6 +27,7 @@ class EventSummaryOverlay extends StatelessWidget {
       userID: currentUser!.userID,
       username: currentUser.username,
       profileImageUrl: currentUser.profileImageUrl,
+      university: currentUser.university,
     );
 
     return Container(
