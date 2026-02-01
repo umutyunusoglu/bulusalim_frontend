@@ -117,7 +117,7 @@ Future<void> main() async {
 
   // 5. Servisleri Başlatma
   await FirebaseMessaging.instance.setAutoInitEnabled(true);
-
+  await FirebaseAuth.instance.initializeRecaptchaConfig();
   final sessionService = getIt<SessionService>();
   final pushService = getIt<PushNotificationsService>();
   await pushService.initialize();
