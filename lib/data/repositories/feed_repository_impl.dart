@@ -9,7 +9,6 @@ import 'package:outnest/data/models/event/event_model.dart';
 import 'package:outnest/data/models/post/post_model.dart' hide getIt;
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/feed/feed_entity.dart';
-import 'package:outnest/domain/entities/feed/post/post_entity.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/feed_repository.dart';
@@ -415,7 +414,30 @@ class FeedRepositoryImpl implements FeedRepository {
   @override
   Future<List<FeedEntity>> fetchPreviousFeedBatch(FeedEntity item) async => [];
   @override
-  Future<void> warmup() async {}
+  Future<void> warmup() async {
+    _logger.info('🚀 Feed warmup: Starting prefetch engine...');
+
+    final sessionService = getIt<SessionService>();
+    var attempts = 0;
+    const maxAttempts = 60;
+    while (sessionService.currentState.user == null && attempts < maxAttempts) {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      attempts++;
+    }
+
+    // 2. Kullanıcı bulunduysa veya limit dolduysa durumu kontrol et
+    final user = sessionService.currentState.user;
+
+    if (user != null) {
+      _logger.info('✅ Warmup: User found. Triggering initial refresh...');
+
+      refresh();
+    } else {
+      _logger.warn(
+        '⚠️ Warmup: Timeout waiting for user. Initial refresh skipped.',
+      );
+    }
+  }
 
   @override
   void dispose() {

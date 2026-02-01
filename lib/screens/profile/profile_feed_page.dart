@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/post_card.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
@@ -7,6 +8,7 @@ import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
 import 'package:outnest/domain/repositories/post_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:outnest/domain/services/file_service.dart';
 
 class ProfilePostFeedPage extends StatefulWidget {
   const ProfilePostFeedPage({
@@ -151,6 +153,11 @@ class _PostLoaderItemState extends State<_PostLoaderItem>
 
     // 1. Yükleniyor Durumu
     if (_isLoading) {
+      final bool hasImage = widget.pinnedPost.imageUrls.isNotEmpty;
+      final String imageUrl = hasImage
+          ? widget.pinnedPost.imageUrls.first
+          : FileService.defaultProfileImageUrl(); // Asset fallback
+
       return Container(
         height: 400.h,
         margin: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
@@ -168,13 +175,10 @@ class _PostLoaderItemState extends State<_PostLoaderItem>
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8.r),
                   image: DecorationImage(
-                    image: NetworkImage(
-                      fixEmulatorUrl(
-                        widget.pinnedPost.imageUrls.isNotEmpty
-                            ? widget.pinnedPost.imageUrls.first
-                            : '',
-                      ), // Liste boşsa hata vermesin diye kontrol
-                    ),
+                    // URL varsa CachedNetworkImageProvider, yoksa AssetImage kullan
+                    image: hasImage
+                        ? CachedNetworkImageProvider(fixEmulatorUrl(imageUrl))
+                        : AssetImage(imageUrl) as ImageProvider,
                     fit: BoxFit.cover,
                     opacity: 0.5,
                   ),

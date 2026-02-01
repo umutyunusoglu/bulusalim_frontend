@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/custom_tab_bar.dart';
 import 'package:outnest/components/header.dart';
@@ -5,6 +6,7 @@ import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/core/utils/types/enums/feed_type.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/screens/home/home_content_page.dart';
 import 'package:flutter/material.dart';
@@ -140,14 +142,14 @@ class _HomePageState extends State<HomePage> {
                           final String eventImage =
                               event.creator.profileImageUrl.isNotEmpty
                               ? event.creator.profileImageUrl
-                              : 'https://picsum.photos/seed/event$index/200';
+                              : FileService.defaultProfileImageUrl();
 
                           return Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               CircleAvatar(
                                 radius: 24.r,
-                                backgroundImage: NetworkImage(
+                                backgroundImage: CachedNetworkImageProvider(
                                   fixEmulatorUrl(eventImage),
                                 ),
                               ),
@@ -283,31 +285,6 @@ class _HomePageState extends State<HomePage> {
     final activeEvents = sessionService.currentState.ongoingEvents;
 
     if (activeEvents == null) return;
-
-    // **********************************************************
-    // TEST ALANI BAŞLANGIÇ
-    // **********************************************************
-
-    // // Gerçek veriyi burada eziyoruz. Test bitince burayı sil.
-    // final List<dynamic> activeEvents = [
-    //   MockEvent(
-    //     name: "Kahve Molası",
-    //     imageUrls: ["https://picsum.photos/seed/coffee/200"],
-    //   ),
-    //   MockEvent(
-    //     name: "Kodlama Kampı",
-    //     imageUrls: ["https://picsum.photos/seed/code/200"],
-    //   ),
-    //   MockEvent(
-    //     name: "Akşam Yemeği",
-    //     imageUrls: ["https://picsum.photos/seed/dinner/200"],
-    //   ),
-    // ];
-
-    // **********************************************************
-    // TEST ALANI BİTİŞ (Normalde aşağıdaki satır kullanılır)
-
-    // **********************************************************
 
     if (activeEvents.isEmpty) {
       _showNoMeetingDialog(context);
