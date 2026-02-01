@@ -1,9 +1,9 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/skip_button.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/screens/camera/camera_page.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class CameraSplashScreen extends StatelessWidget {
   const CameraSplashScreen({super.key});
@@ -73,7 +73,10 @@ class CameraSplashScreen extends StatelessWidget {
                     MaterialPageRoute<CameraPage>(
                       //TODO: BLE ile beraber
                       builder: (context) => CameraPage(
-                        event: getIt<SessionService>().ongoingEvents!.first,
+                        event: getIt<SessionService>()
+                            .currentState
+                            .ongoingEvents
+                            .first,
                       ),
                     ),
                   );

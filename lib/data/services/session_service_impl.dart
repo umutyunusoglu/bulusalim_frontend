@@ -1,14 +1,15 @@
 // lib/core/services/session/session_service_impl.dart
 
 import 'dart:async';
-
+import 'package:flutter/foundation.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/user/session_state.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
-import 'package:flutter/foundation.dart';
 
 class SessionServiceImpl implements SessionService {
   SessionServiceImpl({
@@ -23,29 +24,27 @@ class SessionServiceImpl implements SessionService {
   final UserRepository _userRepository;
   final LoggingService _logger;
 
-  // --- STATE HOLDERS (Notifiers) ---
-  final ValueNotifier<UserEntity?> _userNotifier = ValueNotifier(null);
-  final ValueNotifier<List<EventEntity>?> _eventsNotifier = ValueNotifier(null);
+  // --- SINGLE SOURCE OF TRUTH ---
+  final ValueNotifier<SessionState> _stateNotifier = ValueNotifier(
+    SessionState.empty,
+  );
 
   // --- STREAM SUBSCRIPTIONS ---
   StreamSubscription<String?>? _authSubscription;
-  StreamSubscription<List<EventEntity>>? _eventsSubscription;
-  // [YENİ]: Kullanıcıyı canlı dinlemek için subscription
   StreamSubscription<UserEntity?>? _userSubscription;
+  StreamSubscription<List<EventEntity>>? _eventsSubscription;
+  StreamSubscription<List<Identifier>>? _followersSubscription;
+  StreamSubscription<List<Identifier>>? _followeesSubscription;
 
-  // --- GETTERS (Interface Implementation) ---
+  // --- PUBLIC GETTERS ---
   @override
-  ValueListenable<UserEntity?> get userListenable => _userNotifier;
-
-  @override
-  ValueListenable<List<EventEntity>?> get ongoingEventsListenable =>
-      _eventsNotifier;
-
-  @override
-  UserEntity? get currentUser => _userNotifier.value;
+  ValueListenable<SessionState> get stateListenable => _stateNotifier;
 
   @override
-  List<EventEntity>? get ongoingEvents => _eventsNotifier.value;
+  SessionState get currentState => _stateNotifier.value;
+
+  // Interface uyumluluğu için eski getterlar (Gerekirse)
+  UserEntity? get currentUser => _stateNotifier.value.user;
 
   // --- INIT ---
   @override
@@ -57,88 +56,66 @@ class SessionServiceImpl implements SessionService {
 
   // --- LOGIC ---
   Future<void> _onAuthStateChanged(String? userId) async {
-    // 1. Önceki tüm dinleyicileri temizle
-    await _userSubscription?.cancel();
-    await _eventsSubscription?.cancel();
-    _userSubscription = null;
-    _eventsSubscription = null;
+    // 1. Önceki tüm dinleyicileri kapat
+    await _cancelUserStreams();
 
     if (userId == null) {
-      // CASE: LOGOUT
-      _logger.info('SessionService: Kullanıcı çıkış yaptı.');
-      _userNotifier.value = null;
-      _eventsNotifier.value = null;
+      // 2. Logout: State'i tamamen sıfırla
+      _stateNotifier.value = SessionState.empty;
+      _logger.info('Session ended.');
     } else {
-      // CASE: LOGIN
-      _logger.info(
-        'SessionService: Kullanıcı giriş yaptı. Canlı takipler başlatılıyor...',
+      // 3. Login: Streamleri başlat
+      _logger.info('Session started for $userId');
+      _startUserStreams(userId);
+    }
+  }
+
+  void _startUserStreams(String userId) {
+    // User Stream: Sadece 'user' alanını günceller
+    _userSubscription = _userRepository.watchUser(userId).listen((user) {
+      _stateNotifier.value = _stateNotifier.value.copyWith(user: user);
+    });
+
+    // Events Stream: Sadece 'ongoingEvents' alanını günceller
+    _eventsSubscription = _userRepository.watchOngoingEvents(userId).listen((
+      events,
+    ) {
+      _stateNotifier.value = _stateNotifier.value.copyWith(
+        ongoingEvents: events,
       );
+    });
 
-      // 2. Kullanıcıyı canlı izlemeye başla (Stream)
-      _userSubscription = _userRepository
-          .watchUser(userId)
-          .listen(
-            (userEntity) {
-              debugPrint('🔥 SESSION_SERVICE: Firebaseden yeni veri geldi!');
-              // Stream her yeni veri attığında burası çalışır
-              _userNotifier.value =
-                  null; // Önce null yaparak "değişimi" garanti et
-              _userNotifier.value = userEntity;
-              debugPrint('🔥 NOTIFIER TETİKLENDİ: ValueNotifier güncellendi.');
-              if (userEntity != null) {
-                // Kullanıcı verisi başarıyla geldiyse ve Events henüz dinlenmiyorsa başlat.
-                // Not: Events dinleyicisini if içine koymamızın sebebi, user null ise (db'de yoksa) event çekmemektir.
-                // Ayrıca _eventsSubscription == null kontrolü yapıyoruz ki;
-                // kullanıcı sadece adını güncellediğinde event stream'i tekrar tekrar başlatılmasın.
-                if (_eventsSubscription == null) {
-                  _startListeningEvents(userId);
-                }
-              } else {
-                _logger.warn(
-                  'SessionService: Auth ID var ama User DB kaydı (Stream) boş geldi.',
-                );
-              }
-            },
-            onError: (error) {
-              _logger.error('SessionService: User Stream Hatası - $error');
-            },
-          );
-    }
+    // Followers Stream: Sadece 'followerIds' alanını günceller
+    _followersSubscription = _userRepository.watchFollowers(userId).listen((
+      ids,
+    ) {
+      _stateNotifier.value = _stateNotifier.value.copyWith(followerIds: ids);
+    });
+
+    // Followees Stream: Sadece 'followeeIds' alanını günceller
+    _followeesSubscription = _userRepository.watchFollowees(userId).listen((
+      ids,
+    ) {
+      _stateNotifier.value = _stateNotifier.value.copyWith(followeeIds: ids);
+    });
   }
 
-  void _startListeningEvents(String userId) {
-    _logger.info('SessionService: Event dinleyicisi başlatılıyor...');
-    _eventsSubscription = _userRepository
-        .watchOngoingEvents(userId)
-        .listen(
-          (events) {
-            _eventsNotifier.value = events;
-          },
-          onError: (error) {
-            _logger.error('SessionService: Event Stream Hatası - $error');
-            _eventsNotifier.value = [];
-          },
-        );
+  Future<void> _cancelUserStreams() async {
+    await _userSubscription?.cancel();
+    await _eventsSubscription?.cancel();
+    await _followersSubscription?.cancel();
+    await _followeesSubscription?.cancel();
+
+    _userSubscription = null;
+    _eventsSubscription = null;
+    _followersSubscription = null;
+    _followeesSubscription = null;
   }
 
-  // --- SETTERS (State Manipulation) ---
-  @override
-  void updateUser(UserEntity? user) {
-    // Stream kullandığımız için manuel update'e çok ihtiyacımız kalmayabilir,
-    // ancak optimistic update (anında arayüz güncelleme) için tutulabilir.
-    if (_userNotifier.value != user) {
-      _logger.info('SessionService: Kullanıcı verisi manuel güncellendi.');
-      _userNotifier.value = user;
-    }
-  }
-
-  // --- DISPOSE ---
   @override
   void dispose() {
     _authSubscription?.cancel();
-    _eventsSubscription?.cancel();
-    _userSubscription?.cancel(); // [YENİ]: User dinleyicisini kapat
-    _userNotifier.dispose();
-    _eventsNotifier.dispose();
+    _cancelUserStreams();
+    _stateNotifier.dispose();
   }
 }
