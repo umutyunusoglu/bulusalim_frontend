@@ -1,7 +1,9 @@
 import 'dart:math';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:outnest/domain/services/file_service.dart';
 
 class MapProfileMarker extends StatefulWidget {
   const MapProfileMarker({
@@ -106,10 +108,19 @@ class _MapProfileMarkerState extends State<MapProfileMarker> {
               onTap: widget.onTap,
               child: CircleAvatar(
                 radius: innerRadius,
-                backgroundColor: _selectedColorPair
-                    .inner, // Resim yüklenene kadar görünen renk
-                backgroundImage: NetworkImage(fixEmulatorUrl(widget.imageUrl)),
-                onBackgroundImageError: (_, __) => debugPrint('Avatar Error'),
+                backgroundColor: _selectedColorPair.inner,
+                // URL kontrolü ve Provider seçimi
+                backgroundImage:
+                    (widget.imageUrl.isNotEmpty &&
+                        widget.imageUrl.startsWith('http'))
+                    ? CachedNetworkImageProvider(
+                        fixEmulatorUrl(widget.imageUrl),
+                      )
+                    : AssetImage(FileService.defaultProfileImageUrl())
+                          as ImageProvider,
+                onBackgroundImageError: (exception, stackTrace) {
+                  debugPrint('Avatar Image Error: $exception');
+                },
               ),
             ),
           ),

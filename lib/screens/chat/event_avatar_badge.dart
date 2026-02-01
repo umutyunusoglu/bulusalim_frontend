@@ -3,6 +3,7 @@ import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:outnest/domain/services/file_service.dart';
 
 class EventAvatarBadge extends StatelessWidget {
   const EventAvatarBadge({
@@ -43,41 +44,32 @@ class EventAvatarBadge extends StatelessWidget {
               ],
             ),
             child: ClipOval(
-              child: hasValidUrl
+              child: (imageUrl != null && imageUrl.startsWith('http'))
                   ? CachedNetworkImage(
                       imageUrl: fixEmulatorUrl(imageUrl),
                       fadeInDuration: Duration.zero,
                       fit: BoxFit.cover,
+                      memCacheHeight: 100, // RAM dostu
                       progressIndicatorBuilder:
-                          (context, url, downloadProgress) {
-                            if (downloadProgress == null) {
-                              return Center(
-                                child: SizedBox(
-                                  width: 15.w,
-                                  height: 15.w,
-                                  child: const CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: AppColors.primaryColor,
-                                  ),
-                                ),
-                              );
-                            }
-                            return Center(
-                              child: SizedBox(
-                                width: 15.w,
-                                height: 15.w,
-                                child: const CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.primaryColor,
-                                ),
+                          (context, url, downloadProgress) => Center(
+                            child: SizedBox(
+                              width: 15.w,
+                              height: 15.w,
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.primaryColor,
                               ),
-                            );
-                          },
-                      errorWidget: (context, error, stackTrace) {
-                        return _buildFallbackImage();
-                      },
+                            ),
+                          ),
+                      errorWidget: (context, url, error) => Image.asset(
+                        FileService.defaultProfileImageUrl(), // Fallback resmi
+                        fit: BoxFit.cover,
+                      ),
                     )
-                  : _buildFallbackImage(),
+                  : Image.asset(
+                      FileService.defaultProfileImageUrl(), // URL yoksa direkt bunu bas
+                      fit: BoxFit.cover,
+                    ),
             ),
           ),
 

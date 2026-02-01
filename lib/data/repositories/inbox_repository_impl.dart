@@ -3,6 +3,7 @@ import 'package:outnest/domain/entities/notification/notification_entity.dart';
 import 'package:outnest/domain/repositories/inbox_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:outnest/domain/services/file_service.dart';
 
 class InboxRepositoryImpl implements InboxRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -121,7 +122,9 @@ class InboxRepositoryImpl implements InboxRepository {
       title: (data['title'] as String?) ?? '',
       message: (data['message'] as String?) ?? (data['body'] as String?) ?? '',
       actionText: data['actionText'] as String?,
-      avatarUrl: (data['avatarUrl'] as String?) ?? 'https://picsum.photos/200',
+      avatarUrl:
+          (data['avatarUrl'] as String?) ??
+          FileService.defaultProfileImageUrl(),
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       isRead: (data['isRead'] as bool?) ?? false,
       eventId: data['eventId'] as String?,
@@ -151,7 +154,8 @@ class InboxRepositoryImpl implements InboxRepository {
       userID: id,
       username: (data['username'] as String?) ?? 'Kullanıcı',
       profileImageUrl:
-          (data['profileUrl'] as String?) ?? 'https://picsum.photos/200',
+          (data['profileUrl'] as String?) ??
+          FileService.defaultProfileImageUrl(),
       status: status,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
