@@ -4,6 +4,8 @@ import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/stacked_avatars.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
+import 'package:outnest/domain/services/auth_service.dart';
+import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/scaffold_with_navbar.dart';
 import 'package:outnest/screens/auth/login_page.dart';
@@ -33,7 +35,10 @@ List<AvatarInfo> _mapToAvatarInfo(List<dynamic> rawList) {
     } else if (e is AvatarInfo) {
       return e;
     }
-    return AvatarInfo(imageUrl: 'https://picsum.photos/200', userId: '');
+    return AvatarInfo(
+      imageUrl: FileService.defaultProfileImageUrl(),
+      userId: '',
+    );
   }).toList();
 }
 
@@ -44,9 +49,9 @@ final router = GoRouter(
   initialLocation: '/welcome',
 
   // 2. OTURUM KONTROLÜ (REDIRECT)
-  redirect: (context, state) {
-    final sessionService = getIt<SessionService>();
-    final isLoggedIn = sessionService.currentUser != null;
+  redirect: (context, state) async {
+    final AuthService authService = getIt<AuthService>();
+    final isLoggedIn = await authService.isUserLoggedIn();
 
     final goingTo = state.uri.toString();
 

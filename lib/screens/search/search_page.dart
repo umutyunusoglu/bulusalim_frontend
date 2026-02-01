@@ -1,7 +1,9 @@
 import 'dart:async'; // Timer için gerekli
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
+import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/screens/profile/profile_page.dart';
 
 class SearchPage extends StatefulWidget {
@@ -136,18 +138,29 @@ class _SearchPageState extends State<SearchPage> {
                     ),
                     ..._userResults.map((doc) {
                       final data = doc.data()! as Map<String, dynamic>;
+                      final String? rawProfileUrl =
+                          data['profileImageUrl'] as String?;
+                      final bool hasUrl =
+                          rawProfileUrl != null &&
+                          rawProfileUrl.isNotEmpty &&
+                          rawProfileUrl.startsWith('http');
+
                       return ListTile(
                         leading: CircleAvatar(
-                          backgroundImage: NetworkImage(
-                            fixEmulatorUrl(
-                              data['profileImageUrl'] as String? ?? '',
-                            ),
-                          ),
+                          backgroundColor: Colors.grey.shade200,
+                          // URL varsa CachedNetworkImageProvider, yoksa (veya boşsa) asset resmimiz
+                          backgroundImage: hasUrl
+                              ? CachedNetworkImageProvider(
+                                  fixEmulatorUrl(rawProfileUrl),
+                                )
+                              : AssetImage(FileService.defaultProfileImageUrl())
+                                    as ImageProvider,
+                          onBackgroundImageError: (_, __) =>
+                              debugPrint('ListTile Avatar Error'),
                         ),
                         title: Text(
                           data['username'] as String? ?? 'İsimsiz',
                         ),
-
                         onTap: () {
                           // Klavye açıksa kapat
                           FocusScope.of(context).unfocus();

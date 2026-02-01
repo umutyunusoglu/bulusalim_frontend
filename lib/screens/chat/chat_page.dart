@@ -5,6 +5,7 @@ import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/domain/entities/chat/message_entity.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/repositories/chat_repository.dart';
+import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/screens/chat/chat_input_bar.dart';
 import 'package:outnest/screens/chat/chat_message_buble.dart';
 import 'package:outnest/screens/chat/chat_page_header.dart';
@@ -78,42 +79,47 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Map<String, String> _getSenderDetails(String senderID) {
-    if (senderID == widget.creatorID) {
-      return {
-        'name': 'Buluşma Sahibi',
-        'image': widget.creatorProfileImage.isNotEmpty
-            ? widget.creatorProfileImage
-            : 'https://picsum.photos/200',
-      };
-    }
-    try {
-      final user = widget.participantAvatars.firstWhere(
-        (u) {
-          final uid = (u is Map) ? u['userID'] : u.userID;
-          return uid == senderID;
-        },
-        orElse: () => null,
-      );
+    String imagePath = '';
+    String name = 'Bilinmeyen Kullanıcı';
 
-      if (user != null) {
-        if (user is Map) {
-          return {
-            'name': (user['username'] as String?) ?? 'İsimsiz',
-            'image': (user['profileImageUrl'] as String?) ?? '',
-          };
+    if (senderID == widget.creatorID) {
+      name = 'Buluşma Sahibi';
+      imagePath = widget.creatorProfileImage.isNotEmpty
+          ? widget.creatorProfileImage
+          : FileService.defaultProfileImageUrl();
+    } else {
+      try {
+        final user = widget.participantAvatars.firstWhere(
+          (u) {
+            final uid = (u is Map) ? u['userID'] : u.userID;
+            return uid == senderID;
+          },
+          orElse: () => null,
+        );
+
+        if (user != null) {
+          if (user is Map) {
+            name = (user['username'] as String?) ?? 'İsimsiz';
+            imagePath =
+                (user['profileImageUrl'] as String?) ??
+                FileService.defaultProfileImageUrl();
+          } else {
+            name = (user.username as String?) ?? 'İsimsiz';
+            imagePath =
+                (user.profileImageUrl as String?) ??
+                FileService.defaultProfileImageUrl();
+          }
         } else {
-          return {
-            'name': (user.username as String?) ?? 'İsimsiz',
-            'image': (user.profileImageUrl as String?) ?? '',
-          };
+          imagePath = FileService.defaultProfileImageUrl();
         }
+      } catch (e) {
+        imagePath = FileService.defaultProfileImageUrl();
       }
-    } catch (e) {
-      debugPrint('Kullanıcı bulma hatası: $e');
     }
+
     return {
-      'name': 'Bilinmeyen Kullanıcı',
-      'image': 'https://picsum.photos/200',
+      'name': name,
+      'image': imagePath,
     };
   }
 
@@ -159,8 +165,12 @@ class _ChatPageState extends State<ChatPage> {
                   if (data.containsKey('creator') && data['creator'] is Map) {
                     final creatorMap = data['creator'] as Map<String, dynamic>;
                     if (creatorMap.containsKey('profileImageUrl')) {
+                      final rawImg = creatorMap['profileImageUrl'] as String?;
+                      // Eğer URL boşsa default asset'i ata
                       displayCreatorImage =
-                          creatorMap['profileImageUrl'] as String;
+                          (rawImg != null && rawImg.isNotEmpty)
+                          ? rawImg
+                          : FileService.defaultProfileImageUrl();
                     }
                   }
 
