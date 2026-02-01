@@ -279,6 +279,11 @@ class AuthServiceImpl implements AuthService {
     _logger.debug('signInWithApple called (isLogin: $isLogin)');
     try {
       final appleProvider = AppleAuthProvider();
+
+      // Apple'dan e-posta ve isim izinlerini de isteyelim (İlk kayıtta lazım olur)
+      appleProvider.addScope('email');
+      appleProvider.addScope('name');
+
       final userCredential = await _firebaseAuth.signInWithProvider(
         appleProvider,
       );
@@ -287,22 +292,49 @@ class AuthServiceImpl implements AuthService {
       if (user != null) {
         final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
 
+        // 1. Giriş ekranında yeni kullanıcı gelirse:
         if (isLogin && isNewUser) {
-          await user.delete();
-          throw AuthException('Apple hesabınızla ilişkili kayıt bulunamadı.');
+          _logger.warn(
+            'Login attempt with new Apple account. Deleting user...',
+          );
+          try {
+            await user.delete();
+          } catch (e) {
+            _logger.error('Failed to delete temporary Apple user: $e');
+            // Silinemezse bile en azından oturumu kapatıp hata fırlatalım
+            await _firebaseAuth.signOut();
+          }
+          throw AuthException(
+            'Apple hesabınızla ilişkili bir kayıt bulunamadı. Lütfen önce kayıt olun.',
+          );
         }
 
+        // 2. Kayıt ekranında mevcut kullanıcı gelirse:
         if (!isLogin && !isNewUser) {
-          throw AuthException('Bu Apple hesabı zaten kayıtlı. Giriş yapın.');
+          _logger.info('Register attempt with existing Apple account.');
+          throw AuthException(
+            'Bu Apple hesabı zaten kullanımda. Lütfen giriş yapın.',
+          );
         }
 
         return user.uid;
       }
-      throw AuthException('Apple girişi başarısız.');
+      throw AuthException('Apple servisinden kullanıcı verisi alınamadı.');
+    } on FirebaseAuthException catch (e) {
+      _logger.error('signInWithApple FirebaseAuthException: ${e.code}');
+
+      // Kullanıcı işlemi iptal ettiyse (Vazgeç'e bastıysa)
+      if (e.code == 'canceled' || e.code == 'user-cancelled') {
+        throw AuthException('İşlem iptal edildi.');
+      }
+
+      throw AuthException(
+        e.message ?? 'Apple girişi sırasında bir hata oluştu.',
+      );
     } catch (e) {
-      _logger.error('signInWithApple error: $e');
+      _logger.error('signInWithApple unexpected error: $e');
       if (e is AuthException) rethrow;
-      throw AuthException('Apple ile işlem başarısız.');
+      throw AuthException('Beklenmedik bir hata oluştu.');
     }
   }
 
