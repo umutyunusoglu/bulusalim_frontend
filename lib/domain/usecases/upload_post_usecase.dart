@@ -53,6 +53,7 @@ class UploadPost {
       userID: currentUser.userID,
       username: currentUser.username,
       profileImageUrl: currentUser.profileImageUrl,
+      university: currentUser.university,
     );
 
     final post = PostEntity(
