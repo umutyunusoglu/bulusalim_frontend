@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:flutter/material.dart';
@@ -43,23 +44,36 @@ class EventAvatarBadge extends StatelessWidget {
             ),
             child: ClipOval(
               child: hasValidUrl
-                  ? Image.network(
-                      fixEmulatorUrl(imageUrl),
+                  ? CachedNetworkImage(
+                      imageUrl: fixEmulatorUrl(imageUrl),
+                      fadeInDuration: Duration.zero,
                       fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Center(
-                          child: SizedBox(
-                            width: 15.w,
-                            height: 15.w,
-                            child: const CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.primaryColor,
-                            ),
-                          ),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) {
+                      progressIndicatorBuilder:
+                          (context, url, downloadProgress) {
+                            if (downloadProgress == null) {
+                              return Center(
+                                child: SizedBox(
+                                  width: 15.w,
+                                  height: 15.w,
+                                  child: const CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.primaryColor,
+                                  ),
+                                ),
+                              );
+                            }
+                            return Center(
+                              child: SizedBox(
+                                width: 15.w,
+                                height: 15.w,
+                                child: const CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.primaryColor,
+                                ),
+                              ),
+                            );
+                          },
+                      errorWidget: (context, error, stackTrace) {
                         return _buildFallbackImage();
                       },
                     )

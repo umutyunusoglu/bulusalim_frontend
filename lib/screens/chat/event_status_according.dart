@@ -16,6 +16,7 @@ class ParticipantItem {
     required this.username,
     required this.imageUrl,
     required this.status,
+    required this.university,
     this.requestTime,
   });
 
@@ -24,6 +25,7 @@ class ParticipantItem {
   final String imageUrl;
   final String status;
   final DateTime? requestTime;
+  final String? university;
 
   // Zaman farkı hesaplayıcı
   String get timeAgo {
@@ -78,6 +80,7 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
           username: participant.username,
           imageUrl: participant.profileImageUrl,
           status: 'approved',
+          university: participant.university,
         );
         loadedParticipants.add(userItem);
       } catch (e) {
@@ -94,6 +97,7 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
           username: request.username,
           imageUrl: request.profileImageUrl,
           status: 'pending',
+          university: request.university,
         );
         pendingParticipants.add(userItem);
       } catch (e) {
@@ -136,6 +140,7 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
             imageUrl: user.imageUrl,
             status: 'approved',
             requestTime: user.requestTime,
+            university: user.university,
           ),
         );
       }
@@ -144,6 +149,7 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
       userID: user.userId,
       username: user.username,
       profileImageUrl: user.imageUrl,
+      university: user.university,
     );
 
     try {
@@ -172,6 +178,7 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
         username: '',
         imageUrl: '',
         status: '',
+        university: '',
       ),
     );
     setState(() {
@@ -183,6 +190,7 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
         userID: user.userId,
         username: user.username,
         profileImageUrl: user.imageUrl,
+        university: user.university,
       );
 
       await _eventRepository.removeParticipant(
@@ -420,6 +428,7 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
       child: ClipOval(
         child: CachedNetworkImage(
           imageUrl: fixEmulatorUrl(url),
+          fadeInDuration: Duration.zero,
           fit: BoxFit.cover,
           memCacheHeight: 100,
           memCacheWidth: 100,

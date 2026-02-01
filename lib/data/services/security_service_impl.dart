@@ -112,6 +112,7 @@ class SecurityServiceImpl implements SecurityService {
             userID: doc['userID'] as String,
             username: doc['username'] as String,
             profileImageUrl: doc['profileImageUrl'] as String,
+            university: doc['university'] as String,
           ),
         )
         .toList();
