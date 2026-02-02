@@ -11,6 +11,7 @@ import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/data/models/event/event_model.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/map_repository.dart';
 import 'package:outnest/domain/services/global_content_cache.dart';
 import 'package:outnest/domain/services/in_memory_cache.dart';
@@ -30,13 +31,16 @@ class MapRepositoryImpl implements MapRepository {
     required FirebaseFirestore firestore,
     required GlobalContentCache globalCache,
     required LoggingService logger,
+    required EventRepository eventRepository,
   }) : _firestore = firestore,
        _globalCache = globalCache,
-       _logger = logger;
+       _logger = logger,
+       _eventRepository = eventRepository;
 
   final FirebaseFirestore _firestore;
   final GlobalContentCache _globalCache;
   final LoggingService _logger;
+  final EventRepository _eventRepository;
   final GeoHasher _geoHasher = GeoHasher();
   final dio = Dio(
     BaseOptions(
@@ -61,7 +65,7 @@ class MapRepositoryImpl implements MapRepository {
     required dynamic bounds,
     int precision = 7,
   }) async {
-    // 1. Koordinat hesaplamaları (Refactor edilmiş güvenli hali)
+    // 1. Koordinat hesaplamaları
     final expandedBounds = _expandBounds(bounds as CoordinateBounds, 0.5);
     final searchPrecision = _calculateSearchPrecision(expandedBounds);
 
@@ -77,14 +81,11 @@ class MapRepositoryImpl implements MapRepository {
     }).toList();
 
     if (newRegions.isNotEmpty) {
-      // _logger.info('🔍 MapRepo: Fetching ${newRegions.length} new regions...');
-
-      // FIX: İşleme girenleri kilitle
+      // İşleme girenleri kilitle
       _fetchLock.addAll(newRegions);
 
       final futures = <Future<QuerySnapshot>>[];
 
-      // FIX: Batching - Limitli sorgular
       for (var parentHash in newRegions) {
         final endHash = '$parentHash~';
         futures.add(
@@ -94,7 +95,7 @@ class MapRepositoryImpl implements MapRepository {
               .orderBy('geohash')
               .startAt([parentHash])
               .endAt([endHash])
-              .limit(50) // FIX: Firestore Limit (Cost Control)
+              .limit(50)
               .get(),
         );
       }
@@ -102,31 +103,43 @@ class MapRepositoryImpl implements MapRepository {
       try {
         final snapshots = await Future.wait(futures);
 
+        // Geçici liste: Enrich işlemi için "light" entity'leri topluyoruz
+        final eventsToEnrich = <EventEntity>[];
+
         for (final snap in snapshots) {
           for (final doc in snap.docs) {
             try {
               final eventModel = EventModel.fromFirestore(
                 doc.data() as Map<String, dynamic>,
               );
-              final entity = eventModel.toEntity();
-
-              // Global Cache (Detay sayfası için)
-              _globalCache.cacheEntity(entity);
-              // Map Cache (Harita gösterimi için)
-              _eventCache.set(entity.id, entity);
+              eventsToEnrich.add(eventModel.toEntity());
             } catch (e) {
               _logger.error('MapRepo Parse Error: $e');
             }
           }
         }
 
-        // Başarılı olanları fetched listesine ekle
+        // --- ENRICHMENT ENTEGRASYONU ---
+        // Toplanan eventleri paralel olarak zenginleştiriyoruz.
+        // EventRepository.enrichEventWithDetails zaten cache kontrolü yapıyor.
+        final enrichedEvents = await Future.wait(
+          eventsToEnrich.map((e) => _eventRepository.enrichEventWithDetails(e)),
+        );
+
+        // Zenginleştirilmiş verileri cache'e yazıyoruz
+        for (final entity in enrichedEvents) {
+          // Global Cache (Detay sayfası için hazır olsun)
+          _globalCache.cacheEntity(entity);
+          // Map Cache (Harita gösterimi için)
+          _eventCache.set(entity.id, entity);
+        }
+
+        // Başarılı olan bölgeleri fetched listesine ekle
         _fetchedRegions.addAll(newRegions);
       } catch (e) {
         _logger.error("Fetch hatası: $e");
-        // Hata durumunda yeniden denenebilmesi için fetched'a eklemiyoruz
       } finally {
-        // FIX: İşlem bitince (başarılı/başarısız) kilidi mutlaka aç
+        // İşlem bitince kilidi aç
         _fetchLock.removeAll(newRegions);
       }
     }
