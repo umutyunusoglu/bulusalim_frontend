@@ -29,8 +29,9 @@ class _HomeContentPageState extends State<HomeContentPage> {
   @override
   void initState() {
     super.initState();
-    _feedRepository.switchFeedType(widget.feedType);
-    _feedRepository.refresh();
+    _feedRepository
+      ..switchFeedType(widget.feedType)
+      ..refresh();
 
     // 2. Scroll dinleyicisi (Pagination için)
     _scrollController.addListener(_onScroll);

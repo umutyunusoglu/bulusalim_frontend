@@ -4,6 +4,7 @@ abstract class FileService {
   static const String rootPublic = 'public/';
   static const String rootPrivate = 'private/';
 
+  static const String publicDefaults = '${rootPublic}defaults/';
   static const String publicAppAssets = '$rootPublic/assets/';
   static const String publicImages = '${publicAppAssets}images/';
   static const String publicVideos = '${publicAppAssets}videos/';
@@ -13,6 +14,9 @@ abstract class FileService {
 
   static String userProfileImagePath(String userId, String fileName) =>
       '$privateUsers$userId/profile/images/$fileName';
+
+  static String defaultProfileImageUrl() =>
+      'assets/defaults/default_profile.jpg';
 
   static String postImagePath(
     String userId,
