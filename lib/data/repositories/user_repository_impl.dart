@@ -1112,4 +1112,31 @@ class UserRepositoryImpl implements UserRepository {
           }).toList();
         });
   }
+
+  @override
+  Stream<List<UserPostEntity>> getUserPostsStream(String userId) {
+    return _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('posts')
+        .orderBy('createdAt', descending: true)
+        .limit(50) // <--- KRİTİK EKLEME: Sadece son 50 postu çek
+        .snapshots()
+        .map((querySnapshot) {
+          return querySnapshot.docs.map((doc) {
+            try {
+              final data = doc.data();
+              // fromFirestore içinde hata olursa tüm akışın çökmesini engellemek için
+              // burada da try-catch blokları kullanabilirsin ama şimdilik temel hali yeterli.
+              final model = UserPostModel.fromFirestore(data);
+              return model.toEntity();
+            } catch (e) {
+              // Hatalı bir veri varsa logla ve boş döndür (veya null dönüp filter yap)
+              // Hatalı postu atlamak için dummy bir veri veya null dönebilirsin.
+              // Burayı basit tutmak adına rethrow yapıyorum ama prod'da dikkat et.
+              rethrow;
+            }
+          }).toList();
+        });
+  }
 }
