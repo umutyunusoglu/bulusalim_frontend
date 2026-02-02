@@ -121,25 +121,37 @@ class _HomeContentPageState extends State<HomeContentPage> {
 // --- Event Canlılığı İçin Özel Widget ---
 // Bu widget, listedeki tek bir event kartını sarmalar ve
 // sadece o kartın verisini canlı tutar.
-class _LiveEventItem extends StatelessWidget {
-  final EventEntity initialEvent;
-  final FeedRepository repository;
-
+class _LiveEventItem extends StatefulWidget {
   const _LiveEventItem({
     required this.initialEvent,
     required this.repository,
   });
+  final EventEntity initialEvent;
+  final FeedRepository repository;
+
+  @override
+  State<_LiveEventItem> createState() => _LiveEventItemState();
+}
+
+class _LiveEventItemState extends State<_LiveEventItem> {
+  late final Stream<FeedEntity> _eventStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _eventStream = widget.repository.getLiveEventStream(
+      widget.initialEvent.eventID,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<FeedEntity>(
-      // Repository'den o eventin özel stream'ini istiyoruz
-      stream: repository.getLiveEventStream(initialEvent.eventID),
-      // Ekrana ilk geldiğinde bekleme yapmaması için listeden gelen veriyi kullanıyoruz
-      initialData: initialEvent,
+      stream: _eventStream,
+      initialData: widget.initialEvent,
       builder: (context, snapshot) {
-        // Stream'den gelen en güncel veri (yoksa initial'ı kullan)
-        final liveData = (snapshot.data as EventEntity?) ?? initialEvent;
+        final EventEntity liveData =
+            (snapshot.data as EventEntity?) ?? widget.initialEvent;
 
         return EventCard(
           event: liveData,
