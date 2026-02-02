@@ -122,6 +122,7 @@ Future<void> main() async {
   final pushService = getIt<PushNotificationsService>();
   await pushService.initialize();
   await sessionService.init();
+
   await GoogleSignIn.instance.initialize();
 
   // Session logunu sadece debug'da görelim, production loglarını kirletmeyelim

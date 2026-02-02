@@ -1,9 +1,11 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
+import 'package:outnest/domain/services/file_service.dart';
 
 class ParticipantsBottomSheet extends StatelessWidget {
   const ParticipantsBottomSheet({
@@ -98,10 +100,13 @@ class _ParticipantTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rawUrl = user.profileImageUrl.isNotEmpty
+    final bool hasUrl = user.profileImageUrl.isNotEmpty;
+    final String rawUrl = hasUrl
         ? user.profileImageUrl
-        : 'https://picsum.photos/200';
-    final safeImageUrl = fixEmulatorUrl(rawUrl);
+        : FileService.defaultProfileImageUrl();
+
+    // fixEmulatorUrl sadece ağdan gelen bir URL varsa çalışmalı
+    final String safeImageUrl = hasUrl ? fixEmulatorUrl(rawUrl) : rawUrl;
 
     return InkWell(
       onTap: () {
@@ -118,7 +123,10 @@ class _ParticipantTile extends StatelessWidget {
             CircleAvatar(
               radius: 24.r,
               backgroundColor: Colors.grey.shade200,
-              backgroundImage: NetworkImage(safeImageUrl),
+              // Koşullu gösterim: URL varsa CachedNetworkImageProvider, yoksa AssetImage
+              backgroundImage: hasUrl
+                  ? CachedNetworkImageProvider(safeImageUrl)
+                  : AssetImage(safeImageUrl) as ImageProvider,
               onBackgroundImageError: (_, __) {},
             ),
             SizedBox(width: 20.w),

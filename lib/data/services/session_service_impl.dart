@@ -44,6 +44,7 @@ class SessionServiceImpl implements SessionService {
   SessionState get currentState => _stateNotifier.value;
 
   // Interface uyumluluğu için eski getterlar (Gerekirse)
+  @override
   UserEntity? get currentUser => _stateNotifier.value.user;
 
   // --- INIT ---
