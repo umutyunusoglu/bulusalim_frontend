@@ -1,4 +1,9 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/announcement_button.dart';
 import 'package:outnest/components/login_button.dart';
@@ -12,7 +17,6 @@ import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/friend_entity.dart';
 import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
 import 'package:outnest/domain/entities/user/session_state.dart';
-import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/file_service.dart';
@@ -23,10 +27,6 @@ import 'package:outnest/screens/profile/events_tab.dart';
 import 'package:outnest/screens/profile/grid_tab.dart';
 import 'package:outnest/screens/profile/profile_photo.dart';
 import 'package:outnest/screens/profile/profile_tab_bar.dart';
-import 'package:outnest/screens/settings/settings.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({required this.profileUserID, super.key});
@@ -53,6 +53,8 @@ class _ProfilePageState extends State<ProfilePage> {
   List<EventEntity> _consideredEvents = [];
   List<EventEntity> _currentEvents = [];
 
+  StreamSubscription? _postsSubscription;
+
   String _fullName = '';
   bool _isFollowing = false;
   bool _hasSentFollowRequest = false;
@@ -62,6 +64,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   List<UserPostEntity> _pinnedPosts = [];
   List<UserPostEntity> _activePosts = [];
+  bool _isLoadingPosts = true;
 
   String _school = '';
   int _selectedTabIndex = 0;
@@ -70,17 +73,51 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void dispose() {
     _pageController.dispose();
+    _postsSubscription?.cancel();
     super.dispose();
   }
 
   @override
   void initState() {
     super.initState();
+    _initPostStream();
     _fetchProfileData();
   }
 
-  // --- EKLENEN/DÜZELTİLEN MANTIK: LİSTE GÜNCELLEME ---
-  // Bu fonksiyon PostCard -> ProfileGridTab -> ProfilePage zinciriyle çağrılmalı
+  void _initPostStream() {
+    final userRepository = getIt<UserRepository>();
+
+    // Aboneliği başlatıyoruz
+    _postsSubscription = userRepository
+        .getUserPostsStream(widget.profileUserID)
+        .listen(
+          (allPosts) {
+            // STREAM TETİKLENDİĞİNDE BURASI ÇALIŞIR
+            // (Biri post sildiğinde, yeni post attığında veya pinlediğinde)
+
+            if (!mounted) return;
+
+            // 1. Pinli ve Aktif ayrımını yap
+            final pinned = allPosts.where((p) => p.isPinned).toList();
+            final active = allPosts.where((p) => !p.isPinned).toList();
+
+            // 2. Aktifleri tarihe göre sırala (Yeniden eskiye)
+            active.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+            // 3. UI'ı güncelle
+            setState(() {
+              _pinnedPosts = pinned;
+              _activePosts = active;
+              _isLoadingPosts = false;
+            });
+          },
+          onError: (error) {
+            // Hata yönetimi
+            if (mounted) setState(() => _isLoadingPosts = false);
+          },
+        );
+  }
+
   void _handlePinStatusChange(String postId, bool isPinned) {
     setState(() {
       UserPostEntity? targetPost;
@@ -131,12 +168,6 @@ class _ProfilePageState extends State<ProfilePage> {
       final eventRepository = getIt<EventRepository>();
 
       final user = await userRepository.getUser(widget.profileUserID);
-      final posts = await userRepository.getUserPosts(widget.profileUserID);
-
-      final pinnedPosts = posts.where((post) => post.isPinned).toList();
-      final activePosts = posts.where((post) => !post.isPinned).toList();
-      // Aktif postları tarihe göre sıralayalım
-      activePosts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
       final userEventsEnrolled = await userRepository.getUserEventLog(
         widget.profileUserID,
@@ -222,8 +253,6 @@ class _ProfilePageState extends State<ProfilePage> {
         numberOfFollowing = followeeCount;
         numberOfEvents = completedEventCount;
 
-        _pinnedPosts = pinnedPosts;
-        _activePosts = activePosts;
         _currentEvents = enrolledEvents;
         _consideredEvents = savedEvents;
         _isLoadingEvents = false;
@@ -420,11 +449,10 @@ class _ProfilePageState extends State<ProfilePage> {
                         },
                         itemBuilder: (context, index) {
                           final event = events[index] as EventEntity;
-                          final eventName =
-                              (event.name ?? 'Buluşma ${index + 1}').toString();
+                          (event.name ?? 'Buluşma ${index + 1}').toString();
 
                           // 1. URL'nin tipini kontrol et (Network mü Asset mi?)
-                          final String imageUrl =
+                          final imageUrl =
                               event.creator.profileImageUrl ??
                               FileService.defaultProfileImageUrl();
                           final bool isNetwork = imageUrl.startsWith('http');
