@@ -97,6 +97,7 @@ flutter:
     - assets/map/
     - assets/badge/
     - assets/data/
+    - assets/defaults/
     - .env
 
 flutter_intl:

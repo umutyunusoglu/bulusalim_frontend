@@ -20,4 +20,35 @@ enum VisibilityEnum {
         return 'custom';
     }
   }
+
+  static VisibilityEnum fromString(String value) {
+    var visibility = value.toLowerCase();
+
+    switch (visibility) {
+      case 'everyone':
+        return VisibilityEnum.everyone;
+      case 'onlyFriends':
+        return VisibilityEnum.onlyFriends;
+      case 'university':
+        return VisibilityEnum.university;
+      case 'custom':
+        return VisibilityEnum.custom;
+      default:
+        throw ArgumentError('Invalid visibility value: $value');
+    }
+  }
+
+  static VisibilityEnum fromTurkishUI(String value) {
+    switch (value.toLowerCase()) {
+      case 'herkes':
+        return VisibilityEnum.everyone;
+      case 'takipçiler':
+      case 'arkadaşlar': // Mapping both to onlyFriends based on your list
+        return VisibilityEnum.onlyFriends;
+      case 'okul':
+        return VisibilityEnum.university;
+      default:
+        return VisibilityEnum.everyone; // Fallback
+    }
+  }
 }
