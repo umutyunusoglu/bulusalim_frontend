@@ -22,6 +22,8 @@ class PostCard extends StatefulWidget {
     required this.post,
     required this.user,
     this.onPinToggle, // Callback eklendi
+    this.onPostDeleted,
+
     super.key,
   });
 
@@ -30,6 +32,7 @@ class PostCard extends StatefulWidget {
 
   // Sabitleme durumu değişince üst widget'ı (Feed/Grid) haberdar edecek fonksiyon
   final void Function(bool isPinned)? onPinToggle;
+  final VoidCallback? onPostDeleted;
 
   @override
   State<PostCard> createState() => _PostCardState();
@@ -570,6 +573,8 @@ class _PostCardState extends State<PostCard> {
                         await getIt<PostRepository>().deletePost(
                           widget.post.id,
                         );
+
+                        widget.onPostDeleted?.call();
                       },
                     ),
                   ],
