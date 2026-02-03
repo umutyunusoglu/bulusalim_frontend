@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
@@ -8,6 +10,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:outnest/domain/services/file_service.dart';
 
 // --- UI VERİ MODELİ ---
 class ParticipantItem {
@@ -420,23 +423,31 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
   }
 
   Widget _buildAvatar(String url) {
+    // URL'nin geçerli olup olmadığını kontrol et
+    final bool hasValidUrl = url.isNotEmpty && url.startsWith('http');
+
     return Container(
       width: 36.w,
       height: 36.w,
       decoration: const BoxDecoration(shape: BoxShape.circle),
       child: ClipOval(
-        child: CachedNetworkImage(
-          imageUrl: fixEmulatorUrl(url),
-          fadeInDuration: Duration.zero,
-          fit: BoxFit.cover,
-          memCacheHeight: 100,
-          memCacheWidth: 100,
-          placeholder: (c, u) => Container(color: AppColors.lightCloud),
-          errorWidget: (c, u, e) => Container(
-            color: AppColors.lightCloud,
-            child: Icon(Icons.person, color: Colors.grey, size: 20.sp),
-          ),
-        ),
+        child: hasValidUrl
+            ? CachedNetworkImage(
+                imageUrl: fixEmulatorUrl(url),
+                fadeInDuration: Duration.zero,
+                fit: BoxFit.cover,
+                memCacheHeight: 100,
+                memCacheWidth: 100,
+                placeholder: (c, u) => Container(color: AppColors.lightCloud),
+                errorWidget: (c, u, e) => Image.asset(
+                  FileService.defaultProfileImageUrl(), // Fallback resmi
+                  fit: BoxFit.cover,
+                ),
+              )
+            : Image.asset(
+                FileService.defaultProfileImageUrl(),
+                fit: BoxFit.cover,
+              ),
       ),
     );
   }

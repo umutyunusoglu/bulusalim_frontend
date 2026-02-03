@@ -13,6 +13,7 @@ import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
+import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/screens/chat/event_avatar_badge.dart';
 
@@ -237,7 +238,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
 
     final String profileImage = widget.participantAvatars.isNotEmpty
         ? widget.participantAvatars.first.imageUrl
-        : 'https://picsum.photos/200';
+        : FileService.defaultProfileImageUrl();
 
     String dateString = 'Yükleniyor...';
     if (_currentDate != null) {

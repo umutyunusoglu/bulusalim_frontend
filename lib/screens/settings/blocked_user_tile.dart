@@ -1,7 +1,9 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:outnest/domain/services/file_service.dart';
 
 class BlockedUserTile extends StatelessWidget {
   const BlockedUserTile({
@@ -17,6 +19,10 @@ class BlockedUserTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 1. URL'nin ağdan mı yoksa boş mu olduğunu kontrol et
+    final bool hasUrl =
+        profileImageUrl.isNotEmpty && profileImageUrl.startsWith('http');
+
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 12.h),
       child: Row(
@@ -25,11 +31,16 @@ class BlockedUserTile extends StatelessWidget {
           CircleAvatar(
             radius: 20.r,
             backgroundColor: Colors.grey.shade200,
-            backgroundImage: NetworkImage(fixEmulatorUrl(profileImageUrl)),
-            onBackgroundImageError: (_, __) {},
-            child: profileImageUrl.isEmpty
-                ? Icon(Icons.person, color: Colors.grey, size: 24.sp)
-                : null,
+            // URL varsa CachedNetworkImageProvider, yoksa Asset resmimiz
+            backgroundImage: hasUrl
+                ? CachedNetworkImageProvider(
+                    fixEmulatorUrl(profileImageUrl),
+                  )
+                : AssetImage(FileService.defaultProfileImageUrl())
+                      as ImageProvider,
+            onBackgroundImageError: (_, __) => debugPrint('Avatar Load Error'),
+            // Child'ı null bırakıyoruz çünkü resmi zaten arka plana (backgroundImage) koyduk
+            child: null,
           ),
           SizedBox(width: 12.w),
 
