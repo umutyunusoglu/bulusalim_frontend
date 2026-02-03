@@ -146,8 +146,24 @@ class _EventCardState extends State<EventCard> {
               icon: Icons.settings_outlined,
               text: "Buluşma Ayarları'na Git",
               onTap: () {
-                sheetContext.pop();
-                // TODO: Ayarlar sayfasına yönlendir
+                sheetContext.pop(); // Önce bottom sheet'i kapatıyoruz
+
+                final encodedId = Uri.encodeComponent(widget.event.id);
+
+                GoRouter.of(context).pushNamed(
+                  'eventManagement',
+                  pathParameters: {'mgmtID': encodedId},
+                  extra: {
+                    'title': widget.event.name,
+                    'location': widget.event.displayAddress,
+                    'avatars': widget.participants,
+                    'participants':
+                        '${widget.event.participantCount}/${widget.event.capacity}',
+                    'remainingTime':
+                        'Buluşma Zamanı: ${widget.event.startTime}',
+                    'creatorID': widget.event.creator.userID,
+                  },
+                );
               },
             ),
             // 2. Paylaş

@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/popup.dart';
 import 'package:outnest/components/stacked_avatars.dart';
-import 'package:outnest/core/constants/configs/app_config.dart'; // <--- 1. IMPORT EKLENDİ
+import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/types.dart';
@@ -58,17 +58,14 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     _fetchCurrentEventData();
   }
 
-  // Veritabanından güncel verileri çeken metod
   Future<void> _fetchCurrentEventData() async {
     try {
       final data = await eventRepository.getEvent(widget.eventID);
 
       if (data != null && mounted) {
         setState(() {
-          // Tarih Güncelleme
           _currentDate = data.startTime;
 
-          // 3. KATEGORİ İKONU GÜNCELLEME
           if (data.hobbies.isNotEmpty) {
             final hobbies = data.hobbies;
             if (hobbies.isNotEmpty) {
@@ -83,26 +80,6 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     }
   }
 
-  // --- STYLE CONSTANTS ---
-  final TextStyle _labelStyle = TextStyle(
-    fontFamily: 'SF Pro Display',
-    fontWeight: FontWeight.w500,
-    fontSize: 14.sp,
-    height: 1.0,
-    letterSpacing: 0.0,
-    color: Colors.black87,
-  );
-
-  final TextStyle _subLabelStyle = TextStyle(
-    fontFamily: 'SF Pro Display',
-    fontSize: 11.sp,
-    color: const Color(0xFF8E8E93),
-    height: 1.2,
-  );
-
-  // --- ACTIONS ---
-
-  // 1. KONUM GÜNCELLEME
   Future<void> _onLocationUpdateTap() async {
     final result = await context.push<Map<String, dynamic>>(
       '/pick-location-map',
@@ -148,7 +125,6 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     }
   }
 
-  // 2. ZAMAN GÜNCELLEME
   Future<void> _onTimeUpdateTap() async {
     final result = await context.push<Map<String, dynamic>>(
       '/pick-time-map',
@@ -186,7 +162,6 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     }
   }
 
-  // 3. AYRILMA VE İPTAL İŞLEMLERİ
   void _onLeaveEventTap() {
     showDialog<void>(
       context: context,
@@ -238,6 +213,22 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     );
   }
 
+  // Styles
+  TextStyle get _labelStyle => TextStyle(
+    fontFamily: 'SF Pro Display',
+    fontWeight: FontWeight.w600,
+    fontSize: 14.sp,
+    height: 1.0,
+    color: Colors.black87,
+  );
+
+  TextStyle get _subLabelStyle => TextStyle(
+    fontFamily: 'SF Pro Display',
+    fontSize: 12.sp,
+    color: const Color(0xFF8E8E93),
+    height: 1.2,
+  );
+
   @override
   Widget build(BuildContext context) {
     final currentUser = sessionService.currentUser;
@@ -251,68 +242,96 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     String dateString = 'Yükleniyor...';
     if (_currentDate != null) {
       dateString = DateFormat('d MMMM HH.mm', 'tr_TR').format(_currentDate!);
+    } else {
+      // Eğer widget.remainingTime varsa onu kullan
+      dateString = widget.remainingTime.isNotEmpty
+          ? widget.remainingTime
+          : dateString;
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9F9),
-      body: Padding(
-        padding: const EdgeInsets.only(top: 100),
-        child: Column(
-          children: [
-            // HEADER
-            Padding(
-              padding: EdgeInsets.only(
-                top: 24.h,
-                left: 16.w,
-                right: 16.w,
-                bottom: 12.h,
-              ),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => context.pop(),
-                    child: Icon(
-                      Icons.arrow_back,
-                      color: Colors.black87,
-                      size: 24.sp,
+      backgroundColor: const Color(0xFFF3F5F6),
+      body: SafeArea(
+        bottom: false,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
+            child: Column(
+              children: [
+                // HEADER ROW (back + title centered)
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => context.pop(),
+                      child: Icon(
+                        Icons.arrow_back,
+                        color: Colors.black87,
+                        size: 24.sp,
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        'Buluşma Ayarları',
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Display',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16.sp,
-                          color: Colors.black,
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          'Buluşma Ayarları',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Display',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16.sp,
+                            color: Colors.black,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  SizedBox(width: 24.sp),
-                ],
-              ),
-            ),
+                    SizedBox(
+                      width: 24.sp,
+                    ), // placeholder to keep title centered
+                  ],
+                ),
 
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(horizontal: 24.w),
-                child: Column(
+                SizedBox(height: 18.h),
+
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(height: 20.h),
-
-                    // PROFİL BÖLÜMÜ
+                    // PROFILE ROW
                     Row(
                       children: [
+                        // Avatar with small badge
                         SizedBox(
-                          width: 50.w,
-                          height: 50.w,
-                          child: EventAvatarBadge(
-                            imageUrl: profileImage,
-                            categoryIcon:
-                                _categoryIcon, // 4. KATEGORİ İKONU GÖNDERİLİYOR
+                          width: 56.w,
+                          height: 56.w,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              CircleAvatar(
+                                radius: 28.w,
+                                backgroundImage: NetworkImage(profileImage),
+                              ),
+                              Positioned(
+                                bottom: -2.h,
+                                right: -2.w,
+                                child: Container(
+                                  width: 26.w,
+                                  height: 26.w,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.08),
+                                        blurRadius: 4,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      _categoryIcon,
+                                      style: TextStyle(fontSize: 14.sp),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         SizedBox(width: 12.w),
@@ -323,44 +342,56 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontFamily: 'SF Pro Display',
-                              fontWeight: FontWeight.w500,
-                              fontSize: 14.sp,
-                              color: Colors.black,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15.sp,
+                              color: Colors.black87,
                             ),
                           ),
                         ),
                         if (isCreator)
-                          Icon(
-                            Icons.edit_outlined,
-                            color: Colors.black87,
-                            size: 24.sp,
+                          Padding(
+                            padding: EdgeInsets.only(left: 8.w),
+                            child: InkWell(
+                              onTap: () {
+                                // edit action
+                              },
+                              borderRadius: BorderRadius.circular(8.r),
+                              child: Container(
+                                padding: EdgeInsets.all(6.w),
+                                child: Icon(
+                                  Icons.edit_outlined,
+                                  size: 20.sp,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            ),
                           ),
                       ],
                     ),
 
-                    SizedBox(height: 40.h),
+                    SizedBox(height: 22.h),
 
-                    // AYARLAR LİSTESİ
-
-                    // 1. Buluşma Konumu
+                    // Location row
                     _buildPillRow(
-                      'Buluşma Konumu',
-                      _currentLocation.isNotEmpty
+                      title: 'Buluşma Konumu',
+                      value: _currentLocation.isNotEmpty
                           ? _currentLocation
-                          : 'Konum Seçilmedi',
+                          : 'Konum seçilmedi',
                       icon: Icons.location_on_outlined,
                       onTap: isCreator ? _onLocationUpdateTap : null,
                     ),
-                    _buildDivider(),
+                    _thinDivider(),
 
-                    // 2. Buluşma Zamanı
+                    // Time row
                     _buildPillRow(
-                      'Buluşma Zamanı',
-                      dateString,
+                      title: 'Buluşma Zamanı',
+                      value: dateString,
                       icon: Icons.access_time,
                       onTap: isCreator ? _onTimeUpdateTap : null,
+                      showTrailing: true,
                     ),
-                    SizedBox(height: 30.h),
+
+                    SizedBox(height: 8.h),
 
                     if (isCreator) ...[
                       _buildSwitchRow(
@@ -371,19 +402,17 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                           setState(() => isLocked = val);
                         },
                       ),
-                      _buildDivider(),
-                    ],
-
-                    if (isCreator) ...[
+                      _thinDivider(),
                       _buildExpandableRow(
                         'Görünürlük Seçenekleri',
                         'Buluşmanın hangi kullanıcıların karşısına çıkacağını düzenlersin.',
                       ),
-                      _buildDivider(),
-                    ],
+                      _thinDivider(),
+                    ] else
+                      _thinDivider(),
 
                     _buildSimpleActionRow('Buluşmayı Bildir'),
-                    _buildDivider(),
+                    _thinDivider(),
 
                     _buildSimpleActionRow(
                       'Buluşmadan Ayrıl',
@@ -392,7 +421,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                     ),
 
                     if (isCreator) ...[
-                      _buildDivider(),
+                      _thinDivider(),
                       _buildSimpleActionRow(
                         'Buluşmayı İptal Et',
                         textColor: AppColors.primaryColor,
@@ -401,59 +430,69 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                     ],
                   ],
                 ),
-              ),
+
+                SizedBox(height: 30.h),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  // --- HELPER WIDGETS ---
-
-  Widget _buildPillRow(
-    String title,
-    String value, {
+  Widget _buildPillRow({
+    required String title,
+    required String value,
     IconData? icon,
     VoidCallback? onTap,
+    bool showTrailing = false,
   }) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 16.h),
+      padding: EdgeInsets.symmetric(vertical: 10.h),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(title, style: _labelStyle),
-          Flexible(
-            child: GestureDetector(
-              onTap: onTap,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD4E2EB),
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (icon != null) ...[
-                      Icon(icon, size: 14.sp, color: const Color(0xFF4A6572)),
-                      SizedBox(width: 4.w),
-                    ],
-                    Flexible(
-                      child: Text(
-                        value,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Display',
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF2C3E50),
-                        ),
+          Expanded(
+            child: Text(title, style: _labelStyle),
+          ),
+          GestureDetector(
+            onTap: onTap,
+            child: Container(
+              constraints: BoxConstraints(maxWidth: 240.w),
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDDEFF5),
+                borderRadius: BorderRadius.circular(20.r),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, size: 14.sp, color: const Color(0xFF4A6572)),
+                    SizedBox(width: 6.w),
+                  ],
+                  Flexible(
+                    child: Text(
+                      value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Display',
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF2C3E50),
                       ),
                     ),
+                  ),
+                  if (showTrailing) ...[
+                    SizedBox(width: 6.w),
+                    Icon(
+                      Icons.keyboard_arrow_right,
+                      size: 18.sp,
+                      color: const Color(0xFF4A6572),
+                    ),
                   ],
-                ),
+                ],
               ),
             ),
           ),
@@ -471,21 +510,19 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 12.h),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: _labelStyle),
-                SizedBox(height: 4.h),
+                SizedBox(height: 6.h),
                 Text(subtitle, style: _subLabelStyle),
               ],
             ),
           ),
-          SizedBox(width: 10.w),
           Transform.scale(
-            scale: 0.8,
+            scale: 0.9,
             child: Switch.adaptive(
               value: value,
               onChanged: onChanged,
@@ -501,23 +538,27 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
   }
 
   Widget _buildExpandableRow(String title, String subtitle) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 16.h),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: _labelStyle),
-                SizedBox(height: 4.h),
-                Text(subtitle, style: _subLabelStyle),
-              ],
+    return InkWell(
+      onTap: () {
+        // expand / navigate
+      },
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 12.h),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: _labelStyle),
+                  SizedBox(height: 6.h),
+                  Text(subtitle, style: _subLabelStyle),
+                ],
+              ),
             ),
-          ),
-          Icon(Icons.keyboard_arrow_down, color: Colors.black87, size: 24.sp),
-        ],
+            Icon(Icons.keyboard_arrow_down, color: Colors.black54, size: 22.sp),
+          ],
+        ),
       ),
     );
   }
@@ -530,20 +571,22 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 16.h),
-        child: Row(
-          children: [
-            Text(
-              title,
-              style: _labelStyle.copyWith(color: textColor ?? Colors.black87),
-            ),
-          ],
+        padding: EdgeInsets.symmetric(vertical: 14.h),
+        child: Text(
+          title,
+          style: _labelStyle.copyWith(
+            color: textColor ?? Colors.black87,
+            fontWeight: textColor != null ? FontWeight.w600 : FontWeight.w500,
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildDivider() {
-    return const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE));
+  Widget _thinDivider() {
+    return Padding(
+      padding: EdgeInsets.only(top: 8.h, bottom: 8.h),
+      child: const Divider(height: 1, thickness: 1, color: Color(0xFFF0F0F0)),
+    );
   }
 }
