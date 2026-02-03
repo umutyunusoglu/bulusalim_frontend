@@ -1,3 +1,6 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/announcement_button.dart';
 import 'package:outnest/components/login_button.dart';
@@ -10,7 +13,6 @@ import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/friend_entity.dart';
 import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
 import 'package:outnest/domain/entities/user/session_state.dart';
-import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/session_service.dart';
@@ -20,10 +22,6 @@ import 'package:outnest/screens/profile/events_tab.dart';
 import 'package:outnest/screens/profile/grid_tab.dart';
 import 'package:outnest/screens/profile/profile_photo.dart';
 import 'package:outnest/screens/profile/profile_tab_bar.dart';
-import 'package:outnest/screens/settings/settings.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({required this.profileUserID, super.key});
@@ -651,16 +649,19 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () {
-                            context.push('/settings');
-                          },
-                          child: Icon(
-                            Icons.settings_outlined,
-                            color: AppColors.darkBackgroundColor,
-                            size: 24.sp,
-                          ),
-                        ),
+                        if (isCurrentUser) // Sadece profil sahibi ise göster
+                          GestureDetector(
+                            onTap: () {
+                              context.push('/settings');
+                            },
+                            child: Icon(
+                              Icons.settings_outlined,
+                              color: AppColors.darkBackgroundColor,
+                              size: 24.sp,
+                            ),
+                          )
+                        else // Başkasının profili ise yer kaplamaması için boş SizedBox
+                          SizedBox(width: 24.sp),
                       ],
                     ),
                     SizedBox(height: 9.h),
