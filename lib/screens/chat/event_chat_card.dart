@@ -1,6 +1,7 @@
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/screens/chat/chat_event_info_chip.dart';
 import 'package:outnest/screens/chat/event_avatar_badge.dart';
 import 'package:outnest/screens/chat/event_status_according.dart';
@@ -82,10 +83,12 @@ class EventChatCard extends StatelessWidget {
                   children: [
                     // --- 1. AVATAR ---
                     EventAvatarBadge(
-                      imageUrl: event.creator.profileImageUrl,
+                      // profileImageUrl boşsa default asset yolunu gönder
+                      imageUrl: event.creator.profileImageUrl.isNotEmpty
+                          ? event.creator.profileImageUrl
+                          : FileService.defaultProfileImageUrl(),
                       categoryIcon: categoryIcon,
                     ),
-
                     SizedBox(width: 12.w),
 
                     // --- 2. BİLGİ ALANI ---

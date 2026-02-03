@@ -3,6 +3,7 @@ import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:outnest/domain/services/file_service.dart';
 
 class AvatarInfo {
   AvatarInfo({
@@ -55,7 +56,9 @@ class StackedAvatars extends StatelessWidget {
 
                     // Sol pozisyon: Her eleman (Boyut - Overlap) kadar sağa kayar
                     final leftPos = index * (avatarSize - overlap);
-
+                    final String? avatarUrl = currentUser.imageUrl;
+                    final String defaultAsset =
+                        FileService.defaultProfileImageUrl();
                     return Positioned(
                       left: leftPos,
                       top: 0,
@@ -73,20 +76,33 @@ class StackedAvatars extends StatelessWidget {
                             shape: BoxShape.circle,
                           ),
                           child: ClipOval(
-                            child: CachedNetworkImage(
-                              imageUrl: fixEmulatorUrl(currentUser.imageUrl),
-                              fit: BoxFit.cover,
-                              errorWidget: (context, error, stackTrace) {
-                                return ColoredBox(
-                                  color: Colors.grey.shade300,
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.grey,
-                                    size: avatarSize / 2,
+                            child:
+                                (avatarUrl != null &&
+                                    avatarUrl.startsWith('http'))
+                                ? CachedNetworkImage(
+                                    imageUrl: fixEmulatorUrl(avatarUrl),
+                                    fit: BoxFit.cover,
+                                    width:
+                                        avatarSize, // Boyutları net belirtmek fit: BoxFit.cover için önemlidir
+                                    height: avatarSize,
+                                    placeholder: (context, url) => ColoredBox(
+                                      color: Colors.grey.shade200,
+                                      child: const Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                    ),
+                                    errorWidget: (context, url, error) =>
+                                        Image.asset(
+                                          defaultAsset,
+                                          fit: BoxFit.cover,
+                                        ),
+                                  )
+                                : Image.asset(
+                                    defaultAsset,
+                                    fit: BoxFit.cover,
+                                    width: avatarSize,
+                                    height: avatarSize,
                                   ),
-                                );
-                              },
-                            ),
                           ),
                         ),
                       ),
@@ -178,7 +194,7 @@ class StackedAvatars extends StatelessWidget {
 //                   width: currentSize,
 //                   height: currentSize,
 //                   child: ClipOval(
-//                     child: CachedNetworkImage(
+//                     child: CachedCachedNetworkImageProvider(
 //                       currentUser.imageUrl,
 //                       fit: BoxFit.cover,
 //                       errorBuilder: (context, error, stackTrace) {

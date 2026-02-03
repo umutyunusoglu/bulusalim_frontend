@@ -2,6 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
+import 'package:outnest/domain/services/file_service.dart';
 
 class ChatMessageBubble extends StatelessWidget {
   const ChatMessageBubble({
@@ -83,21 +85,23 @@ class ChatMessageBubble extends StatelessWidget {
             child: SizedBox(
               width: 24.w,
               height: 24.w,
-              child: userAvatarUrl != null && userAvatarUrl!.isNotEmpty
+              child:
+                  (userAvatarUrl != null && userAvatarUrl!.startsWith('http'))
                   ? CachedNetworkImage(
-                      imageUrl: userAvatarUrl!,
+                      imageUrl: fixEmulatorUrl(
+                        userAvatarUrl!,
+                      ), // Emulator fix'i unutma
                       fadeInDuration: Duration.zero,
                       fit: BoxFit.cover,
-                      errorWidget: (context, error, stackTrace) =>
-                          Container(color: Colors.grey.shade300),
-                    )
-                  : Container(
-                      color: Colors.grey.shade300,
-                      child: Icon(
-                        Icons.person,
-                        size: 16.sp,
-                        color: Colors.grey,
+                      // İnternet varken ama resim yüklenemezse (404 vs.)
+                      errorWidget: (context, error, stackTrace) => Image.asset(
+                        FileService.defaultProfileImageUrl(),
+                        fit: BoxFit.cover,
                       ),
+                    )
+                  : Image.asset(
+                      FileService.defaultProfileImageUrl(),
+                      fit: BoxFit.cover,
                     ),
             ),
           ),

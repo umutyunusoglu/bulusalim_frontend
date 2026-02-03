@@ -76,6 +76,8 @@ extension ServiceModule on GetIt {
         () => PushNotificationsServiceImpl(
           firebaseMessaging: this(),
           logger: this(),
+          userRepository: this(),
+          sessionService: this(),
         ),
       )
       ..registerLazySingleton<InboxRepository>(() => InboxRepositoryImpl());
