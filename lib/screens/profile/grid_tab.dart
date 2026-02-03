@@ -1,5 +1,7 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
+import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/screens/profile/profile_feed_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -70,10 +72,10 @@ class ProfileGridTab extends StatelessWidget {
 
           final post = totalPosts[index];
 
-          // Güvenli resim URL'si
-          final imageUrl = (post.imageUrls.isNotEmpty)
+          final bool isNetwork = post.imageUrls.isNotEmpty;
+          final imageUrl = isNetwork
               ? post.imageUrls.first
-              : 'https://picsum.photos/200'; // Fallback
+              : FileService.defaultProfileImageUrl(); // Fallback resmimiz (Asset)
 
           return GestureDetector(
             onTap: () => _openFeedPage(context, index),
@@ -86,14 +88,14 @@ class ProfileGridTab extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16.r),
                     color: theme.colorScheme.surfaceContainerHighest,
                     image: DecorationImage(
-                      image: NetworkImage(
-                        fixEmulatorUrl(imageUrl),
-                      ),
+                      // URL varsa CachedNetworkImageProvider + Fix, yoksa (asset ise) AssetImage
+                      image: isNetwork
+                          ? CachedNetworkImageProvider(fixEmulatorUrl(imageUrl))
+                          : AssetImage(imageUrl) as ImageProvider,
                       fit: BoxFit.cover,
                     ),
                   ),
                 ),
-
                 // 2. SAĞ ÜST İKON (Pinned ise Pin ikonu, değilse saat vb.)
                 Positioned(
                   top: 6.h,

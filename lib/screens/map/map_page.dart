@@ -24,6 +24,7 @@ import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/event_role_enum.dart';
 import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
+import 'package:outnest/core/utils/types/enums/visibility_enum.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
@@ -70,6 +71,7 @@ class _MapPageState extends State<MapPage> {
   DateTime? _tempDate;
   TimeOfDay? _tempTime;
   String? _tempEventName;
+  VisibilityEnum? _tempVisibility;
   PointAnnotation? _pickingMarker;
   final String _currentUserImageUrl = 'https://i.pravatar.cc/300?img=12';
 
@@ -611,6 +613,9 @@ class _MapPageState extends State<MapPage> {
               right: 0,
               child: _selectedEvent != null
                   ? EventCard(
+                      key: ValueKey(
+                        _selectedEvent!.eventID,
+                      ),
                       event: _selectedEvent!,
                       participants: _selectedEvent!.participants,
                     )
@@ -798,7 +803,10 @@ class _MapPageState extends State<MapPage> {
         return VisibilitySelectionStep(
           onBack: () => setState(() => _createEventStep = 2),
           onClose: _closeWizard,
-          onNext: (v, g, h) => setState(() => _createEventStep = 4),
+          onNext: (v, g, h) => {
+            _tempVisibility = VisibilityEnum.fromTurkishUI(v),
+            setState(() => _createEventStep = 4),
+          },
         );
       case 4: // İsim
         return EventNameStep(

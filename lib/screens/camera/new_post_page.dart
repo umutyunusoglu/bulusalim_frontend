@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/components/apple_toast_popup.dart';
+import 'package:outnest/core/constants/configs/app_config.dart';
+import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/services/draft_post_service.dart';
 import 'package:outnest/domain/usecases/upload_post_usecase.dart';
@@ -294,18 +297,40 @@ class _NewPostPageState extends State<NewPostPage> {
     final uploadPost = getIt<UploadPost>();
     final draftService = getIt<DraftPostService>();
 
-    await uploadPost(
-      widget.event,
-      _selectedMedia,
-      _showParticipants,
-      _addToDump,
-      _pinPhoto,
-      _captionController.text.trim(),
-    );
+    // Widget dispose olmadan önce messenger'ı ve verileri kopyala
+    final messenger = ScaffoldMessenger.of(context);
+    final event = widget.event;
+    final media = List<File>.from(_selectedMedia);
+    final caption = _captionController.text.trim();
 
-    await draftService.clearDraft(widget.event.id);
+    // 1. Kullanıcıya "Başlıyoruz" bilgisi ver
+    showAppleToast(messenger, 'Paylaşılıyor...');
 
-    if (!mounted) return;
+    // 2. Sayfayı hemen kapat
     context.go('/home');
+
+    // 3. Arka planda işlemi yürüt
+    try {
+      await uploadPost(
+        event,
+        media,
+        _showParticipants,
+        _addToDump,
+        _pinPhoto,
+        caption,
+      );
+
+      // Başarılı ise taslağı temizle ve haber ver
+      await draftService.clearDraft(event.id);
+      showAppleToast(messenger, 'Paylaşıldı!');
+    } catch (e) {
+      // Hata durumunda uyar
+      showAppleToast(
+        messenger,
+        'Hata oluştu, tekrar deneniyor.',
+        isError: true,
+      );
+      // Not: Burada retry mekanizması veya taslağı koruma mantığı eklenebilir.
+    }
   }
 }

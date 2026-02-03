@@ -358,29 +358,25 @@ class _EventCardState extends State<EventCard> {
     getIt<RemoteConfigService>();
     final categories = AppConfig.categories;
 
-    final displayAvatars = widget.participants.isNotEmpty
-        ? widget.participants
-              .map(
-                (user) => AvatarInfo(
-                  userId: user.userID,
-                  imageUrl: user.profileImageUrl,
-                ),
-              )
-              .toList()
-        : [
-            AvatarInfo(
-              userId: '1',
-              imageUrl: 'https://picsum.photos/seed/1/100',
+    final displayAvatars = [
+      AvatarInfo(
+        userId: widget.event.creator.userID,
+        imageUrl: widget.event.creator.profileImageUrl,
+      ),
+    ];
+
+    if (widget.participants.isNotEmpty) {
+      displayAvatars.addAll(
+        widget.participants
+            .where((user) => user.userID != widget.event.creator.userID)
+            .map(
+              (user) => AvatarInfo(
+                userId: user.userID,
+                imageUrl: user.profileImageUrl,
+              ),
             ),
-            AvatarInfo(
-              userId: '2',
-              imageUrl: 'https://picsum.photos/seed/2/100',
-            ),
-            AvatarInfo(
-              userId: '3',
-              imageUrl: 'https://picsum.photos/seed/3/100',
-            ),
-          ];
+      );
+    }
 
     final categoryIcon = widget.event.hobbies.isNotEmpty
         ? categories[widget.event.hobbies[0]] ?? ''
