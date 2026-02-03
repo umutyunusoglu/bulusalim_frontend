@@ -45,7 +45,7 @@ List<AvatarInfo> _mapToAvatarInfo(List<dynamic> rawList) {
 final router = GoRouter(
   navigatorKey: _rootNavigatorKey,
 
-  // 1. BAŞLANGIÇ ROTASI WELCOME
+  // Başlangıç rotası
   initialLocation: '/welcome',
 
   // 2. OTURUM KONTROLÜ (REDIRECT)
@@ -55,7 +55,6 @@ final router = GoRouter(
 
     final goingTo = state.uri.toString();
 
-    // Giriş sayfaları (Auth rotaları)
     final isAuthRoute =
         goingTo == '/welcome' ||
         goingTo == '/login' ||
@@ -64,21 +63,14 @@ final router = GoRouter(
         goingTo == '/login-verification' ||
         goingTo == '/register-info';
 
-    // Debug sayfasına izin ver
     final isDebugRoute = goingTo == '/debug';
 
-    // SENARYO A: Kullanıcı giriş YAPMAMIŞSA
     if (!isLoggedIn) {
-      // Auth rotalarındaysa veya debug daysa sorun yok
       if (isAuthRoute || isDebugRoute) return null;
-
-      // İçerideki sayfalara girmeye çalışıyorsa Welcome'a at
       return '/welcome';
     }
 
-    // SENARYO B: Kullanıcı giriş YAPMIŞSA
     if (isLoggedIn) {
-      // Auth sayfalarına girmeye çalışıyorsa Home'a at
       if (isAuthRoute) return '/home';
     }
 
@@ -95,44 +87,38 @@ final router = GoRouter(
       path: '/login',
       builder: (context, state) => const LoginPage(),
     ),
-    // Login için OTP Rotası (isLogin: true)
     GoRoute(
       path: '/login-verification',
       builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>?;
         final verificationID = extra?['verificationID'] as String?;
-
         return OtpVerificationPage(
           isLogin: true,
           verificationID: verificationID,
         );
       },
     ),
-
     GoRoute(
       path: '/register',
       builder: (context, state) => const RegisterPage(),
     ),
-    // Register için OTP Rotası (isLogin: false)
     GoRoute(
       path: '/verification-code-field',
       builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>?;
         final verificationID = extra?['verificationID'] as String?;
-
         return OtpVerificationPage(
           isLogin: false,
           verificationID: verificationID,
         );
       },
     ),
-    // Kayıt Bilgileri Sihirbazı
     GoRoute(
       path: '/register-info',
       builder: (context, state) => const RegisterInfoPage(),
     ),
 
-    // --- DEBUG ROTASI ---
+    // --- DEBUG ---
     GoRoute(
       path: '/debug',
       parentNavigatorKey: _rootNavigatorKey,
@@ -207,8 +193,6 @@ final router = GoRouter(
     ),
 
     // --- FULL SCREEN (NAVBARSIZ) SAYFALAR ---
-
-    // AYARLAR
     GoRoute(
       path: '/settings',
       parentNavigatorKey: _rootNavigatorKey,
@@ -221,8 +205,6 @@ final router = GoRouter(
         ),
       ],
     ),
-
-    // BİLDİRİMLER
     GoRoute(
       path: '/notifications',
       parentNavigatorKey: _rootNavigatorKey,
@@ -238,16 +220,12 @@ final router = GoRouter(
     GoRoute(
       path: '/pick-location-map',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) {
-        return const MapPage(isLocationPicker: true);
-      },
+      builder: (context, state) => const MapPage(isLocationPicker: true),
     ),
     GoRoute(
       path: '/pick-time-map',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) {
-        return const MapPage(isTimePicker: true);
-      },
+      builder: (context, state) => const MapPage(isTimePicker: true),
     ),
 
     // KAMERA
@@ -257,14 +235,11 @@ final router = GoRouter(
       builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>?;
         final event = extra?['event'] as EventEntity?;
-
-        return CameraPage(
-          event: event!,
-        );
+        return CameraPage(event: event!);
       },
     ),
 
-    // SOHBET ODASI
+    // --- SOHBET ODASI VE ALT ROTALARI ---
     GoRoute(
       path: '/chat/room/:eventID',
       parentNavigatorKey: _rootNavigatorKey,
@@ -275,37 +250,30 @@ final router = GoRouter(
         final rawAvatars = (extra?['avatars'] as List?) ?? [];
         final safeAvatars = _mapToAvatarInfo(rawAvatars);
 
-        final eventDate = extra?['date'] as DateTime? ?? DateTime.now();
-
-        final eventEntity = extra?['event'] as EventEntity?;
-
         return ChatPage(
           eventID: eventID,
-          event: eventEntity!,
+          event: extra?['event'] as EventEntity,
           chatTitle: (extra?['title'] as String?) ?? 'Sohbet',
           participantAvatars: safeAvatars,
           location: (extra?['location'] as String?) ?? '',
           participantStatus: (extra?['participants'] as String?) ?? '',
-          eventDate: eventDate,
+          eventDate: extra?['date'] as DateTime? ?? DateTime.now(),
           creatorID: (extra?['creatorID'] as String?) ?? '',
           creatorProfileImage: (extra?['creatorProfileImage'] as String?) ?? '',
         );
       },
       routes: [
-        // CHAT AYARLARI
+        // Child route: sadece 'settings' (parent eventID parametresini kullanır)
         GoRoute(
           path: 'settings',
-          parentNavigatorKey: _rootNavigatorKey,
           builder: (context, state) {
-            final eventID = state.pathParameters['eventID'] ?? '';
             final extra = state.extra as Map<String, dynamic>?;
-
             final rawAvatars = (extra?['avatars'] as List?) ?? [];
             final safeAvatars = _mapToAvatarInfo(rawAvatars);
 
             return EventSettingsPage(
-              eventID: eventID,
-              chatTitle: (extra?['title'] as String?) ?? 'Ayarlar',
+              eventID: state.pathParameters['eventID'] ?? '',
+              chatTitle: (extra?['title'] as String?) ?? 'Buluşma Ayarları',
               participantAvatars: safeAvatars,
               location: (extra?['location'] as String?) ?? '',
               participantStatus: (extra?['participants'] as String?) ?? '',
@@ -315,6 +283,29 @@ final router = GoRouter(
           },
         ),
       ],
+    ),
+
+    // --- BAĞIMSIZ EVENT SETTINGS (EventCard / root çağrılar için) ---
+    GoRoute(
+      name: 'eventManagement',
+      path: '/event-management/:mgmtID',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) {
+        final eventID = state.pathParameters['mgmtID'] ?? '';
+        final extra = state.extra as Map<String, dynamic>?;
+        final rawAvatars = (extra?['avatars'] as List?) ?? [];
+        final safeAvatars = _mapToAvatarInfo(rawAvatars);
+
+        return EventSettingsPage(
+          eventID: eventID,
+          chatTitle: (extra?['title'] as String?) ?? 'Buluşma Ayarları',
+          participantAvatars: safeAvatars,
+          location: (extra?['location'] as String?) ?? '',
+          participantStatus: (extra?['participants'] as String?) ?? '',
+          remainingTime: (extra?['remainingTime'] as String?) ?? '',
+          creatorID: (extra?['creatorID'] as String?) ?? '',
+        );
+      },
     ),
   ],
 );
