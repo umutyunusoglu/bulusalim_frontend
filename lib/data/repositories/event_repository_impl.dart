@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
@@ -29,6 +31,36 @@ class EventRepositoryImpl implements EventRepository {
   final LoggingService _logger;
   final GlobalContentCache _globalCache;
 
+  // --- HELPER: TRIGGER CREATOR ---
+  /// Bu metod, bir değişiklik olduğunda (katılma, çıkma, reddetme vb.)
+  /// Etkinlik sahibinin (Creator) `eventLog` kaydını güncelleyerek
+  /// onun ekranındaki Stream'in tetiklenmesini sağlar.
+  void _triggerCreatorRefresh(
+    Transaction? transaction,
+    WriteBatch? batch,
+    String creatorId,
+    String eventId,
+  ) {
+    final creatorLogRef = _firestore
+        .collection('users')
+        .doc(creatorId)
+        .collection('eventLog')
+        .doc(eventId);
+
+    final data = {'lastUpdated': FieldValue.serverTimestamp()};
+
+    if (transaction != null) {
+      transaction.update(creatorLogRef, data);
+    } else if (batch != null) {
+      batch.update(creatorLogRef, data);
+    } else {
+      // Eğer batch veya transaction yoksa direkt update yap
+      creatorLogRef.update(data).catchError((e) {
+        _logger.error('Failed to trigger creator refresh: $e');
+      });
+    }
+  }
+
   // --- CRUD Operations ---
 
   @override
@@ -49,7 +81,7 @@ class EventRepositoryImpl implements EventRepository {
         updatedAt: DateTime.now(),
       );
 
-      // Creator'ı hem Subcollection'a hem de Ana Dökümana (Feed için) ekliyoruz.
+      // Creator'ı hem Subcollection'a hem de Ana Dökümana ekliyoruz.
       final eventWithId = event.copyWith(
         eventID: eventId,
         participantCount: 1,
@@ -60,7 +92,7 @@ class EventRepositoryImpl implements EventRepository {
             profileImageUrl: event.creator.profileImageUrl,
             university: event.creator.university,
           ),
-        ], // DÜZELTME: Creator listeye eklendi
+        ],
       );
 
       final eventModel = EventModel.fromEntity(eventWithId);
@@ -73,11 +105,8 @@ class EventRepositoryImpl implements EventRepository {
           .doc(event.creator.userID);
 
       final batch = _firestore.batch()
-        // 1. Ana Döküman (İçinde participants array var)
         ..set(docRef, eventModel.toFirestore())
-        // 2. Subcollection (Yedek ve Detaylı yönetim için)
         ..set(creatorRef, event.creator.toMap())
-        // 3. Kullanıcının event log'una ekleme
         ..set(userEventLogRef, userEventModel.toFirestore());
 
       await batch.commit();
@@ -92,6 +121,7 @@ class EventRepositoryImpl implements EventRepository {
   Future<void> updateEvent(String eventId, Map<String, dynamic> changes) async {
     try {
       await _firestore.collection('events').doc(eventId).update(changes);
+      _globalCache.removeEntity(eventId); // Değişiklik sonrası cache temizliği
     } catch (e) {
       _logger.error('Failed to update event partial: $e');
       rethrow;
@@ -101,14 +131,15 @@ class EventRepositoryImpl implements EventRepository {
   @override
   Future<void> deleteEvent(Identifier eventId) async {
     try {
-      // Subcollection'lar parent silindiğinde otomatik silinmez (Firestore özelliği).
-      // Cloud Function ile temizlenmesi önerilir. Burada sadece parent'ı siliyoruz.
       await _firestore.collection('events').doc(eventId).delete();
-    } on Exception catch (e) {
-      _logger.error('Failed to delete event::$e');
+      _globalCache.removeEntity(eventId);
+    } catch (e) {
+      _logger.error('Failed to delete event: $e');
       rethrow;
     }
   }
+
+  // --- FETCH & ENRICHMENT ---
 
   @override
   Future<EventEntity> enrichEventWithDetails(
@@ -116,15 +147,11 @@ class EventRepositoryImpl implements EventRepository {
     bool forceRefresh = false,
   }) async {
     // 1. CACHE KONTROLÜ
-    // Eğer zorla yenileme istenmemişse cache'e bak.
     if (!forceRefresh) {
       final cachedItem = _globalCache.getEntity(event.eventID);
 
-      // Cache'de veri varsa VE bu veri EventEntity türündeyse
       if (cachedItem is EventEntity) {
-        // "Veri Tam mı?" kontrolü:
-        // Eğer katılımcı listesi doluysa VEYA katılımcı sayısı 0 ise (kimse yok demektir)
-        // veriyi tam kabul edip cache'den dönüyoruz. Firestore'a gitmiyoruz.
+        // Veri tutarlılığını kontrol et (Örn: katılımcı listesi boş mu değil mi?)
         final isDataComplete =
             cachedItem.participants.isNotEmpty ||
             cachedItem.participantCount == 0;
@@ -136,8 +163,7 @@ class EventRepositoryImpl implements EventRepository {
     }
 
     try {
-      // 2. PARALEL VERİ ÇEKME (Subcollections Only)
-      // Ana dökümanı çekmiyoruz, sadece dinamik listeleri çekiyoruz.
+      // 2. PARALEL VERİ ÇEKME
       final results = await Future.wait([
         _firestore
             .collection('events')
@@ -156,7 +182,7 @@ class EventRepositoryImpl implements EventRepository {
             .get(),
       ]);
 
-      // 3. MAPLEME İŞLEMLERİ
+      // 3. MAPLEME
       final participantsList = results[0].docs
           .map((d) => CompactUserEntity.fromMap(d.data()))
           .toList();
@@ -169,24 +195,21 @@ class EventRepositoryImpl implements EventRepository {
           .map((d) => CompactUserEntity.fromMap(d.data()))
           .toList();
 
-      // 4. ENTITY BİRLEŞTİRME (Merging)
-      // Feed'den gelen ana veri (event) ile buradan gelen listeleri birleştiriyoruz.
+      // 4. BİRLEŞTİRME
       final fullEvent = event.copyWith(
         participants: participantsList,
         requestPool: requestPoolList,
         rejectedUsers: rejectedUsersList,
-        // Feed'deki sayı eski kalmış olabilir, listeye güvenip sayıyı güncelliyoruz.
         participantCount: participantsList.length,
       );
 
       // 5. CACHE GÜNCELLEME
-      // Bir sonraki istekte tekrar çekmemek için full halini cache'e yazıyoruz.
       _globalCache.cacheEntity(fullEvent);
 
       return fullEvent;
     } catch (e) {
       _logger.error('Failed to enrich event details for ${event.eventID}: $e');
-
+      // Hata durumunda elimizdeki eksik veriyi dönüyoruz ki UI çökmesin
       return event;
     }
   }
@@ -206,22 +229,59 @@ class EventRepositoryImpl implements EventRepository {
               .map((doc) => UserEventModel.fromFirestore(doc.data()).eventID)
               .toList();
 
+          // Stream tetiklendiğinde (bizim log güncellememiz sayesinde),
+          // Cache'e bakmadan doğrudan Firestore'dan en güncel veriyi çekecek.
+          // forceRefresh: true bu işi yapar.
           final enrichedEvents = await getEventsByIds(
             eventIds,
+            loadDetails: true,
+            forceRefresh: true,
           );
           return enrichedEvents;
         });
   }
 
   @override
-  // loadDetails: true -> Full (3 liste dahil)
-  // loadDetails: false -> Light (Sadece ana döküman)
+  Future<List<EventEntity>> getEventsByIds(
+    List<Identifier> eventIds, {
+    bool loadDetails = true,
+    bool forceRefresh = false,
+  }) async {
+    if (eventIds.isEmpty) return Future.value([]);
+    try {
+      final snapshot = await _firestore
+          .collection('events')
+          .where('eventID', whereIn: eventIds)
+          .get();
+
+      final data = snapshot.docs
+          .map((doc) => EventModel.fromFirestore(doc.data()).toEntity())
+          .toList();
+
+      if (loadDetails) {
+        // Parametreyi aşağıya iletiyoruz
+        final enrichedEvents = await Future.wait(
+          data.map(
+            (event) =>
+                enrichEventWithDetails(event, forceRefresh: forceRefresh),
+          ),
+        );
+        return enrichedEvents;
+      } else {
+        return data;
+      }
+    } catch (e) {
+      _logger.error('Failed to get events by IDs: $e');
+      rethrow;
+    }
+  }
+
+  @override
   Future<EventEntity?> getEvent(
     Identifier eventId, {
     bool loadDetails = true,
   }) async {
     try {
-      // 1. Ana dokümanı çek
       final doc = await _firestore.collection('events').doc(eventId).get();
 
       if (!doc.exists) return null;
@@ -229,17 +289,244 @@ class EventRepositoryImpl implements EventRepository {
       final eventModel = EventModel.fromFirestore(doc.data()!);
       final eventEntity = eventModel.toEntity();
 
-      // 2. Eğer detay istenmiyorsa direkt döndür (Light Variant)
       if (!loadDetails) {
         return eventEntity;
       }
 
-      // 3. Detay isteniyorsa helper'ı kullan (Full Variant)
       return await enrichEventWithDetails(eventEntity);
-    } on Exception catch (e) {
+    } catch (e) {
       _logger.error('Failed to fetch event: $e');
       rethrow;
     }
+  }
+
+  // --- PARTICIPANTS SUBCOLLECTION (TRIGGER LOGIC) ---
+
+  @override
+  Future<void> requestJoin(String eventId, CompactUserEntity user) async {
+    try {
+      // 1. Etkinlik sahibini (Creator) bulmalıyız ki onu dürtebilelim.
+      final eventDoc = await _firestore.collection('events').doc(eventId).get();
+      if (!eventDoc.exists) throw Exception('Etkinlik bulunamadı');
+
+      // Model yapısına göre creator ID path'i
+      final creatorId = eventDoc.data()?['creator']?['userID'] as String?;
+
+      final batch = _firestore.batch();
+
+      final requestPoolRef = _firestore
+          .collection('events')
+          .doc(eventId)
+          .collection('requestPool')
+          .doc(user.userID);
+
+      final userEventLogRef = _firestore
+          .collection('users')
+          .doc(user.userID)
+          .collection('eventLog')
+          .doc(eventId);
+
+      final userEvent = UserEventEntity(
+        eventId: eventId,
+        role: EventRoleEnum.participant,
+        status: UserEventStatusEnum.pending,
+        updatedAt: DateTime.now(),
+      );
+
+      batch
+        ..set(requestPoolRef, user.toMap())
+        ..set(
+          userEventLogRef,
+          UserEventModel.fromEntity(userEvent).toFirestore(),
+        );
+
+      // --- TRIGGER ---
+      // Kurucu, yeni isteği anında görmeli (Kırmızı nokta vs.)
+      if (creatorId != null) {
+        _triggerCreatorRefresh(null, batch, creatorId, eventId);
+      }
+
+      await batch.commit();
+
+      // Cache temizlemeye gerek yok çünkü bu metodu çağıran genelde
+      // istek atan kişidir, kurucu değil. Ama garanti olsun diye:
+      _globalCache.removeEntity(eventId);
+    } catch (e) {
+      _logger.error('Failed to request join: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> acceptParticipant(String eventId, CompactUserEntity user) async {
+    try {
+      final eventRef = _firestore.collection('events').doc(eventId);
+      final userEventLogRef = _firestore
+          .collection('users')
+          .doc(user.userID)
+          .collection('eventLog')
+          .doc(eventId);
+
+      final participantRef = eventRef
+          .collection('participants')
+          .doc(user.userID);
+      final requestPoolRef = eventRef
+          .collection('requestPool')
+          .doc(user.userID);
+
+      final participant = EventParticipantEntity(
+        userID: user.userID,
+        username: user.username,
+        profileImageUrl: user.profileImageUrl,
+        role: EventRoleEnum.participant,
+        eventScore: 0,
+        university: user.university,
+      );
+
+      await _firestore.runTransaction((transaction) async {
+        final eventDoc = await transaction.get(eventRef);
+        if (!eventDoc.exists) throw Exception('Etkinlik bulunamadı');
+
+        final currentCount = (eventDoc.data()?['participantCount'] ?? 0) as int;
+        const maxParticipants = AppConfig.eventCapacity;
+        final creatorId = eventDoc.data()?['creator']?['userID'] as String?;
+
+        if (currentCount >= maxParticipants) {
+          throw Exception('Etkinlik dolu!');
+        }
+
+        transaction
+          ..set(participantRef, participant.toMap())
+          ..delete(requestPoolRef)
+          ..update(eventRef, {
+            'participantCount': currentCount + 1,
+          })
+          ..set(userEventLogRef, {
+            'status': eventDoc.data()?['status'],
+            'lastUpdated': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+
+        // --- TRIGGER ---
+        // Kurucunun listesi güncellensin
+        if (creatorId != null) {
+          _triggerCreatorRefresh(transaction, null, creatorId, eventId);
+        }
+      });
+
+      // --- CACHE TEMİZLİĞİ ---
+      _globalCache.removeEntity(eventId);
+    } catch (e) {
+      _logger.error('Failed to accept participant: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> rejectRequest(String eventId, CompactUserEntity user) async {
+    try {
+      // Önce Creator ID'yi bulmak için eventi çekiyoruz.
+      final eventDoc = await _firestore.collection('events').doc(eventId).get();
+      if (!eventDoc.exists) throw Exception('Etkinlik bulunamadı');
+
+      final creatorId = eventDoc.data()?['creator']?['userID'] as String?;
+
+      final eventRef = _firestore.collection('events').doc(eventId);
+      final requestPoolRef = eventRef
+          .collection('requestPool')
+          .doc(user.userID);
+      final rejectedUsersRef = eventRef
+          .collection('rejectedUsers')
+          .doc(user.userID);
+
+      final userEventLogRef = _firestore
+          .collection('users')
+          .doc(user.userID)
+          .collection('eventLog')
+          .doc(eventId);
+
+      final batch = _firestore.batch()
+        ..delete(requestPoolRef)
+        ..set(rejectedUsersRef, user.toMap())
+        ..set(userEventLogRef, {
+          'status': UserEventStatusEnum.rejected.toString(),
+          'lastUpdated': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+
+      // --- TRIGGER ---
+      // Kurucu, isteği reddettiğinde listeden düştüğünü anında görmeli
+      if (creatorId != null) {
+        _triggerCreatorRefresh(null, batch, creatorId, eventId);
+      }
+
+      await batch.commit();
+
+      // --- CACHE TEMİZLİĞİ ---
+      _globalCache.removeEntity(eventId);
+    } catch (e) {
+      _logger.error('Failed to reject request: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> removeParticipant(
+    Identifier eventId,
+    CompactUserEntity user,
+  ) async {
+    try {
+      final eventRef = _firestore.collection('events').doc(eventId);
+      final participantRef = eventRef
+          .collection('participants')
+          .doc(user.userID);
+      final rejectedUsersRef = eventRef
+          .collection('rejectedUsers')
+          .doc(user.userID);
+
+      final userEventLogRef = _firestore
+          .collection('users')
+          .doc(user.userID)
+          .collection('eventLog')
+          .doc(eventId);
+
+      await _firestore.runTransaction((transaction) async {
+        final eventDoc = await transaction.get(eventRef);
+        if (!eventDoc.exists) throw Exception('Etkinlik bulunamadı');
+
+        final currentCount = (eventDoc.data()?['participantCount'] ?? 0) as int;
+        final creatorId = eventDoc.data()?['creator']?['userID'] as String?;
+
+        transaction
+          ..delete(participantRef)
+          ..update(eventRef, {
+            'participantCount': currentCount > 0 ? currentCount - 1 : 0,
+          })
+          ..set(userEventLogRef, {
+            'status': UserEventStatusEnum.rejected.toString(),
+            'lastUpdated': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true))
+          ..set(rejectedUsersRef, user.toMap());
+
+        // --- TRIGGER ---
+        // Kurucu, katılımcıyı attığında listeden düştüğünü görmeli
+        if (creatorId != null) {
+          _triggerCreatorRefresh(transaction, null, creatorId, eventId);
+        }
+      });
+
+      // --- CACHE TEMİZLİĞİ ---
+      _globalCache.removeEntity(eventId);
+    } catch (e) {
+      _logger.error('Failed to remove participant: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> updateParticipant(
+    String eventId,
+    EventParticipantEntity newParticipantData,
+  ) async {
+    throw UnimplementedError();
   }
 
   // --- MESSAGES SUBCOLLECTION ---
@@ -256,7 +543,7 @@ class EventRepositoryImpl implements EventRepository {
       final messageWithId = message.copyWith(messageID: messageDocRef.id);
       final messageModel = EventMessagesModel.fromEntity(messageWithId);
       return messageDocRef.set(messageModel.toFirestore());
-    } on Exception catch (e) {
+    } catch (e) {
       _logger.error('Failed to add message: $e');
       rethrow;
     }
@@ -264,209 +551,58 @@ class EventRepositoryImpl implements EventRepository {
 
   @override
   Future<List<EventMessagesEntity>> getMessages(Identifier eventId) async {
-    return _firestore
-        .collection('events')
-        .doc(eventId)
-        .collection('messages')
-        .orderBy('timestamp', descending: true)
-        .get()
-        .then(
-          (snapshot) => snapshot.docs
-              .map(
-                (doc) =>
-                    EventMessagesModel.fromFirestore(doc.data()).toEntity(),
-              )
-              .toList(),
-        );
+    try {
+      final snapshot = await _firestore
+          .collection('events')
+          .doc(eventId)
+          .collection('messages')
+          .orderBy('timestamp', descending: true)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => EventMessagesModel.fromFirestore(doc.data()).toEntity())
+          .toList();
+    } catch (e) {
+      _logger.error('Failed to get messages: $e');
+      rethrow;
+    }
   }
 
   @override
   Future<List<EventMessagesEntity>> getMessagesByUser(
     Identifier eventId,
     Identifier userId,
-  ) {
-    return _firestore
-        .collection('events')
-        .doc(eventId)
-        .collection('messages')
-        .where('senderId', isEqualTo: userId)
-        .get()
-        .then(
-          (snapshot) => snapshot.docs
-              .map(
-                (doc) =>
-                    EventMessagesModel.fromFirestore(doc.data()).toEntity(),
-              )
-              .toList(),
-        );
+  ) async {
+    try {
+      final snapshot = await _firestore
+          .collection('events')
+          .doc(eventId)
+          .collection('messages')
+          .where('senderId', isEqualTo: userId)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => EventMessagesModel.fromFirestore(doc.data()).toEntity())
+          .toList();
+    } catch (e) {
+      _logger.error('Failed to get messages by user: $e');
+      rethrow;
+    }
   }
 
   @override
   Future<void> deleteMessage(Identifier eventId, Identifier messageId) {
-    return _firestore
-        .collection('events')
-        .doc(eventId)
-        .collection('messages')
-        .doc(messageId)
-        .delete();
-  }
-
-  // --- PARTICIPANTS SUBCOLLECTION (Smart Logic) ---
-  @override
-  Future<void> requestJoin(String eventId, CompactUserEntity user) async {
-    final batch = _firestore.batch();
-
-    // 2. Referansları hazırla
-    final requestPoolRef = _firestore
-        .collection('events')
-        .doc(eventId)
-        .collection('requestPool')
-        .doc(user.userID);
-
-    final userEventLogRef = _firestore
-        .collection('users')
-        .doc(user.userID)
-        .collection('eventLog')
-        .doc(eventId);
-
-    final userEvent = UserEventEntity(
-      eventId: eventId,
-      role: EventRoleEnum.participant,
-      status: UserEventStatusEnum.pending,
-      updatedAt: DateTime.now(),
-    );
-
-    final userEventModel = UserEventModel.fromEntity(userEvent);
-
-    batch
-      ..set(requestPoolRef, user.toMap())
-      ..set(userEventLogRef, userEventModel.toFirestore());
-
-    await batch.commit();
-  }
-
-  @override
-  Future<void> acceptParticipant(
-    String eventId,
-    CompactUserEntity user,
-  ) async {
-    final eventRef = _firestore.collection('events').doc(eventId);
-    final userEventLogRef = _firestore
-        .collection('users')
-        .doc(user.userID)
-        .collection('eventLog')
-        .doc(eventId);
-
-    final participantRef = eventRef.collection('participants').doc(user.userID);
-    final requestPoolRef = eventRef.collection('requestPool').doc(user.userID);
-    // 1. Katılımcıyı Participants'a Ekle
-
-    final participant = EventParticipantEntity(
-      userID: user.userID,
-      username: user.username,
-      profileImageUrl: user.profileImageUrl,
-      role: EventRoleEnum.participant,
-      eventScore: 0,
-      university: user.university,
-    );
-
-    await _firestore.runTransaction((transaction) async {
-      // 1. Önce Etkinliği Oku (Kilitler)
-      final eventDoc = await transaction.get(eventRef);
-      if (!eventDoc.exists) throw Exception('Etkinlik bulunamadı');
-
-      final currentCount = (eventDoc.data()?['participantCount'] ?? 0) as int;
-      const maxParticipants = AppConfig.eventCapacity;
-
-      // 2. Kontenjan Kontrolü
-      if (currentCount >= maxParticipants) {
-        throw Exception('Etkinlik dolu!');
-      }
-
-      // 3. Yazma İşlemleri (Batch ile aynı mantık)
-      transaction
-        ..set(participantRef, participant.toMap())
-        ..delete(requestPoolRef)
-        ..update(eventRef, {
-          'participantCount':
-              currentCount +
-              1, // increment yerine manuel artırabiliriz çünkü okuduk
-        })
-        ..set(userEventLogRef, {
-          'status': eventDoc
-              .data()?['status'], // Güncel statüyü içeriden alıyoruz
-          'lastUpdated': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-    });
-  }
-
-  @override
-  Future<void> rejectRequest(String eventId, CompactUserEntity user) async {
-    //TODO: Implement rejectRequest
-
-    final eventRef = _firestore.collection('events').doc(eventId);
-    final requestPoolRef = eventRef.collection('requestPool').doc(user.userID);
-    final rejectedUsersRef = eventRef
-        .collection('rejectedUsers')
-        .doc(user.userID);
-
-    final userEventLogRef = _firestore
-        .collection('users')
-        .doc(user.userID)
-        .collection('eventLog')
-        .doc(eventId);
-
-    final batch = _firestore.batch()
-      ..delete(requestPoolRef)
-      ..set(rejectedUsersRef, user.toMap())
-      ..set(userEventLogRef, {
-        'status': UserEventStatusEnum.rejected.toString(),
-        'lastUpdated': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-    await batch.commit();
-  }
-
-  @override
-  Future<void> updateParticipant(
-    String eventId,
-    EventParticipantEntity newParticipantData,
-  ) async {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<void> removeParticipant(
-    Identifier eventId,
-    CompactUserEntity user,
-  ) async {
-    final eventRef = _firestore.collection('events').doc(eventId);
-
-    final participantRef = eventRef.collection('participants').doc(user.userID);
-    final userEventLogRef = _firestore
-        .collection('users')
-        .doc(user.userID)
-        .collection('eventLog')
-        .doc(eventId);
-
-    final rejectedUsersRef = eventRef
-        .collection('rejectedUsers')
-        .doc(user.userID);
-    await _firestore.runTransaction((transaction) async {
-      final eventDoc = await transaction.get(eventRef);
-      if (!eventDoc.exists) throw Exception('Etkinlik bulunamadı');
-      final currentCount = (eventDoc.data()?['participantCount'] ?? 0) as int;
-
-      transaction
-        ..delete(participantRef)
-        ..update(eventRef, {
-          'participantCount': currentCount > 0 ? currentCount - 1 : 0,
-        })
-        ..set(userEventLogRef, {
-          'status': UserEventStatusEnum.rejected.toString(),
-          'lastUpdated': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true))
-        ..set(rejectedUsersRef, user.toMap());
-    });
+    try {
+      return _firestore
+          .collection('events')
+          .doc(eventId)
+          .collection('messages')
+          .doc(messageId)
+          .delete();
+    } catch (e) {
+      _logger.error('Failed to delete message: $e');
+      rethrow;
+    }
   }
 
   // --- QUERY & SEARCH ---
@@ -506,21 +642,17 @@ class EventRepositoryImpl implements EventRepository {
       return false;
     }
 
-    // Tüm kontrolleri geçtiyse katılabilir
     return true;
   }
 
   @override
   Future<List<EventEntity>> getAllEvents() async {
     try {
-      // Feed ekranı için sadece ana dökümanları çekiyoruz.
-      // Subcollection çekilmediği için Entity'deki 'participants' listesi boş gelir.
-      // Ancak 'participantCount' alanı dolu ve doğrudur.
       final querySnapshot = await _firestore.collection('events').get();
       return querySnapshot.docs
           .map((doc) => EventModel.fromFirestore(doc.data()).toEntity())
           .toList();
-    } on Exception catch (e) {
+    } catch (e) {
       _logger.error('Failed to get all events: $e');
       rethrow;
     }
@@ -537,38 +669,8 @@ class EventRepositoryImpl implements EventRepository {
       return querySnapshot.docs
           .map((doc) => EventModel.fromFirestore(doc.data()).toEntity())
           .toList();
-    } on Exception catch (e) {
+    } catch (e) {
       _logger.error('Failed to search events by title: $e');
-      rethrow;
-    }
-  }
-
-  @override
-  Future<List<EventEntity>> getEventsByIds(
-    List<Identifier> eventIds, {
-    bool loadDetails = true,
-  }) async {
-    if (eventIds.isEmpty) return Future.value([]);
-    try {
-      final data = await _firestore
-          .collection('events')
-          .where('eventID', whereIn: eventIds)
-          .get()
-          .then(
-            (snapshot) => snapshot.docs
-                .map((doc) => EventModel.fromFirestore(doc.data()).toEntity())
-                .toList(),
-          );
-      if (loadDetails) {
-        final enrichedEvents = await Future.wait(
-          data.map((event) => enrichEventWithDetails(event)),
-        );
-        return enrichedEvents;
-      } else {
-        return data;
-      }
-    } on Exception catch (e) {
-      _logger.error('Failed to get events by IDs: $e');
       rethrow;
     }
   }
@@ -594,6 +696,7 @@ class EventRepositoryImpl implements EventRepository {
     throw UnimplementedError();
   }
 
+  @override
   Stream<List<UserEventEntity>> getUserEventsStream(Identifier userId) {
     return _firestore
         .collection('users')
@@ -607,6 +710,12 @@ class EventRepositoryImpl implements EventRepository {
                 (doc) => UserEventModel.fromFirestore(doc.data()).toEntity(),
               )
               .toList(),
-        );
+        )
+        .handleError((e) {
+          _logger.error('Error in getUserEventsStream: $e');
+          // Stream hatalarında boş liste dönmek veya hatayı propagate etmek
+          // stratejine bağlıdır. Burada hatayı fırlatıyoruz.
+          throw e as Exception;
+        });
   }
 }

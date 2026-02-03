@@ -64,4 +64,10 @@ class AppConfig {
   static const String hiveBoxName = 'app_data_box';
 
   static late String mapBoxAccessTokenKey;
+
+  static const String baseUrl =
+      'https://us-central1-bulusalim-e8e7c.cloudfunctions.net';
+  static const String startEventEndpoint = '/startEventLogic';
+
+  static String get startEventUrl => '$baseUrl$startEventEndpoint';
 }
