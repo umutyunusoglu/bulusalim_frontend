@@ -90,8 +90,7 @@ class MapRepositoryImpl implements MapRepository {
         final endHash = '$parentHash~';
         futures.add(
           _firestore
-              .collection('feed')
-              .where('feedType', isEqualTo: 'event')
+              .collection('events')
               .orderBy('geohash')
               .startAt([parentHash])
               .endAt([endHash])
