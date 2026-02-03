@@ -7,6 +7,7 @@ import 'package:outnest/core/utils/types/enums/emote_enum.dart';
 import 'package:outnest/domain/entities/feed/post/post_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/post_repository.dart';
+import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/screens/home/post%20components/content_tag_chip.dart';
@@ -21,6 +22,8 @@ class PostCard extends StatefulWidget {
     required this.post,
     required this.user,
     this.onPinToggle, // Callback eklendi
+    this.onPostDeleted,
+
     super.key,
   });
 
@@ -29,6 +32,7 @@ class PostCard extends StatefulWidget {
 
   // Sabitleme durumu değişince üst widget'ı (Feed/Grid) haberdar edecek fonksiyon
   final void Function(bool isPinned)? onPinToggle;
+  final VoidCallback? onPostDeleted;
 
   @override
   State<PostCard> createState() => _PostCardState();
@@ -417,8 +421,7 @@ class _PostCardState extends State<PostCard> {
 
     final username = widget.user?.username ?? 'Buluşalım Kullanıcısı';
     final userAvatarUrl =
-        widget.user?.profileImageUrl ??
-        'https://picsum.photos/seed/avatar_default/100/100';
+        widget.user?.profileImageUrl ?? FileService.defaultProfileImageUrl();
 
     final staticLocationName =
         widget.post.displayAddress ?? 'Konum Bilgisi Yok';
@@ -426,7 +429,7 @@ class _PostCardState extends State<PostCard> {
         .take(3)
         .map((p) => p.profileImageUrl)
         .toList();
-    const defaultImageUrl = 'https://picsum.photos/seed/cafe/600/800';
+    final defaultImageUrl = FileService.defaultProfileImageUrl();
 
     final effectiveMediaUrls = mediaUrls.isNotEmpty
         ? mediaUrls
@@ -472,6 +475,8 @@ class _PostCardState extends State<PostCard> {
   }) {
     final theme = Theme.of(context);
     final isPostMine = widget.post.creator.userID == _myUserId;
+    final bool hasAvatarUrl =
+        avatarUrl.isNotEmpty && avatarUrl.startsWith('http');
 
     return Row(
       children: [
@@ -479,7 +484,11 @@ class _PostCardState extends State<PostCard> {
           onTap: _navigateToProfile,
           child: CircleAvatar(
             radius: 20.r,
-            backgroundImage: NetworkImage(fixEmulatorUrl(avatarUrl)),
+            backgroundColor: Colors.grey.shade200,
+            backgroundImage: hasAvatarUrl
+                ? CachedNetworkImageProvider(fixEmulatorUrl(avatarUrl))
+                : AssetImage(FileService.defaultProfileImageUrl())
+                      as ImageProvider,
           ),
         ),
         SizedBox(width: 12.w),
@@ -564,6 +573,8 @@ class _PostCardState extends State<PostCard> {
                         await getIt<PostRepository>().deletePost(
                           widget.post.id,
                         );
+
+                        widget.onPostDeleted?.call();
                       },
                     ),
                   ],
@@ -593,19 +604,26 @@ class _PostCardState extends State<PostCard> {
             child: PageView.builder(
               controller: _pageController,
               itemCount: mediaUrls.length,
-              onPageChanged: (index) {
-                setState(() {
-                  _currentPage = index;
-                });
-              },
+              onPageChanged: (index) => setState(() => _currentPage = index),
               itemBuilder: (context, index) {
-                return CachedNetworkImage(
-                  fadeInDuration: Duration.zero,
-                  imageUrl: (mediaUrls[index]),
-                  fit: BoxFit.cover,
-                  errorWidget: (context, error, stackTrace) =>
-                      Container(color: Colors.grey.shade200),
-                );
+                final String currentMedia = mediaUrls[index];
+                final bool isNetworkMedia = currentMedia.startsWith('http');
+
+                return isNetworkMedia
+                    ? CachedNetworkImage(
+                        fadeInDuration: Duration.zero,
+                        imageUrl: fixEmulatorUrl(currentMedia),
+                        fit: BoxFit.cover,
+                        errorWidget: (context, error, stackTrace) =>
+                            Image.asset(
+                              FileService.defaultProfileImageUrl(),
+                              fit: BoxFit.cover,
+                            ),
+                      )
+                    : Image.asset(
+                        currentMedia, // Asset yolu (FileService.defaultProfileImageUrl() gibi)
+                        fit: BoxFit.cover,
+                      );
               },
             ),
           ),

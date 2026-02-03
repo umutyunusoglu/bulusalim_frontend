@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
@@ -537,7 +538,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (_profileImageUrl.isNotEmpty) {
       // Eğer URL 'http' ile başlıyorsa sunucudaki resimdir
       if (_profileImageUrl.startsWith('http')) {
-        imageProvider = NetworkImage(fixEmulatorUrl(_profileImageUrl));
+        imageProvider = CachedNetworkImageProvider(
+          fixEmulatorUrl(_profileImageUrl),
+        );
       } else {
         // Değilse, cihazdan yeni seçilmiş yerel bir dosyadır
         imageProvider = FileImage(File(_profileImageUrl));
@@ -622,11 +625,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
     var updatedData = <String, dynamic>{};
 
     if (_profileImageChanged) {
-      final newURL = await getIt<UploadProfilePicture>().call(
-        userID: getIt<SessionService>().currentUser!.userID,
-        filePath: _profileImageUrl,
-      );
-      updatedData['profileImageUrl'] = newURL;
+      try {
+        final newURL = await getIt<UploadProfilePicture>().call(
+          userID: getIt<SessionService>().currentUser!.userID,
+          filePath: _profileImageUrl,
+        );
+        updatedData['profileImageUrl'] = newURL;
+      } catch (e) {
+        debugPrint('Profil resmi yüklenirken hata oluştu: $e');
+        updatedData['profileImageUrl'] = "";
+      }
     }
     if (_nameController.text != _previousName) {
       updatedData['username'] = _nameController.text.toLowerCase();

@@ -3,6 +3,7 @@ import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
+import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/screens/chat/event_chat_card.dart';
 import 'package:flutter/material.dart';
@@ -149,6 +150,12 @@ class _MyEventsPageState extends State<MyEventsPage> {
                           ),
                           itemBuilder: (context, index) {
                             final item = filteredItems[index];
+                            final String rawImage =
+                                item.event.creator.profileImageUrl;
+                            final String safeCreatorImage =
+                                (rawImage.isNotEmpty)
+                                ? rawImage
+                                : FileService.defaultProfileImageUrl();
 
                             return EventChatCard(
                               event: item.event,
@@ -169,8 +176,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
                                         '${item.event.participants.length}/${item.event.capacity}',
                                     'time': 'Bugün 21:00', // TODO: Formatla
                                     'creatorID': item.event.creator.userID,
-                                    'creatorProfileImage':
-                                        item.event.creator.profileImageUrl,
+                                    'creatorProfileImage': safeCreatorImage,
                                     'avatars': item.event.participants,
                                     'event': item.event,
                                   },

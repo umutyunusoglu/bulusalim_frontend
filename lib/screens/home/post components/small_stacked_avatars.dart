@@ -1,5 +1,7 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:flutter/material.dart';
+import 'package:outnest/domain/services/file_service.dart';
 
 class SmallStackedAvatars extends StatelessWidget {
   const SmallStackedAvatars({
@@ -30,9 +32,11 @@ class SmallStackedAvatars extends StatelessWidget {
       height: size,
       width: width,
       child: Stack(
-        // Soldan sağa hizalama
         alignment: Alignment.centerLeft,
         children: List.generate(items.length, (index) {
+          final String currentItem = items[index] ?? "";
+          final bool isNetwork = currentItem.startsWith('http');
+
           return Positioned(
             left: index * (size - overlap),
             child: Container(
@@ -45,7 +49,10 @@ class SmallStackedAvatars extends StatelessWidget {
                   width: borderWidth,
                 ),
                 image: DecorationImage(
-                  image: NetworkImage(fixEmulatorUrl(items[index])),
+                  image: isNetwork
+                      ? CachedNetworkImageProvider(fixEmulatorUrl(currentItem))
+                      : AssetImage(FileService.defaultProfileImageUrl())
+                            as ImageProvider,
                   fit: BoxFit.cover,
                 ),
                 color: Colors.grey.shade300,
