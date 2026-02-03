@@ -380,12 +380,12 @@ class ChatPageHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       color: Colors.white,
-      padding: EdgeInsets.only(top: topPadding + 50.h),
+      padding: EdgeInsets.only(top: topPadding + 5.h),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.w),
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -396,7 +396,7 @@ class ChatPageHeader extends StatelessWidget {
                   child: Padding(
                     padding: EdgeInsets.zero,
                     child: Icon(
-                      Icons.keyboard_backspace,
+                      Icons.arrow_back,
                       size: 24.sp,
                       color: Colors.black87,
                     ),
@@ -479,8 +479,12 @@ class ChatPageHeader extends StatelessWidget {
                               GestureDetector(
                                 onTap: () {
                                   if (isCreator) {
-                                    context.push(
-                                      '/chat/room/$eventID/settings',
+                                    final encodedId = Uri.encodeComponent(
+                                      eventID,
+                                    );
+
+                                    GoRouter.of(context).push(
+                                      '/chat/room/$encodedId/settings',
                                       extra: {
                                         'title': chatTitle,
                                         'avatars': participantAvatars,

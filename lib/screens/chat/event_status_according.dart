@@ -397,14 +397,13 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
             ),
           ),
 
-          // BUTON: Kaldır (Açık Pembe Zemin, Koyu Pembe İkon)
           GestureDetector(
             onTap: () => _removeParticipant(user.userId),
             child: Container(
               width: 24.w,
               height: 24.w,
               decoration: BoxDecoration(
-                color: AppColors.primaryColor.withOpacity(0.3), // Açık pembe
+                color: AppColors.primaryColor.withOpacity(0.3),
                 shape: BoxShape.circle,
               ),
               // Icon olarak 'remove' (tire) kullanıyoruz
