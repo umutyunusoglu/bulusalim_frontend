@@ -1,4 +1,9 @@
 import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
@@ -6,10 +11,6 @@ import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/screens/chat/event_chat_card.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
-import 'package:intl/date_symbol_data_local.dart';
 
 @immutable
 class MyEventItemData {
@@ -52,7 +53,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
           return Future.wait(
             events.map((event) async {
               final pendingCount = event.requestPool.length;
-              final unreadCount = 0;
+              const unreadCount = 0;
 
               return MyEventItemData(
                 event: event,
@@ -150,10 +151,8 @@ class _MyEventsPageState extends State<MyEventsPage> {
                           ),
                           itemBuilder: (context, index) {
                             final item = filteredItems[index];
-                            final String rawImage =
-                                item.event.creator.profileImageUrl;
-                            final String safeCreatorImage =
-                                (rawImage.isNotEmpty)
+                            final rawImage = item.event.creator.profileImageUrl;
+                            final safeCreatorImage = (rawImage.isNotEmpty)
                                 ? rawImage
                                 : FileService.defaultProfileImageUrl();
 

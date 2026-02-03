@@ -49,9 +49,7 @@ class GlobalContentCacheImpl implements GlobalContentCache {
 
   @override
   void removeEntity(Identifier id) {
-    // NOT: InMemoryCache sınıfına 'remove' metodunu eklemeyi unutma.
-    // Şimdilik eklemediysen bu satırı yoruma alabilirsin.
-    // _memoryCache.remove(id);
+    _memoryCache.remove(id);
   }
 
   @override

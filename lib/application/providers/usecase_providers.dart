@@ -18,8 +18,6 @@ extension UseCaseModule on GetIt {
       ..registerLazySingleton<ForceStartEvent>(
         () => ForceStartEvent(
           logger: this(),
-          eventRepository: this(),
-          userRepository: this(),
         ),
       )
       ..registerLazySingleton<ForceStopEvent>(
