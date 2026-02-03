@@ -45,6 +45,10 @@ class InMemoryCache<T> {
     _cache.clear();
   }
 
+  void remove(String key) {
+    _cache.remove(key);
+  }
+
   List<T> get values {
     final now = DateTime.now();
     // Süresi dolanları temizleyerek sadece geçerli olanları döndür
