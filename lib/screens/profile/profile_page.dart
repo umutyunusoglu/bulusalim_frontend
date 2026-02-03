@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -50,7 +53,7 @@ class _ProfilePageState extends State<ProfilePage> {
   List<EventEntity> _consideredEvents = [];
   List<EventEntity> _currentEvents = [];
 
-  StreamSubscription? _postsSubscription;
+  StreamSubscription<List<UserPostEntity>>? _postsSubscription;
 
   String _fullName = '';
   bool _isFollowing = false;
@@ -61,7 +64,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
   List<UserPostEntity> _pinnedPosts = [];
   List<UserPostEntity> _activePosts = [];
-  bool _isLoadingPosts = true;
 
   String _school = '';
   int _selectedTabIndex = 0;
@@ -105,12 +107,13 @@ class _ProfilePageState extends State<ProfilePage> {
             setState(() {
               _pinnedPosts = pinned;
               _activePosts = active;
-              _isLoadingPosts = false;
             });
           },
           onError: (error) {
             // Hata yönetimi
-            if (mounted) setState(() => _isLoadingPosts = false);
+            if (mounted) {
+              debugPrint('Post Stream Hatası: $error');
+            }
           },
         );
   }
