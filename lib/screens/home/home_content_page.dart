@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/event_card.dart';
 import 'package:outnest/components/post_card.dart';
@@ -38,7 +39,6 @@ class _HomeContentPageState extends State<HomeContentPage> {
   }
 
   void _onScroll() {
-    // Listenin sonuna yaklaşıldı mı?
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
       // 200px kala yükle
@@ -76,16 +76,14 @@ class _HomeContentPageState extends State<HomeContentPage> {
             // 2. Listeyi Çiz
             return ListView.builder(
               controller: _scrollController,
-              // +1 ekleyerek en alta loading indicator koyabiliriz (opsiyonel)
+              physics: const SlowFeedPhysics(),
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final item = items[index];
 
                 if (item is PostEntity) {
-                  // Postlar genelde statik kalabilir (beğeni anlık değilse)
                   return PostCard(post: item, user: item.creator);
                 } else if (item is EventEntity) {
-                  // KRİTİK NOKTA: Event kartını "Canlı" moda alıyoruz.
                   return _LiveEventItem(
                     initialEvent: item,
                     repository: _feedRepository,
@@ -118,9 +116,6 @@ class _HomeContentPageState extends State<HomeContentPage> {
   }
 }
 
-// --- Event Canlılığı İçin Özel Widget ---
-// Bu widget, listedeki tek bir event kartını sarmalar ve
-// sadece o kartın verisini canlı tutar.
 class _LiveEventItem extends StatefulWidget {
   const _LiveEventItem({
     required this.initialEvent,
@@ -159,5 +154,31 @@ class _LiveEventItemState extends State<_LiveEventItem> {
         );
       },
     );
+  }
+}
+
+// --- SCROLL  ---
+class SlowFeedPhysics extends BouncingScrollPhysics {
+  const SlowFeedPhysics({super.parent});
+
+  @override
+  SlowFeedPhysics applyTo(ScrollPhysics? ancestor) {
+    return SlowFeedPhysics(parent: buildParent(ancestor));
+  }
+
+  @override
+  double applyPhysicsToUserOffset(ScrollMetrics metrics, double offset) {
+    return offset * 0.85; // Parmakla kaydırma hızı (%15 yavaşlatıldı)
+  }
+
+  @override
+  Simulation? createBallisticSimulation(
+    ScrollMetrics metrics,
+    double velocity,
+  ) {
+    return super.createBallisticSimulation(
+      metrics,
+      velocity * 0.75,
+    ); // Fırlatma hızı (%25 yavaşlatıldı)
   }
 }
