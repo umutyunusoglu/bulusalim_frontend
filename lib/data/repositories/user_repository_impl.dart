@@ -11,6 +11,7 @@ import 'package:outnest/data/models/user/user_event_model.dart';
 import 'package:outnest/data/models/user/user_hobby_model.dart';
 import 'package:outnest/data/models/user/user_model.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/entities/user/friend_entity.dart';
 import 'package:outnest/domain/entities/user/index.dart';
 import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
@@ -540,7 +541,7 @@ class UserRepositoryImpl implements UserRepository {
         .doc(userID)
         .collection('eventLog')
         .where('status', whereIn: ['upcoming', 'ongoing']) // Sadece aktifler
-        .orderBy('date')
+        .orderBy('updatedAt', descending: true)
         .snapshots()
         .asyncMap((snapshot) async {
           if (snapshot.docs.isEmpty) return [];
@@ -1066,7 +1067,7 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Stream<List<Identifier>> watchFollowees(Identifier userID) {
+  Stream<List<CompactUserEntity>> watchFollowees(Identifier userID) {
     final snapshot = _firestore
         .collection('users')
         .doc(userID)
@@ -1076,13 +1077,13 @@ class UserRepositoryImpl implements UserRepository {
     return snapshot.map((querySnapshot) {
       return querySnapshot.docs.map((doc) {
         final data = doc.data();
-        return data['userID'] as Identifier;
+        return CompactUserEntity.fromMap(data);
       }).toList();
     });
   }
 
   @override
-  Stream<List<Identifier>> watchFollowers(Identifier userID) {
+  Stream<List<CompactUserEntity>> watchFollowers(Identifier userID) {
     final snapshot = _firestore
         .collection('users')
         .doc(userID)
@@ -1092,7 +1093,7 @@ class UserRepositoryImpl implements UserRepository {
     return snapshot.map((querySnapshot) {
       return querySnapshot.docs.map((doc) {
         final data = doc.data();
-        return data['userID'] as Identifier;
+        return CompactUserEntity.fromMap(data);
       }).toList();
     });
   }
