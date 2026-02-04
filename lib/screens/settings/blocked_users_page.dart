@@ -1,4 +1,5 @@
 import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
@@ -16,6 +17,7 @@ class BlockedUsersPage extends StatefulWidget {
 class _BlockedUsersPageState extends State<BlockedUsersPage> {
   final SecurityService _securityService = getIt<SecurityService>();
   final SessionService _sessionService = getIt<SessionService>();
+  final LoggingService _logger = getIt<LoggingService>();
 
   // HATA 1 ÇÖZÜMÜ: Late yerine boş liste ile başlatıyoruz.
   List<CompactUserEntity> _blockedUsers = [];
@@ -55,7 +57,9 @@ class _BlockedUsersPageState extends State<BlockedUsersPage> {
 
     try {
       final users = await _securityService.getBlockedUsers(currentUser.userID);
-
+      _logger.info(
+        'Blocked users fetched successfully for user ${currentUser.userID}. Total blocked users: ${users.length}',
+      );
       if (mounted) {
         setState(() {
           _blockedUsers = users;
