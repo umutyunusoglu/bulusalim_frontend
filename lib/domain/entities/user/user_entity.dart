@@ -22,7 +22,6 @@ class UserEntity extends Equatable {
     required this.lastActiveAt,
     required this.followeeCount,
     required this.followerCount,
-    required this.activeEvents,
 
     required this.accountType,
     required this.phoneNumber,
@@ -86,7 +85,6 @@ class UserEntity extends Equatable {
       isPrivate: isPrivate ?? this.isPrivate,
       universityEmail: universityEmail ?? this.universityEmail,
       isUniversityVerified: isUniversityVerified ?? this.isUniversityVerified,
-      activeEvents: activeEvents ?? this.activeEvents,
     );
   }
 
@@ -109,7 +107,6 @@ class UserEntity extends Equatable {
   final DateTime lastActiveAt;
   final int followeeCount;
   final int followerCount;
-  final List<EventEntity> activeEvents;
   final List<String> hobbies;
   final bool isPrivate;
   final bool hideSavedEvents;
