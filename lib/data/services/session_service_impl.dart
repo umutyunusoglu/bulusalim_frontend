@@ -3,8 +3,10 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/entities/user/session_state.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
@@ -33,8 +35,8 @@ class SessionServiceImpl implements SessionService {
   StreamSubscription<String?>? _authSubscription;
   StreamSubscription<UserEntity?>? _userSubscription;
   StreamSubscription<List<EventEntity>>? _eventsSubscription;
-  StreamSubscription<List<Identifier>>? _followersSubscription;
-  StreamSubscription<List<Identifier>>? _followeesSubscription;
+  StreamSubscription<List<CompactUserEntity>>? _followersSubscription;
+  StreamSubscription<List<CompactUserEntity>>? _followeesSubscription;
 
   // --- PUBLIC GETTERS ---
   @override
@@ -77,27 +79,35 @@ class SessionServiceImpl implements SessionService {
       _stateNotifier.value = _stateNotifier.value.copyWith(user: user);
     });
 
-    // Events Stream: Sadece 'ongoingEvents' alanını günceller
-    _eventsSubscription = _userRepository.watchOngoingEvents(userId).listen((
+    _eventsSubscription = _userRepository.watchActiveEvents(userId).listen((
       events,
     ) {
       _stateNotifier.value = _stateNotifier.value.copyWith(
-        ongoingEvents: events,
+        ongoingEvents: events
+            .where((e) => e.status == EventStatusEnum.ongoing)
+            .toList(),
+        upcomingEvents: events
+            .where((e) => e.status == EventStatusEnum.upcoming)
+            .toList(),
       );
     });
 
-    // Followers Stream: Sadece 'followerIds' alanını günceller
+    // Followers Stream: Sadece 'followers' alanını günceller
     _followersSubscription = _userRepository.watchFollowers(userId).listen((
-      ids,
+      followers,
     ) {
-      _stateNotifier.value = _stateNotifier.value.copyWith(followerIds: ids);
+      _stateNotifier.value = _stateNotifier.value.copyWith(
+        followers: followers,
+      );
     });
 
-    // Followees Stream: Sadece 'followeeIds' alanını günceller
+    // Followees Stream: Sadece 'followees' alanını günceller
     _followeesSubscription = _userRepository.watchFollowees(userId).listen((
-      ids,
+      followees,
     ) {
-      _stateNotifier.value = _stateNotifier.value.copyWith(followeeIds: ids);
+      _stateNotifier.value = _stateNotifier.value.copyWith(
+        followees: followees,
+      );
     });
   }
 
