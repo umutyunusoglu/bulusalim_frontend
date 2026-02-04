@@ -77,7 +77,7 @@ class SecurityServiceImpl implements SecurityService {
     } catch (e) {
       // Beklenmedik diğer hatalar (İnternet kaybı vb.)
       _logger.error('Unexpected error during reporting: $e');
-      throw Exception('Bir hata oluştu. Lütfen tekrar deneyin.');
+      throw Exception('Bir hata oluştu. Lütfen tekrar deneyin. ');
     }
   }
 
@@ -112,7 +112,7 @@ class SecurityServiceImpl implements SecurityService {
             userID: doc['userID'] as String,
             username: doc['username'] as String,
             profileImageUrl: doc['profileImageUrl'] as String,
-            university: doc['university'] as String,
+            university: '',
           ),
         )
         .toList();
