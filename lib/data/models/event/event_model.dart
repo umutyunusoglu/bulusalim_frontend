@@ -1,5 +1,8 @@
+import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
+import 'package:outnest/core/utils/types/enums/visibility_enum.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/data/models/model.dart';
@@ -30,6 +33,7 @@ class EventModel extends Model<EventEntity> {
     required this.updatedAt,
     required this.isLocked,
     required this.geohash,
+    required this.visibility,
   });
 
   @override
@@ -55,6 +59,7 @@ class EventModel extends Model<EventEntity> {
       updatedAt: entity.updatedAt,
       isLocked: entity.isLocked,
       geohash: entity.geohash,
+      visibility: entity.visibility,
     );
   }
 
@@ -101,6 +106,16 @@ class EventModel extends Model<EventEntity> {
         (doc['participantCount'] as int?) ??
         (participants.isNotEmpty ? participants.length : 1);
 
+    VisibilityEnum visibility;
+    try {
+      visibility = VisibilityEnum.fromString(doc['visibility'] as String);
+    } catch (e) {
+      getIt<LoggingService>().warn(
+        'VisibilityEnum parsing failed, defaulting to everyone. Error: $e',
+      );
+      visibility = VisibilityEnum.everyone;
+    }
+
     return EventModel(
       eventId: doc['eventID'] as String,
       name: doc['name'] as String,
@@ -122,6 +137,7 @@ class EventModel extends Model<EventEntity> {
       updatedAt: (doc['updatedAt'] as Timestamp).toDate(),
       isLocked: (doc['isLocked'] as bool?) ?? false,
       geohash: geohash,
+      visibility: visibility,
     );
   }
 
@@ -159,6 +175,7 @@ class EventModel extends Model<EventEntity> {
       'isLocked': isLocked,
       'geohash': geohash,
       'feedType': 'event',
+      'visibility': visibility.toString(),
     };
   }
 
@@ -184,6 +201,7 @@ class EventModel extends Model<EventEntity> {
       updatedAt: updatedAt,
       isLocked: isLocked,
       geohash: geohash,
+      visibility: visibility,
     );
   }
 
@@ -206,6 +224,7 @@ class EventModel extends Model<EventEntity> {
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isLocked;
+  final VisibilityEnum visibility;
 
   final String geohash;
 }
