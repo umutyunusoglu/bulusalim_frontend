@@ -28,6 +28,7 @@ class AuthServiceImpl implements AuthService {
     }
     final uid = _firebaseAuth.currentUser!.uid;
     _logger.info('getCurrentUserCredential: userId=$uid');
+
     return uid;
   }
 
@@ -315,7 +316,7 @@ class AuthServiceImpl implements AuthService {
             'Bu Apple hesabı zaten kullanımda. Lütfen giriş yapın.',
           );
         }
-
+        await user.getIdToken(true);
         return user.uid;
       }
       throw AuthException('Apple servisinden kullanıcı verisi alınamadı.');
@@ -381,6 +382,7 @@ class AuthServiceImpl implements AuthService {
         }
 
         _logger.info('signInWithGoogle success: ${user.uid}');
+        await user.getIdToken(true);
         return user.uid;
       }
       throw AuthException('Kullanıcı verisi alınamadı.');
