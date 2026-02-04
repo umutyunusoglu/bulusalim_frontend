@@ -47,7 +47,7 @@ class EventRepositoryImpl implements EventRepository {
         .collection('eventLog')
         .doc(eventId);
 
-    final data = {'lastUpdated': FieldValue.serverTimestamp()};
+    final data = {'updatedAt': FieldValue.serverTimestamp()};
 
     if (transaction != null) {
       transaction.update(creatorLogRef, data);
@@ -403,7 +403,7 @@ class EventRepositoryImpl implements EventRepository {
           })
           ..set(userEventLogRef, {
             'status': eventDoc.data()?['status'],
-            'lastUpdated': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
           }, SetOptions(merge: true));
 
         // --- TRIGGER ---
@@ -449,7 +449,7 @@ class EventRepositoryImpl implements EventRepository {
         ..set(rejectedUsersRef, user.toMap())
         ..set(userEventLogRef, {
           'status': UserEventStatusEnum.rejected.toString(),
-          'lastUpdated': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
 
       // --- TRIGGER ---
@@ -502,7 +502,7 @@ class EventRepositoryImpl implements EventRepository {
           })
           ..set(userEventLogRef, {
             'status': UserEventStatusEnum.rejected.toString(),
-            'lastUpdated': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
           }, SetOptions(merge: true))
           ..set(rejectedUsersRef, user.toMap());
 

@@ -14,6 +14,7 @@ import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/entities/user/friend_entity.dart';
 import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
 import 'package:outnest/domain/entities/user/session_state.dart';
@@ -21,6 +22,7 @@ import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/domain/usecases/send_event_invitation_usecase.dart';
 import 'package:outnest/screens/home/post%20components/small_stacked_avatars.dart';
 import 'package:outnest/screens/profile/dump_tab.dart';
 import 'package:outnest/screens/profile/events_tab.dart';
@@ -52,6 +54,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String _bio = '';
   List<EventEntity> _consideredEvents = [];
   List<EventEntity> _currentEvents = [];
+  List<CompactUserEntity> _commonFollowers = [];
 
   StreamSubscription<List<UserPostEntity>>? _postsSubscription;
 
@@ -194,6 +197,23 @@ class _ProfilePageState extends State<ProfilePage> {
       final sessionService = getIt<SessionService>();
       var isFollowing = false;
       final currentUser = sessionService.currentUser;
+      final sessionState = sessionService.currentState;
+      final myFollowers = sessionState.followers;
+
+      final commonFollows = <CompactUserEntity>[];
+
+      //Todo: optimize
+      if (widget.profileUserID != currentUser?.userID) {
+        for (final follower in myFollowers) {
+          final isFollowing = await userRepository.isFollowing(
+            widget.profileUserID,
+            follower.userID,
+          );
+          if (isFollowing) {
+            commonFollows.add(follower);
+          }
+        }
+      }
 
       if (user!.userID == currentUser?.userID) {
         isFollowing = true;
@@ -252,6 +272,8 @@ class _ProfilePageState extends State<ProfilePage> {
         numberOfFollowers = followerCount;
         numberOfFollowing = followeeCount;
         numberOfEvents = completedEventCount;
+
+        _commonFollowers = commonFollows;
 
         _currentEvents = enrolledEvents;
         _consideredEvents = savedEvents;
@@ -452,9 +474,8 @@ class _ProfilePageState extends State<ProfilePage> {
                           (event.name ?? 'Buluşma ${index + 1}').toString();
 
                           // 1. URL'nin tipini kontrol et (Network mü Asset mi?)
-                          final imageUrl =
-                              event.creator.profileImageUrl ??
-                              FileService.defaultProfileImageUrl();
+                          final imageUrl = event.creator.profileImageUrl;
+
                           final bool isNetwork = imageUrl.startsWith('http');
 
                           return Column(
@@ -468,11 +489,14 @@ class _ProfilePageState extends State<ProfilePage> {
                                     ? CachedNetworkImageProvider(
                                         fixEmulatorUrl(imageUrl),
                                       )
-                                    : AssetImage(imageUrl) as ImageProvider,
+                                    : AssetImage(
+                                            FileService.defaultProfileImageUrl(),
+                                          )
+                                          as ImageProvider,
                               ),
                               SizedBox(height: 8.h),
                               Text(
-                                'Bizimle beraber tracking\nyapmak ister misiniz???',
+                                '${event.name ?? 'Buluşma ${index + 1}'}',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontFamily: 'SF Pro Display',
@@ -537,12 +561,57 @@ class _ProfilePageState extends State<ProfilePage> {
                         // PAYLAŞ
                         Expanded(
                           child: TextButton(
-                            onPressed: () {
-                              context.pop();
-                              // TODO: Paylaşma işlemi (Seçilen event: events[selectedIndex])
-                              debugPrint(
-                                "Etkinlik paylaşıldı: ${events[selectedIndex].name}",
+                            onPressed: () async {
+                              final event =
+                                  events[selectedIndex] as EventEntity;
+
+                              // 1. Kullanıcıya işlemin başladığını hissettir (Opsiyonel: Dialog'u kapatmadan önce loading gösterilebilir)
+                              // Şimdilik pop yapıp ana ekranda Snackbar gösterelim.
+                              final scaffoldMessenger = ScaffoldMessenger.of(
+                                context,
                               );
+                              final navigator = Navigator.of(context);
+
+                              navigator
+                                  .pop(); // Önce BottomSheet veya Dialog'u kapatıyoruz
+
+                              try {
+                                // 2. Fonksiyonu await ile bekle
+                                final resultMessage =
+                                    await getIt<SendEventInvitation>().call(
+                                      toID: widget.profileUserID,
+                                      toUsername: _username,
+                                      toAvatarUrl: _avatarUrl,
+                                      eventID: event.eventID,
+                                      eventName: event.name ?? '',
+                                    );
+
+                                // 3. Başarılı durum bildirimi
+                                scaffoldMessenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      resultMessage ??
+                                          'Davet başarıyla gönderildi!',
+                                    ),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+
+                                debugPrint(
+                                  'Etkinlik paylaşıldı: ${event.name}',
+                                );
+                              } on Exception catch (e) {
+                                // 4. Hata durum bildirimi
+                                scaffoldMessenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Davet gönderilemedi: $e',
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                debugPrint('Paylaşım hatası: $e');
+                              }
                             },
                             style: TextButton.styleFrom(
                               backgroundColor: AppColors.primaryColor,
@@ -582,9 +651,11 @@ class _ProfilePageState extends State<ProfilePage> {
     if (currentUser == null) return;
 
     // Aktif etkinlikleri al
-    final activeEvents = currentUser.activeEvents;
+    final activeEvents =
+        sessionService.currentState.ongoingEvents +
+        sessionService.currentState.upcomingEvents;
 
-    if (activeEvents == null || activeEvents.isEmpty) {
+    if (activeEvents.isEmpty) {
       // 0 Etkinlik -> Hata Mesajı
       _showNoShareableEventDialog(context);
     } else {
@@ -829,10 +900,30 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildFollowedBySection(BuildContext context) {
     final theme = Theme.of(context);
-    final avatars = [
-      FileService.defaultProfileImageUrl(),
-      FileService.defaultProfileImageUrl(),
-    ];
+    final avatars = <String>[];
+
+    var commonCount = _commonFollowers.length;
+    if (commonCount == 0) {
+      return const SizedBox.shrink();
+    }
+
+    if (commonCount == 1) {
+      avatars.add(_commonFollowers.first.profileImageUrl);
+      commonCount -= 1;
+    } else if (commonCount >= 2) {
+      avatars
+        ..add(_commonFollowers[0].profileImageUrl)
+        ..add(_commonFollowers[1].profileImageUrl);
+      commonCount -= 2;
+    }
+    var showAdditional = commonCount > 0;
+
+    final commonDisplayNames = _commonFollowers
+        .take(2)
+        .map((user) => user.username)
+        .toList();
+
+    final namesText = commonDisplayNames.join(', ');
 
     return Row(
       children: [
@@ -854,17 +945,19 @@ class _ProfilePageState extends State<ProfilePage> {
                   color: theme.colorScheme.onSurface,
                   fontWeight: FontWeight.w400,
                 ),
-                children: const [
+                children: [
                   TextSpan(
-                    text: 'durucetin, yarkinyoruk',
-                    style: TextStyle(fontWeight: FontWeight.w400),
+                    text: namesText,
+                    style: const TextStyle(fontWeight: FontWeight.w400),
                   ),
-                  TextSpan(text: ' ve '),
-                  TextSpan(
-                    text: '4 diğer kişi',
-                    style: TextStyle(fontWeight: FontWeight.w400),
-                  ),
-                  TextSpan(text: ' tarafından takip ediliyor.'),
+                  if (showAdditional) ...[
+                    const TextSpan(text: ' ve '),
+                    TextSpan(
+                      text: '$commonCount diğer kişi',
+                      style: const TextStyle(fontWeight: FontWeight.w400),
+                    ),
+                  ],
+                  const TextSpan(text: ' tarafından takip ediliyor.'),
                 ],
               ),
             ),

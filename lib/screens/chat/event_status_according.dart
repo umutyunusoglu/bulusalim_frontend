@@ -399,24 +399,25 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-
-          GestureDetector(
-            onTap: () => _removeParticipant(user.userId),
-            child: Container(
-              width: 24.w,
-              height: 24.w,
-              decoration: BoxDecoration(
-                color: AppColors.primaryColor.withOpacity(0.3),
-                shape: BoxShape.circle,
-              ),
-              // Icon olarak 'remove' (tire) kullanıyoruz
-              child: Icon(
-                Icons.remove,
-                size: 14.sp,
-                color: AppColors.primaryColor,
+          if (widget.event.creator.userID != user.userId) ...[
+            GestureDetector(
+              onTap: () => _removeParticipant(user.userId),
+              child: Container(
+                width: 24.w,
+                height: 24.w,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.3),
+                  shape: BoxShape.circle,
+                ),
+                // Icon olarak 'remove' (tire) kullanıyoruz
+                child: Icon(
+                  Icons.remove,
+                  size: 14.sp,
+                  color: AppColors.primaryColor,
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );
