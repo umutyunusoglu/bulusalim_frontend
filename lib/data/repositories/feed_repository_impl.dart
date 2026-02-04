@@ -91,7 +91,9 @@ class FeedRepositoryImpl implements FeedRepository {
     try {
       final sessionService = getIt<SessionService>();
       final currentUser = sessionService.currentState.user;
-      final followeeIds = sessionService.currentState.followeeIds;
+      final followeeIds = sessionService.currentState.followees
+          .map((e) => e.userID)
+          .toList();
 
       if (currentUser == null) {
         _logger.error('❌ loadMore failed: Current user is null.');
