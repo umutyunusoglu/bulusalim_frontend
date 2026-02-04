@@ -991,6 +991,7 @@ class _MapPageState extends State<MapPage> {
         _tempLocation?.latitude ?? 42,
         precision: 7,
       ),
+      visibility: _tempVisibility ?? VisibilityEnum.everyone,
     );
   }
 
@@ -1044,6 +1045,7 @@ class _MapPageState extends State<MapPage> {
       participantCount: 1,
       isLocked: false,
       geohash: geohash,
+      visibility: _tempVisibility ?? VisibilityEnum.everyone,
     );
     await eventRepository.createEvent(event);
     _closeWizard();

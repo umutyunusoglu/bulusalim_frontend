@@ -52,31 +52,38 @@ final router = GoRouter(
   redirect: (context, state) async {
     final AuthService authService = getIt<AuthService>();
     final isLoggedIn = await authService.isUserLoggedIn();
-
     final goingTo = state.uri.toString();
 
-    final isAuthRoute =
-        goingTo == '/welcome' ||
-        goingTo == '/login' ||
-        goingTo == '/register' ||
-        goingTo == '/verification-code-field' ||
-        goingTo == '/login-verification' ||
-        goingTo == '/register-info';
+    // Auth rotaları listesi
+    final isAuthRoute = [
+      '/welcome',
+      '/login',
+      '/register',
+      '/verification-code-field',
+      '/login-verification',
+    ].contains(goingTo);
 
+    // Özel olarak register-info rotasını ayırıyoruz
+    final isRegisterInfo = goingTo == '/register-info';
     final isDebugRoute = goingTo == '/debug';
 
+    // 1. Giriş yapmamış kullanıcı
     if (!isLoggedIn) {
-      if (isAuthRoute || isDebugRoute) return null;
+      if (isAuthRoute || isRegisterInfo || isDebugRoute) return null;
       return '/welcome';
     }
 
+    // 2. Giriş yapmış kullanıcı
     if (isLoggedIn) {
+      // Eğer kullanıcı register-info sayfasındaysa, oraya gitmesine izin ver
+      if (isRegisterInfo) return null;
+
+      // Diğer auth sayfalarına gitmeye çalışırsa home'a yönlendir
       if (isAuthRoute) return '/home';
     }
 
     return null;
   },
-
   routes: [
     // --- AUTH ROTALARI ---
     GoRoute(

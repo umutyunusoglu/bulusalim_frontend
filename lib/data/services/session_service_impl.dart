@@ -76,7 +76,26 @@ class SessionServiceImpl implements SessionService {
   void _startUserStreams(String userId) {
     // User Stream: Sadece 'user' alanını günceller
     _userSubscription = _userRepository.watchUser(userId).listen((user) {
-      _stateNotifier.value = _stateNotifier.value.copyWith(user: user);
+      // 1. DURUM: Firestore'da doküman yok (null döndü)
+      if (user == null) {
+        // Eğer daha önce state'imizde bu kullanıcı VARDIYSA (yani null'a düştüyse)
+        // Bu, hesabın veritabanından SİLİNDİĞİ anlamına gelir.
+        if (_stateNotifier.value.user != null) {
+          _logger.warn(
+            'Hesap veritabanından silindi. Auth oturumu da kapatılıyor...',
+          );
+          _authService
+              .signOut(); // Firestore'u dinlerken Auth'u buradan kapatıyoruz
+          return;
+        }
+
+        // Eğer state zaten boşsa ve null geldiyse, bu YENİ bir kullanıcıdır.
+        // Onu dışarı atmıyoruz, sadece user nesnesini null tutuyoruz (onboarding için).
+        _stateNotifier.value = _stateNotifier.value.copyWith(user: null);
+      } else {
+        // 2. DURUM: Firestore'da doküman var (Kayıtlı kullanıcı)
+        _stateNotifier.value = _stateNotifier.value.copyWith(user: user);
+      }
     });
 
     _eventsSubscription = _userRepository.watchActiveEvents(userId).listen((

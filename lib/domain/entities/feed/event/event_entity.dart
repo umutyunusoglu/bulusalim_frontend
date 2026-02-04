@@ -30,6 +30,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
     required this.participantCount,
     required this.isLocked,
     required this.geohash,
+    required this.visibility,
     this.currentUserStatus,
     this.currentUserRole,
   }) : super(feedType: FeedEntityTypeEnum.event, id: eventID);
@@ -57,6 +58,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
     int? participantCount,
     bool? isLocked,
     String? geohash,
+    VisibilityEnum? visibility,
   }) {
     return EventEntity(
       eventID: eventID ?? this.eventID,
@@ -80,6 +82,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
       participantCount: participantCount ?? this.participantCount,
       isLocked: isLocked ?? this.isLocked,
       geohash: geohash ?? this.geohash,
+      visibility: visibility ?? this.visibility,
     );
   }
 
@@ -104,7 +107,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
   final DateTime updatedAt;
   final bool isLocked;
   final String geohash;
-  final VisibilityEnum visibility = VisibilityEnum.everyone;
+  final VisibilityEnum visibility;
 
   @override
   List<Object?> get props => [eventID];
