@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:ui' as ui;
-
+import 'package:intl/intl.dart';
 import 'package:dart_geohash/dart_geohash.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -31,6 +31,8 @@ import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/map_repository.dart';
 import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/screens/map/map_people_filter.dart';
+import 'package:outnest/screens/map/map_time_filter.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({
@@ -56,7 +58,14 @@ class _MapPageState extends State<MapPage> {
   String? _selectedCategory;
   bool _isCardVisible = false;
   EventEntity? _selectedEvent;
-
+  DateTimeRange? _filterTimeRange;
+  String _filterPeople = 'herkes';
+  final List<String> _peopleOptions = [
+    'herkes',
+    'takipçiler',
+    'okul',
+    'kümeler',
+  ];
   // --- WIZARD STATE ---
   int _createEventStep = 0;
   // 0:Kategori, 1:Konum, 2:Zaman, 3:Görünürlük, 4:İsim
@@ -201,6 +210,10 @@ class _MapPageState extends State<MapPage> {
   Future<void> _onCategoryChanged() async {
     if (_isDisposed) return;
     await _fetchVisibleEvents(forceRefresh: true);
+  }
+
+  bool _isWithinRange(DateTime dt, DateTimeRange range) {
+    return !(dt.isBefore(range.start) || dt.isAfter(range.end));
   }
 
   Future<void> _updateMarkers(List<EventEntity> visibleEvents) async {
@@ -449,9 +462,38 @@ class _MapPageState extends State<MapPage> {
 
       if (_isDisposed || !mounted) return;
 
-      final filteredEvents = _selectedCategory == null
-          ? events
-          : events.where((e) => e.hobbies.contains(_selectedCategory)).toList();
+      // currentUserId burada alınsın (session servise erişimi metod içinde güvenlidir)
+      final String? currentUserId = getIt<SessionService>().currentUser?.userID;
+
+      // Client-side filtreleme: kategori, zaman aralığı, kişiler
+      final filteredEvents = events.where((e) {
+        // 1) kategori filtresi
+        final byCategory =
+            _selectedCategory == null || e.hobbies.contains(_selectedCategory);
+
+        // 2) zaman filtresi
+        final byTime = _filterTimeRange == null
+            ? true
+            : _isWithinRange(e.startTime, _filterTimeRange!);
+
+        // 3) kişi filtresi (basit örnek mantık; uygulamanıza göre uyarlayın)
+        bool byPeople = true;
+        if (_filterPeople == 'arkadaşlar') {
+          if (currentUserId == null) {
+            byPeople = false;
+          } else {
+            // Katılımcılar veya creator kontrolü (arkadaş mantığı yoksa bu örnek işe yarar)
+            byPeople =
+                e.participants.any((p) => p.userID == currentUserId) ||
+                e.creator.userID == currentUserId;
+          }
+        } else if (_filterPeople == 'sadece davet') {
+          // Eğer sizin modelde davet-only farklıysa bu satırı uyarlayın
+          byPeople = e.isLocked == true;
+        }
+
+        return byCategory && byTime && byPeople;
+      }).toList();
 
       await _updateMarkers(filteredEvents);
     } on Exception catch (e) {
@@ -565,7 +607,45 @@ class _MapPageState extends State<MapPage> {
                 onCameraChangeListener: _onCameraChangeListener,
               ),
             ),
+            if (!_isCreatePopupVisible &&
+                !_isCardVisible &&
+                !widget.isLocationPicker &&
+                !widget.isTimePicker)
+              Positioned(
+                top: 20.h,
+                left: 16.w,
+                right: 16.w,
+                child: SafeArea(
+                  child: Row(
+                    mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween, // İki uca yaslar
+                    children: [
+                      // Zaman Filtresi
+                      MapTimeFilter(
+                        onChanged: (range) {
+                          setState(() => _filterTimeRange = range);
+                          _fetchVisibleEvents(forceRefresh: true);
+                        },
+                      ),
 
+                      // Yeni Küçük Kişi Filtresi
+                      MapPeopleFilter(
+                        options: const [
+                          'herkes',
+                          'takipçiler',
+                          'okul',
+                          'kümeler',
+                        ],
+                        initial: _filterPeople,
+                        onChanged: (val) {
+                          setState(() => _filterPeople = val);
+                          _fetchVisibleEvents(forceRefresh: true);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             // 2. KATEGORİ BAR
             if (!_isCreatePopupVisible &&
                 !_isCardVisible &&
