@@ -1,6 +1,7 @@
 import 'package:outnest/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/entities/user/friend_entity.dart';
 import 'package:outnest/domain/entities/user/index.dart';
 import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
@@ -68,8 +69,8 @@ abstract class UserRepository {
   Stream<List<EventEntity>> watchActiveEvents(Identifier userID);
   Stream<List<EventEntity>> watchOngoingEvents(Identifier userID);
 
-  Stream<List<Identifier>> watchFollowees(Identifier userID);
-  Stream<List<Identifier>> watchFollowers(Identifier userID);
+  Stream<List<CompactUserEntity>> watchFollowees(Identifier userID);
+  Stream<List<CompactUserEntity>> watchFollowers(Identifier userID);
 
   Stream<List<UserEventEntity>> watchUserEventLog(Identifier userID);
 

@@ -28,7 +28,6 @@ class UserModel extends Model<UserEntity> {
     required this.hobbies,
     required this.followeeCount,
     required this.followerCount,
-    required this.activeEvents,
     required this.isPrivate,
     required this.hideSavedEvents,
     required this.instagram,
@@ -57,7 +56,6 @@ class UserModel extends Model<UserEntity> {
       hobbies: entity.hobbies,
       followeeCount: entity.followeeCount,
       followerCount: entity.followerCount,
-      activeEvents: entity.activeEvents,
       isPrivate: entity.isPrivate,
       hideSavedEvents: entity.hideSavedEvents,
       instagram: entity.instagram,
@@ -107,7 +105,6 @@ class UserModel extends Model<UserEntity> {
           .toList(),
       followeeCount: doc['followeeCount'] as int? ?? 0,
       followerCount: doc['followerCount'] as int? ?? 0,
-      activeEvents: [], // Aktif etkinlikler daha sonra yüklenebilir
       isPrivate: doc['isPrivate'] as bool? ?? false,
       hideSavedEvents: doc['hideSavedEvents'] as bool? ?? false,
       instagram: doc['instagram'] as String?,
@@ -143,7 +140,6 @@ class UserModel extends Model<UserEntity> {
       'hobbies': hobbies,
       'followeeCount': followeeCount,
       'followerCount': followerCount,
-      'activeEvents': activeEvents,
       'isPrivate': isPrivate,
       'hideSavedEvents': hideSavedEvents,
       'instagram': instagram,
@@ -172,7 +168,6 @@ class UserModel extends Model<UserEntity> {
       hobbies: hobbies,
       followeeCount: followeeCount,
       followerCount: followerCount,
-      activeEvents: activeEvents,
       isPrivate: isPrivate,
       hideSavedEvents: hideSavedEvents,
       instagram: instagram,
@@ -198,7 +193,6 @@ class UserModel extends Model<UserEntity> {
   final DateTime lastActiveAt;
   final int followeeCount;
   final int followerCount;
-  final List<EventEntity> activeEvents;
   final bool isPrivate;
   final bool hideSavedEvents;
 

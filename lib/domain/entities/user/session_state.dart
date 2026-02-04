@@ -3,25 +3,28 @@
 import 'package:flutter/foundation.dart';
 import 'package:outnest/core/utils/types/types.dart'; // Identifier typedef burada varsayılmıştır
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
 
 @immutable
 class SessionState {
   final UserEntity? user;
   final List<EventEntity> ongoingEvents;
-  final List<Identifier> followerIds;
-  final List<Identifier> followeeIds;
+  final List<EventEntity> upcomingEvents;
+  final List<CompactUserEntity> followers;
+  final List<CompactUserEntity> followees;
 
   const SessionState({
     this.user,
     this.ongoingEvents = const [],
-    this.followerIds = const [],
-    this.followeeIds = const [],
+    this.upcomingEvents = const [],
+    this.followers = const [],
+    this.followees = const [],
   });
 
   // Derived Getters
-  int get followerCount => followerIds.length;
-  int get followeeCount => followeeIds.length;
+  int get followerCount => followers.length;
+  int get followeeCount => followees.length;
   bool get isAuthenticated => user != null;
 
   static const empty = SessionState();
@@ -30,14 +33,16 @@ class SessionState {
   SessionState copyWith({
     UserEntity? user,
     List<EventEntity>? ongoingEvents,
-    List<Identifier>? followerIds,
-    List<Identifier>? followeeIds,
+    List<EventEntity>? upcomingEvents,
+    List<CompactUserEntity>? followers,
+    List<CompactUserEntity>? followees,
   }) {
     return SessionState(
       user: user ?? this.user,
       ongoingEvents: ongoingEvents ?? this.ongoingEvents,
-      followerIds: followerIds ?? this.followerIds,
-      followeeIds: followeeIds ?? this.followeeIds,
+      upcomingEvents: upcomingEvents ?? this.upcomingEvents,
+      followers: followers ?? this.followers,
+      followees: followees ?? this.followees,
     );
   }
 
@@ -48,15 +53,15 @@ class SessionState {
     return other is SessionState &&
         other.user == user &&
         listEquals(other.ongoingEvents, ongoingEvents) &&
-        listEquals(other.followerIds, followerIds) &&
-        listEquals(other.followeeIds, followeeIds);
+        listEquals(other.followers, followers) &&
+        listEquals(other.followees, followees);
   }
 
   @override
   int get hashCode => Object.hash(
     user,
     Object.hashAll(ongoingEvents),
-    Object.hashAll(followerIds),
-    Object.hashAll(followeeIds),
+    Object.hashAll(followers),
+    Object.hashAll(followees),
   );
 }
