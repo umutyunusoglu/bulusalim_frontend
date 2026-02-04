@@ -25,6 +25,7 @@ class _NotificationPageState extends State<NotificationPage> {
 
   void _onNotificationTap(NotificationEntity notification) {
     // Buraya bildirim detayına gitme mantığı eklenebilir
+    final type = notification.type;
   }
 
   @override
