@@ -363,6 +363,8 @@ class FeedRepositoryImpl implements FeedRepository {
       case VisibilityEnum.everyone:
         return true;
       case VisibilityEnum.university:
+        if (currentUser.university == null) return false;
+
         return event.creator.university == currentUser.university;
       case VisibilityEnum.onlyFriends:
         return followeeIds.contains(event.creator.userID);

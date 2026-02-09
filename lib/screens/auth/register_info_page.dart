@@ -370,7 +370,28 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
             RegisterStepView(
               title: 'Kullanıcı Adı',
               controller: _usernameController,
-              onNext: _nextPage,
+              onNext: () async {
+                final username = _usernameController.text.trim();
+
+                // 2. Async kontrolü burada yap
+                final bool exists = await getIt<UserRepository>()
+                    .doesUsernameExist(username);
+
+                final logger = getIt<LoggingService>();
+                logger.warn(exists.toString());
+
+                if (exists) {
+                  // Hata mesajını göster (SnackBar veya bir state değişkeni ile)
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Bu kullanıcı adı zaten alınmış!"),
+                    ),
+                  );
+                } else {
+                  // 3. Her şey yolundaysa genel _nextPage fonksiyonunu çağır
+                  _nextPage();
+                }
+              },
               description:
                   'Uygulama içerisinde insanlar sizi bu isimle görecek.',
               hintText: '@kullaniciadi',

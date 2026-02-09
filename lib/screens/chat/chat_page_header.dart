@@ -140,7 +140,7 @@ class ChatPageHeader extends StatelessWidget {
               ),
               SizedBox(height: 12.h),
               Text(
-                'Etkinlik durumu "tamamlandı" olarak güncellenecektir.',
+                'Buluşma durumu "tamamlandı" olarak güncellenecektir.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'SF Pro Display',

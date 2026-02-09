@@ -424,7 +424,7 @@ class _EventCardState extends State<EventCard> {
                             child: Text(
                               widget.event.name.isNotEmpty
                                   ? widget.event.name
-                                  : 'İsimsiz Etkinlik',
+                                  : 'İsimsiz Buluşma',
                               textAlign: TextAlign.center,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,

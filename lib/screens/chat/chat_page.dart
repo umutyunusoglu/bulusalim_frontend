@@ -79,6 +79,10 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Map<String, String> _getSenderDetails(String senderID) {
+    //TODO: Bu fonksiyon, senderID'ye göre kullanıcının adını ve profil resmini bulmalı. Şu anki yapıda participantAvatars listesinde bu bilgiler var gibi görünüyor, ancak tam yapıyı bilmediğim için genel bir yaklaşım sunuyorum.
+    widget.event.participants.forEach((participant) {
+      debugPrint('Katılımcı: ${participant.userID}, ${participant.username}');
+    });
     String imagePath = '';
     String name = 'Bilinmeyen Kullanıcı';
 
