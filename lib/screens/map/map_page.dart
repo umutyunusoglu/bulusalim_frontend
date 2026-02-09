@@ -535,10 +535,13 @@ class _MapPageState extends State<MapPage> {
       final byCategory =
           _selectedCategory == null || e.hobbies.contains(_selectedCategory);
 
+      final isEventStarted = e.status == EventStatusEnum.ongoing;
       // 2) Zaman filtresi
-      final byTime = _filterTimeRange == null
-          ? true
-          : _isWithinRange(e.startTime, _filterTimeRange!);
+      final byTime =
+          (_filterTimeRange == null
+              ? true
+              : _isWithinRange(e.startTime, _filterTimeRange!)) ||
+          isEventStarted;
 
       // 3) Kişi filtresi
 

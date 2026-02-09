@@ -4,6 +4,7 @@ import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/stacked_avatars.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
+import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
@@ -48,13 +49,12 @@ final router = GoRouter(
   // Başlangıç rotası
   initialLocation: '/welcome',
 
-  // 2. OTURUM KONTROLÜ (REDIRECT)
   redirect: (context, state) async {
     final AuthService authService = getIt<AuthService>();
+    final UserRepository userRepository = getIt<UserRepository>();
     final isLoggedIn = await authService.isUserLoggedIn();
-    final goingTo = state.uri.toString();
 
-    // Auth rotaları listesi
+    final goingTo = state.uri.toString();
     final isAuthRoute = [
       '/welcome',
       '/login',
@@ -63,27 +63,40 @@ final router = GoRouter(
       '/login-verification',
     ].contains(goingTo);
 
-    // Özel olarak register-info rotasını ayırıyoruz
     final isRegisterInfo = goingTo == '/register-info';
     final isDebugRoute = goingTo == '/debug';
 
     // 1. Giriş yapmamış kullanıcı
     if (!isLoggedIn) {
+      // Auth rotalarından birindeyse veya debug sayfasındaysa bırak gitsin
       if (isAuthRoute || isRegisterInfo || isDebugRoute) return null;
+      // Değilse welcome'a zorla
       return '/welcome';
     }
 
     // 2. Giriş yapmış kullanıcı
     if (isLoggedIn) {
-      // Eğer kullanıcı register-info sayfasındaysa, oraya gitmesine izin ver
-      if (isRegisterInfo) return null;
+      final isUserRegistered = await userRepository.isUserRegistered(
+        authService.getCurrentUserID(),
+      );
 
-      // Diğer auth sayfalarına gitmeye çalışırsa home'a yönlendir
-      if (isAuthRoute) return '/home';
+      if (isUserRegistered) {
+        // Kullanıcı kayıtlı ve ana uygulamaya girmek istiyor.
+        // Eğer hala auth sayfalarındaysa /home'a at, değilse (yani zaten içerdeyse) gitmek istediği yere izin ver.
+        if (isAuthRoute || isRegisterInfo) {
+          return '/home';
+        }
+        return null; // Mevcut rotasına devam etmesine izin ver (örn: /chat, /profile vs.)
+      } else {
+        // Kaydı tamam değilse ve register-info'da değilse oraya zorla
+        if (!isRegisterInfo) return '/register-info';
+        return null;
+      }
     }
 
     return null;
   },
+
   routes: [
     // --- AUTH ROTALARI ---
     GoRoute(

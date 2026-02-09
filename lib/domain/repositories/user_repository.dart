@@ -19,8 +19,10 @@ abstract class UserRepository {
     Map<String, dynamic> updates,
   );
   Future<void> deleteUser(String? reason);
+  Future<bool> isUserRegistered(String userID);
 
   Future<bool> tryUpdateUsername(String newUsername, String userId);
+  Future<bool> doesUsernameExist(String username);
 
   // === Hobbies Subcollection ===
   Future<void> addHobby(
