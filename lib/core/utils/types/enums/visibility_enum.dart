@@ -22,9 +22,7 @@ enum VisibilityEnum {
   }
 
   static VisibilityEnum fromString(String value) {
-    var visibility = value.toLowerCase();
-
-    switch (visibility) {
+    switch (value) {
       case 'everyone':
         return VisibilityEnum.everyone;
       case 'onlyFriends':

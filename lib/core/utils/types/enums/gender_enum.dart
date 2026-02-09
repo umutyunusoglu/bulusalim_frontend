@@ -9,7 +9,7 @@ enum GenderEnum {
   final String value;
 
   @override
-  String toString() => value;
+  String toString() => value.toLowerCase();
 
   static GenderEnum fromString(String value) {
     switch (value) {

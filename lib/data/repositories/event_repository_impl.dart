@@ -307,7 +307,7 @@ class EventRepositoryImpl implements EventRepository {
     try {
       // 1. Etkinlik sahibini (Creator) bulmalıyız ki onu dürtebilelim.
       final eventDoc = await _firestore.collection('events').doc(eventId).get();
-      if (!eventDoc.exists) throw Exception('Etkinlik bulunamadı');
+      if (!eventDoc.exists) throw Exception('Buluşma bulunamadı');
 
       // Model yapısına göre creator ID path'i
       final creatorId = eventDoc.data()?['creator']?['userID'] as String?;
@@ -392,7 +392,7 @@ class EventRepositoryImpl implements EventRepository {
         final creatorId = eventDoc.data()?['creator']?['userID'] as String?;
 
         if (currentCount >= maxParticipants) {
-          throw Exception('Etkinlik dolu!');
+          throw Exception('Buluşma dolu!');
         }
 
         transaction
@@ -426,7 +426,7 @@ class EventRepositoryImpl implements EventRepository {
     try {
       // Önce Creator ID'yi bulmak için eventi çekiyoruz.
       final eventDoc = await _firestore.collection('events').doc(eventId).get();
-      if (!eventDoc.exists) throw Exception('Etkinlik bulunamadı');
+      if (!eventDoc.exists) throw Exception('Buluşma bulunamadı');
 
       final creatorId = eventDoc.data()?['creator']?['userID'] as String?;
 

@@ -43,7 +43,7 @@ class SendEventInvitation {
       rethrow;
     } catch (e) {
       _loggingService.error(
-        'Etkinlik daveti gönderilirken beklenmedik hata: $e',
+        'Buluşma daveti gönderilirken beklenmedik hata: $e',
       );
       rethrow;
     }
