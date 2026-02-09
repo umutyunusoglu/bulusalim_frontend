@@ -181,13 +181,12 @@ class UserRepositoryImpl implements UserRepository {
     );
 
     // Sorgulama yapabilmek için username'in küçük harf versiyonu şart
-    final lowercaseUsername = user.username!.toLowerCase();
 
     return await _firestore.runTransaction((transaction) async {
       // 1. ADIM: Username daha önce alınmış mı kontrol et
       final usernameQuery = await _firestore
           .collection('users')
-          .where('username_lowercase', isEqualTo: lowercaseUsername)
+          .where('username', isEqualTo: user.username)
           .get();
 
       if (usernameQuery.docs.isNotEmpty) {
@@ -200,11 +199,9 @@ class UserRepositoryImpl implements UserRepository {
       // Eğer Auth'tan gelen bir UID varsa onu kullanmak daha mantıklıdır (user.userID)
       final docRef = _firestore.collection('users').doc(user.userID);
 
-      // 3. ADIM: Modelini hazırla (lowercase alanını eklemeyi unutma)
       final userModel = UserModel.fromEntity(user);
       final userData = userModel.toFirestore();
-      userData['username_lowercase'] =
-          lowercaseUsername; // Veritabanına bu alanı ekliyoruz
+      userData['registerCompleted'] = true;
 
       // 4. ADIM: Kaydı gerçekleştir
       transaction.set(docRef, userData, SetOptions(merge: true));
@@ -215,14 +212,12 @@ class UserRepositoryImpl implements UserRepository {
 
   @override
   Future<bool> tryUpdateUsername(String newUsername, String userId) async {
-    final lowercaseName = newUsername.toLowerCase();
-
     try {
       return await _firestore.runTransaction((transaction) async {
         // 1. ADIM: SORGULA (Transaction içinde)
         final snapshot = await _firestore
             .collection('users')
-            .where('username_lowercase', isEqualTo: lowercaseName)
+            .where('username', isEqualTo: newUsername)
             .get();
 
         // Eğer isim başkası tarafından alınmışsa işlemi iptal et
@@ -233,7 +228,6 @@ class UserRepositoryImpl implements UserRepository {
         // 2. ADIM: YAZ (Transaction içinde)
         transaction.update(_firestore.collection('users').doc(userId), {
           'username': newUsername,
-          'username_lowercase': lowercaseName,
         });
 
         return true; // İşlem başarılı, isim alındı ve güncellendi.
@@ -273,12 +267,11 @@ class UserRepositoryImpl implements UserRepository {
         // 1. Eğer updates içinde 'username' alanı varsa benzersizlik kontrolü yap
         if (updates.containsKey('username')) {
           final newUsername = updates['username'] as String;
-          final lowercaseName = newUsername.toLowerCase();
 
           // İsmin başkası tarafından alınıp alınmadığını kontrol et
           final querySnapshot = await _firestore
               .collection('users')
-              .where('username_lowercase', isEqualTo: lowercaseName)
+              .where('username', isEqualTo: newUsername)
               .get();
 
           // Eğer isim varsa VE bu isim bizim şu anki userID'mize ait değilse başkası kapmış demektir
@@ -289,9 +282,6 @@ class UserRepositoryImpl implements UserRepository {
             );
             throw Exception('username-already-exists');
           }
-
-          // Güncelleme paketine küçük harf versiyonunu da ekle (Sorgular için şart)
-          updates['username_lowercase'] = lowercaseName;
         }
 
         // 2. Güncelleme işlemini gerçekleştir
@@ -303,6 +293,46 @@ class UserRepositoryImpl implements UserRepository {
     } catch (e) {
       _logger.warn('İşlem hatası: $e');
     }
+  }
+
+  @override
+  Future<bool> isUserRegistered(String userID) async {
+    final userDoc = await _firestore.collection("users").doc(userID).get();
+
+    if (!userDoc.exists) {
+      return false;
+    }
+
+    final data = userDoc.data();
+    if (data == null) {
+      return false;
+    }
+
+    bool registerCompleted;
+    if (data["registerCompleted"] != null) {
+      registerCompleted = data["registerCompleted"] as bool;
+    } else {
+      registerCompleted = false;
+    }
+    if (registerCompleted) {
+      return true;
+    }
+
+    return false;
+  }
+
+  @override
+  Future<bool> doesUsernameExist(String username) async {
+    final querySnapshot = await _firestore
+        .collection('users')
+        .where('username', isEqualTo: username)
+        .get();
+
+    // Eğer isim varsa VE bu isim bizim şu anki userID'mize ait değilse başkası kapmış demektir
+    if (querySnapshot.docs.isNotEmpty) {
+      return true;
+    }
+    return false;
   }
 
   // === Hobbies Subcollection ===

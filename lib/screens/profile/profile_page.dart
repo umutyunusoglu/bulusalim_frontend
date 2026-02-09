@@ -598,7 +598,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 );
 
                                 debugPrint(
-                                  'Etkinlik paylaşıldı: ${event.name}',
+                                  'Buluşma paylaşıldı: ${event.name}',
                                 );
                               } on Exception catch (e) {
                                 // 4. Hata durum bildirimi
