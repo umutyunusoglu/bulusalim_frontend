@@ -32,7 +32,7 @@ class ProfileEventsTab extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: _buildSectionHeader(
               context,
-              'Güncel Etkinlik',
+              'Güncel Buluşma',
               isActive: true,
             ),
           ),
@@ -65,7 +65,7 @@ class ProfileEventsTab extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: _buildSectionHeader(
               context,
-              'Düşünülen Etkinlikler',
+              'Düşünülen Buluşmalar',
               isActive: false,
             ),
           ),
@@ -80,7 +80,7 @@ class ProfileEventsTab extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: 16.w),
               child: _buildEmptyState(
                 context,
-                'Henüz kaydettiğin bir etkinlik yok.',
+                'Henüz kaydettiğin bir buluşma yok.',
               ),
             )
           else
