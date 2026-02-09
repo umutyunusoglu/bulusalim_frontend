@@ -30,6 +30,7 @@ import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/map_repository.dart';
+import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/screens/map/map_people_filter.dart';
 import 'package:outnest/screens/map/map_time_filter.dart';
@@ -59,7 +60,8 @@ class _MapPageState extends State<MapPage> {
   bool _isCardVisible = false;
   EventEntity? _selectedEvent;
   DateTimeRange? _filterTimeRange;
-  String _filterPeople = 'herkes';
+
+  VisibilityEnum _filterPeople = VisibilityEnum.everyone;
   final List<String> _peopleOptions = [
     'herkes',
     'takipçiler',
@@ -82,7 +84,7 @@ class _MapPageState extends State<MapPage> {
   String? _tempEventName;
   VisibilityEnum? _tempVisibility;
   PointAnnotation? _pickingMarker;
-  final String _currentUserImageUrl = 'https://i.pravatar.cc/300?img=12';
+  String? _currentUserImageUrl;
 
   // --- MAPBOX ---
   late MapboxMap mapboxMap;
@@ -94,13 +96,24 @@ class _MapPageState extends State<MapPage> {
   final Set<String> _loadedEventIds = {};
   final Map<String, Uint8List> _markerImageCache = {};
   CoordinateBounds? _lastFetchedBounds;
+  // --- STATE --- bloğunun içine ekleyin
+  List<EventEntity> _cachedEvents =
+      []; // Sunucudan gelen tüm eventler burada duracak
   Timer? _debounceTimer;
   bool _isDisposed = false;
 
   @override
   void initState() {
     super.initState();
+
+    final imageURL = getIt<SessionService>().currentUser?.profileImageUrl;
     // Modlara göre başlangıç adımını ayarla
+    if (imageURL != null) {
+      _currentUserImageUrl = imageURL;
+    } else {
+      _currentUserImageUrl = FileService.defaultProfileImageUrl();
+    }
+
     if (widget.isLocationPicker) {
       _isCreatePopupVisible = true;
       _createEventStep = 1; // Konum adımı
@@ -171,7 +184,7 @@ class _MapPageState extends State<MapPage> {
     }
 
     final customMarkerIcon = await _generateCustomMarkerImage(
-      _currentUserImageUrl,
+      _currentUserImageUrl ?? '',
       scale: 1.5,
     );
 
@@ -209,7 +222,7 @@ class _MapPageState extends State<MapPage> {
   // --- FETCH & MARKER YÖNETİMİ ---
   Future<void> _onCategoryChanged() async {
     if (_isDisposed) return;
-    await _fetchVisibleEvents(forceRefresh: true);
+    _applyLocalFilters();
   }
 
   bool _isWithinRange(DateTime dt, DateTimeRange range) {
@@ -309,18 +322,35 @@ class _MapPageState extends State<MapPage> {
       return _markerImageCache[imageUrl];
     }
     try {
+      ui.Image profileImage;
       final colorIndex = imageUrl.hashCode.abs() % kMarkerPalette.length;
       final colorPair = kMarkerPalette[colorIndex];
-      final response = await http
-          .get(Uri.parse(fixEmulatorUrl(imageUrl)))
-          .timeout(const Duration(seconds: 10));
+      if (!imageUrl.startsWith('http')) {
+        profileImage = await _loadAssetImage(
+          FileService.defaultProfileImageUrl(),
+        );
+      } else {
+        try {
+          final response = await http
+              .get(Uri.parse(fixEmulatorUrl(imageUrl)))
+              .timeout(const Duration(seconds: 10));
 
-      if (response.statusCode != 200) return null;
-
-      final codec = await ui.instantiateImageCodec(response.bodyBytes);
-      final fi = await codec.getNextFrame();
-      final profileImage = fi.image;
-
+          if (response.statusCode == 200) {
+            final codec = await ui.instantiateImageCodec(response.bodyBytes);
+            final fi = await codec.getNextFrame();
+            profileImage = fi.image;
+          } else {
+            profileImage = await _loadAssetImage(
+              "assets/images/default_user.png",
+            );
+          }
+        } catch (e) {
+          _logger.warn("Resim indirilemedi, default'a dönülüyor: $e");
+          profileImage = await _loadAssetImage(
+            "assets/images/default_user.png",
+          );
+        }
+      }
       const baseOuterRadius = 60.0;
       const baseRingRadius = 46.0;
       const baseImageRadius = 37.0;
@@ -389,6 +419,13 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
+  Future<ui.Image> _loadAssetImage(String path) async {
+    final data = await rootBundle.load(path);
+    final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
+    final fi = await codec.getNextFrame();
+    return fi.image;
+  }
+
   // --- MAP INIT ---
   Future<void> _onMapCreated(MapboxMap mapboxMap) async {
     this.mapboxMap = mapboxMap;
@@ -441,20 +478,26 @@ class _MapPageState extends State<MapPage> {
     });
   }
 
+  // A) SADECE VERİ ÇEKME (Harita hareket edince çalışır)
   Future<void> _fetchVisibleEvents({bool forceRefresh = false}) async {
     if (_isDisposed || !mounted) return;
     try {
       final cameraState = await mapboxMap.getCameraState();
+      // Zoom seviyesi kontrolü (isteğe bağlı)
       if (cameraState.zoom < 8.0) return;
 
       final bounds = await mapboxMap.coordinateBoundsForCamera(
         CameraOptions(center: cameraState.center, zoom: cameraState.zoom),
       );
 
+      // Eğer sınırlar çok değişmediyse ve zorlama yoksa istek atma
       if (!forceRefresh && _isBoundsSimilar(bounds, _lastFetchedBounds)) return;
+
       _lastFetchedBounds = bounds;
 
       final dynamicPrecision = _getGeohashPrecision(cameraState.zoom);
+
+      // 1. İSTEK AT
       final events = await _mapRepository.fetchEventsInBounds(
         bounds: bounds,
         precision: dynamicPrecision,
@@ -462,43 +505,73 @@ class _MapPageState extends State<MapPage> {
 
       if (_isDisposed || !mounted) return;
 
-      // currentUserId burada alınsın (session servise erişimi metod içinde güvenlidir)
-      final String? currentUserId = getIt<SessionService>().currentUser?.userID;
+      // 2. GELEN VERİYİ CACHE'LE
+      _cachedEvents = events;
 
-      // Client-side filtreleme: kategori, zaman aralığı, kişiler
-      final filteredEvents = events.where((e) {
-        // 1) kategori filtresi
-        final byCategory =
-            _selectedCategory == null || e.hobbies.contains(_selectedCategory);
-
-        // 2) zaman filtresi
-        final byTime = _filterTimeRange == null
-            ? true
-            : _isWithinRange(e.startTime, _filterTimeRange!);
-
-        // 3) kişi filtresi (basit örnek mantık; uygulamanıza göre uyarlayın)
-        bool byPeople = true;
-        if (_filterPeople == 'arkadaşlar') {
-          if (currentUserId == null) {
-            byPeople = false;
-          } else {
-            // Katılımcılar veya creator kontrolü (arkadaş mantığı yoksa bu örnek işe yarar)
-            byPeople =
-                e.participants.any((p) => p.userID == currentUserId) ||
-                e.creator.userID == currentUserId;
-          }
-        } else if (_filterPeople == 'sadece davet') {
-          // Eğer sizin modelde davet-only farklıysa bu satırı uyarlayın
-          byPeople = e.isLocked == true;
-        }
-
-        return byCategory && byTime && byPeople;
-      }).toList();
-
-      await _updateMarkers(filteredEvents);
+      // 3. FİLTRELERİ UYGULA (Markerları güncelle)
+      _applyLocalFilters();
     } on Exception catch (e) {
       _logger.error('Error fetching visible events: $e');
     }
+  }
+
+  // B) SADECE FİLTRELEME (Filtre butonlarına basınca çalışır - İSTEK ATMAZ)
+  void _applyLocalFilters() {
+    if (_isDisposed || !mounted) return;
+
+    final SessionService sessionService = getIt<SessionService>();
+    final currentUser = sessionService.currentUser;
+    if (currentUser == null) return;
+
+    //TODO: Move to server side later
+
+    // Hafızadaki (_cachedEvents) veriyi süzüyoruz
+    final filteredEvents = _cachedEvents.where((e) {
+      if (currentUser.userID == e.creator.userID) {
+        return true;
+      }
+
+      // 1) Kategori filtresi
+      final byCategory =
+          _selectedCategory == null || e.hobbies.contains(_selectedCategory);
+
+      // 2) Zaman filtresi
+      final byTime = _filterTimeRange == null
+          ? true
+          : _isWithinRange(e.startTime, _filterTimeRange!);
+
+      // 3) Kişi filtresi
+
+      bool byPeople = true;
+      switch (_filterPeople) {
+        case VisibilityEnum.everyone:
+          byPeople = true;
+        case VisibilityEnum.onlyFriends:
+          final whoIFollow = sessionService.currentState.followees
+              .map((u) => u.userID)
+              .toSet();
+
+          byPeople = whoIFollow.contains(e.creator.userID);
+
+        case VisibilityEnum.university:
+          if (currentUser.university == null) {
+            byPeople = false;
+          } else {
+            byPeople = currentUser.university == e.creator.university;
+          }
+
+        case VisibilityEnum.custom:
+          // Örnek: Özel küme bazlı filtreleme mantığını buraya ek
+          byPeople = true; // Varsayılan olarak true, kendi logic'inizi ekleyin
+      }
+
+      // Not: 'herkes', 'okul', 'kümeler' mantığını buraya kendi business logic'inize göre ekleyebilirsiniz.
+
+      return byCategory && byTime && byPeople;
+    }).toList();
+
+    // Süzülmüş listeyi markerlara gönder
+    _updateMarkers(filteredEvents);
   }
 
   bool _isBoundsSimilar(CoordinateBounds? a, CoordinateBounds? b) {
@@ -621,11 +694,13 @@ class _MapPageState extends State<MapPage> {
                         MainAxisAlignment.spaceBetween, // İki uca yaslar
                     children: [
                       // Zaman Filtresi
-                      MapTimeFilter(
-                        onChanged: (range) {
-                          setState(() => _filterTimeRange = range);
-                          _fetchVisibleEvents(forceRefresh: true);
-                        },
+                      Expanded(
+                        child: MapTimeFilter(
+                          onChanged: (range) {
+                            setState(() => _filterTimeRange = range);
+                            _applyLocalFilters();
+                          },
+                        ),
                       ),
 
                       // Yeni Küçük Kişi Filtresi
@@ -636,10 +711,14 @@ class _MapPageState extends State<MapPage> {
                           'okul',
                           'kümeler',
                         ],
-                        initial: _filterPeople,
+                        initial: 'herkes',
                         onChanged: (val) {
-                          setState(() => _filterPeople = val);
-                          _fetchVisibleEvents(forceRefresh: true);
+                          setState(
+                            () => _filterPeople = VisibilityEnum.fromTurkishUI(
+                              val,
+                            ),
+                          );
+                          _applyLocalFilters();
                         },
                       ),
                     ],
@@ -896,6 +975,7 @@ class _MapPageState extends State<MapPage> {
             _tempEventName = n;
             _createEventStep = 5;
           }),
+          category: _tempCategory ?? 'Kahve',
         );
       default:
         return const SizedBox.shrink();

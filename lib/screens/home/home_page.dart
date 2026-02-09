@@ -331,8 +331,6 @@ class _HomePageState extends State<HomePage> {
                       HomeContentPage(feedType: FeedType.all),
                       HomeContentPage(feedType: FeedType.friendsOnly),
                       HomeContentPage(feedType: FeedType.university),
-
-                      Center(child: Text('Okul Akışı Yakında...')),
                     ],
                   ),
                 ),

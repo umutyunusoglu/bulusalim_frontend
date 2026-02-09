@@ -33,15 +33,24 @@ class AuthServiceImpl implements AuthService {
   }
 
   @override
-  Future<bool> isUserLoggedIn() {
+  Future<bool> isUserLoggedIn() async {
     _logger.debug('isUserLoggedIn called');
+    final user = _firebaseAuth.currentUser;
+
+    if (user == null) {
+      _logger.info('isUserLoggedIn: false (no local user)');
+      return false;
+    }
+
     try {
-      final loggedIn = _firebaseAuth.currentUser != null;
-      _logger.info('isUserLoggedIn: $loggedIn');
-      return Future.value(loggedIn);
-    } on FirebaseAuthException catch (e) {
-      _logger.error('isUserLoggedIn error: ${e.message}');
-      throw AuthException('No user is currently signed in.');
+      // Backend ile senkronize olur. Hesap silindiyse burada hata fırlatır.
+      await user.reload();
+      _logger.info('isUserLoggedIn: true (verified)');
+      return true;
+    } catch (e) {
+      _logger.error('isUserLoggedIn error (user likely deleted/disabled): $e');
+      // Eğer reload başarısız olursa kullanıcı artık geçerli değildir.
+      return false;
     }
   }
 
