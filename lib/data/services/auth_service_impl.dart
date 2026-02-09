@@ -33,15 +33,24 @@ class AuthServiceImpl implements AuthService {
   }
 
   @override
-  Future<bool> isUserLoggedIn() {
+  Future<bool> isUserLoggedIn() async {
     _logger.debug('isUserLoggedIn called');
+    final user = _firebaseAuth.currentUser;
+
+    if (user == null) {
+      _logger.info('isUserLoggedIn: false (no local user)');
+      return false;
+    }
+
     try {
-      final loggedIn = _firebaseAuth.currentUser != null;
-      _logger.info('isUserLoggedIn: $loggedIn');
-      return Future.value(loggedIn);
-    } on FirebaseAuthException catch (e) {
-      _logger.error('isUserLoggedIn error: ${e.message}');
-      throw AuthException('No user is currently signed in.');
+      // Backend ile senkronize olur. Hesap silindiyse burada hata fırlatır.
+      await user.reload();
+      _logger.info('isUserLoggedIn: true (verified)');
+      return true;
+    } catch (e) {
+      _logger.error('isUserLoggedIn error (user likely deleted/disabled): $e');
+      // Eğer reload başarısız olursa kullanıcı artık geçerli değildir.
+      return false;
     }
   }
 
@@ -119,66 +128,58 @@ class AuthServiceImpl implements AuthService {
   Future<PhoneAuthResult> sendSMS({required String phoneNumber}) {
     final completer = Completer<PhoneAuthResult>();
     _logger.debug('sendSMS called for phone=${maskPhone(phoneNumber)}');
+
     try {
       _firebaseAuth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
-        timeout: const Duration(seconds: 180),
+        timeout: const Duration(seconds: 90),
 
         verificationCompleted: (PhoneAuthCredential credential) async {
           _logger.info('sendSMS verificationCompleted');
-          // Auto-retrieval or instant verification completed
-          final result = await _firebaseAuth.signInWithCredential(credential);
-          completer.complete(
-            PhoneAuthResult(
-              verificationId: result.user?.uid,
-              isVerified: true,
-            ),
-          );
         },
+
         verificationFailed: (FirebaseAuthException e) {
           _logger.error('sendSMS verificationFailed: ${e.message}');
-          // Verification failed
-          completer.complete(
-            PhoneAuthResult(
-              verificationId: null,
-              error: e.message,
-            ),
-          );
+          if (!completer.isCompleted) {
+            completer.complete(
+              PhoneAuthResult(
+                verificationId: null,
+                error: e.message,
+              ),
+            );
+          }
         },
+
         codeSent: (String verificationId, int? resendToken) {
-          _logger.info(
-            'sendSMS codeSent verificationId=$verificationId'
-            ' resendToken=$resendToken',
-          );
-          // Code sent to the user's phone
-          completer.complete(
-            PhoneAuthResult(
-              verificationId: verificationId,
-              resendToken: resendToken,
-            ),
-          );
-        },
-        codeAutoRetrievalTimeout: (String verificationId) {
-          _logger.info(
-            'sendSMS codeAutoRetrievalTimeout verificationId=$verificationId',
-          );
+          _logger.info('sendSMS codeSent verificationId=$verificationId');
+
+          // CRITICAL CHECK
           if (!completer.isCompleted) {
             completer.complete(
               PhoneAuthResult(
                 verificationId: verificationId,
+                resendToken: resendToken,
               ),
+            );
+          }
+        },
+
+        codeAutoRetrievalTimeout: (String verificationId) {
+          _logger.info('sendSMS codeAutoRetrievalTimeout');
+          if (!completer.isCompleted) {
+            completer.complete(
+              PhoneAuthResult(verificationId: verificationId),
             );
           }
         },
       );
     } on FirebaseAuthException catch (e) {
       _logger.error('sendSMS exception: ${e.message}');
-      completer.complete(
-        PhoneAuthResult(
-          verificationId: null,
-          error: e.message,
-        ),
-      );
+      if (!completer.isCompleted) {
+        completer.complete(
+          PhoneAuthResult(verificationId: null, error: e.message),
+        );
+      }
     }
 
     return completer.future;

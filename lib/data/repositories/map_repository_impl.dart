@@ -102,7 +102,6 @@ class MapRepositoryImpl implements MapRepository {
       try {
         final snapshots = await Future.wait(futures);
 
-        // Geçici liste: Enrich işlemi için "light" entity'leri topluyoruz
         final eventsToEnrich = <EventEntity>[];
 
         for (final snap in snapshots) {
@@ -118,9 +117,6 @@ class MapRepositoryImpl implements MapRepository {
           }
         }
 
-        // --- ENRICHMENT ENTEGRASYONU ---
-        // Toplanan eventleri paralel olarak zenginleştiriyoruz.
-        // EventRepository.enrichEventWithDetails zaten cache kontrolü yapıyor.
         final enrichedEvents = await Future.wait(
           eventsToEnrich.map((e) => _eventRepository.enrichEventWithDetails(e)),
         );
