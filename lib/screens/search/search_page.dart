@@ -195,7 +195,7 @@ class _SearchPageState extends State<SearchPage> {
                       return ListTile(
                         leading: const Icon(Icons.event, color: Colors.purple),
                         title: Text(
-                          data['username'] as String? ?? 'Adsız Etkinlik',
+                          data['username'] as String? ?? 'Adsız Buluşma',
                         ),
                         onTap: () => debugPrint('Tıklandı: Event ${doc.id}'),
                       );
