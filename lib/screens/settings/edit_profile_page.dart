@@ -497,7 +497,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Kaydedilen Etkinlikleri Gizle',
+                    'Kaydedilen Buluşmaları Gizle',
                     style: TextStyle(
                       fontFamily: 'SF Pro Display',
                       fontSize: 14.sp,

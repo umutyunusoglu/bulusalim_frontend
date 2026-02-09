@@ -1,18 +1,22 @@
-import 'package:outnest/components/popup_next_button.dart';
-import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/components/popup_next_button.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/domain/services/remote_config_service.dart';
 
 class EventNameStep extends StatefulWidget {
   const EventNameStep({
     required this.onBack,
     required this.onClose,
     required this.onNext,
+    required this.category,
     super.key,
   });
 
   final VoidCallback onBack;
   final VoidCallback onClose;
+  final String category;
   final Function(String eventName) onNext;
 
   @override
@@ -23,11 +27,37 @@ class _EventNameStepState extends State<EventNameStep> {
   final TextEditingController _controller = TextEditingController();
 
   // Örnek öneriler (Dinamik halde kullanılabilir)
-  final List<String> _suggestions = [
-    'Beraber tenis oynayalım!',
-    'Tenis partneri arıyorum.',
-    'Maça var mısın?',
-  ];
+  List<String> _suggestions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSuggestions();
+  }
+
+  Future<void> _loadSuggestions() async {
+    final remoteConfig = getIt<RemoteConfigService>();
+    final allSuggestions = await remoteConfig.getValue<Map>('category_names');
+
+    // widget.category değerinin (Örn: "Kahve") Map içinde olup olmadığını kontrol edin
+    final categorySuggestions =
+        allSuggestions[widget.category] as List<dynamic>?;
+
+    if (categorySuggestions != null) {
+      final suggestions = categorySuggestions
+          .map((e) => e.toString())
+          .where((e) => e.isNotEmpty)
+          .toList();
+
+      setState(() {
+        _suggestions = suggestions;
+      });
+    } else {
+      print(
+        "Hata: ${widget.category} kategorisi Firebase'deki Map içinde bulunamadı.",
+      );
+    }
+  }
 
   @override
   void dispose() {
@@ -111,7 +141,9 @@ class _EventNameStepState extends State<EventNameStep> {
               fontWeight: FontWeight.w500,
             ),
             decoration: InputDecoration(
-              hintText: 'çiftler tenisi turnuvası 🎾👟',
+              hintText: _suggestions.isNotEmpty
+                  ? 'Örn: ${_suggestions.first}'
+                  : 'Buluşma adını girin',
               hintStyle: TextStyle(
                 color: Colors.grey.shade500,
                 fontSize: 16.sp,
