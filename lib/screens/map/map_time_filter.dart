@@ -14,13 +14,17 @@ class MapTimeFilter extends StatefulWidget {
 }
 
 class _MapTimeFilterState extends State<MapTimeFilter> {
-  int _currentIndex = 0;
+  int _currentIndex = 11;
   final DateTime _now = DateTime.now();
 
   List<TimeStep> get _steps {
     final steps = <TimeStep>[
       TimeStep(
-        '1 saat içinde',
+        'Başladı',
+        DateTimeRange(start: _now, end: _now.add(const Duration(hours: 1))),
+      ),
+      TimeStep(
+        '1 saat İçinde',
         DateTimeRange(start: _now, end: _now.add(const Duration(hours: 1))),
       ),
       TimeStep(
