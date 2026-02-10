@@ -63,6 +63,10 @@ final router = GoRouter(
       '/login-verification',
     ].contains(goingTo);
 
+    if (!isAuthRoute) {
+      return null;
+    }
+
     final isRegisterInfo = goingTo == '/register-info';
     final isDebugRoute = goingTo == '/debug';
 
