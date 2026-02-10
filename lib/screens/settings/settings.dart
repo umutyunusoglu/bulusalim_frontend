@@ -76,7 +76,7 @@ class SettingsPage extends StatelessWidget {
                       Navigator.pop(context);
 
                       // 2. Perform the sign out
-                      await getIt<AuthService>().signOut();
+                      getIt<AuthService>().signOut();
 
                       // 3. Check if the widget is still in the tree before navigating
                       if (context.mounted) {
