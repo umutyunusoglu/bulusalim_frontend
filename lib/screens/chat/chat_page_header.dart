@@ -1,8 +1,12 @@
+import 'package:intl/intl.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/components/bottomsheetoption.dart';
+import 'package:outnest/components/popup.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/usecases/force_start_event_usecase.dart';
 import 'package:outnest/domain/usecases/force_stop_event_usecase.dart';
 import 'package:outnest/screens/chat/chat_event_info_chip.dart';
@@ -11,6 +15,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:outnest/screens/home/eventcomponents/participant_bottom_sheet.dart';
 
 class ChatPageHeader extends StatefulWidget {
   const ChatPageHeader({
@@ -255,146 +260,127 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
     );
   }
 
-  // --- 3. KATILIMCI AYARLARI ---
+  // 3. KATILIMCI AYARLARI
   void _showParticipantSettingsSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(height: 12.h),
-              Container(
-                width: 24.w,
-                height: 3.h,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(3.r),
-                ),
-              ),
-              SizedBox(height: 25.h),
-              ListTile(
-                leading: Icon(
-                  Icons.exit_to_app_outlined,
-                  color: Colors.black87,
-                  size: 24.sp,
-                ),
-                title: Text(
-                  'Buluşmadan Ayrıl',
-                  style: TextStyle(
-                    fontFamily: 'SF Pro Display',
-                    fontSize: 14.sp,
-                    color: Colors.black87,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                onTap: () => Navigator.pop(context),
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.error_outline,
-                  color: AppColors.primaryColor,
-                  size: 24.sp,
-                ),
-                title: Text(
-                  'Şikayet Et',
-                  style: TextStyle(
-                    fontFamily: 'SF Pro Display',
-                    fontSize: 14.sp,
-                    color: AppColors.primaryColor,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                onTap: () => Navigator.pop(context),
-              ),
-              SizedBox(height: 35.h),
-            ],
-          ),
+        return CustomActionBottomSheet(
+          options: [
+            BottomSheetOption(
+              icon: Icons.exit_to_app_rounded,
+              text: 'Buluşmadan Ayrıl',
+              onTap: () {
+                Navigator.pop(context);
+                _showLeaveEventDialog(context);
+              },
+            ),
+            BottomSheetOption(
+              icon: Icons.report_problem_outlined,
+              text: 'Şikayet Et',
+              isDestructive: true,
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: Şikayet ekranına yönlendirme
+              },
+            ),
+          ],
         );
       },
     );
   }
 
-  // --- 4. KONUM DETAY SHEET ---
+  void _showLeaveEventDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => Popup(
+        title:
+            '"${widget.chatTitle}" buluşmasından ayrılmak istediğinize emin misiniz?',
+        description:
+            'Ayrıldığınızda bu sohbetten ve buluşma listesinden çıkarılacaksınız.',
+        confirmButtonText: 'ayrıl',
+        confirmButtonColor: const Color(0xFF1F415B),
+        onConfirm: () {
+          context.pop();
+        },
+      ),
+    );
+  }
+
   void _showLocationDetailSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.w),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(height: 12.h),
-                Container(
-                  width: 24.w,
-                  height: 3.h,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(3.r),
-                  ),
-                ),
-                SizedBox(height: 25.h),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.location_on_outlined,
-                      color: Colors.black87,
-                      size: 24.sp,
-                    ),
-                    SizedBox(width: 20.w),
-                    Expanded(
-                      child: Text(
-                        widget.location,
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Display',
-                          fontSize: 14.sp,
-                          color: Colors.black87,
-                          height: 1.4,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 20.h),
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.map_outlined,
-                        color: const Color(0xFF218B3C),
-                        size: 24.sp,
-                      ),
-                      SizedBox(width: 20.w),
-                      Text(
-                        'Konumu Haritada Gör',
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Display',
-                          fontSize: 14.sp,
-                          color: Colors.green,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 35.h),
-              ],
+        return CustomActionBottomSheet(
+          options: [
+            BottomSheetOption(
+              icon: Icons.location_on_outlined,
+              text: widget.location,
+              onTap:
+                  () {}, // Sadece bilgi amaçlı olduğu için boş bırakabilirsin
             ),
-          ),
+            BottomSheetOption(
+              icon: Icons.map_outlined,
+              text: 'Konumu Haritada Gör',
+              onTap: () {
+                // TODO: Harita açma logic'i
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // --- ZAMAN DETAY POPUP ---
+  void _showTimeDetailSheet(BuildContext context) {
+    final eventTimeText = DateFormat(
+      'dd MMMM HH.mm',
+      'tr_TR',
+    ).format(widget.eventDate);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return CustomActionBottomSheet(
+          options: [
+            BottomSheetOption(
+              icon: Icons.access_time_rounded,
+              text:
+                  'Buluşma $eventTimeText tarihinde başlayacak şekilde planlandı.',
+              onTap: () => Navigator.pop(context),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // --- KATILIMCI LİSTESİ POPUP ---
+  void _showParticipantsBottomSheet() {
+    final creatorEntity = CompactUserEntity(
+      userID: widget.creatorID,
+      username: widget.event.creator.username,
+      profileImageUrl: widget.creatorProfileImage,
+      university: widget.event.creator.university,
+    );
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      builder: (context) {
+        return ParticipantsBottomSheet(
+          creator: creatorEntity,
+          participants: widget.event.participants,
         );
       },
     );
@@ -404,8 +390,8 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
   Widget build(BuildContext context) {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
     final isCreator = currentUserId == widget.creatorID;
-    final logger = getIt<LoggingService>();
-    logger.debug('Building ChatPageHeader for eventID: ${widget.eventID}');
+    final logger = getIt<LoggingService>()
+      ..debug('Building ChatPageHeader for eventID: ${widget.eventID}');
 
     final topPadding = MediaQuery.of(context).padding.top;
 
@@ -552,17 +538,19 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
                       ),
                       SizedBox(height: 4.h),
 
-                      // INFO CHIP
-                      GestureDetector(
-                        onTap: () => _showLocationDetailSheet(context),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          physics: const BouncingScrollPhysics(),
-                          child: ChatEventInfoChip(
-                            location: widget.location,
-                            startTime: widget.eventDate,
-                            participantCount: participantCount,
-                          ),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        child: ChatEventInfoChip(
+                          location: widget.location,
+                          startTime: widget.eventDate,
+                          participantCount: participantCount,
+                          // Sadece konum kısmına tıklandığında tetiklenecek:
+                          onLocationTap: () =>
+                              _showLocationDetailSheet(context),
+                          onTimeTap: () => _showTimeDetailSheet(context),
+                          onParticipantsTap: () =>
+                              _showParticipantsBottomSheet(),
                         ),
                       ),
                     ],

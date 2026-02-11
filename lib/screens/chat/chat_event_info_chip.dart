@@ -8,12 +8,18 @@ class ChatEventInfoChip extends StatelessWidget {
     required this.location,
     required this.startTime,
     required this.participantCount,
+    this.onLocationTap,
+    this.onTimeTap,
+    this.onParticipantsTap,
     super.key,
   });
 
   final String location;
   final DateTime startTime;
   final int participantCount;
+  final VoidCallback? onLocationTap;
+  final VoidCallback? onTimeTap;
+  final VoidCallback? onParticipantsTap;
 
   static final DateFormat _dateFormat = DateFormat('dd MMMM HH.mm', 'tr_TR');
 
@@ -25,17 +31,27 @@ class ChatEventInfoChip extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         // 1. Konum
-        _buildItem(Icons.location_on_outlined, location),
-
+        GestureDetector(
+          onTap: onLocationTap,
+          behavior: HitTestBehavior.opaque,
+          child: _buildItem(Icons.location_on_outlined, location),
+        ),
         SizedBox(width: 8.w),
 
         // 2. Tarih/Saat
-        _buildItem(Icons.access_time, dateStr),
-
+        GestureDetector(
+          onTap: onTimeTap,
+          behavior: HitTestBehavior.opaque,
+          child: _buildItem(Icons.access_time, dateStr),
+        ),
         SizedBox(width: 8.w),
 
         // 3. Kişi Sayısı
-        _buildItem(Icons.people_outline, participantCount.toString()),
+        GestureDetector(
+          onTap: onParticipantsTap,
+          behavior: HitTestBehavior.opaque,
+          child: _buildItem(Icons.people_outline, participantCount.toString()),
+        ),
       ],
     );
   }
@@ -44,11 +60,7 @@ class ChatEventInfoChip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          icon,
-          size: 12.sp,
-          color: AppColors.darkSlate,
-        ),
+        Icon(icon, size: 12.sp, color: AppColors.darkSlate),
         SizedBox(width: 2.w),
         Flexible(
           child: Text(
