@@ -1,4 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:outnest/app_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
@@ -14,20 +16,70 @@ import 'package:outnest/screens/settings/edit_profile_page.dart';
 import 'package:outnest/screens/settings/settings_section_header.dart';
 import 'package:outnest/screens/settings/settings_tile.dart';
 import 'package:outnest/screens/settings/static_info_page.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
 
-  void _navigateToPermissionDetail(
-    BuildContext context, {
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage>
+    with WidgetsBindingObserver {
+  // --- İZİN DURUMLARI ---
+  bool _isNotifGranted = false;
+  bool _isBluetoothGranted = false;
+  bool _isLocationGranted = false;
+  bool _isCameraGranted = false;
+  bool _isPhotosGranted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _checkAllPermissions(); // Sayfa açıldığında izinleri kontrol et
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Kullanıcı telefon ayarlarına gidip geri döndüğünde tetiklenir
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkAllPermissions();
+    }
+  }
+
+  // --- TÜM İZİNLERİ KONTROL EDEN MERKEZİ FONKSİYON ---
+  Future<void> _checkAllPermissions() async {
+    final notif = await Permission.notification.status;
+    final blue = await Permission.bluetooth.status;
+    final loc = await Permission.location.status;
+    final cam = await Permission.camera.status;
+    final photo = await Permission.photos.status;
+
+    if (mounted) {
+      setState(() {
+        _isNotifGranted = notif.isGranted || notif.isLimited;
+        _isBluetoothGranted = blue.isGranted || blue.isLimited;
+        _isLocationGranted = loc.isGranted || loc.isLimited;
+        _isCameraGranted = cam.isGranted || cam.isLimited;
+        _isPhotosGranted = photo.isGranted || photo.isLimited;
+      });
+    }
+  }
+
+  Future<void> _navigateToPermissionDetail({
     required String title,
     required String description,
     required Permission permission,
-  }) {
-    Navigator.push(
+  }) async {
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => DevicePermissionsPage(
@@ -37,6 +89,8 @@ class SettingsPage extends StatelessWidget {
         ),
       ),
     );
+    // Sayfadan geri dönüldüğünde stateleri güncelle
+    _checkAllPermissions();
   }
 
   // --- POPUP FONKSİYONU ---
@@ -70,16 +124,10 @@ class SettingsPage extends StatelessWidget {
                 SizedBox(
                   width: 173.w,
                   height: 40.h,
-
                   child: ElevatedButton(
                     onPressed: () async {
-                      // 1. Close the dialog/drawer first
                       Navigator.pop(context);
-
-                      // 2. Perform the sign out
                       getIt<AuthService>().signOut();
-
-                      // 3. Check if the widget is still in the tree before navigating
                       if (context.mounted) {
                         router.go('/welcome');
                       }
@@ -115,6 +163,10 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentUser = getIt<SessionService>().currentUser;
     final profileImageUrl = currentUser?.profileImageUrl ?? '';
+
+    // Metinleri statelere göre dinamik belirlemek için yardımcı
+    String getStatusText(bool isGranted) =>
+        isGranted ? 'izin verildi' : 'izin verilmedi';
 
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
@@ -185,9 +237,8 @@ class SettingsPage extends StatelessWidget {
 
             SettingsTile(
               title: 'Bildirimler',
-              trailingText: 'izin verildi',
+              trailingText: getStatusText(_isNotifGranted), // DİNAMİK
               onTap: () => _navigateToPermissionDetail(
-                context,
                 title: 'Bildirimler',
                 description:
                     'Outnest uygulamasına bu cihaza güncellemeler ve önemli bildirimler göndermesine izin verilir.',
@@ -196,9 +247,8 @@ class SettingsPage extends StatelessWidget {
             ),
             SettingsTile(
               title: 'Bluetooth',
-              trailingText: 'izin verildi',
+              trailingText: getStatusText(_isBluetoothGranted), // DİNAMİK
               onTap: () => _navigateToPermissionDetail(
-                context,
                 title: 'Bluetooth',
                 description:
                     "Outnest uygulamasına yakındaki cihazlarla bağlantı kurmak için Bluetooth'u kullanmasına izin verilir.",
@@ -207,9 +257,8 @@ class SettingsPage extends StatelessWidget {
             ),
             SettingsTile(
               title: 'Konum Servisleri',
-              trailingText: 'izin verildi',
+              trailingText: getStatusText(_isLocationGranted), // DİNAMİK
               onTap: () => _navigateToPermissionDetail(
-                context,
                 title: 'Konum Servisleri',
                 description:
                     'Outnest uygulamasına bulunduğun konuma göre içerik ve öneriler sunmak için konum bilgine erişmesine izin verilir.',
@@ -218,9 +267,8 @@ class SettingsPage extends StatelessWidget {
             ),
             SettingsTile(
               title: 'Kamera',
-              trailingText: 'izin verildi',
+              trailingText: getStatusText(_isCameraGranted), // DİNAMİK
               onTap: () => _navigateToPermissionDetail(
-                context,
                 title: 'Kamera',
                 description:
                     'Outnest uygulamasında fotoğraf çekmek ve paylaşmak için kameranıza erişim izni verilir.',
@@ -229,9 +277,8 @@ class SettingsPage extends StatelessWidget {
             ),
             SettingsTile(
               title: 'Fotoğraflar',
-              trailingText: 'izin verilmedi',
+              trailingText: getStatusText(_isPhotosGranted), // DİNAMİK
               onTap: () => _navigateToPermissionDetail(
-                context,
                 title: 'Fotoğraflar',
                 description:
                     'Outnest uygulamasının galerinizdeki fotoğrafları seçip yükleyebilmesi için erişim izni verilir.',
@@ -351,11 +398,9 @@ class SettingsPage extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // URL'nin ağdan mı yoksa boş mu olduğunu kontrol et
             CircleAvatar(
               radius: 24.r,
               backgroundColor: AppColors.dividerColor,
-              // URL varsa CachedNetworkImageProvider + Fix, yoksa varsayılan asset resmi
               backgroundImage: hasUrl
                   ? CachedNetworkImageProvider(
                       fixEmulatorUrl(profileImageUrl),
@@ -375,7 +420,6 @@ class SettingsPage extends StatelessWidget {
                 color: AppColors.onBackgroundColor,
               ),
             ),
-
             const Spacer(),
             Icon(
               Icons.chevron_right,
