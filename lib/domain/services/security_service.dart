@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
+import 'package:tflite_flutter/tflite_flutter.dart';
 
 abstract class SecurityService {
   Future<void> sendReport(
@@ -14,6 +17,10 @@ abstract class SecurityService {
     Identifier ownerID,
     Identifier queriedUserID,
   );
+
+  Future<bool> isImageSafe(File imageFile);
+  Interpreter? _nsfwImageModel;
+  final List<String> _labels = ['drawings', 'neutral', 'porn', 'sexy'];
 }
 
 class ReportData {
