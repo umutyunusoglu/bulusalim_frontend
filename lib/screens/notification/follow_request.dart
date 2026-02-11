@@ -64,8 +64,9 @@ class _FollowRequestsPageState extends State<FollowRequestsPage> {
           }
 
           final items = snapshot.data ?? [];
-          if (items.isEmpty)
-            return const Center(child: Text("Takip isteği yok"));
+          if (items.isEmpty) {
+            return const Center(child: Text('Takip isteği yok'));
+          }
 
           // GRUPLAMA MANTIĞI
           final now = DateTime.now();

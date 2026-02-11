@@ -34,8 +34,8 @@ class SmallStackedAvatars extends StatelessWidget {
       child: Stack(
         alignment: Alignment.centerLeft,
         children: List.generate(items.length, (index) {
-          final String currentItem = items[index] ?? "";
-          final bool isNetwork = currentItem.startsWith('http');
+          final currentItem = items[index] ?? '';
+          final isNetwork = currentItem.startsWith('http');
 
           return Positioned(
             left: index * (size - overlap),

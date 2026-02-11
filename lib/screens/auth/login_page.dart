@@ -9,6 +9,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 
+// Yükleme durumlarını ayırt etmek için enum
+enum AuthStatus { none, phone, google, apple }
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -19,15 +22,15 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _phoneController = TextEditingController();
 
+  // Hangi yöntemin işlemde olduğunu tutan değişken
+  AuthStatus _authStatus = AuthStatus.none;
+
   @override
   void dispose() {
     _phoneController.dispose();
     super.dispose();
   }
 
-  bool _isLoading = false;
-
-  // --- HATA GÖSTERME YARDIMCISI ---
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -35,20 +38,18 @@ class _LoginPageState extends State<LoginPage> {
           message,
           style: const TextStyle(color: Colors.white),
         ),
-        backgroundColor:
-            Colors.redAccent, // Hata olduğu belli olsun diye kırmızı
+        backgroundColor: Colors.redAccent,
         duration: const Duration(seconds: 2),
       ),
     );
   }
 
-  void _handleLogin() async {
-    if (_isLoading) return;
+  Future<void> _handleLogin() async {
+    // Herhangi bir işlem sürüyorsa engelle
+    if (_authStatus != AuthStatus.none) return;
 
-    // 1. ÖNCE FORMATI TEMİZLE (Boşlukları kaldır)
     final rawNumber = _phoneController.text.replaceAll(' ', '');
 
-    // 2. VALIDASYON KONTROLLERİ (Hata varsa durdur)
     if (rawNumber.isEmpty) {
       _showErrorSnackBar('Lütfen telefon numaranızı giriniz.');
       return;
@@ -64,8 +65,7 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    // Her şey yolundaysa yükleniyor durumuna geç
-    setState(() => _isLoading = true);
+    setState(() => _authStatus = AuthStatus.phone);
 
     try {
       final result = await getIt<AuthService>().sendSMS(
@@ -73,10 +73,9 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() => _authStatus = AuthStatus.none);
 
         if (result.error != null) {
-          // Backend'den gelen hata
           _showErrorSnackBar('Hata: ${result.error}');
         } else {
           final verificationID = result.verificationId;
@@ -91,7 +90,7 @@ class _LoginPageState extends State<LoginPage> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() => _authStatus = AuthStatus.none);
         _showErrorSnackBar('Beklenmedik bir hata oluştu.');
       }
       debugPrint('Beklenmedik hata: $e');
@@ -100,6 +99,9 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Herhangi bir yükleme işlemi var mı?
+    final isAnyLoading = _authStatus != AuthStatus.none;
+
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
@@ -113,7 +115,7 @@ class _LoginPageState extends State<LoginPage> {
               color: Colors.black,
               size: 20.sp,
             ),
-            onPressed: () => context.pop(),
+            onPressed: isAnyLoading ? null : () => context.pop(),
           ),
         ),
         body: SingleChildScrollView(
@@ -144,16 +146,11 @@ class _LoginPageState extends State<LoginPage> {
                 prefixText: '+90',
                 keyboardType: TextInputType.phone,
                 textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _handleLogin(),
+                // Eğer yükleme varsa klavye submit'ini de engelle
+                onSubmitted: isAnyLoading ? null : (_) => _handleLogin(),
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
-                  // Not: Formatlayıcı boşluk eklediği için limit 10'dan fazla olmalı
-                  // veya formatlayıcıdan sonra uygulanmalı.
-                  // Burada kullanıcının sadece rakam girmesine izin verip
-                  // formatlayıcının işini yapmasına izin veriyoruz.
-                  LengthLimitingTextInputFormatter(
-                    14,
-                  ), // Boşluk payı ile birlikte
+                  LengthLimitingTextInputFormatter(14),
                   _PhoneInputFormatter(),
                 ],
               ),
@@ -173,15 +170,18 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               SizedBox(height: 36.h),
+
+              // SMS GÖNDER BUTONU
               AuthButton(
-                text: 'gönder',
-                onPressed: _handleLogin,
+                text: _authStatus == AuthStatus.phone
+                    ? 'Gönderiliyor...'
+                    : 'gönder',
+                // Herhangi bir işlem varsa butonu devre dışı bırak
+                onPressed: isAnyLoading ? null : _handleLogin,
               ),
 
-              // ... AuthButton'dan sonrası
               SizedBox(height: 24.h),
 
-              // 1. AYRAÇ (Row burada bitmeli)
               Row(
                 children: [
                   Expanded(
@@ -190,27 +190,27 @@ class _LoginPageState extends State<LoginPage> {
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 12.w),
                     child: Text(
-                      "veya",
+                      'veya',
                       style: TextStyle(color: Colors.grey, fontSize: 12.sp),
                     ),
                   ),
                   Expanded(
                     child: Divider(color: Colors.grey.shade300, thickness: 1),
                   ),
-                ], // Row burada kapandı!
+                ],
               ),
 
               SizedBox(height: 24.h),
 
-              // 2. GOOGLE BUTONU (Row'un dışında, direkt Column'un içinde)
-              Container(
+              // GOOGLE BUTONU
+              SizedBox(
                 width: double.infinity,
                 height: 48.h,
                 child: OutlinedButton.icon(
-                  onPressed: _isLoading
+                  onPressed: isAnyLoading
                       ? null
                       : () async {
-                          setState(() => _isLoading = true);
+                          setState(() => _authStatus = AuthStatus.google);
                           try {
                             await getIt<AuthService>().signInWithGoogle(
                               isLogin: true,
@@ -220,18 +220,16 @@ class _LoginPageState extends State<LoginPage> {
                               context.go('/home');
                             }
                           } catch (e) {
-                            // Only reset loading if there was an error
-                            // If successful, the navigation handles the UI transition
                             if (mounted) {
-                              setState(() => _isLoading = false);
+                              setState(() => _authStatus = AuthStatus.none);
                               _showErrorSnackBar(
                                 e.toString().replaceAll('Exception: ', ''),
                               );
                             }
                           }
-                          // Removed 'finally' to prevent setState during/after navigation
                         },
-                  icon: _isLoading
+                  // Sadece Google işlemi yapılıyorsa spinner göster
+                  icon: _authStatus == AuthStatus.google
                       ? SizedBox(
                           height: 20.h,
                           width: 20.h,
@@ -251,30 +249,42 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
 
-              // Google butonundan sonra gelen kısım...
               if (Platform.isIOS) ...[
-                SizedBox(height: 12.h), // Google butonuyla aradaki mesafe
-                Container(
+                SizedBox(height: 12.h),
+                // APPLE BUTONU
+                SizedBox(
                   width: double.infinity,
                   height: 48.h,
                   child: ElevatedButton.icon(
-                    onPressed: _isLoading
+                    onPressed: isAnyLoading
                         ? null
                         : () async {
-                            setState(() => _isLoading = true);
+                            setState(() => _authStatus = AuthStatus.apple);
                             try {
                               await getIt<AuthService>().signInWithApple(
                                 isLogin: true,
                               );
-                              // Başarılı girişte GoRouter zaten auth state'e göre yönlendirme yapacaktır
                               if (mounted) context.go('/home');
                             } catch (e) {
-                              _showErrorSnackBar(
-                                e.toString().replaceAll('Exception: ', ''),
-                              );
+                              if (mounted) {
+                                setState(() => _authStatus = AuthStatus.none);
+                                _showErrorSnackBar(
+                                  e.toString().replaceAll('Exception: ', ''),
+                                );
+                              }
                             }
                           },
-                    icon: Icon(Icons.apple, color: Colors.white, size: 24.sp),
+                    // Sadece Apple işlemi yapılıyorsa spinner (veya siyah üzerine beyaz loading) göster
+                    icon: _authStatus == AuthStatus.apple
+                        ? SizedBox(
+                            height: 20.h,
+                            width: 20.h,
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Icon(Icons.apple, color: Colors.white, size: 24.sp),
                     label: const Text('Apple ile devam et'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.black,
@@ -302,17 +312,14 @@ class _PhoneInputFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    // Sadece rakamları al
     final text = newValue.text.replaceAll(' ', '');
     if (text.isEmpty) return newValue;
 
-    // Eğer 10 karakterden fazlaysa (kopyala yapıştır durumları için) kes
     final truncatedText = text.length > 10 ? text.substring(0, 10) : text;
 
     final buffer = StringBuffer();
-    for (int i = 0; i < truncatedText.length; i++) {
+    for (var i = 0; i < truncatedText.length; i++) {
       buffer.write(truncatedText[i]);
-      // 5XX (boşluk) XXX (boşluk) XX (boşluk) XX
       if (i == 2 || i == 5 || i == 7) {
         if (i != truncatedText.length - 1) buffer.write(' ');
       }

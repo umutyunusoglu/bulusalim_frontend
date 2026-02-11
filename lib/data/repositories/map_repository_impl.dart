@@ -86,7 +86,7 @@ class MapRepositoryImpl implements MapRepository {
 
       final futures = <Future<QuerySnapshot>>[];
 
-      for (var parentHash in newRegions) {
+      for (final parentHash in newRegions) {
         final endHash = '$parentHash~';
         futures.add(
           _firestore
@@ -108,7 +108,7 @@ class MapRepositoryImpl implements MapRepository {
           for (final doc in snap.docs) {
             try {
               final eventModel = EventModel.fromFirestore(
-                doc.data() as Map<String, dynamic>,
+                doc.data()! as Map<String, dynamic>,
               );
               eventsToEnrich.add(eventModel.toEntity());
             } catch (e) {
@@ -132,7 +132,7 @@ class MapRepositoryImpl implements MapRepository {
         // Başarılı olan bölgeleri fetched listesine ekle
         _fetchedRegions.addAll(newRegions);
       } catch (e) {
-        _logger.error("Fetch hatası: $e");
+        _logger.error('Fetch hatası: $e');
       } finally {
         // İşlem bitince kilidi aç
         _fetchLock.removeAll(newRegions);
@@ -339,6 +339,7 @@ class MapRepositoryImpl implements MapRepository {
     }
   }
 
+  @override
   Future<List<Place>> searchPlaces(String query, String sessionToken) async {
     final accessToken = AppConfig.mapBoxAccessTokenKey;
     // Access token veya query boş ise direkt boş dön
@@ -387,8 +388,8 @@ class MapRepositoryImpl implements MapRepository {
           }
 
           //TODO: Burada context içinden şehir ve ilçe bilgilerini almak daha doğru olabilir
-          final city = map["region"] as String? ?? '';
-          final district = map["place"] as String? ?? '';
+          final city = map['region'] as String? ?? '';
+          final district = map['place'] as String? ?? '';
 
           var displayAdress = city.isNotEmpty ? '$district, $city' : district;
           if (displayAdress.isEmpty) {

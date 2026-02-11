@@ -72,7 +72,7 @@ class ProfileGridTab extends StatelessWidget {
 
           final post = totalPosts[index];
 
-          final bool isNetwork = post.imageUrls.isNotEmpty;
+          final isNetwork = post.imageUrls.isNotEmpty;
           final imageUrl = isNetwork
               ? post.imageUrls.first
               : FileService.defaultProfileImageUrl(); // Fallback resmimiz (Asset)

@@ -90,7 +90,7 @@ class _HomePageState extends State<HomePage> {
     BuildContext context,
     List<dynamic> activeEvents,
   ) {
-    int selectedIndex = 0;
+    var selectedIndex = 0;
 
     showDialog(
       context: context,
@@ -134,12 +134,12 @@ class _HomePageState extends State<HomePage> {
 
                           // Mock veriyi de gerçek veriyi de karşılayacak şekilde
                           final eventName =
-                              event.name?.toString() ?? 'Buluşma ${index + 1}';
+                              event.name.toString() ?? 'Buluşma ${index + 1}';
 
                           final participants = event.participants;
                           // Mock listede veya gerçek entity'de imageUrls erişimi
 
-                          final String eventImage =
+                          final eventImage =
                               event.creator.profileImageUrl.isNotEmpty
                               ? event.creator.profileImageUrl
                               : FileService.defaultProfileImageUrl();
@@ -149,9 +149,11 @@ class _HomePageState extends State<HomePage> {
                             children: [
                               CircleAvatar(
                                 radius: 24.r,
-                                backgroundImage: CachedNetworkImageProvider(
-                                  fixEmulatorUrl(eventImage),
-                                ),
+                                backgroundImage: eventImage.startsWith('http')
+                                    ? CachedNetworkImageProvider(
+                                        fixEmulatorUrl(eventImage),
+                                      )
+                                    : AssetImage(eventImage),
                               ),
                               SizedBox(height: 8.h),
                               Text(
@@ -282,16 +284,14 @@ class _HomePageState extends State<HomePage> {
   void _navigateToCamera() {
     // A) Kullanıcı verisini al
     final sessionService = getIt<SessionService>();
-    final activeEvents = sessionService.currentState.ongoingEvents;
+    final ongoingEvents = sessionService.currentState.ongoingEvents;
 
-    if (activeEvents == null) return;
-
-    if (activeEvents.isEmpty) {
+    if (ongoingEvents.isEmpty) {
       _showNoMeetingDialog(context);
-    } else if (activeEvents.length == 1) {
-      context.push('/camera', extra: {'event': activeEvents.first});
+    } else if (ongoingEvents.length == 1) {
+      context.push('/camera', extra: {'event': ongoingEvents.first});
     } else {
-      _showMultipleEventsSelectionDialog(context, activeEvents);
+      _showMultipleEventsSelectionDialog(context, ongoingEvents);
     }
   }
 

@@ -5,8 +5,6 @@ import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/usecases/force_start_event_usecase.dart';
 import 'package:outnest/domain/usecases/force_stop_event_usecase.dart';
-// Note: You will likely need to import a ForceStopEventUseCase here
-// import 'package:outnest/domain/usecases/force_stop_event_usecase.dart';
 import 'package:outnest/screens/chat/chat_event_info_chip.dart';
 import 'package:outnest/screens/chat/event_avatar_badge.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -14,7 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
-class ChatPageHeader extends StatelessWidget {
+class ChatPageHeader extends StatefulWidget {
   const ChatPageHeader({
     required this.eventID,
     required this.event,
@@ -39,6 +37,33 @@ class ChatPageHeader extends StatelessWidget {
   final String participantStatus;
   final List<dynamic> participantAvatars;
   final String categoryIcon;
+
+  @override
+  State<ChatPageHeader> createState() => _ChatPageHeaderState();
+}
+
+class _ChatPageHeaderState extends State<ChatPageHeader> {
+  // Optimistic Update için lokal state
+  late EventStatusEnum _currentStatus;
+
+  @override
+  void initState() {
+    super.initState();
+    // Başlangıçta gelen event status'u alıyoruz
+    _currentStatus = widget.event.status;
+  }
+
+  @override
+  void didUpdateWidget(covariant ChatPageHeader oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Eğer parent widget'tan yeni bir status gelirse (server sync)
+    // lokal state'i güncelliyoruz.
+    if (widget.event.status != oldWidget.event.status) {
+      setState(() {
+        _currentStatus = widget.event.status;
+      });
+    }
+  }
 
   // --- 1. START POPUP (FORCE START) ---
   void _showStartEventDialog(BuildContext context) {
@@ -97,8 +122,16 @@ class ChatPageHeader extends StatelessWidget {
                       color: AppColors.primaryColor,
                       textColor: Colors.white,
                       onTap: () {
+                        // 1. Önce UI'ı güncelle (Optimistic Update)
+                        setState(() {
+                          _currentStatus = EventStatusEnum.ongoing;
+                        });
+
+                        // 2. Sonra isteği at
                         final forceStartEvent = getIt<ForceStartEvent>();
-                        forceStartEvent(event);
+                        forceStartEvent(widget.event);
+
+                        // 3. Dialog'u kapat
                         context.pop();
                       },
                     ),
@@ -166,12 +199,19 @@ class ChatPageHeader extends StatelessWidget {
                     child: _buildDialogButton(
                       context,
                       label: 'bitir',
-                      color: Colors.redAccent, // Red to indicate stopping
+                      color: Colors.redAccent,
                       textColor: Colors.white,
                       onTap: () {
-                        // TODO: Inject and call ForceStopEvent usecase here
+                        // 1. Önce UI'ı güncelle (Optimistic Update)
+                        setState(() {
+                          _currentStatus = EventStatusEnum.completed;
+                        });
+
+                        // 2. Sonra isteği at
                         final forceStopEvent = getIt<ForceStopEvent>();
-                        forceStopEvent(event);
+                        forceStopEvent(widget.event);
+
+                        // 3. Dialog'u kapat
                         context.pop();
                       },
                     ),
@@ -185,7 +225,7 @@ class ChatPageHeader extends StatelessWidget {
     );
   }
 
-  // Helper widget for Dialog Buttons to reduce code duplication
+  // Helper widget for Dialog Buttons
   Widget _buildDialogButton(
     BuildContext context, {
     required String label,
@@ -217,7 +257,6 @@ class ChatPageHeader extends StatelessWidget {
 
   // --- 3. KATILIMCI AYARLARI ---
   void _showParticipantSettingsSheet(BuildContext context) {
-    // ... (Existing code remains unchanged)
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -283,7 +322,6 @@ class ChatPageHeader extends StatelessWidget {
 
   // --- 4. KONUM DETAY SHEET ---
   void _showLocationDetailSheet(BuildContext context) {
-    // ... (Existing code remains unchanged)
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -318,7 +356,7 @@ class ChatPageHeader extends StatelessWidget {
                     SizedBox(width: 20.w),
                     Expanded(
                       child: Text(
-                        location,
+                        widget.location,
                         style: TextStyle(
                           fontFamily: 'SF Pro Display',
                           fontSize: 14.sp,
@@ -365,15 +403,15 @@ class ChatPageHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
-    final isCreator = currentUserId == creatorID;
-    final LoggingService logger = getIt<LoggingService>();
-    logger.debug('Building ChatPageHeader for eventID: $eventID');
+    final isCreator = currentUserId == widget.creatorID;
+    final logger = getIt<LoggingService>();
+    logger.debug('Building ChatPageHeader for eventID: ${widget.eventID}');
 
     final topPadding = MediaQuery.of(context).padding.top;
 
     var participantCount = 0;
     try {
-      final parts = participantStatus.split('/');
+      final parts = widget.participantStatus.split('/');
       participantCount = int.parse(parts[0].trim());
     } catch (_) {}
 
@@ -387,7 +425,6 @@ class ChatPageHeader extends StatelessWidget {
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // 1. Geri Butonu
                 InkWell(
@@ -409,8 +446,8 @@ class ChatPageHeader extends StatelessWidget {
                   width: 50.w,
                   height: 50.w,
                   child: EventAvatarBadge(
-                    imageUrl: creatorProfileImage,
-                    categoryIcon: categoryIcon,
+                    imageUrl: widget.creatorProfileImage,
+                    categoryIcon: widget.categoryIcon,
                   ),
                 ),
                 SizedBox(width: 12.w),
@@ -425,7 +462,7 @@ class ChatPageHeader extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              chatTitle,
+                              widget.chatTitle,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -445,8 +482,10 @@ class ChatPageHeader extends StatelessWidget {
                             children: [
                               // Only render action buttons if user is creator
                               if (isCreator) ...[
+                                // Local state (_currentStatus) kullanıyoruz
+
                                 // STATUS: UPCOMING -> Show "Force Start" (Play)
-                                if (event.status ==
+                                if (_currentStatus ==
                                     EventStatusEnum.upcoming) ...[
                                   GestureDetector(
                                     onTap: () => _showStartEventDialog(context),
@@ -459,14 +498,13 @@ class ChatPageHeader extends StatelessWidget {
                                 ],
 
                                 // STATUS: ONGOING -> Show "Force Stop" (Stop)
-                                if (event.status ==
+                                if (_currentStatus ==
                                     EventStatusEnum.ongoing) ...[
                                   GestureDetector(
                                     onTap: () => _showStopEventDialog(context),
                                     child: _buildCircleActionButton(
                                       icon: Icons.stop_rounded,
-                                      color: Colors
-                                          .greenAccent, // Distinct color for stop
+                                      color: Colors.greenAccent,
                                     ),
                                   ),
                                   SizedBox(width: 12.w),
@@ -480,20 +518,21 @@ class ChatPageHeader extends StatelessWidget {
                                 onTap: () {
                                   if (isCreator) {
                                     final encodedId = Uri.encodeComponent(
-                                      eventID,
+                                      widget.eventID,
                                     );
 
                                     GoRouter.of(context).push(
                                       '/chat/room/$encodedId/settings',
                                       extra: {
-                                        'title': chatTitle,
-                                        'avatars': participantAvatars,
-                                        'location': location,
-                                        'participants': participantStatus,
-                                        'date': eventDate,
-                                        'creatorID': creatorID,
+                                        'title': widget.chatTitle,
+                                        'avatars': widget.participantAvatars,
+                                        'location': widget.location,
+                                        'participants':
+                                            widget.participantStatus,
+                                        'date': widget.eventDate,
+                                        'creatorID': widget.creatorID,
                                         'creatorProfileImage':
-                                            creatorProfileImage,
+                                            widget.creatorProfileImage,
                                       },
                                     );
                                   } else {
@@ -520,8 +559,8 @@ class ChatPageHeader extends StatelessWidget {
                           scrollDirection: Axis.horizontal,
                           physics: const BouncingScrollPhysics(),
                           child: ChatEventInfoChip(
-                            location: location,
-                            startTime: eventDate,
+                            location: widget.location,
+                            startTime: widget.eventDate,
                             participantCount: participantCount,
                           ),
                         ),

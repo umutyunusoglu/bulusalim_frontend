@@ -72,11 +72,12 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   Future<void> _takePhoto() async {
     if (_controller == null ||
         !_controller!.value.isInitialized ||
-        _takenPhotos.length >= 3)
+        _takenPhotos.length >= 3) {
       return;
+    }
 
     try {
-      final XFile photo = await _controller!.takePicture();
+      final photo = await _controller!.takePicture();
       final croppedFile = await ImageCropper().cropImage(
         sourcePath: photo.path,
         aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),

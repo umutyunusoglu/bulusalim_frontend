@@ -1,9 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/data/models/chat/message_model.dart';
 import 'package:outnest/domain/entities/chat/message_entity.dart';
 import 'package:outnest/domain/repositories/chat_repository.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ChatRepositoryImpl implements ChatRepository {
   ChatRepositoryImpl({
@@ -42,15 +42,14 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<void> sendMessage(Identifier eventID, MessageEntity message) {
+    final messageModel = MessageModel.fromEntity(message);
+    final messageMap = messageModel.toFirestore();
+    messageMap['createdAt'] = FieldValue.serverTimestamp();
     return _firestore
         .collection('events')
         .doc(eventID)
         .collection('messages')
-        .add({
-          'content': message.content,
-          'senderID': message.senderID,
-          'createdAt': FieldValue.serverTimestamp(),
-        })
+        .add(messageMap)
         .then((_) {
           _logger.info('Message sent successfully.');
         })

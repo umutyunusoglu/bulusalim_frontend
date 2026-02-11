@@ -386,7 +386,6 @@ class _PostCardState extends State<PostCard> {
     required String text,
     required Color color,
     required VoidCallback onTap,
-    bool isDestructive = false,
   }) {
     return InkWell(
       onTap: onTap,
@@ -475,8 +474,7 @@ class _PostCardState extends State<PostCard> {
   }) {
     final theme = Theme.of(context);
     final isPostMine = widget.post.creator.userID == _myUserId;
-    final bool hasAvatarUrl =
-        avatarUrl.isNotEmpty && avatarUrl.startsWith('http');
+    final hasAvatarUrl = avatarUrl.isNotEmpty && avatarUrl.startsWith('http');
 
     return Row(
       children: [
@@ -552,13 +550,13 @@ class _PostCardState extends State<PostCard> {
                           _togglePinStatus();
                         },
                       ),
-                    BottomSheetOption(
+                    /* BottomSheetOption(
                       icon: Icons.share_outlined,
                       text: 'Gönderiyi Paylaş',
                       onTap: () {
                         sheetContext.pop();
                       },
-                    ),
+                    ),*/
                     BottomSheetOption(
                       icon: Icons.delete_outline,
                       text: 'Gönderiyi Sil',
@@ -606,8 +604,8 @@ class _PostCardState extends State<PostCard> {
               itemCount: mediaUrls.length,
               onPageChanged: (index) => setState(() => _currentPage = index),
               itemBuilder: (context, index) {
-                final String currentMedia = mediaUrls[index];
-                final bool isNetworkMedia = currentMedia.startsWith('http');
+                final currentMedia = mediaUrls[index];
+                final isNetworkMedia = currentMedia.startsWith('http');
 
                 return isNetworkMedia
                     ? CachedNetworkImage(
