@@ -1,9 +1,4 @@
 // Proje importları
-import 'package:outnest/application/providers/get_it_init.dart';
-import 'package:outnest/domain/entities/chat/message_entity.dart';
-import 'package:outnest/domain/repositories/chat_repository.dart';
-import 'package:outnest/domain/repositories/event_repository.dart';
-import 'package:outnest/firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 // Firebase importları
@@ -11,6 +6,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/domain/entities/chat/message_entity.dart';
+import 'package:outnest/domain/repositories/chat_repository.dart';
+import 'package:outnest/domain/repositories/event_repository.dart';
+import 'package:outnest/firebase_options.dart';
 
 void main() async {
   const eventID = String.fromEnvironment('EVENT_ID');

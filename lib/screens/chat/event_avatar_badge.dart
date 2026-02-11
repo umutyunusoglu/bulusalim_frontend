@@ -44,7 +44,7 @@ class EventAvatarBadge extends StatelessWidget {
               ],
             ),
             child: ClipOval(
-              child: (imageUrl != null && imageUrl.startsWith('http'))
+              child: (imageUrl.startsWith('http'))
                   ? CachedNetworkImage(
                       imageUrl: fixEmulatorUrl(imageUrl),
                       fadeInDuration: Duration.zero,

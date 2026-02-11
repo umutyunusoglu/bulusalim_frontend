@@ -295,7 +295,6 @@ class _EventCardState extends State<EventCard> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       useRootNavigator: true,
-      useSafeArea: false,
       builder: (context) {
         return ParticipantsBottomSheet(
           creator: creator,

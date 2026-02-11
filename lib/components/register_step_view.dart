@@ -41,7 +41,7 @@ class RegisterStepView extends StatelessWidget {
 
   void _handleNext(BuildContext context) {
     if (validator != null) {
-      final String? error = validator!();
+      final error = validator!();
       if (error != null) {
         // Hata varsa SnackBar göster ve dur.
         ScaffoldMessenger.of(context).showSnackBar(

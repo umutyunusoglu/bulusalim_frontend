@@ -62,7 +62,7 @@ class RemoteConfigServiceImpl implements RemoteConfigService {
       try {
         return json.decode(rawString) as T;
       } catch (e) {
-        print("Remote Config Decode Hatası ($key): $e");
+        print('Remote Config Decode Hatası ($key): $e');
         return (T == List ? [] : {}) as T;
       }
     }

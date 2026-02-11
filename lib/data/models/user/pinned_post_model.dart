@@ -6,7 +6,7 @@ import 'package:outnest/data/models/model.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
 
-final getIt = GetIt.instance;
+final GetIt getIt = GetIt.instance;
 
 class UserPostModel extends Model<UserPostEntity> {
   UserPostModel({
@@ -38,7 +38,7 @@ class UserPostModel extends Model<UserPostEntity> {
 
     try {
       // 1. Safe Location Parsing
-      Geolocation parsedLocation = Geolocation(latitude: 0, longitude: 0);
+      var parsedLocation = Geolocation(latitude: 0, longitude: 0);
       if (doc['location'] != null && doc['location'] is GeoPoint) {
         try {
           final geoPoint = doc['location'] as GeoPoint;
@@ -54,7 +54,7 @@ class UserPostModel extends Model<UserPostEntity> {
       }
 
       // 2. Safe Participants Parsing
-      List<CompactUserEntity> parsedParticipants = [];
+      var parsedParticipants = <CompactUserEntity>[];
       if (doc['participants'] != null && doc['participants'] is List) {
         try {
           parsedParticipants = (doc['participants'] as List).map((e) {
@@ -68,7 +68,7 @@ class UserPostModel extends Model<UserPostEntity> {
       }
 
       // 3. Safe EmoteCounts Parsing
-      Map<String, int> parsedEmoteCounts = {};
+      var parsedEmoteCounts = <String, int>{};
       if (doc['emoteCounts'] != null && doc['emoteCounts'] is Map) {
         try {
           final rawMap = doc['emoteCounts'] as Map<String, dynamic>;
@@ -83,7 +83,7 @@ class UserPostModel extends Model<UserPostEntity> {
       }
 
       // 4. Safe Image URLs Parsing
-      List<String> parsedImageUrls = [];
+      var parsedImageUrls = <String>[];
       if (doc['imageUrls'] != null && doc['imageUrls'] is List) {
         parsedImageUrls = (doc['imageUrls'] as List)
             .map((e) => e.toString())
@@ -91,7 +91,7 @@ class UserPostModel extends Model<UserPostEntity> {
       }
 
       // 5. Safe Date Parsing
-      DateTime parsedCreatedAt = DateTime.now();
+      var parsedCreatedAt = DateTime.now();
       if (doc['createdAt'] is Timestamp) {
         parsedCreatedAt = (doc['createdAt'] as Timestamp).toDate();
       }

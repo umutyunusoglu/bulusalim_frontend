@@ -1,5 +1,5 @@
-import 'package:outnest/core/utils/types/types.dart';
 import 'package:equatable/equatable.dart';
+import 'package:outnest/core/utils/types/types.dart';
 
 class CompactUserEntity extends Equatable {
   const CompactUserEntity({

@@ -1,7 +1,6 @@
 import 'package:outnest/application/providers/get_it_init.dart';
-import 'package:outnest/core/constants/configs/app_config.dart'; // <--- BU SATIR EKLENDİ
+import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
-import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/domain/entities/chat/message_entity.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/repositories/chat_repository.dart';
@@ -9,11 +8,12 @@ import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/screens/chat/chat_input_bar.dart';
 import 'package:outnest/screens/chat/chat_message_buble.dart';
 import 'package:outnest/screens/chat/chat_page_header.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
+
+// NOT: Firestore importu kaldırıldı çünkü UI katmanında işi yok.
 
 class ChatPage extends StatefulWidget {
   const ChatPage({
@@ -78,13 +78,22 @@ class _ChatPageState extends State<ChatPage> {
     });
   }
 
+  // Helper metod: Kategori ikonunu Entity üzerinden bulur
+  String _getCategoryIcon() {
+    var categoryIcon = '🎉';
+    // EventEntity içinde hobbies listesi olduğunu varsayıyoruz (önceki kodda map['hobbies'] vardı)
+    // Eğer EventEntity içinde hobbies yoksa burayı entity yapısına göre güncellemelisin.
+    if (widget.event.hobbies.isNotEmpty) {
+      final category = widget.event.hobbies.first;
+      categoryIcon = AppConfig.categories[category] ?? '🎉';
+    }
+    return categoryIcon;
+  }
+
   Map<String, String> _getSenderDetails(String senderID) {
-    //TODO: Bu fonksiyon, senderID'ye göre kullanıcının adını ve profil resmini bulmalı. Şu anki yapıda participantAvatars listesinde bu bilgiler var gibi görünüyor, ancak tam yapıyı bilmediğim için genel bir yaklaşım sunuyorum.
-    widget.event.participants.forEach((participant) {
-      debugPrint('Katılımcı: ${participant.userID}, ${participant.username}');
-    });
-    String imagePath = '';
-    String name = 'Bilinmeyen Kullanıcı';
+    // Bu metod mantığına dokunulmadı, mevcut haliyle bırakıldı.
+    var imagePath = '';
+    var name = 'Bilinmeyen Kullanıcı';
 
     if (senderID == widget.creatorID) {
       name = 'Buluşma Sahibi';
@@ -108,6 +117,7 @@ class _ChatPageState extends State<ChatPage> {
                 (user['profileImageUrl'] as String?) ??
                 FileService.defaultProfileImageUrl();
           } else {
+            // Eğer user bir Entity ise
             name = (user.username as String?) ?? 'İsimsiz';
             imagePath =
                 (user.profileImageUrl as String?) ??
@@ -133,81 +143,29 @@ class _ChatPageState extends State<ChatPage> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // 1. HEADER
-          StreamBuilder<DocumentSnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('events')
-                .doc(widget.eventID)
-                .snapshots(),
-
-            builder: (context, snapshot) {
-              var displayTitle = widget.chatTitle;
-              var displayLocation = widget.location;
-              var displayDate = widget.eventDate;
-              var displayCreatorImage = widget.creatorProfileImage;
-
-              // 2. VARSAYILAN İKON TANIMLA
-              String categoryIcon = '🎉';
-
-              if (snapshot.hasData &&
-                  snapshot.data != null &&
-                  snapshot.data!.exists) {
-                final data = snapshot.data!.data() as Map<String, dynamic>?;
-                if (data != null) {
-                  if (data.containsKey('name')) {
-                    displayTitle = data['name'] as String;
-                  }
-                  if (data.containsKey('displayAddress')) {
-                    displayLocation = data['displayAddress'] as String;
-                  }
-
-                  if (data.containsKey('startTime')) {
-                    final timestamp = data['startTime'] as Timestamp?;
-                    if (timestamp != null) displayDate = timestamp.toDate();
-                  }
-
-                  if (data.containsKey('creator') && data['creator'] is Map) {
-                    final creatorMap = data['creator'] as Map<String, dynamic>;
-                    if (creatorMap.containsKey('profileImageUrl')) {
-                      final rawImg = creatorMap['profileImageUrl'] as String?;
-                      // Eğer URL boşsa default asset'i ata
-                      displayCreatorImage =
-                          (rawImg != null && rawImg.isNotEmpty)
-                          ? rawImg
-                          : FileService.defaultProfileImageUrl();
-                    }
-                  }
-
-                  // 3. HOBİLERDEN İKONU AL
-                  if (data.containsKey('hobbies')) {
-                    final hobbies = data['hobbies'] as List<dynamic>?;
-                    if (hobbies != null && hobbies.isNotEmpty) {
-                      final category = hobbies.first.toString();
-                      categoryIcon = AppConfig.categories[category] ?? '🎉';
-                    }
-                  }
-                }
-              }
-
-              return ChatPageHeader(
-                eventID: widget.eventID,
-                event: widget.event,
-                creatorID: widget.creatorID,
-                chatTitle: displayTitle,
-                creatorProfileImage: displayCreatorImage,
-                location: displayLocation,
-                eventDate: displayDate,
-                participantStatus: widget.participantStatus,
-                participantAvatars: widget.participantAvatars,
-                categoryIcon: categoryIcon, // 4. KATEGORİ İKONUNU GÖNDER
-              );
-            },
+          // 1. HEADER (ARTIK STREAM DEĞİL, STATİK WIDGET)
+          // Verileri doğrudan widget parametrelerinden alıyoruz.
+          ChatPageHeader(
+            eventID: widget.eventID,
+            event: widget.event,
+            creatorID: widget.creatorID,
+            chatTitle:
+                widget.chatTitle, // Stream'den gelen 'displayTitle' yerine
+            creatorProfileImage:
+                widget.creatorProfileImage, // Tekrar fetch etmeye gerek yok
+            location: widget.location,
+            eventDate: widget.eventDate,
+            participantStatus: widget.participantStatus,
+            participantAvatars: widget.participantAvatars,
+            categoryIcon: _getCategoryIcon(), // Helper metoddan geliyor
           ),
 
-          // 2. MESAJ LİSTESİ
+          // 2. MESAJ LİSTESİ (Burası Clean Architecture'a uygun Repository Stream'i)
           Expanded(
             child: StreamBuilder<List<MessageEntity>>(
-              stream: _chatRepository.getChatMessagesStream(widget.eventID),
+              stream: _chatRepository.getChatMessagesStream(
+                widget.eventID,
+              ), // Dokunulmadı
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());

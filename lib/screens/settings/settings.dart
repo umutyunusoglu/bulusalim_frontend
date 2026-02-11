@@ -341,7 +341,7 @@ class SettingsPage extends StatelessWidget {
     BuildContext context,
     String profileImageUrl,
   ) {
-    final bool hasUrl =
+    final hasUrl =
         profileImageUrl.isNotEmpty && profileImageUrl.startsWith('http');
 
     return Padding(
@@ -366,8 +366,6 @@ class SettingsPage extends StatelessWidget {
                         as ImageProvider,
               onBackgroundImageError: (_, __) =>
                   debugPrint('Avatar Load Error'),
-              // İkon yerine artık arka planda asset resmi var, o yüzden child null
-              child: null,
             ),
             SizedBox(width: 12.w),
             Text(

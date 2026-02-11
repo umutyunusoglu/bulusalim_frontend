@@ -219,7 +219,7 @@ class _NewPostPageState extends State<NewPostPage> {
                   onPressed: _sendPost,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6C86A4),
-                    shape: StadiumBorder(),
+                    shape: const StadiumBorder(),
                     elevation: 0,
                   ),
                   child: Text(

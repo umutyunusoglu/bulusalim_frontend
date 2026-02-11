@@ -34,7 +34,6 @@ class AppTheme {
       secondary: AppColors.secondaryColor, // Nav: Mavi
       tertiary: AppColors.tertiaryColor, // Deep Blue (#004B75)
       surface: AppColors.backgroundColor,
-      onPrimary: AppColors.onPrimaryColor,
       onSecondary: AppColors.onSecondaryColor,
       onSurface: AppColors.onBackgroundColor, // Yazılar: Siyah
     ),
