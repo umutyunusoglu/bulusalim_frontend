@@ -25,6 +25,7 @@ import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/usecases/upload_profile_picture_usecase.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class RegisterInfoPage extends StatefulWidget {
   const RegisterInfoPage({super.key});
@@ -43,6 +44,12 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
   final _universityController = TextEditingController();
   final _genderDisplayController = TextEditingController();
   final _friendSearchController = TextEditingController();
+  // --- İZİN STATE'LERİ (Varsayılan Kapalı) ---
+  bool _permNotifications = false;
+  bool _permBluetooth = false;
+  bool _permLocation = false;
+  bool _permCamera = false;
+  bool _permPhotos = false;
 
   final List<TextEditingController> _eduOtpControllers = List.generate(
     6,
@@ -147,7 +154,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
           ? _universityController.text.trim()
           : null;
 
-      var userRepository = getIt<UserRepository>();
+      final userRepository = getIt<UserRepository>();
 
       final newUser = UserEntity(
         userID: getIt<FirebaseAuth>().currentUser!.uid,
@@ -374,8 +381,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
                   username,
                 );
 
-                final logger = getIt<LoggingService>();
-                logger.warn(exists.toString());
+                final logger = getIt<LoggingService>()..warn(exists.toString());
 
                 if (exists) {
                   // Hata mesajını göster (SnackBar veya bir state değişkeni ile)
@@ -657,11 +663,12 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
                     ),
             ),
 
-            // 9. ARKADAŞLARINI EKLE (SON ADIM)
+            // 9. ARKADAŞLARINI EKLE
             RegisterStepView(
               title: 'Arkadaşlarını Ekle',
-              onNext: _finishRegistration, // Bitir ve Home'a git
-              buttonText: 'bitir', // Metin güncellendi
+              onNext: _nextPage,
+              onSkip: _nextPage,
+              buttonText: 'devam',
               customContent: Column(
                 children: [
                   AuthInput(
@@ -680,6 +687,102 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
                   ),
                   Divider(color: Colors.grey.shade200),
                   _buildActionRow(Icons.camera_alt_outlined, 'Instagram bağla'),
+                ],
+              ),
+            ),
+
+            // 10. CİHAZ İZİNLERİ
+            RegisterStepView(
+              title: 'Cihaz İzinleri',
+              onNext: _finishRegistration,
+              buttonText: 'bitir',
+              customContent: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildPermissionRow(
+                    title: 'Bildirimler',
+                    description:
+                        'Outnest uygulamasına bu cihaza güncellemeler ve önemli bildirimler göndermesine izin verilir.',
+                    value: _permNotifications,
+                    onChanged: (val) => _handlePermissionToggle(
+                      val,
+                      Permission.notification,
+                      (newState) => _permNotifications = newState,
+                    ),
+                  ),
+                  _buildPermissionRow(
+                    title: 'Bluetooth',
+                    description:
+                        "Outnest uygulamasına yakındaki cihazlarla bağlantı kurmak için Bluetooth'u kullanmasına izin verilir.",
+                    value: _permBluetooth,
+                    onChanged: (val) => _handlePermissionToggle(
+                      val,
+                      Permission.bluetooth,
+                      (newState) => _permBluetooth = newState,
+                    ),
+                  ),
+                  _buildPermissionRow(
+                    title: 'Konum Servisleri',
+                    description:
+                        'Outnest uygulamasına bulunduğun konuma göre içerik ve öneriler sunmak için konum bilgine erişmesine izin verilir.',
+                    value: _permLocation,
+                    onChanged: (val) => _handlePermissionToggle(
+                      val,
+                      Permission.location,
+                      (newState) => _permLocation = newState,
+                    ),
+                  ),
+                  _buildPermissionRow(
+                    title: 'Kamera',
+                    description:
+                        'Outnest uygulamasına fotoğraf ve video çekerek paylaşım yapabilmen için kameraya erişmesine izin verilir.',
+                    value: _permCamera,
+                    onChanged: (val) => _handlePermissionToggle(
+                      val,
+                      Permission.camera,
+                      (newState) => _permCamera = newState,
+                    ),
+                  ),
+                  _buildPermissionRow(
+                    title: 'Fotoğraflar',
+                    description:
+                        'Outnest uygulamasına galerinden fotoğraf ve video seçip paylaşabilmen için fotoğraflarına erişmesine izin verilir.',
+                    value: _permPhotos,
+                    onChanged: (val) => _handlePermissionToggle(
+                      val,
+                      Permission.photos,
+                      (newState) => _permPhotos = newState,
+                    ),
+                  ),
+
+                  // ALT BİLGİLENDİRME METİNLERİ
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Gizlilik ve veri kullanımı hakkında daha fazla bilgi al',
+                        textAlign: TextAlign.left,
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Display',
+                          fontSize: 12.sp,
+                          color: AppColors.tertiaryColor,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      SizedBox(height: 12.h),
+                      Text(
+                        'Cihaz izinlerinizi daha sonra Ayarlar sayfasından düzenleyebilirsiniz.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Display',
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w400,
+                          color: const Color(0xFF8E8E93),
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -742,7 +845,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
   }
 
   void _showError(String message) {
-    // Eğer hali hazırda bir SnackBar varsa onu kapat (üst üste binmemesi için)
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -795,5 +897,170 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
     } catch (e) {
       if (mounted) _showError('Resim seçilirken bir hata oluştu: $e');
     }
+  } // --- İZİN YARDIMCI FONKSİYONLARI ---
+
+  Widget _buildPermissionRow({
+    required String title,
+    required String description,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 12.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Display',
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Display',
+                    fontSize: 12.sp,
+                    color: Colors.grey.shade400,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 16.w),
+
+          // SWITCH
+          GestureDetector(
+            onTap: () => onChanged(!value),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 42.w,
+              height: 24.h,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12.h),
+                color: value ? AppColors.primaryColor : Colors.grey.shade300,
+              ),
+              child: Stack(
+                alignment: Alignment.centerLeft,
+                children: [
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    left: value ? (42.w - 20.h - 2.w) : 2.w,
+                    child: Container(
+                      width: 20.h,
+                      height: 20.h,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 2,
+                            offset: Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handlePermissionToggle(
+    bool newValue,
+    Permission permission,
+    ValueChanged<bool> onStateChanged,
+  ) async {
+    if (newValue) {
+      // İzni açmak istiyor, sistem popup'ını göster
+      final status = await permission.request();
+
+      if (status.isGranted) {
+        setState(() => onStateChanged(true));
+      } else if (status.isPermanentlyDenied) {
+        // Kalıcı reddedilmişse ayarlara yönlendir
+        _showSettingsDialog();
+        setState(() => onStateChanged(false));
+      } else {
+        // Sadece reddedildi, switch kapalı kalsın
+        setState(() => onStateChanged(false));
+      }
+    } else {
+      // İzni kapatmak istiyor. (Sistem izni kodla kapanmaz ama app içi state kapanır)
+      setState(() => onStateChanged(false));
+    }
+  }
+
+  void _showSettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        title: Text(
+          'İzin Gerekli',
+          style: TextStyle(
+            fontFamily: 'SF Pro Display',
+            fontWeight: FontWeight.w600,
+            fontSize: 17.sp,
+            color: Colors.black,
+          ),
+        ),
+        content: Text(
+          "Bu özelliği kullanabilmek için cihaz ayarlarından Outnest'e izin vermeniz gerekmektedir.",
+          style: TextStyle(
+            fontFamily: 'SF Pro Display',
+            fontSize: 14.sp,
+            color: Colors.grey.shade700,
+            height: 1.3,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'İptal',
+              style: TextStyle(
+                fontFamily: 'SF Pro Display',
+                fontSize: 15.sp,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey.shade500,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              openAppSettings();
+              Navigator.pop(context);
+            },
+            child: Text(
+              'Ayarlara Git',
+              style: TextStyle(
+                fontFamily: 'SF Pro Display',
+                fontSize: 15.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primaryColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
