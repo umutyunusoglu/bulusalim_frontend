@@ -18,6 +18,7 @@ import 'package:outnest/screens/camera/camera_page.dart';
 import 'package:outnest/screens/chat/chat_page.dart';
 import 'package:outnest/screens/chat/event_settings_page.dart';
 import 'package:outnest/screens/chat/my_events_page.dart';
+import 'package:outnest/screens/debug/debug_nsfw_screen.dart';
 import 'package:outnest/screens/home/home_page.dart';
 import 'package:outnest/screens/map/map_page.dart';
 import 'package:outnest/screens/notification/follow_request.dart';
@@ -144,7 +145,7 @@ final router = GoRouter(
     GoRoute(
       path: '/debug',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const HomePage(),
+      builder: (context, state) => NsfwDebugScreen(),
     ),
 
     // --- BOTTOM NAVIGATION BAR (SHELL) ---
