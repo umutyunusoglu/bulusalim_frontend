@@ -36,7 +36,6 @@ class _CategorySelectionStepState extends State<CategorySelectionStep> {
     final theme = Theme.of(context);
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // 1. HEADER
         Stack(

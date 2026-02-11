@@ -102,12 +102,12 @@ class PostModel extends Model<PostEntity> {
 
           parsedCreator = CompactUserEntity.fromMap(creatorMap);
         } else {
-          throw Exception("Creator data is null/invalid");
+          throw Exception('Creator data is null/invalid');
         }
       } catch (e) {
         // ... Fallback logic ...
         // Fallback kullanıcında da university'i boş ver
-        parsedCreator = CompactUserEntity.fromMap({
+        parsedCreator = CompactUserEntity.fromMap(const {
           'userID': 'unknown',
           'username': 'Unknown',
           'university': '',
@@ -185,7 +185,7 @@ class PostModel extends Model<PostEntity> {
         showParticipants: doc['showParticipants'] as bool? ?? true,
         includeInDump: doc['includeInDump'] as bool? ?? false,
       );
-    } catch (e, stack) {
+    } catch (e) {
       // Burası sadece en kötü senaryoda (PostModel'in kendisi oluşamazsa) çalışır.
       logger.error(
         'PostModel: Critical failure in fromFirestore factory. error: $e',

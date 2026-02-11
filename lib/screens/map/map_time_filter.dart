@@ -6,7 +6,7 @@ import 'package:outnest/core/constants/theme/color_themes.dart';
 typedef OnTimeRangeChanged = void Function(DateTimeRange range);
 
 class MapTimeFilter extends StatefulWidget {
-  const MapTimeFilter({super.key, required this.onChanged});
+  const MapTimeFilter({required this.onChanged, super.key});
   final OnTimeRangeChanged onChanged;
 
   @override
@@ -109,7 +109,6 @@ class _MapTimeFilterState extends State<MapTimeFilter> {
               ),
               child: Slider(
                 value: _currentIndex.toDouble(),
-                min: 0,
                 max: (steps.length - 1).toDouble(),
                 divisions: steps.length - 1, // Kesikli geçiş sağlar
                 onChanged: (val) {
@@ -126,8 +125,7 @@ class _MapTimeFilterState extends State<MapTimeFilter> {
 }
 
 class TimeStep {
+  TimeStep(this.label, this.range);
   final String label;
   final DateTimeRange range;
-
-  TimeStep(this.label, this.range);
 }

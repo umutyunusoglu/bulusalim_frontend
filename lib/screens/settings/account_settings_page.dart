@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
@@ -9,8 +11,6 @@ import 'package:outnest/screens/settings/change_password_page.dart';
 import 'package:outnest/screens/settings/change_phone_number.dart'; // Dosya ismine dikkat
 import 'package:outnest/screens/settings/change_university_page.dart';
 import 'package:outnest/screens/settings/connect_social_media_page.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class AccountSettingsPage extends StatefulWidget {
   const AccountSettingsPage({super.key});

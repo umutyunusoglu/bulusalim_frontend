@@ -9,7 +9,7 @@ class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
 
   Future<void> _launchURL(String urlString) async {
-    final Uri url = Uri.parse(urlString);
+    final url = Uri.parse(urlString);
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       debugPrint('Link açılamadı: $urlString');
     }

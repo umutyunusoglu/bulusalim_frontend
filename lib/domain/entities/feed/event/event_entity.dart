@@ -1,13 +1,12 @@
+import 'package:equatable/equatable.dart';
 import 'package:outnest/core/utils/types/enums/event_role_enum.dart';
 import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
-import 'package:outnest/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:outnest/core/utils/types/enums/feed_entity_type_enum.dart';
 import 'package:outnest/core/utils/types/enums/visibility_enum.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/feed/feed_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
-import 'package:equatable/equatable.dart';
 
 class EventEntity extends FeedEntity with EquatableMixin {
   EventEntity({

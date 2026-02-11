@@ -1,9 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:outnest/core/utils/types/enums/event_role_enum.dart';
 import 'package:outnest/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/data/models/model.dart';
 import 'package:outnest/domain/entities/user/user_event_entity.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserEventModel extends Model<UserEventEntity> {
   UserEventModel({

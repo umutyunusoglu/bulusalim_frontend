@@ -145,8 +145,7 @@ class _LiveEventItemState extends State<_LiveEventItem> {
       stream: _eventStream,
       initialData: widget.initialEvent,
       builder: (context, snapshot) {
-        final EventEntity liveData =
-            (snapshot.data as EventEntity?) ?? widget.initialEvent;
+        final liveData = (snapshot.data as EventEntity?) ?? widget.initialEvent;
 
         return EventCard(
           event: liveData,

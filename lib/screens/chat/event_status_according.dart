@@ -78,7 +78,7 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
 
     for (final participant in widget.event.participants) {
       try {
-        final ParticipantItem userItem = ParticipantItem(
+        final userItem = ParticipantItem(
           userId: participant.userID,
           username: participant.username,
           imageUrl: participant.profileImageUrl,
@@ -95,7 +95,7 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
 
     for (final request in widget.event.requestPool) {
       try {
-        final ParticipantItem userItem = ParticipantItem(
+        final userItem = ParticipantItem(
           userId: request.userID,
           username: request.username,
           imageUrl: request.profileImageUrl,
@@ -120,7 +120,7 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
         _isLoading = false;
       });
     } catch (e) {
-      debugPrint("Hata: $e");
+      debugPrint('Hata: $e');
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -128,7 +128,7 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
   // --- İŞLEM YÖNETİMİ ---
   Future<void> _handleRequest(String userId, bool isAccepted) async {
     // Optimistic UI Update
-    final int userIndex = _pendingUsers.indexWhere((u) => u.userId == userId);
+    final userIndex = _pendingUsers.indexWhere((u) => u.userId == userId);
     if (userIndex == -1) return;
 
     final user = _pendingUsers[userIndex];
@@ -201,7 +201,7 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
         compactUser,
       );
     } catch (e) {
-      debugPrint("Remove error: $e");
+      debugPrint('Remove error: $e');
     }
   }
 
@@ -281,7 +281,7 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
                     Padding(
                       padding: EdgeInsets.all(16.w),
                       child: Text(
-                        "Henüz katılımcı yok.",
+                        'Henüz katılımcı yok.',
                         style: TextStyle(
                           color: Colors.grey,
                           fontSize: 12.sp,
@@ -425,7 +425,7 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
 
   Widget _buildAvatar(String url) {
     // URL'nin geçerli olup olmadığını kontrol et
-    final bool hasValidUrl = url.isNotEmpty && url.startsWith('http');
+    final hasValidUrl = url.isNotEmpty && url.startsWith('http');
 
     return Container(
       width: 36.w,

@@ -49,6 +49,10 @@ class SessionServiceImpl implements SessionService {
   @override
   UserEntity? get currentUser => _stateNotifier.value.user;
 
+  @override
+  List<EventEntity> get activeEvents =>
+      _stateNotifier.value.ongoingEvents + _stateNotifier.value.upcomingEvents;
+
   // --- INIT ---
   @override
   Future<void> init() async {
@@ -91,7 +95,7 @@ class SessionServiceImpl implements SessionService {
 
         // Eğer state zaten boşsa ve null geldiyse, bu YENİ bir kullanıcıdır.
         // Onu dışarı atmıyoruz, sadece user nesnesini null tutuyoruz (onboarding için).
-        _stateNotifier.value = _stateNotifier.value.copyWith(user: null);
+        _stateNotifier.value = _stateNotifier.value.copyWith();
       } else {
         // 2. DURUM: Firestore'da doküman var (Kayıtlı kullanıcı)
         _stateNotifier.value = _stateNotifier.value.copyWith(user: user);

@@ -84,7 +84,6 @@ class SignInScreen extends StatelessWidget {
                   },
                   height: 50.h,
                   borderWidth: 2,
-                  borderRadius: 40,
                   width: 340.w,
                 ),
 
@@ -99,7 +98,6 @@ class SignInScreen extends StatelessWidget {
                   },
                   height: 50.h,
                   borderWidth: 2,
-                  borderRadius: 40,
                   width: 340.w,
                 ),
                 LoginButton(
@@ -110,7 +108,6 @@ class SignInScreen extends StatelessWidget {
                   },
                   height: 50.h,
                   borderWidth: 2,
-                  borderRadius: 40,
                   width: 340.w,
                 ),
               ],

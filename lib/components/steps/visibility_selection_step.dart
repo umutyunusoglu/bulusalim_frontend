@@ -134,9 +134,7 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
                       ? activeColor.withOpacity(0.15)
                       : const Color(0xFFF5F5F5),
                   borderRadius: BorderRadius.circular(12.r),
-                  border: isSelected
-                      ? Border.all(color: activeColor, width: 1)
-                      : null,
+                  border: isSelected ? Border.all(color: activeColor) : null,
                   // Sadece 'arkadaşlar' seçiliyken gölge efekti
                   boxShadow: (isSelected && option == 'arkadaşlar')
                       ? [

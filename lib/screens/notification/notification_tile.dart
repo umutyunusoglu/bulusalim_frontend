@@ -22,22 +22,19 @@ class NotificationTile extends StatelessWidget {
     IconData icon;
     Color bgColor;
     // Varsayılan ikon rengi beyaz
-    Color iconColor = Colors.white;
-    double iconSize = 10.sp;
+    var iconColor = Colors.white;
+    var iconSize = 10.sp;
 
     switch (notification.type) {
       case NotificationType.join:
         icon = Icons.waving_hand_rounded;
         bgColor = const Color(0xFF67C95F); //  Yeşil
-        break;
       case NotificationType.invite:
         icon = Icons.mail_outline_rounded;
         bgColor = const Color(0xFF2D8CFF); // Mavis
-        break;
       case NotificationType.cancel:
         icon = Icons.close_rounded;
         bgColor = const Color(0xFFFF3B30); // Kırmızı
-        break;
       case NotificationType.updateTime:
       case NotificationType.updateLocation:
       case NotificationType.startingSoon:
@@ -45,7 +42,6 @@ class NotificationTile extends StatelessWidget {
         icon = Icons.calendar_today_rounded;
         bgColor = const Color(0xFFFF9500); // Turuncu
         iconSize = 10.sp;
-        break;
       case NotificationType.warning:
         return const SizedBox(); // Uyarıda küçük ikon yok, ana görsel değişiyor
       case NotificationType.badgeWin:
@@ -102,7 +98,7 @@ class NotificationTile extends StatelessWidget {
         ),
         child: Center(
           child: Text(
-            "rozet",
+            'rozet',
             style: TextStyle(
               fontSize: 8.sp,
               fontWeight: FontWeight.w400,

@@ -100,13 +100,13 @@ class _ParticipantTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool hasUrl = user.profileImageUrl.isNotEmpty;
-    final String rawUrl = hasUrl
+    final hasUrl = user.profileImageUrl.isNotEmpty;
+    final rawUrl = hasUrl
         ? user.profileImageUrl
         : FileService.defaultProfileImageUrl();
 
     // fixEmulatorUrl sadece ağdan gelen bir URL varsa çalışmalı
-    final String safeImageUrl = hasUrl ? fixEmulatorUrl(rawUrl) : rawUrl;
+    final safeImageUrl = hasUrl ? fixEmulatorUrl(rawUrl) : rawUrl;
 
     return InkWell(
       onTap: () {
@@ -157,7 +157,6 @@ class _ParticipantTile extends StatelessWidget {
                 decoration: BoxDecoration(
                   border: Border.all(
                     color: AppColors.primaryColor,
-                    width: 1,
                   ),
                   color: AppColors.primaryColor.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(20.r),

@@ -29,15 +29,14 @@ class MapFilterChip extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           // Arka plan her zaman beyaz (veya isteğe göre gri)
-          color: Color(0XFFF2F2F7),
+          color: const Color(0XFFF2F2F7),
           borderRadius: BorderRadius.circular(20.r),
 
           // Seçiliyse 1px Siyah Border, değilse Transparent (görünmez)
           border: isSelected
-              ? Border.all(color: Colors.black, width: 1.0)
+              ? Border.all(width: 1)
               : Border.all(
                   color: Colors.transparent,
-                  width: 1.0,
                 ), // Zıplamayı önlemek için width tutuyoruz
 
           boxShadow: [

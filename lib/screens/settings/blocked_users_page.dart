@@ -98,7 +98,7 @@ class _BlockedUsersPageState extends State<BlockedUsersPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Kullanıcının engeli kaldırıldı."),
+            content: Text('Kullanıcının engeli kaldırıldı.'),
             duration: Duration(seconds: 1),
           ),
         );
@@ -111,7 +111,7 @@ class _BlockedUsersPageState extends State<BlockedUsersPage> {
           _filterUsers(_searchController.text);
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Hata oluştu: $e")),
+          SnackBar(content: Text('Hata oluştu: $e')),
         );
       }
     }

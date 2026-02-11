@@ -11,6 +11,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
+// Yükleme durumlarını yönetmek için Enum
+enum AuthStatus { none, phone, google, apple }
+
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
@@ -21,13 +24,14 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final _phoneController = TextEditingController();
 
+  // Enum değişkeni
+  AuthStatus _authStatus = AuthStatus.none;
+
   @override
   void dispose() {
     _phoneController.dispose();
     super.dispose();
   }
-
-  bool _isLoading = false;
 
   // --- HATA GÖSTERME YARDIMCISI ---
   void _showErrorSnackBar(String message) {
@@ -43,8 +47,9 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  void _handleSendCode() async {
-    if (_isLoading) return;
+  Future<void> _handleSendCode() async {
+    // Herhangi bir işlem sürüyorsa durdur
+    if (_authStatus != AuthStatus.none) return;
 
     // 1. FORMATI TEMİZLE
     final rawNumber = _phoneController.text.replaceAll(' ', '');
@@ -65,8 +70,8 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    // Her şey yolundaysa işlemi başlat
-    setState(() => _isLoading = true);
+    // Telefon işlemi başladı
+    setState(() => _authStatus = AuthStatus.phone);
 
     try {
       final result = await getIt<AuthService>().sendSMS(
@@ -74,7 +79,8 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       if (mounted) {
-        setState(() => _isLoading = false);
+        // Sonuç geldi, yüklemeyi durdur
+        setState(() => _authStatus = AuthStatus.none);
 
         if (result.error != null) {
           _showErrorSnackBar('Hata: ${result.error}');
@@ -91,7 +97,7 @@ class _RegisterPageState extends State<RegisterPage> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() => _authStatus = AuthStatus.none);
         _showErrorSnackBar('Beklenmedik bir hata oluştu.');
       }
       debugPrint('Beklenmedik hata: $e');
@@ -100,6 +106,9 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Herhangi bir yükleme var mı kontrolü
+    final isAnyLoading = _authStatus != AuthStatus.none;
+
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
@@ -113,7 +122,8 @@ class _RegisterPageState extends State<RegisterPage> {
               color: Colors.black,
               size: 24.sp,
             ),
-            onPressed: () => context.pop(),
+            // Yükleme varsa geri tuşunu devre dışı bırak
+            onPressed: isAnyLoading ? null : () => context.pop(),
           ),
         ),
         body: SingleChildScrollView(
@@ -160,10 +170,10 @@ class _RegisterPageState extends State<RegisterPage> {
                 prefixText: '+90',
                 keyboardType: TextInputType.phone,
                 textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _handleSendCode(),
+                // Yükleme sırasında input submit'i engelle
+                onSubmitted: isAnyLoading ? null : (_) => _handleSendCode(),
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
-                  // DİKKAT: Boşluklar dahil 14 karaktere izin veriyoruz
                   LengthLimitingTextInputFormatter(14),
                   _PhoneInputFormatter(),
                 ],
@@ -190,8 +200,11 @@ class _RegisterPageState extends State<RegisterPage> {
 
               // GÖNDER BUTONU
               AuthButton(
-                text: 'gönder',
-                onPressed: _handleSendCode,
+                text: _authStatus == AuthStatus.phone
+                    ? 'Gönderiliyor...'
+                    : 'gönder',
+                // HATA ÇÖZÜMÜ: null yerine boş fonksiyon () {} veriyoruz
+                onPressed: isAnyLoading ? () {} : _handleSendCode,
               ),
               SizedBox(height: 24.h),
 
@@ -202,7 +215,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 12.w),
                     child: Text(
-                      "veya",
+                      'veya',
                       style: TextStyle(
                         color: Colors.grey.shade500,
                         fontSize: 12.sp,
@@ -221,29 +234,40 @@ class _RegisterPageState extends State<RegisterPage> {
                 width: double.infinity,
                 height: 48.h,
                 child: OutlinedButton.icon(
-                  onPressed: _isLoading
+                  onPressed: isAnyLoading
                       ? null
                       : () async {
-                          setState(() => _isLoading = true);
+                          setState(() => _authStatus = AuthStatus.google);
                           try {
                             await getIt<AuthService>().signInWithGoogle(
                               isLogin: false,
                             );
                             if (mounted) context.push('/register-info');
                           } catch (e) {
-                            _showErrorSnackBar(
-                              e.toString().replaceAll('Exception: ', ''),
-                            );
-                          } finally {
-                            if (mounted) setState(() => _isLoading = false);
+                            if (mounted) {
+                              setState(() => _authStatus = AuthStatus.none);
+                              _showErrorSnackBar(
+                                e.toString().replaceAll('Exception: ', ''),
+                              );
+                            }
                           }
+                          // push işleminden geri dönülürse loading'i kapatmak için
+                          // finally bloğu eklenebilir ancak görsel akış için
+                          // şimdilik sadece hata durumunda resetliyoruz.
                         },
-                  icon: Image.asset('assets/google.png', height: 22.h),
-                  label: Text(
+                  icon: _authStatus == AuthStatus.google
+                      ? SizedBox(
+                          height: 22.h,
+                          width: 22.h,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Image.asset('assets/google.png', height: 22.h),
+                  label: const Text(
                     'Google ile devam et',
                     style: TextStyle(
                       color: Colors.black,
-                      fontSize: 14.sp,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -263,29 +287,38 @@ class _RegisterPageState extends State<RegisterPage> {
                   width: double.infinity,
                   height: 48.h,
                   child: ElevatedButton.icon(
-                    onPressed: _isLoading
+                    onPressed: isAnyLoading
                         ? null
                         : () async {
-                            setState(() => _isLoading = true);
+                            setState(() => _authStatus = AuthStatus.apple);
                             try {
                               await getIt<AuthService>().signInWithApple(
                                 isLogin: false,
                               );
                               if (mounted) context.push('/register-info');
                             } catch (e) {
-                              _showErrorSnackBar(
-                                e.toString().replaceAll('Exception: ', ''),
-                              );
-                            } finally {
-                              if (mounted) setState(() => _isLoading = false);
+                              if (mounted) {
+                                setState(() => _authStatus = AuthStatus.none);
+                                _showErrorSnackBar(
+                                  e.toString().replaceAll('Exception: ', ''),
+                                );
+                              }
                             }
                           },
-                    icon: Icon(Icons.apple, color: Colors.white, size: 24.sp),
-                    label: Text(
+                    icon: _authStatus == AuthStatus.apple
+                        ? SizedBox(
+                            height: 22.h,
+                            width: 22.h,
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Icon(Icons.apple, color: Colors.white, size: 24.sp),
+                    label: const Text(
                       'Apple ile devam et',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 14.sp,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -323,7 +356,7 @@ class _PhoneInputFormatter extends TextInputFormatter {
     final truncatedText = text.length > 10 ? text.substring(0, 10) : text;
 
     final buffer = StringBuffer();
-    for (int i = 0; i < truncatedText.length; i++) {
+    for (var i = 0; i < truncatedText.length; i++) {
       buffer.write(truncatedText[i]);
       // 2., 5. ve 7. karakterden sonra boşluk ekle
       if (i == 2 || i == 5 || i == 7) {

@@ -1,3 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get_it/get_it.dart';
+import 'package:http/http.dart' as http;
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/logging/logging_service_impl.dart';
 import 'package:outnest/data/repositories/global_content_cache_impl.dart';
@@ -18,9 +21,6 @@ import 'package:outnest/domain/services/push_notifications_service.dart';
 import 'package:outnest/domain/services/remote_config_service.dart';
 import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:get_it/get_it.dart';
-import 'package:http/http.dart' as http;
 
 extension ServiceModule on GetIt {
   void registerServices() {
