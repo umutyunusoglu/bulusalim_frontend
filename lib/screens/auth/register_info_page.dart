@@ -50,9 +50,9 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
   );
 
   final List<String> _selectedInterests = [];
-  Map<String, String> _categories = AppConfig.categories;
+  final Map<String, String> _categories = AppConfig.categories;
   int _currentIndex = 0;
-  bool _isLoadingConfig = false;
+  final bool _isLoadingConfig = false;
   DateTime? _selectedDate;
 
   String? _detectedUniversity;
@@ -75,7 +75,9 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
     _universityController.dispose();
     _genderDisplayController.dispose();
     _friendSearchController.dispose();
-    for (var c in _eduOtpControllers) c.dispose();
+    for (final c in _eduOtpControllers) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -110,31 +112,27 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
     try {
       final username = _usernameController.text.trim();
       final name = _nameController.text.trim();
-      final DateTime dob = _selectedDate!;
+      final dob = _selectedDate!;
       GenderEnum gender;
 
       switch (_genderDisplayController.text.trim().toLowerCase()) {
         case 'kadın':
           gender = GenderEnum.female;
-          break;
         case 'erkek':
           gender = GenderEnum.male;
-          break;
 
         case 'belirtmek istemiyorum':
           gender = GenderEnum.other;
-          break;
         case 'özel':
           gender = GenderEnum.preferNotToSay;
-          break;
         default:
           gender = GenderEnum.preferNotToSay;
       }
 
       final interests = _selectedInterests;
       final File? profilePhoto; // Fotoğraf seçme işlemi eklenmeli.
-      final UploadProfilePicture uploadUseCase = getIt<UploadProfilePicture>();
-      String profileImageUrl = '';
+      final uploadUseCase = getIt<UploadProfilePicture>();
+      var profileImageUrl = '';
       if (_selectedImage != null) {
         profileImageUrl =
             await uploadUseCase.call(
@@ -149,9 +147,9 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
           ? _universityController.text.trim()
           : null;
 
-      UserRepository userRepository = getIt<UserRepository>();
+      var userRepository = getIt<UserRepository>();
 
-      final UserEntity newUser = UserEntity(
+      final newUser = UserEntity(
         userID: getIt<FirebaseAuth>().currentUser!.uid,
         username: username,
         nameSurname: name,
@@ -182,8 +180,8 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
       context.go('/home');
     } catch (e, stackTrace) {
       // Konsola detaylı bas ki hatayı görebilelim
-      debugPrint("HATA OLUŞTU: $e");
-      debugPrint("Stack Trace: $stackTrace");
+      debugPrint('HATA OLUŞTU: $e');
+      debugPrint('Stack Trace: $stackTrace');
 
       getIt<LoggingService>().error('Kayıt tamamlanamadı: $e');
 
@@ -247,9 +245,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
                         ),
                       ),
                       onPressed: () {
-                        if (_selectedDate == null) {
-                          _selectedDate = initialDate;
-                        }
+                        _selectedDate ??= initialDate;
                         final formattedDate = DateFormat(
                           'dd/MM/yyyy',
                         ).format(_selectedDate!);
@@ -374,8 +370,9 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
                 final username = _usernameController.text.trim();
 
                 // 2. Async kontrolü burada yap
-                final bool exists = await getIt<UserRepository>()
-                    .doesUsernameExist(username);
+                final exists = await getIt<UserRepository>().doesUsernameExist(
+                  username,
+                );
 
                 final logger = getIt<LoggingService>();
                 logger.warn(exists.toString());
@@ -384,7 +381,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
                   // Hata mesajını göster (SnackBar veya bir state değişkeni ile)
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text("Bu kullanıcı adı zaten alınmış!"),
+                      content: Text('Bu kullanıcı adı zaten alınmış!'),
                     ),
                   );
                 } else {
@@ -415,7 +412,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
                 if (text.length > 30) return 'En fazla 30 karakter olmalı';
                 // 3. Karakter kontrolü (Küçük harf, rakam, nokta ve alt tire)
                 // ^ : Başlangıç, $ : Bitiş, [a-z0-0._] : İzin verilenler, + : En az bir tane
-                final RegExp usernameRegExp = RegExp(r'^[a-z0-9._]+$');
+                final usernameRegExp = RegExp(r'^[a-z0-9._]+$');
 
                 if (!usernameRegExp.hasMatch(text)) {
                   return 'Sadece küçük harf, rakam, "." ve "_" kullanabilirsiniz';
@@ -447,8 +444,9 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
                     .split(' ')
                     .where((w) => w.isNotEmpty)
                     .toList();
-                if (words.length < 2)
+                if (words.length < 2) {
                   return 'Lütfen adınızı ve soyadınızı tam giriniz';
+                }
 
                 if (text.length < 2) return 'En az 2 karakter olmalı';
                 if (text.length > 50) return 'En fazla 50 karakter olmalı';
@@ -483,7 +481,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
 
                 // Eğer seçilen tarih, 18 yıl önceki tarihten sonra ise (yani daha gençse)
                 if (_selectedDate!.isAfter(eighteenYearsAgo)) {
-                  return 'Outnest\'e katılmak için 18 yaşını doldurmuş olmalısın';
+                  return "Outnest'e katılmak için 18 yaşını doldurmuş olmalısın";
                 }
 
                 return null; // Her şey yolunda
@@ -500,13 +498,14 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
               onChanged: _onUniversityEmailChanged,
               description: _detectedUniversity != null
                   ? 'Tespit Edilen: $_detectedUniversity'
-                  : 'Üniversiteni doğruladığında, üniversite bilgin profilinde otomatik olarak görünür. Yalnızca Türkiye\'deki üniversiteler desteklenmektedir.',
+                  : "Üniversiteni doğruladığında, üniversite bilgin profilinde otomatik olarak görünür. Yalnızca Türkiye'deki üniversiteler desteklenmektedir.",
 
               validator: () {
                 final email = _universityController.text.trim();
                 if (email.isEmpty) return 'Mail adresi boş olamaz';
-                if (_detectedUniversity == null)
+                if (_detectedUniversity == null) {
                   return 'Tanınan bir üniversite maili giriniz';
+                }
                 return null;
               },
 
@@ -539,7 +538,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
                 final otpCode = _eduOtpControllers.map((c) => c.text).join();
                 try {
                   // Debug ekranındaki verifyEmail logic'i:
-                  print("otpCode: $otpCode");
+                  print('otpCode: $otpCode');
                   await getIt<UserRepository>().verifyEmail(
                     _universityController.text.trim(),
                     _detectedUniversity!,
@@ -548,7 +547,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
                   if (!mounted) return;
                   _nextPage(); // Başarılıysa devam et
                 } catch (e) {
-                  if (mounted) _showError("Kod hatalı veya geçersiz: $e");
+                  if (mounted) _showError('Kod hatalı veya geçersiz: $e');
                 }
               },
             ),
@@ -567,7 +566,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
             RegisterStepView(
               title: 'Profil Fotoğrafı',
               onNext: _nextPage,
-              buttonText: 'devam',
               customContent: GestureDetector(
                 onTap: _showPhotoPicker, // Mevcut modalını kullanacağız
                 child: Stack(
@@ -621,7 +619,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
               description: 'En az 3 adet seçmenizi öneririz.',
               onNext: _nextPage,
               onSkip: _nextPage,
-              buttonText: 'devam',
               customContent: _isLoadingConfig
                   ? SizedBox(
                       height: 100.h,
@@ -634,7 +631,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
                   : _categories.isEmpty
                   ? Center(
                       child: Text(
-                        "Kategoriler yüklenemedi.\nLütfen internet bağlantınızı kontrol edin.",
+                        'Kategoriler yüklenemedi.\nLütfen internet bağlantınızı kontrol edin.',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 14.sp, color: Colors.grey),
                       ),
@@ -734,7 +731,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
     try {
       final uniNames = await getIt<UniversityDatasource>().getUniversityOfMail(
         email,
-        "Turkiye",
+        'Turkiye',
       );
       setState(() {
         _detectedUniversity = uniNames.isNotEmpty ? uniNames.first : null;
@@ -780,7 +777,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
 
   Future<void> _pickImage(ImageSource source) async {
     try {
-      final XFile? pickedFile = await _picker.pickImage(
+      final pickedFile = await _picker.pickImage(
         source: source,
         maxWidth: 1000, // Performans için resmi boyutlandırıyoruz
         maxHeight: 1000,
@@ -796,7 +793,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
         Navigator.pop(context); // Modal'ı kapat
       }
     } catch (e) {
-      if (mounted) _showError("Resim seçilirken bir hata oluştu: $e");
+      if (mounted) _showError('Resim seçilirken bir hata oluştu: $e');
     }
   }
 }

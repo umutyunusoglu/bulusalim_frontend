@@ -64,12 +64,11 @@ Future<void> main() async {
 
   // 3. App Check ve Emülatör Ayarları
   if (kDebugMode) {
-    /*
     await FirebaseAppCheck.instance.activate(
       androidProvider: AndroidProvider.debug,
       appleProvider: AppleProvider.debug,
     );
-
+    /*
     FirebaseFirestore.instance.useFirestoreEmulator(
       AppConfig.host,
       8080,
@@ -108,7 +107,6 @@ Future<void> main() async {
   } else {
     // Release Modu (Production)
     await FirebaseAppCheck.instance.activate(
-      androidProvider: AndroidProvider.playIntegrity, // Android için standart
       appleProvider: AppleProvider.appAttest, // iOS için standart
     );
   }

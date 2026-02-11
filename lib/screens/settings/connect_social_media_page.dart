@@ -11,7 +11,7 @@ class ConnectSocialMediaPage extends StatefulWidget {
 
 class _ConnectSocialMediaPageState extends State<ConnectSocialMediaPage> {
   String? _xHandle; // Bağlı değil (null)
-  final String? _instagramHandle = 'instagram.com/elif_dogan'; // Bağlı
+  final String _instagramHandle = 'instagram.com/elif_dogan'; // Bağlı
   String? _facebookHandle; // Bağlı değil (null)
 
   @override
@@ -62,8 +62,8 @@ class _ConnectSocialMediaPageState extends State<ConnectSocialMediaPage> {
 
   Widget _buildSocialItem({
     required String platformName,
-    String? connectedValue,
     required VoidCallback onTap,
+    String? connectedValue,
   }) {
     final isConnected = connectedValue != null;
 

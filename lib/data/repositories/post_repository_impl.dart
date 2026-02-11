@@ -114,7 +114,7 @@ class PostRepositoryImpl implements PostRepository {
       _logger.error('Post not found for unpinning: $postId');
       throw Exception('Post not found for unpinning');
     }
-    final UserPostModel userPostModel = UserPostModel.fromFirestore(
+    final userPostModel = UserPostModel.fromFirestore(
       userPostSnapshot.data()!,
     );
     final userPostEntity = userPostModel.toEntity();

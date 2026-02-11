@@ -26,8 +26,6 @@ class ProfileInputRow extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4.h),
       child: Row(
-        // Etiket ve Input her zaman dikeyde ortalı
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // --- SOL TARAF: ETİKET (TIKLANAMAZ) ---
           SizedBox(
@@ -98,7 +96,7 @@ class ProfileInputRow extends StatelessWidget {
                           alignment: Alignment.centerRight,
                           margin: EdgeInsets.only(top: 2.h),
                           child: Text(
-                            "$currentLength/$maxLength",
+                            '$currentLength/$maxLength',
                             style: TextStyle(
                               fontFamily: 'SF Pro Display',
                               fontSize: 10.sp,

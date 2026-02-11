@@ -1,5 +1,5 @@
-import 'package:outnest/domain/entities/hobby/hobby_entity.dart';
 import 'package:equatable/equatable.dart';
+import 'package:outnest/domain/entities/hobby/hobby_entity.dart';
 
 class UserHobbyEntity extends Equatable {
   const UserHobbyEntity({

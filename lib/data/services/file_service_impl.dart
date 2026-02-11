@@ -32,7 +32,7 @@ class FileServiceImpl implements FileService {
       final tempDir = await getTemporaryDirectory();
       final targetPath = p.join(
         tempDir.path,
-        "${DateTime.now().millisecondsSinceEpoch}${extension}",
+        '${DateTime.now().millisecondsSinceEpoch}$extension',
       );
 
       _logger.info('Compressing image: $path');
@@ -42,7 +42,6 @@ class FileServiceImpl implements FileService {
         targetPath,
         quality: 80,
         minWidth: 1080,
-        minHeight: 1080,
       );
 
       if (result == null) return file;

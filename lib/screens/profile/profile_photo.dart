@@ -5,14 +5,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:outnest/domain/services/file_service.dart';
 
 class ProfilePhoto extends StatelessWidget {
-  final String profileImageUrl;
-  final List<String> badgeUrls;
-
   const ProfilePhoto({
     super.key,
     required this.profileImageUrl,
     required this.badgeUrls,
   });
+  final String profileImageUrl;
+  final List<String> badgeUrls;
 
   @override
   Widget build(BuildContext context) {
@@ -25,11 +24,11 @@ class ProfilePhoto extends StatelessWidget {
     // Secondary (Mavi): Pasif rozetlerin rengi için
     final inactiveBadgeColor = theme.colorScheme.secondary;
 
-    final double photoSize = 61.w;
-    final double spreadSize = 4.5.w;
-    final double badgeSize = 23.w;
+    final photoSize = 61.w;
+    final spreadSize = 4.5.w;
+    final badgeSize = 23.w;
 
-    final bool isNetwork =
+    final isNetwork =
         profileImageUrl.isNotEmpty && profileImageUrl.startsWith('http');
 
     return Column(
@@ -46,7 +45,6 @@ class ProfilePhoto extends StatelessWidget {
                 color: glowColor,
                 blurRadius: 12,
                 spreadRadius: spreadSize,
-                offset: const Offset(0, 0),
               ),
             ],
           ),
@@ -87,10 +85,10 @@ class ProfilePhoto extends StatelessWidget {
   }
 
   List<Widget> _buildBadgeSlots(double size, Color inactiveColor) {
-    List<Widget> slots = [];
-    const int totalSlots = 3;
+    var slots = <Widget>[];
+    const totalSlots = 3;
 
-    for (int i = 0; i < totalSlots; i++) {
+    for (var i = 0; i < totalSlots; i++) {
       if (i < badgeUrls.length) {
         print('Badge URL: ${badgeUrls[i]}');
         slots.add(
@@ -120,9 +118,9 @@ class ProfilePhoto extends StatelessWidget {
 
   Widget _buildSingleBadge({
     required bool isActive,
-    String? imageUrl,
     required double size,
     required Color inactiveColor,
+    String? imageUrl,
   }) {
     return Container(
       width: size,

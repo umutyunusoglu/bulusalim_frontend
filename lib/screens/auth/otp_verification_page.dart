@@ -43,7 +43,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
       // Not: Backend bağlandığında burada API isteği yapılacak.
 
       try {
-        final LoggingService logger = getIt<LoggingService>()
+        final logger = getIt<LoggingService>()
           ..info(
             'Doğrulama kodu gönderiliyor: $otpCode,verificationID${widget.verificationID}',
           );

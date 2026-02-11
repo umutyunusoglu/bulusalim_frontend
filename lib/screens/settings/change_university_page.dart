@@ -51,7 +51,7 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
     try {
       final uniNames = await getIt<UniversityDatasource>().getUniversityOfMail(
         email.trim(),
-        "Turkey",
+        'Turkey',
       );
 
       setState(() {
@@ -60,11 +60,11 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
           _errorMessage = null;
         } else {
           _detectedUniversity = null;
-          _errorMessage = "Üniversite e-postası tanınamadı.";
+          _errorMessage = 'Üniversite e-postası tanınamadı.';
         }
       });
     } catch (e) {
-      debugPrint("Uni Check Error: $e");
+      debugPrint('Uni Check Error: $e');
     }
   }
 
@@ -85,7 +85,7 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Doğrulama kodu gönderildi!")),
+          const SnackBar(content: Text('Doğrulama kodu gönderildi!')),
         );
       }
     } catch (e) {
@@ -243,7 +243,7 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
   Widget _buildStatusMessage() {
     if (_detectedUniversity != null && !_isCodeSent) {
       return Text(
-        "Tespit Edildi: $_detectedUniversity",
+        'Tespit Edildi: $_detectedUniversity',
         style: TextStyle(
           color: Colors.green,
           fontSize: 12.sp,
@@ -252,7 +252,7 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
       );
     } else if (_isCodeSent) {
       return Text(
-        "Kod şuraya gönderildi: ${_emailController.text}",
+        'Kod şuraya gönderildi: ${_emailController.text}',
         style: TextStyle(
           color: AppColors.tertiaryColor,
           fontSize: 12.sp,
@@ -318,7 +318,6 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
           borderRadius: BorderRadius.circular(50.r),
           borderSide: BorderSide(
             color: AppColors.tertiaryColor.withOpacity(0.5),
-            width: 1,
           ),
         ),
       ),

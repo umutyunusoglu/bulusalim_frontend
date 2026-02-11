@@ -191,8 +191,9 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
       );
       eventRepository.removeParticipant(widget.eventID, compactUser);
     }
-    context.pop();
-    context.pop();
+    context
+      ..pop()
+      ..pop();
   }
 
   void _onCancelEventTap() {
@@ -219,7 +220,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     fontFamily: 'SF Pro Display',
     fontWeight: FontWeight.w600,
     fontSize: 14.sp,
-    height: 1.0,
+    height: 1,
     color: Colors.black87,
   );
 
@@ -236,11 +237,11 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     final isCreator =
         currentUser != null && currentUser.userID == widget.creatorID;
 
-    final String profileImage = widget.participantAvatars.isNotEmpty
+    final profileImage = widget.participantAvatars.isNotEmpty
         ? widget.participantAvatars.first.imageUrl
         : FileService.defaultProfileImageUrl();
 
-    String dateString = 'Yükleniyor...';
+    var dateString = 'Yükleniyor...';
     if (_currentDate != null) {
       dateString = DateFormat('d MMMM HH.mm', 'tr_TR').format(_currentDate!);
     } else {
@@ -451,7 +452,6 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 10.h),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: Text(title, style: _labelStyle),
