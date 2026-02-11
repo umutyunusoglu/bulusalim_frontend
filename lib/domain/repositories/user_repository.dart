@@ -73,6 +73,7 @@ abstract class UserRepository {
 
   Stream<List<CompactUserEntity>> watchFollowees(Identifier userID);
   Stream<List<CompactUserEntity>> watchFollowers(Identifier userID);
+  Stream<List<CompactUserEntity>> watchBlockedUsers(Identifier userID);
 
   Stream<List<UserEventEntity>> watchUserEventLog(Identifier userID);
 

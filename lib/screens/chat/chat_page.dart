@@ -3,8 +3,10 @@ import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/chat/message_entity.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/user/index.dart';
 import 'package:outnest/domain/repositories/chat_repository.dart';
 import 'package:outnest/domain/services/file_service.dart';
+import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/screens/chat/chat_input_bar.dart';
 import 'package:outnest/screens/chat/chat_message_buble.dart';
 import 'package:outnest/screens/chat/chat_page_header.dart';
@@ -47,6 +49,7 @@ class _ChatPageState extends State<ChatPage> {
   late final ChatRepository _chatRepository;
   final ScrollController _scrollController = ScrollController();
   final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+  UserEntity? currentUser = getIt<SessionService>().currentUser;
 
   @override
   void initState() {
@@ -61,9 +64,12 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _handleSendMessage(String text) async {
+    if (currentUser == null) return;
     final message = MessageEntity(
       content: text,
-      senderID: currentUserId,
+      senderID: currentUser!.userID,
+      username: currentUser!.username,
+      profileImageUrl: currentUser!.profileImageUrl,
       createdAt: DateTime.now(),
     );
 
@@ -78,11 +84,8 @@ class _ChatPageState extends State<ChatPage> {
     });
   }
 
-  // Helper metod: Kategori ikonunu Entity üzerinden bulur
   String _getCategoryIcon() {
     var categoryIcon = '🎉';
-    // EventEntity içinde hobbies listesi olduğunu varsayıyoruz (önceki kodda map['hobbies'] vardı)
-    // Eğer EventEntity içinde hobbies yoksa burayı entity yapısına göre güncellemelisin.
     if (widget.event.hobbies.isNotEmpty) {
       final category = widget.event.hobbies.first;
       categoryIcon = AppConfig.categories[category] ?? '🎉';
@@ -143,14 +146,11 @@ class _ChatPageState extends State<ChatPage> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // 1. HEADER (ARTIK STREAM DEĞİL, STATİK WIDGET)
-          // Verileri doğrudan widget parametrelerinden alıyoruz.
           ChatPageHeader(
             eventID: widget.eventID,
             event: widget.event,
             creatorID: widget.creatorID,
-            chatTitle:
-                widget.chatTitle, // Stream'den gelen 'displayTitle' yerine
+            chatTitle: widget.chatTitle,
             creatorProfileImage:
                 widget.creatorProfileImage, // Tekrar fetch etmeye gerek yok
             location: widget.location,
@@ -197,10 +197,27 @@ class _ChatPageState extends State<ChatPage> {
                     final message = messages[index];
                     final isMe = message.senderID == currentUserId;
 
-                    if (message.content.toLowerCase().contains('bildirim') ||
-                        message.content.toLowerCase().contains('katıldı')) {
-                      return _buildSystemMessage(message.content);
+                    // --- Tarih Ayracı Mantığı Başlangıç ---
+                    bool showDateDivider = false;
+
+                    if (index == messages.length - 1) {
+                      showDateDivider = true;
+                    } else {
+                      final prevMessage = messages[index + 1];
+                      final currentMsgDate = message.createdAt;
+                      final prevMsgDate = prevMessage.createdAt;
+
+                      if (currentMsgDate.year != prevMsgDate.year ||
+                          currentMsgDate.month != prevMsgDate.month ||
+                          currentMsgDate.day != prevMsgDate.day) {
+                        showDateDivider = true;
+                      }
                     }
+
+                    final String dateDividerString = _getFormattedDate(
+                      message.createdAt,
+                    );
+                    // --- Tarih Ayracı Mantığı Bitiş ---
 
                     final timeString = DateFormat(
                       'HH:mm',
@@ -210,17 +227,22 @@ class _ChatPageState extends State<ChatPage> {
                     String? avatarUrl;
 
                     if (!isMe) {
-                      final details = _getSenderDetails(message.senderID);
-                      username = details['name'];
-                      avatarUrl = details['image'];
+                      username = message.username;
+                      avatarUrl = message.profileImageUrl;
                     }
 
-                    return ChatMessageBubble(
-                      message: message.content,
-                      time: timeString,
-                      isCurrentUser: isMe,
-                      username: username,
-                      userAvatarUrl: avatarUrl,
+                    return Column(
+                      children: [
+                        if (showDateDivider)
+                          _buildDateDivider(dateDividerString),
+                        ChatMessageBubble(
+                          message: message.content,
+                          time: timeString,
+                          isCurrentUser: isMe,
+                          username: username,
+                          userAvatarUrl: avatarUrl,
+                        ),
+                      ],
                     );
                   },
                 );
@@ -237,18 +259,37 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  Widget _buildSystemMessage(String content) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8.h),
-      child: Center(
-        child: Text(
-          content,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: AppColors.textGrey.withOpacity(0.6),
-            fontSize: 11.sp,
-            fontFamily: 'SF Pro Display',
-          ),
+  // Tarihi "Bugün", "Dün" veya "11 Şubat" şeklinde formatlar
+  String _getFormattedDate(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = DateTime(now.year, now.month, now.day - 1);
+    final dateToCheck = DateTime(date.year, date.month, date.day);
+
+    if (dateToCheck == today) {
+      return 'Bugün';
+    } else if (dateToCheck == yesterday) {
+      return 'Dün';
+    } else {
+      return DateFormat('d MMMM yyyy', 'tr_TR').format(date);
+    }
+  }
+
+  // Tarih ayracı tasarımı
+  Widget _buildDateDivider(String date) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 20.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+      decoration: BoxDecoration(
+        color: Colors.grey.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        date,
+        style: TextStyle(
+          color: Colors.grey[600],
+          fontSize: 12.sp,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

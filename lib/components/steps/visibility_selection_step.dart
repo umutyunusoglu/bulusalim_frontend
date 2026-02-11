@@ -43,7 +43,7 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
     'herkes',
     'takipçiler',
     'okul',
-    'arkadaşlar',
+    //  'arkadaşlar',
   ];
 
   @override

@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:outnest/app_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
@@ -80,10 +81,7 @@ class SettingsPage extends StatelessWidget {
 
                       // 3. Check if the widget is still in the tree before navigating
                       if (context.mounted) {
-                        await Navigator.pushReplacementNamed(
-                          context,
-                          '/welcome',
-                        );
+                        router.go('/welcome');
                       }
                     },
                     style: ElevatedButton.styleFrom(
