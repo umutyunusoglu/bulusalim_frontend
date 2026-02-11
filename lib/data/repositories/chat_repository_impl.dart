@@ -42,15 +42,14 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<void> sendMessage(Identifier eventID, MessageEntity message) {
+    final messageModel = MessageModel.fromEntity(message);
+    final messageMap = messageModel.toFirestore();
+    messageMap['createdAt'] = FieldValue.serverTimestamp();
     return _firestore
         .collection('events')
         .doc(eventID)
         .collection('messages')
-        .add({
-          'content': message.content,
-          'senderID': message.senderID,
-          'createdAt': FieldValue.serverTimestamp(),
-        })
+        .add(messageMap)
         .then((_) {
           _logger.info('Message sent successfully.');
         })

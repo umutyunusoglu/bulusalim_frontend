@@ -66,7 +66,7 @@ class _MapPageState extends State<MapPage> {
     'herkes',
     'takipçiler',
     'okul',
-    'kümeler',
+    // 'kümeler',
   ];
   // --- WIZARD STATE ---
   int _createEventStep = 0;

@@ -1130,6 +1130,23 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
+  Stream<List<CompactUserEntity>> watchBlockedUsers(Identifier userID) {
+    final snapshot = _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('blockedUsers')
+        .snapshots();
+
+    return snapshot.map((querySnapshot) {
+      return querySnapshot.docs.map((doc) {
+        final data = doc.data();
+        final blockedUser = CompactUserEntity.fromMap(data);
+        return blockedUser;
+      }).toList();
+    });
+  }
+
+  @override
   Stream<List<UserEventEntity>> watchUserEventLog(Identifier userID) {
     return _firestore
         .collection('users')
