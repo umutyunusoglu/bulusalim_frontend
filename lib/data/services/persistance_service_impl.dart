@@ -1,6 +1,6 @@
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/domain/services/persistance_service.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 
 class PersistanceServiceImpl implements PersistanceService {
   PersistanceServiceImpl({

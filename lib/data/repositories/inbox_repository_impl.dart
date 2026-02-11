@@ -1,8 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:outnest/domain/entities/notification/follow_notification_entity.dart'; // <--- 1. YENİ ENTITY IMPORT
 import 'package:outnest/domain/entities/notification/notification_entity.dart';
 import 'package:outnest/domain/repositories/inbox_repository.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:outnest/domain/services/file_service.dart';
 
 class InboxRepositoryImpl implements InboxRepository {

@@ -57,8 +57,12 @@ class PostRepositoryImpl implements PostRepository {
       );
 
       final userPostModel = UserPostModel.fromEntity(userPost);
+      final firestoreData = postModel.toFirestore();
+      firestoreData['expiresAt'] = postModel.createdAt?.add(
+        const Duration(days: 1),
+      );
 
-      await docRef.set(postModel.toFirestore());
+      await docRef.set(firestoreData);
       await userPostRef.set(userPostModel.toFirestore());
     } catch (e) {
       _logger.error('Failed to create post: $e');
@@ -114,7 +118,7 @@ class PostRepositoryImpl implements PostRepository {
       _logger.error('Post not found for unpinning: $postId');
       throw Exception('Post not found for unpinning');
     }
-    final UserPostModel userPostModel = UserPostModel.fromFirestore(
+    final userPostModel = UserPostModel.fromFirestore(
       userPostSnapshot.data()!,
     );
     final userPostEntity = userPostModel.toEntity();

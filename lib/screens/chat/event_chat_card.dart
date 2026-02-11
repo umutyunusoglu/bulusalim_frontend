@@ -47,7 +47,7 @@ class EventChatCard extends StatelessWidget {
         if (snapshot.hasData &&
             snapshot.data != null &&
             snapshot.data!.exists) {
-          final data = snapshot.data!.data() as Map<String, dynamic>;
+          final data = snapshot.data!.data()! as Map<String, dynamic>;
 
           if (data.containsKey('name')) {
             displayName = data['name'] as String;
@@ -179,7 +179,7 @@ class EventChatCard extends StatelessWidget {
                         color: Colors.white,
                         fontSize: 9.sp,
                         fontWeight: FontWeight.bold,
-                        height: 1.0,
+                        height: 1,
                         fontFamily: 'SF Pro Display',
                       ),
                     ),

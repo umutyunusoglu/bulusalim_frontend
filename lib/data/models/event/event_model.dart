@@ -1,5 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dart_geohash/dart_geohash.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
-import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/core/utils/types/enums/visibility_enum.dart';
@@ -8,8 +9,6 @@ import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/data/models/model.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dart_geohash/dart_geohash.dart';
 
 class EventModel extends Model<EventEntity> {
   EventModel({

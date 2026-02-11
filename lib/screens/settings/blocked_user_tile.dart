@@ -20,7 +20,7 @@ class BlockedUserTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 1. URL'nin ağdan mı yoksa boş mu olduğunu kontrol et
-    final bool hasUrl =
+    final hasUrl =
         profileImageUrl.isNotEmpty && profileImageUrl.startsWith('http');
 
     return Padding(
@@ -39,8 +39,6 @@ class BlockedUserTile extends StatelessWidget {
                 : AssetImage(FileService.defaultProfileImageUrl())
                       as ImageProvider,
             onBackgroundImageError: (_, __) => debugPrint('Avatar Load Error'),
-            // Child'ı null bırakıyoruz çünkü resmi zaten arka plana (backgroundImage) koyduk
-            child: null,
           ),
           SizedBox(width: 12.w),
 

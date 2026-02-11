@@ -1,8 +1,7 @@
-import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/push_notifications_service.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:outnest/domain/services/session_service.dart';
 
 @pragma('vm:entry-point')

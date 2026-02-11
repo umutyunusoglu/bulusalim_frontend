@@ -94,13 +94,15 @@ class FeedRepositoryImpl implements FeedRepository {
       final followeeIds = sessionService.currentState.followees
           .map((e) => e.userID)
           .toList();
-
+      final blockedIds = sessionService.currentState.blockedUsers
+          .map((e) => e.userID)
+          .toSet();
       if (currentUser == null) {
         _logger.error('❌ loadMore failed: Current user is null.');
         return;
       }
 
-      const int fetchLimit = AppConfig.feedBatchSize;
+      const fetchLimit = AppConfig.feedBatchSize;
 
       // 1. Verileri Çek
       final results = await Future.wait([
@@ -108,8 +110,8 @@ class FeedRepositoryImpl implements FeedRepository {
         _fetchEvents(fetchLimit, currentUser, followeeIds),
       ]);
 
-      final List<DocumentSnapshot> postDocs = results[0];
-      final List<DocumentSnapshot> eventDocs = results[1];
+      final postDocs = results[0];
+      final eventDocs = results[1];
 
       // 2. Pagination State Güncelle
       if (postDocs.isNotEmpty) _lastPostDoc = postDocs.last;
@@ -126,6 +128,7 @@ class FeedRepositoryImpl implements FeedRepository {
         eventDocs,
         currentUser,
         followeeIds,
+        blockedIds,
       );
 
       // 4. Listeye Ekle ve Cache'le
@@ -135,7 +138,7 @@ class FeedRepositoryImpl implements FeedRepository {
       for (final item in newBatch) {
         _cache.cacheEntity(item);
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       _logger.error('❌ Feed Load Error: $e');
     } finally {
       _isLoading = false;
@@ -147,7 +150,7 @@ class FeedRepositoryImpl implements FeedRepository {
   /// Firestore Query mantığını FeedType'a göre oluşturur.
   /// Not: University filtresini burada yaparak performansı artırıyoruz.
   Query _buildBaseQuery(CollectionReference collection, UserEntity user) {
-    Query query = collection.orderBy('createdAt', descending: true);
+    var query = collection.orderBy('createdAt', descending: true);
 
     if (_currentFeedType == FeedType.university) {
       // Buradaki null kontrolünü kaldırdık, çünkü yukarıda (fetch metodunda) engelleyeceğiz.
@@ -177,7 +180,7 @@ class FeedRepositoryImpl implements FeedRepository {
       return _fetchFriendsContent(collection, followeeIds, limit, _lastPostDoc);
     }
 
-    Query query = _buildBaseQuery(collection, user);
+    var query = _buildBaseQuery(collection, user);
     if (_lastPostDoc != null) {
       query = query.startAfterDocument(_lastPostDoc!);
     }
@@ -205,7 +208,7 @@ class FeedRepositoryImpl implements FeedRepository {
       );
     }
 
-    Query query = _buildBaseQuery(collection, user);
+    var query = _buildBaseQuery(collection, user);
     if (_lastEventDoc != null) {
       query = query.startAfterDocument(_lastEventDoc!);
     }
@@ -225,12 +228,12 @@ class FeedRepositoryImpl implements FeedRepository {
     DateTime? lastDate;
 
     if (lastDoc != null) {
-      final data = lastDoc.data() as Map<String, dynamic>;
+      final data = lastDoc.data()! as Map<String, dynamic>;
       lastDate = (data['createdAt'] as Timestamp).toDate();
     }
 
     final futures = chunks.map((chunk) {
-      Query query = collection
+      var query = collection
           .where('creator.userID', whereIn: chunk)
           .orderBy('createdAt', descending: true);
 
@@ -245,8 +248,10 @@ class FeedRepositoryImpl implements FeedRepository {
     // Tüm chunk'ları birleştir ve yeniden sırala
     final allDocs = snapshots.expand((s) => s.docs).toList()
       ..sort((a, b) {
-        final tA = (a.data() as Map<String, dynamic>)['createdAt'] as Timestamp;
-        final tB = (b.data() as Map<String, dynamic>)['createdAt'] as Timestamp;
+        final tA =
+            (a.data()! as Map<String, dynamic>)['createdAt'] as Timestamp;
+        final tB =
+            (b.data()! as Map<String, dynamic>)['createdAt'] as Timestamp;
         return tB.compareTo(tA);
       });
 
@@ -260,40 +265,48 @@ class FeedRepositoryImpl implements FeedRepository {
     List<DocumentSnapshot> eventDocs,
     UserEntity user,
     List<String> followeeIds,
+    Set<String> blockedIds, // Parametre olarak ekledik
   ) async {
     final resultBatch = <FeedEntity>[];
     final postQueue = List<DocumentSnapshot>.from(postDocs);
     final eventQueue = List<DocumentSnapshot>.from(eventDocs);
 
-    // Kuyruklar bitene veya limit dolana kadar dön
     while ((postQueue.isNotEmpty || eventQueue.isNotEmpty) &&
         resultBatch.length < AppConfig.feedBatchSize) {
       final type = _flatPattern[_patternIndex % _flatPattern.length];
-      bool added = false;
+      var added = false;
 
-      // Patern 'P' ise önce Post eklemeyi dene, yoksa Event dene (ve tam tersi)
       if (type == 'P') {
         if (postQueue.isNotEmpty) {
-          added = await _tryAddPost(postQueue, resultBatch);
+          added = await _tryAddPost(
+            postQueue,
+            resultBatch,
+            blockedIds,
+          ); // blockedIds eklendi
         } else if (eventQueue.isNotEmpty) {
           added = await _tryAddEvent(
             eventQueue,
             resultBatch,
             user,
             followeeIds,
-          );
+            blockedIds,
+          ); // eklendi
         }
       } else {
-        // Type == 'E'
         if (eventQueue.isNotEmpty) {
           added = await _tryAddEvent(
             eventQueue,
             resultBatch,
             user,
             followeeIds,
-          );
+            blockedIds,
+          ); // eklendi
         } else if (postQueue.isNotEmpty) {
-          added = await _tryAddPost(postQueue, resultBatch);
+          added = await _tryAddPost(
+            postQueue,
+            resultBatch,
+            blockedIds,
+          ); // eklendi
         }
       }
 
@@ -305,13 +318,21 @@ class FeedRepositoryImpl implements FeedRepository {
   Future<bool> _tryAddPost(
     List<DocumentSnapshot> queue,
     List<FeedEntity> result,
+    Set<String> blockedIds, // Eklendi
   ) async {
     if (queue.isEmpty) return false;
 
     final doc = queue.removeAt(0);
-    final model = PostModel.fromFirestore(doc.data() as Map<String, dynamic>);
+    final data = doc.data()! as Map<String, dynamic>;
 
-    // Not: University kontrolü artık Query seviyesinde yapıldığı için burada tekrar etmeye gerek yok.
+    // FİLTRE: Eğer creator engellenenler arasındaysa ekleme
+    final creatorId = (data['creator'] as Map<String, dynamic>)['userID'];
+    if (blockedIds.contains(creatorId)) {
+      _logger.info('🚫 Filtering out post from blocked user: $creatorId');
+      return false;
+    }
+
+    final model = PostModel.fromFirestore(data);
     result.add(model.toEntity());
     return true;
   }
@@ -321,11 +342,21 @@ class FeedRepositoryImpl implements FeedRepository {
     List<FeedEntity> result,
     UserEntity user,
     List<String> followeeIds,
+    Set<String> blockedIds, // Eklendi
   ) async {
     if (queue.isEmpty) return false;
 
     final doc = queue.removeAt(0);
-    final model = EventModel.fromFirestore(doc.data() as Map<String, dynamic>);
+    final data = doc.data()! as Map<String, dynamic>;
+
+    // FİLTRE: Eğer creator engellenenler arasındaysa ekleme
+    final creatorId = (data['creator'] as Map<String, dynamic>)['userID'];
+    if (blockedIds.contains(creatorId)) {
+      _logger.info('🚫 Filtering out event from blocked user: $creatorId');
+      return false;
+    }
+
+    final model = EventModel.fromFirestore(data);
     final entity = model.toEntity();
 
     if (_canUserSeeEvent(entity, user, followeeIds)) {
@@ -334,7 +365,7 @@ class FeedRepositoryImpl implements FeedRepository {
       return true;
     }
 
-    return false; // Görünür değilse eklenmedi
+    return false;
   }
 
   bool _canUserSeeEvent(
@@ -345,21 +376,13 @@ class FeedRepositoryImpl implements FeedRepository {
     // Kendi etkinliği ise her zaman gör
     if (event.creator.userID == currentUser.userID) return true;
 
-    // DÜZELTME 3: Visibility null kontrolü ve loglama
-    if (event.visibility == null) {
-      _logger.warn(
-        '⚠️ Event ${event.id} has NO VISIBILITY defined. Defaulting to true.',
-      );
-      return true;
-    }
-
     // Üniversite feed'inde dışarıdan gelen ama 'university' visibility olan event kontrolü
     if (_currentFeedType == FeedType.all &&
         event.visibility == VisibilityEnum.university) {
       if (event.creator.university != currentUser.university) return false;
     }
 
-    switch (event.visibility!) {
+    switch (event.visibility) {
       case VisibilityEnum.everyone:
         return true;
       case VisibilityEnum.university:

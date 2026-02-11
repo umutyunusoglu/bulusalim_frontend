@@ -348,8 +348,6 @@ class AuthServiceImpl implements AuthService {
 
       final googleUser = await GoogleSignIn.instance.authenticate();
 
-      if (googleUser == null) throw AuthException('Giriş iptal edildi.');
-
       // Obtain the auth details from the request
       final googleAuth = googleUser.authentication;
 

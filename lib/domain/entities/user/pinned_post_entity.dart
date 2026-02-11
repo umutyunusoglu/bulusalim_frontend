@@ -1,7 +1,6 @@
-import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
-import 'package:outnest/domain/entities/feed/post/post_entity.dart';
-import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:equatable/equatable.dart';
+import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 
 class UserPostEntity with EquatableMixin {
   UserPostEntity({

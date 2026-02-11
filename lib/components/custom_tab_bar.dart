@@ -20,7 +20,6 @@ class CustomTabBar extends StatelessWidget {
       child: Row(
         // Elemanları (Senlik - Arkadaşların - Okul) eşit aralıkla yay
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: List.generate(tabs.length, (index) {
           final isSelected = currentIndex == index;
 

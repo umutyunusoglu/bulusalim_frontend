@@ -24,7 +24,6 @@ class Header extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.only(top: 8),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // 1. LOGO
             SizedBox(

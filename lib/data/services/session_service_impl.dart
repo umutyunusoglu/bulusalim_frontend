@@ -37,6 +37,7 @@ class SessionServiceImpl implements SessionService {
   StreamSubscription<List<EventEntity>>? _eventsSubscription;
   StreamSubscription<List<CompactUserEntity>>? _followersSubscription;
   StreamSubscription<List<CompactUserEntity>>? _followeesSubscription;
+  StreamSubscription<List<CompactUserEntity>>? _blockedUsersSubscription;
 
   // --- PUBLIC GETTERS ---
   @override
@@ -48,6 +49,10 @@ class SessionServiceImpl implements SessionService {
   // Interface uyumluluğu için eski getterlar (Gerekirse)
   @override
   UserEntity? get currentUser => _stateNotifier.value.user;
+
+  @override
+  List<EventEntity> get activeEvents =>
+      _stateNotifier.value.ongoingEvents + _stateNotifier.value.upcomingEvents;
 
   // --- INIT ---
   @override
@@ -91,7 +96,7 @@ class SessionServiceImpl implements SessionService {
 
         // Eğer state zaten boşsa ve null geldiyse, bu YENİ bir kullanıcıdır.
         // Onu dışarı atmıyoruz, sadece user nesnesini null tutuyoruz (onboarding için).
-        _stateNotifier.value = _stateNotifier.value.copyWith(user: null);
+        _stateNotifier.value = _stateNotifier.value.copyWith();
       } else {
         // 2. DURUM: Firestore'da doküman var (Kayıtlı kullanıcı)
         _stateNotifier.value = _stateNotifier.value.copyWith(user: user);
@@ -128,6 +133,19 @@ class SessionServiceImpl implements SessionService {
         followees: followees,
       );
     });
+
+    _blockedUsersSubscription = _userRepository
+        .watchBlockedUsers(userId)
+        .listen(
+          (users) {
+            _logger.info('Stream Update: ${users.length} blocked users found.');
+            _stateNotifier.value = _stateNotifier.value.copyWith(
+              blockedUsers: users,
+            );
+          },
+          onError: (error) =>
+              _logger.error('Error watching blocked users: $error'),
+        );
   }
 
   Future<void> _cancelUserStreams() async {
@@ -135,11 +153,13 @@ class SessionServiceImpl implements SessionService {
     await _eventsSubscription?.cancel();
     await _followersSubscription?.cancel();
     await _followeesSubscription?.cancel();
+    await _blockedUsersSubscription?.cancel();
 
     _userSubscription = null;
     _eventsSubscription = null;
     _followersSubscription = null;
     _followeesSubscription = null;
+    _blockedUsersSubscription = null;
   }
 
   @override
