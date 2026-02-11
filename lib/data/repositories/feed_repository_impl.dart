@@ -94,7 +94,9 @@ class FeedRepositoryImpl implements FeedRepository {
       final followeeIds = sessionService.currentState.followees
           .map((e) => e.userID)
           .toList();
-
+      final blockedIds = sessionService.currentState.blockedUsers
+          .map((e) => e.userID)
+          .toSet();
       if (currentUser == null) {
         _logger.error('❌ loadMore failed: Current user is null.');
         return;
@@ -126,6 +128,7 @@ class FeedRepositoryImpl implements FeedRepository {
         eventDocs,
         currentUser,
         followeeIds,
+        blockedIds,
       );
 
       // 4. Listeye Ekle ve Cache'le
@@ -262,40 +265,48 @@ class FeedRepositoryImpl implements FeedRepository {
     List<DocumentSnapshot> eventDocs,
     UserEntity user,
     List<String> followeeIds,
+    Set<String> blockedIds, // Parametre olarak ekledik
   ) async {
     final resultBatch = <FeedEntity>[];
     final postQueue = List<DocumentSnapshot>.from(postDocs);
     final eventQueue = List<DocumentSnapshot>.from(eventDocs);
 
-    // Kuyruklar bitene veya limit dolana kadar dön
     while ((postQueue.isNotEmpty || eventQueue.isNotEmpty) &&
         resultBatch.length < AppConfig.feedBatchSize) {
       final type = _flatPattern[_patternIndex % _flatPattern.length];
       var added = false;
 
-      // Patern 'P' ise önce Post eklemeyi dene, yoksa Event dene (ve tam tersi)
       if (type == 'P') {
         if (postQueue.isNotEmpty) {
-          added = await _tryAddPost(postQueue, resultBatch);
+          added = await _tryAddPost(
+            postQueue,
+            resultBatch,
+            blockedIds,
+          ); // blockedIds eklendi
         } else if (eventQueue.isNotEmpty) {
           added = await _tryAddEvent(
             eventQueue,
             resultBatch,
             user,
             followeeIds,
-          );
+            blockedIds,
+          ); // eklendi
         }
       } else {
-        // Type == 'E'
         if (eventQueue.isNotEmpty) {
           added = await _tryAddEvent(
             eventQueue,
             resultBatch,
             user,
             followeeIds,
-          );
+            blockedIds,
+          ); // eklendi
         } else if (postQueue.isNotEmpty) {
-          added = await _tryAddPost(postQueue, resultBatch);
+          added = await _tryAddPost(
+            postQueue,
+            resultBatch,
+            blockedIds,
+          ); // eklendi
         }
       }
 
@@ -307,13 +318,21 @@ class FeedRepositoryImpl implements FeedRepository {
   Future<bool> _tryAddPost(
     List<DocumentSnapshot> queue,
     List<FeedEntity> result,
+    Set<String> blockedIds, // Eklendi
   ) async {
     if (queue.isEmpty) return false;
 
     final doc = queue.removeAt(0);
-    final model = PostModel.fromFirestore(doc.data()! as Map<String, dynamic>);
+    final data = doc.data()! as Map<String, dynamic>;
 
-    // Not: University kontrolü artık Query seviyesinde yapıldığı için burada tekrar etmeye gerek yok.
+    // FİLTRE: Eğer creator engellenenler arasındaysa ekleme
+    final creatorId = (data['creator'] as Map<String, dynamic>)['userID'];
+    if (blockedIds.contains(creatorId)) {
+      _logger.info('🚫 Filtering out post from blocked user: $creatorId');
+      return false;
+    }
+
+    final model = PostModel.fromFirestore(data);
     result.add(model.toEntity());
     return true;
   }
@@ -323,11 +342,21 @@ class FeedRepositoryImpl implements FeedRepository {
     List<FeedEntity> result,
     UserEntity user,
     List<String> followeeIds,
+    Set<String> blockedIds, // Eklendi
   ) async {
     if (queue.isEmpty) return false;
 
     final doc = queue.removeAt(0);
-    final model = EventModel.fromFirestore(doc.data()! as Map<String, dynamic>);
+    final data = doc.data()! as Map<String, dynamic>;
+
+    // FİLTRE: Eğer creator engellenenler arasındaysa ekleme
+    final creatorId = (data['creator'] as Map<String, dynamic>)['userID'];
+    if (blockedIds.contains(creatorId)) {
+      _logger.info('🚫 Filtering out event from blocked user: $creatorId');
+      return false;
+    }
+
+    final model = EventModel.fromFirestore(data);
     final entity = model.toEntity();
 
     if (_canUserSeeEvent(entity, user, followeeIds)) {
@@ -336,7 +365,7 @@ class FeedRepositoryImpl implements FeedRepository {
       return true;
     }
 
-    return false; // Görünür değilse eklenmedi
+    return false;
   }
 
   bool _canUserSeeEvent(

@@ -57,8 +57,12 @@ class PostRepositoryImpl implements PostRepository {
       );
 
       final userPostModel = UserPostModel.fromEntity(userPost);
+      final firestoreData = postModel.toFirestore();
+      firestoreData['expiresAt'] = postModel.createdAt?.add(
+        const Duration(days: 1),
+      );
 
-      await docRef.set(postModel.toFirestore());
+      await docRef.set(firestoreData);
       await userPostRef.set(userPostModel.toFirestore());
     } catch (e) {
       _logger.error('Failed to create post: $e');
