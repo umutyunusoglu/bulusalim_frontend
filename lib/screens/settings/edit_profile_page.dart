@@ -46,7 +46,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   bool _hasChanges = false;
 
   // Carousel dönerken seçilen geçici tarih
-  DateTime _tempSelectedDate = DateTime(2002, 1, 1);
+  DateTime _tempSelectedDate = DateTime(2002, 1);
 
   @override
   void initState() {
@@ -71,7 +71,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _profileImageUrl = user?.profileImageUrl ?? '';
     _hideSavedEvents = user?.hideSavedEvents ?? false;
     _selectedGender = user?.gender ?? GenderEnum.preferNotToSay;
-    _selectedDob = user?.birthDate ?? DateTime(2002, 1, 1);
+    _selectedDob = user?.birthDate ?? DateTime(2002, 1);
 
     // Önceki değerleri sakla
     _previousName = user?.username ?? '';
@@ -306,7 +306,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   // --- CAROUSEL TARİH SEÇİMİ (YENİLENMİŞ) ---
   void _showCarouselDatePicker() {
-    _tempSelectedDate = DateTime(2002, 1, 1); // Varsayılan veya mevcut değer
+    _tempSelectedDate = DateTime(2002, 1); // Varsayılan veya mevcut değer
 
     showModalBottomSheet(
       context: context,
@@ -599,9 +599,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    final ImagePicker picker = ImagePicker();
+    final picker = ImagePicker();
     try {
-      final XFile? pickedFile = await picker.pickImage(
+      final pickedFile = await picker.pickImage(
         source: source,
         imageQuality: 80, // Performans için kaliteyi biraz düşürebilirsin
         maxWidth: 1000, // Çok büyük resimleri küçültmek iyi olur
@@ -622,7 +622,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Future<void> _saveProfileChanges() async {
     debugPrint('Profil değişiklikleri kaydediliyor...');
-    var updatedData = <String, dynamic>{};
+    final updatedData = <String, dynamic>{};
 
     if (_profileImageChanged) {
       try {
@@ -633,7 +633,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         updatedData['profileImageUrl'] = newURL;
       } catch (e) {
         debugPrint('Profil resmi yüklenirken hata oluştu: $e');
-        updatedData['profileImageUrl'] = "";
+        updatedData['profileImageUrl'] = '';
       }
     }
     if (_nameController.text != _previousName) {

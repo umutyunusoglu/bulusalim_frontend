@@ -28,7 +28,7 @@ class ProfileTabBar extends StatelessWidget {
         ? primaryColor
         : secondaryColor;
 
-    final List<IconData> icons = [
+    final icons = <IconData>[
       Icons.grid_view_rounded, // 0: Sol
       Icons.location_on_outlined, // 1: Orta
       Icons.style_outlined, // 2: Sağ
@@ -51,9 +51,9 @@ class ProfileTabBar extends StatelessWidget {
             safeIndex * tabWidth + (tabWidth - indicatorWidth) / 2;
 
         // Yükseklik Ayarları
-        final double indicatorHeight = 4.h;
-        final double gradientSpread = 8.h;
-        final double totalStackHeight = indicatorHeight + gradientSpread;
+        final indicatorHeight = 4.h;
+        final gradientSpread = 8.h;
+        final totalStackHeight = indicatorHeight + gradientSpread;
 
         return Column(
           mainAxisSize: MainAxisSize.min,
@@ -113,7 +113,7 @@ class ProfileTabBar extends StatelessWidget {
                                 ]
                               : [
                                   Colors.grey.withOpacity(0.4),
-                                  Colors.grey.withOpacity(0.0),
+                                  Colors.grey.withOpacity(0),
                                 ],
                           stops: const [0.0, 1.0],
                         ),

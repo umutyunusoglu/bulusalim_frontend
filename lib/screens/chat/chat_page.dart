@@ -1,19 +1,21 @@
 import 'package:outnest/application/providers/get_it_init.dart';
-import 'package:outnest/core/constants/configs/app_config.dart'; // <--- BU SATIR EKLENDİ
+import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
-import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/domain/entities/chat/message_entity.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/user/index.dart';
 import 'package:outnest/domain/repositories/chat_repository.dart';
 import 'package:outnest/domain/services/file_service.dart';
+import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/screens/chat/chat_input_bar.dart';
 import 'package:outnest/screens/chat/chat_message_buble.dart';
 import 'package:outnest/screens/chat/chat_page_header.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
+
+// NOT: Firestore importu kaldırıldı çünkü UI katmanında işi yok.
 
 class ChatPage extends StatefulWidget {
   const ChatPage({
@@ -47,6 +49,7 @@ class _ChatPageState extends State<ChatPage> {
   late final ChatRepository _chatRepository;
   final ScrollController _scrollController = ScrollController();
   final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+  UserEntity? currentUser = getIt<SessionService>().currentUser;
 
   @override
   void initState() {
@@ -61,9 +64,12 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _handleSendMessage(String text) async {
+    if (currentUser == null) return;
     final message = MessageEntity(
       content: text,
-      senderID: currentUserId,
+      senderID: currentUser!.userID,
+      username: currentUser!.username,
+      profileImageUrl: currentUser!.profileImageUrl,
       createdAt: DateTime.now(),
     );
 
@@ -78,13 +84,19 @@ class _ChatPageState extends State<ChatPage> {
     });
   }
 
+  String _getCategoryIcon() {
+    var categoryIcon = '🎉';
+    if (widget.event.hobbies.isNotEmpty) {
+      final category = widget.event.hobbies.first;
+      categoryIcon = AppConfig.categories[category] ?? '🎉';
+    }
+    return categoryIcon;
+  }
+
   Map<String, String> _getSenderDetails(String senderID) {
-    //TODO: Bu fonksiyon, senderID'ye göre kullanıcının adını ve profil resmini bulmalı. Şu anki yapıda participantAvatars listesinde bu bilgiler var gibi görünüyor, ancak tam yapıyı bilmediğim için genel bir yaklaşım sunuyorum.
-    widget.event.participants.forEach((participant) {
-      debugPrint('Katılımcı: ${participant.userID}, ${participant.username}');
-    });
-    String imagePath = '';
-    String name = 'Bilinmeyen Kullanıcı';
+    // Bu metod mantığına dokunulmadı, mevcut haliyle bırakıldı.
+    var imagePath = '';
+    var name = 'Bilinmeyen Kullanıcı';
 
     if (senderID == widget.creatorID) {
       name = 'Buluşma Sahibi';
@@ -108,6 +120,7 @@ class _ChatPageState extends State<ChatPage> {
                 (user['profileImageUrl'] as String?) ??
                 FileService.defaultProfileImageUrl();
           } else {
+            // Eğer user bir Entity ise
             name = (user.username as String?) ?? 'İsimsiz';
             imagePath =
                 (user.profileImageUrl as String?) ??
@@ -133,81 +146,26 @@ class _ChatPageState extends State<ChatPage> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // 1. HEADER
-          StreamBuilder<DocumentSnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('events')
-                .doc(widget.eventID)
-                .snapshots(),
-
-            builder: (context, snapshot) {
-              var displayTitle = widget.chatTitle;
-              var displayLocation = widget.location;
-              var displayDate = widget.eventDate;
-              var displayCreatorImage = widget.creatorProfileImage;
-
-              // 2. VARSAYILAN İKON TANIMLA
-              String categoryIcon = '🎉';
-
-              if (snapshot.hasData &&
-                  snapshot.data != null &&
-                  snapshot.data!.exists) {
-                final data = snapshot.data!.data() as Map<String, dynamic>?;
-                if (data != null) {
-                  if (data.containsKey('name')) {
-                    displayTitle = data['name'] as String;
-                  }
-                  if (data.containsKey('displayAddress')) {
-                    displayLocation = data['displayAddress'] as String;
-                  }
-
-                  if (data.containsKey('startTime')) {
-                    final timestamp = data['startTime'] as Timestamp?;
-                    if (timestamp != null) displayDate = timestamp.toDate();
-                  }
-
-                  if (data.containsKey('creator') && data['creator'] is Map) {
-                    final creatorMap = data['creator'] as Map<String, dynamic>;
-                    if (creatorMap.containsKey('profileImageUrl')) {
-                      final rawImg = creatorMap['profileImageUrl'] as String?;
-                      // Eğer URL boşsa default asset'i ata
-                      displayCreatorImage =
-                          (rawImg != null && rawImg.isNotEmpty)
-                          ? rawImg
-                          : FileService.defaultProfileImageUrl();
-                    }
-                  }
-
-                  // 3. HOBİLERDEN İKONU AL
-                  if (data.containsKey('hobbies')) {
-                    final hobbies = data['hobbies'] as List<dynamic>?;
-                    if (hobbies != null && hobbies.isNotEmpty) {
-                      final category = hobbies.first.toString();
-                      categoryIcon = AppConfig.categories[category] ?? '🎉';
-                    }
-                  }
-                }
-              }
-
-              return ChatPageHeader(
-                eventID: widget.eventID,
-                event: widget.event,
-                creatorID: widget.creatorID,
-                chatTitle: displayTitle,
-                creatorProfileImage: displayCreatorImage,
-                location: displayLocation,
-                eventDate: displayDate,
-                participantStatus: widget.participantStatus,
-                participantAvatars: widget.participantAvatars,
-                categoryIcon: categoryIcon, // 4. KATEGORİ İKONUNU GÖNDER
-              );
-            },
+          ChatPageHeader(
+            eventID: widget.eventID,
+            event: widget.event,
+            creatorID: widget.creatorID,
+            chatTitle: widget.chatTitle,
+            creatorProfileImage:
+                widget.creatorProfileImage, // Tekrar fetch etmeye gerek yok
+            location: widget.location,
+            eventDate: widget.eventDate,
+            participantStatus: widget.participantStatus,
+            participantAvatars: widget.participantAvatars,
+            categoryIcon: _getCategoryIcon(), // Helper metoddan geliyor
           ),
 
-          // 2. MESAJ LİSTESİ
+          // 2. MESAJ LİSTESİ (Burası Clean Architecture'a uygun Repository Stream'i)
           Expanded(
             child: StreamBuilder<List<MessageEntity>>(
-              stream: _chatRepository.getChatMessagesStream(widget.eventID),
+              stream: _chatRepository.getChatMessagesStream(
+                widget.eventID,
+              ), // Dokunulmadı
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -239,10 +197,27 @@ class _ChatPageState extends State<ChatPage> {
                     final message = messages[index];
                     final isMe = message.senderID == currentUserId;
 
-                    if (message.content.toLowerCase().contains('bildirim') ||
-                        message.content.toLowerCase().contains('katıldı')) {
-                      return _buildSystemMessage(message.content);
+                    // --- Tarih Ayracı Mantığı Başlangıç ---
+                    bool showDateDivider = false;
+
+                    if (index == messages.length - 1) {
+                      showDateDivider = true;
+                    } else {
+                      final prevMessage = messages[index + 1];
+                      final currentMsgDate = message.createdAt;
+                      final prevMsgDate = prevMessage.createdAt;
+
+                      if (currentMsgDate.year != prevMsgDate.year ||
+                          currentMsgDate.month != prevMsgDate.month ||
+                          currentMsgDate.day != prevMsgDate.day) {
+                        showDateDivider = true;
+                      }
                     }
+
+                    final String dateDividerString = _getFormattedDate(
+                      message.createdAt,
+                    );
+                    // --- Tarih Ayracı Mantığı Bitiş ---
 
                     final timeString = DateFormat(
                       'HH:mm',
@@ -252,17 +227,22 @@ class _ChatPageState extends State<ChatPage> {
                     String? avatarUrl;
 
                     if (!isMe) {
-                      final details = _getSenderDetails(message.senderID);
-                      username = details['name'];
-                      avatarUrl = details['image'];
+                      username = message.username;
+                      avatarUrl = message.profileImageUrl;
                     }
 
-                    return ChatMessageBubble(
-                      message: message.content,
-                      time: timeString,
-                      isCurrentUser: isMe,
-                      username: username,
-                      userAvatarUrl: avatarUrl,
+                    return Column(
+                      children: [
+                        if (showDateDivider)
+                          _buildDateDivider(dateDividerString),
+                        ChatMessageBubble(
+                          message: message.content,
+                          time: timeString,
+                          isCurrentUser: isMe,
+                          username: username,
+                          userAvatarUrl: avatarUrl,
+                        ),
+                      ],
                     );
                   },
                 );
@@ -279,18 +259,37 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  Widget _buildSystemMessage(String content) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8.h),
-      child: Center(
-        child: Text(
-          content,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: AppColors.textGrey.withOpacity(0.6),
-            fontSize: 11.sp,
-            fontFamily: 'SF Pro Display',
-          ),
+  // Tarihi "Bugün", "Dün" veya "11 Şubat" şeklinde formatlar
+  String _getFormattedDate(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = DateTime(now.year, now.month, now.day - 1);
+    final dateToCheck = DateTime(date.year, date.month, date.day);
+
+    if (dateToCheck == today) {
+      return 'Bugün';
+    } else if (dateToCheck == yesterday) {
+      return 'Dün';
+    } else {
+      return DateFormat('d MMMM yyyy', 'tr_TR').format(date);
+    }
+  }
+
+  // Tarih ayracı tasarımı
+  Widget _buildDateDivider(String date) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 20.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+      decoration: BoxDecoration(
+        color: Colors.grey.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        date,
+        style: TextStyle(
+          color: Colors.grey[600],
+          fontSize: 12.sp,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

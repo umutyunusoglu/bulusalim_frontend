@@ -33,7 +33,7 @@ class _ProfilePostFeedPageState extends State<ProfilePostFeedPage> {
   void initState() {
     super.initState();
     // Tahmini yükseklik üzerinden scroll
-    final double initialOffset = widget.initialIndex * 580.h;
+    final initialOffset = widget.initialIndex * 580.h;
     _scrollController = ScrollController(initialScrollOffset: initialOffset);
   }
 
@@ -56,7 +56,7 @@ class _ProfilePostFeedPageState extends State<ProfilePostFeedPage> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          "Gönderiler",
+          'Gönderiler',
           style: TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
@@ -119,13 +119,13 @@ class _PostLoaderItemState extends State<_PostLoaderItem>
 
       if (post == null) {
         // Hata loglamasını BURADA yapıyoruz, build içinde değil.
-        const msg = "Post verisi null döndü (Veritabanında bulunamadı)";
+        const msg = 'Post verisi null döndü (Veritabanında bulunamadı)';
         getIt<LoggingService>().error(
           'Post yükleme hatası ID: ${widget.pinnedPost.postID} -> $msg',
         );
 
         setState(() {
-          _errorMessage = "İçerik bulunamadı";
+          _errorMessage = 'İçerik bulunamadı';
           _isLoading = false;
         });
       } else {
@@ -153,8 +153,8 @@ class _PostLoaderItemState extends State<_PostLoaderItem>
 
     // 1. Yükleniyor Durumu
     if (_isLoading) {
-      final bool hasImage = widget.pinnedPost.imageUrls.isNotEmpty;
-      final String imageUrl = hasImage
+      final hasImage = widget.pinnedPost.imageUrls.isNotEmpty;
+      final imageUrl = hasImage
           ? widget.pinnedPost.imageUrls.first
           : FileService.defaultProfileImageUrl(); // Asset fallback
 
@@ -200,7 +200,7 @@ class _PostLoaderItemState extends State<_PostLoaderItem>
         height: 100.h,
         child: Center(
           child: Text(
-            _errorMessage ?? "Veri bulunamadı",
+            _errorMessage ?? 'Veri bulunamadı',
             style: TextStyle(color: Colors.grey[600]),
           ),
         ),

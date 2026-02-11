@@ -138,9 +138,8 @@ class _SearchPageState extends State<SearchPage> {
                     ),
                     ..._userResults.map((doc) {
                       final data = doc.data()! as Map<String, dynamic>;
-                      final String? rawProfileUrl =
-                          data['profileImageUrl'] as String?;
-                      final bool hasUrl =
+                      final rawProfileUrl = data['profileImageUrl'] as String?;
+                      final hasUrl =
                           rawProfileUrl != null &&
                           rawProfileUrl.isNotEmpty &&
                           rawProfileUrl.startsWith('http');

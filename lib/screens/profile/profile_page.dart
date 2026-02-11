@@ -224,7 +224,7 @@ class _ProfilePageState extends State<ProfilePage> {
         );
       }
 
-      bool hasSentFollowRequest = false;
+      var hasSentFollowRequest = false;
       if (!isFollowing) {
         hasSentFollowRequest = await userRepository.hasSentFollowRequest(
           currentUser!.userID,
@@ -232,12 +232,12 @@ class _ProfilePageState extends State<ProfilePage> {
         );
       }
 
-      List<EventEntity> enrolledEvents = [];
+      var enrolledEvents = <EventEntity>[];
       if (enrolledEventIds.isNotEmpty) {
         enrolledEvents = await eventRepository.getEventsByIds(enrolledEventIds);
       }
 
-      List<EventEntity> savedEvents = [];
+      var savedEvents = <EventEntity>[];
       if (savedEventIds.isNotEmpty) {
         savedEvents = await eventRepository.getEventsByIds(savedEventIds);
       }
@@ -257,13 +257,11 @@ class _ProfilePageState extends State<ProfilePage> {
       if (!mounted) return;
 
       setState(() {
-        if (user != null) {
-          _username = user.username;
-          _fullName = user.nameSurname;
-          _bio = user.bio ?? '';
-          _school = user.university ?? 'Üniversite Doğrulanmadı';
-          _avatarUrl = user.profileImageUrl;
-        }
+        _username = user.username;
+        _fullName = user.nameSurname;
+        _bio = user.bio ?? '';
+        _school = user.university ?? 'Üniversite Doğrulanmadı';
+        _avatarUrl = user.profileImageUrl;
 
         _isFollowing = isFollowing;
         _isPrivateAccount = isPrivate;
@@ -372,7 +370,6 @@ class _ProfilePageState extends State<ProfilePage> {
         description:
             'Bu hesabı tekrardan takip etmek için istek tekrardan göndermen gerekecek.',
         confirmButtonText: 'takibi bırak',
-        cancelButtonText: 'vazgeç',
         confirmButtonColor: const Color(0xFF5D6B82),
         onConfirm: () {
           context.pop();
@@ -429,7 +426,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   // --- 2. ETKİNLİK VARSA (SEÇİM POPUP) ---
   void _showShareSelectionDialog(BuildContext context, List<dynamic> events) {
-    int selectedIndex = 0;
+    var selectedIndex = 0;
 
     showDialog(
       context: context,
@@ -471,12 +468,12 @@ class _ProfilePageState extends State<ProfilePage> {
                         },
                         itemBuilder: (context, index) {
                           final event = events[index] as EventEntity;
-                          (event.name ?? 'Buluşma ${index + 1}').toString();
+                          (event.name ?? 'Buluşma ${index + 1}');
 
                           // 1. URL'nin tipini kontrol et (Network mü Asset mi?)
                           final imageUrl = event.creator.profileImageUrl;
 
-                          final bool isNetwork = imageUrl.startsWith('http');
+                          final isNetwork = imageUrl.startsWith('http');
 
                           return Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -496,7 +493,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               ),
                               SizedBox(height: 8.h),
                               Text(
-                                '${event.name ?? 'Buluşma ${index + 1}'}',
+                                event.name ?? 'Buluşma ${index + 1}',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontFamily: 'SF Pro Display',
@@ -861,7 +858,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     height: 32.h,
                     width: 361,
                     borderRadius: 20.r,
-                    borderWidth: 0,
                     backgroundColor: _isFollowing
                         ? const Color(0xFF5D6B82)
                         : ((_isPrivateAccount && _hasSentFollowRequest)
@@ -916,7 +912,7 @@ class _ProfilePageState extends State<ProfilePage> {
         ..add(_commonFollowers[1].profileImageUrl);
       commonCount -= 2;
     }
-    var showAdditional = commonCount > 0;
+    final showAdditional = commonCount > 0;
 
     final commonDisplayNames = _commonFollowers
         .take(2)

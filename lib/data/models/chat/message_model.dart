@@ -1,21 +1,29 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:outnest/data/models/model.dart';
 import 'package:outnest/domain/entities/chat/message_entity.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MessageModel implements Model<MessageEntity> {
   MessageModel({
     required this.content,
     required this.senderID,
     required this.createdAt,
+    required this.profileImageUrl,
+    required this.username,
   });
+
   factory MessageModel.fromFirestore(
     Map<String, dynamic> firestoreData,
   ) {
-    if (firestoreData['createdAt'] == null) {}
     return MessageModel(
-      content: firestoreData['content'] as String,
-      senderID: firestoreData['senderID'] as String,
-      createdAt: (firestoreData['createdAt'] as Timestamp).toDate(),
+      content: firestoreData['content'] as String? ?? "",
+      senderID: firestoreData['senderID'] as String? ?? "",
+      // createdAt null gelirse şu anki zamanı ata
+      createdAt:
+          (firestoreData['createdAt'] as Timestamp?)?.toDate() ??
+          DateTime.now(),
+      // Null gelme ihtimaline karşı cast işlemini String? yaparak koruyoruz
+      username: firestoreData['username'] as String? ?? "Bilinmeyen Kullanıcı",
+      profileImageUrl: firestoreData['profileImageUrl'] as String? ?? "",
     );
   }
 
@@ -24,29 +32,36 @@ class MessageModel implements Model<MessageEntity> {
       content: entity.content,
       senderID: entity.senderID,
       createdAt: entity.createdAt,
+      username: entity.username,
+      profileImageUrl: entity.profileImageUrl,
     );
   }
 
   final String content;
   final String senderID;
-  final DateTime? createdAt;
+  final DateTime createdAt;
+  final String username;
+  final String profileImageUrl;
 
   @override
   MessageEntity toEntity() {
     return MessageEntity(
       content: content,
       senderID: senderID,
-      createdAt: createdAt!,
+      createdAt: createdAt,
+      username: username,
+      profileImageUrl: profileImageUrl,
     );
   }
 
   @override
   Map<String, dynamic> toFirestore() {
-    final timestamp = createdAt != null ? Timestamp.fromDate(createdAt!) : null;
     return {
       'content': content,
       'senderID': senderID,
-      'createdAt': timestamp ?? FieldValue.serverTimestamp(),
+      'createdAt': Timestamp.fromDate(createdAt),
+      'username': username,
+      'profileImageUrl': profileImageUrl,
     };
   }
 }
