@@ -37,6 +37,7 @@ class SessionServiceImpl implements SessionService {
   StreamSubscription<List<EventEntity>>? _eventsSubscription;
   StreamSubscription<List<CompactUserEntity>>? _followersSubscription;
   StreamSubscription<List<CompactUserEntity>>? _followeesSubscription;
+  StreamSubscription<List<CompactUserEntity>>? _blockedUsersSubscription;
 
   // --- PUBLIC GETTERS ---
   @override
@@ -132,6 +133,19 @@ class SessionServiceImpl implements SessionService {
         followees: followees,
       );
     });
+
+    _blockedUsersSubscription = _userRepository
+        .watchBlockedUsers(userId)
+        .listen(
+          (users) {
+            _logger.info('Stream Update: ${users.length} blocked users found.');
+            _stateNotifier.value = _stateNotifier.value.copyWith(
+              blockedUsers: users,
+            );
+          },
+          onError: (error) =>
+              _logger.error('Error watching blocked users: $error'),
+        );
   }
 
   Future<void> _cancelUserStreams() async {
@@ -139,11 +153,13 @@ class SessionServiceImpl implements SessionService {
     await _eventsSubscription?.cancel();
     await _followersSubscription?.cancel();
     await _followeesSubscription?.cancel();
+    await _blockedUsersSubscription?.cancel();
 
     _userSubscription = null;
     _eventsSubscription = null;
     _followersSubscription = null;
     _followeesSubscription = null;
+    _blockedUsersSubscription = null;
   }
 
   @override

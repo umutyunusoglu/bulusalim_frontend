@@ -167,14 +167,14 @@ class _EventCardState extends State<EventCard> {
               },
             ),
             // 2. Paylaş
-            BottomSheetOption(
+            /* BottomSheetOption(
               icon: Icons.share_outlined,
               text: 'Buluşmayı Paylaş',
               onTap: () {
                 logger.info('Buluşma paylaşıldı: ${widget.event.id}');
                 sheetContext.pop();
               },
-            ),
+            ),*/
             // 3. Ayrıl
             BottomSheetOption(
               icon: Icons.exit_to_app_outlined,
