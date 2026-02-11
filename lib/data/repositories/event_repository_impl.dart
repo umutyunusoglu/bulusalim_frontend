@@ -234,7 +234,6 @@ class EventRepositoryImpl implements EventRepository {
           // forceRefresh: true bu işi yapar.
           final enrichedEvents = await getEventsByIds(
             eventIds,
-            loadDetails: true,
             forceRefresh: true,
           );
           return enrichedEvents;

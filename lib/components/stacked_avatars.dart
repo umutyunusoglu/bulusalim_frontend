@@ -56,9 +56,8 @@ class StackedAvatars extends StatelessWidget {
 
                     // Sol pozisyon: Her eleman (Boyut - Overlap) kadar sağa kayar
                     final leftPos = index * (avatarSize - overlap);
-                    final String? avatarUrl = currentUser.imageUrl;
-                    final String defaultAsset =
-                        FileService.defaultProfileImageUrl();
+                    final String avatarUrl = currentUser.imageUrl;
+                    final defaultAsset = FileService.defaultProfileImageUrl();
                     return Positioned(
                       left: leftPos,
                       top: 0,

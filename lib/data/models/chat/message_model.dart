@@ -1,6 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:outnest/data/models/model.dart';
 import 'package:outnest/domain/entities/chat/message_entity.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MessageModel implements Model<MessageEntity> {
   MessageModel({

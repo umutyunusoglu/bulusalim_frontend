@@ -57,7 +57,7 @@ class UploadPost {
     );
 
     final post = PostEntity(
-      postID: "",
+      postID: '',
       creator: creator,
       eventID: currentEvent.eventID,
       caption: caption,

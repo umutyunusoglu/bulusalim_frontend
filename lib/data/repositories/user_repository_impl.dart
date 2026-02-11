@@ -182,7 +182,7 @@ class UserRepositoryImpl implements UserRepository {
 
     // Sorgulama yapabilmek için username'in küçük harf versiyonu şart
 
-    return await _firestore.runTransaction((transaction) async {
+    return _firestore.runTransaction((transaction) async {
       // 1. ADIM: Username daha önce alınmış mı kontrol et
       final usernameQuery = await _firestore
           .collection('users')
@@ -297,7 +297,7 @@ class UserRepositoryImpl implements UserRepository {
 
   @override
   Future<bool> isUserRegistered(String userID) async {
-    final userDoc = await _firestore.collection("users").doc(userID).get();
+    final userDoc = await _firestore.collection('users').doc(userID).get();
 
     if (!userDoc.exists) {
       return false;
@@ -309,8 +309,8 @@ class UserRepositoryImpl implements UserRepository {
     }
 
     bool registerCompleted;
-    if (data["registerCompleted"] != null) {
-      registerCompleted = data["registerCompleted"] as bool;
+    if (data['registerCompleted'] != null) {
+      registerCompleted = data['registerCompleted'] as bool;
     } else {
       registerCompleted = false;
     }
@@ -745,6 +745,7 @@ class UserRepositoryImpl implements UserRepository {
     return doc.exists;
   }
 
+  @override
   Future<List<Follower>> getFollowers(Identifier userID) async {
     _logger.info('Getting followers for user: $userID');
 
@@ -1078,7 +1079,7 @@ class UserRepositoryImpl implements UserRepository {
     String universityName,
     String code,
   ) async {
-    final response = await _functions.httpsCallable("verifyEmailCode").call({
+    final response = await _functions.httpsCallable('verifyEmailCode').call({
       'universityEmail': email,
       'universityName': universityName,
       'otp': code,
@@ -1091,7 +1092,7 @@ class UserRepositoryImpl implements UserRepository {
   Future<void> sendVerificationEmail(
     String email,
   ) async {
-    await _functions.httpsCallable("sendVerificationEmail").call({
+    await _functions.httpsCallable('sendVerificationEmail').call({
       'email': email,
     });
   }

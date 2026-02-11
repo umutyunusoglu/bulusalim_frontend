@@ -1,6 +1,7 @@
 // lib/domain/services/session_service.dart
 
 import 'package:flutter/foundation.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/session_state.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
 
@@ -13,6 +14,7 @@ abstract class SessionService {
 
   /// Anlık state değerine senkron erişim (Snapshot).
   SessionState get currentState;
+  List<EventEntity> get activeEvents;
 
   // --- CONVENIENCE GETTERS (Kolay Erişim) ---
 

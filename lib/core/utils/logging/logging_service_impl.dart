@@ -1,7 +1,7 @@
+import 'package:logger/logger.dart';
 import 'package:outnest/core/constants/configs/logger_config.dart'
     show loggerPrettyPrinterConfig;
 import 'package:outnest/core/utils/logging/logging_service.dart';
-import 'package:logger/logger.dart';
 
 class LoggingServiceImpl implements LoggingService {
   final _logger = Logger(printer: loggerPrettyPrinterConfig);

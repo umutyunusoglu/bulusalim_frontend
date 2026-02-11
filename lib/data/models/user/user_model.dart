@@ -1,12 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
 // GenderEnum importunun doğru olduğundan emin ol
 import 'package:outnest/core/utils/types/enums/gender_enum.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/data/models/model.dart';
-import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserModel extends Model<UserEntity> {
   UserModel({

@@ -341,13 +341,13 @@ class _MapPageState extends State<MapPage> {
             profileImage = fi.image;
           } else {
             profileImage = await _loadAssetImage(
-              "assets/images/default_user.png",
+              'assets/images/default_user.png',
             );
           }
         } catch (e) {
           _logger.warn("Resim indirilemedi, default'a dönülüyor: $e");
           profileImage = await _loadAssetImage(
-            "assets/images/default_user.png",
+            'assets/images/default_user.png',
           );
         }
       }
@@ -519,7 +519,7 @@ class _MapPageState extends State<MapPage> {
   void _applyLocalFilters() {
     if (_isDisposed || !mounted) return;
 
-    final SessionService sessionService = getIt<SessionService>();
+    final sessionService = getIt<SessionService>();
     final currentUser = sessionService.currentUser;
     if (currentUser == null) return;
 
@@ -538,14 +538,13 @@ class _MapPageState extends State<MapPage> {
       final isEventStarted = e.status == EventStatusEnum.ongoing;
       // 2) Zaman filtresi
       final byTime =
-          (_filterTimeRange == null
-              ? true
-              : _isWithinRange(e.startTime, _filterTimeRange!)) ||
+          (_filterTimeRange == null ||
+              _isWithinRange(e.startTime, _filterTimeRange!)) ||
           isEventStarted;
 
       // 3) Kişi filtresi
 
-      bool byPeople = true;
+      var byPeople = true;
       switch (_filterPeople) {
         case VisibilityEnum.everyone:
           byPeople = true;
@@ -639,8 +638,9 @@ class _MapPageState extends State<MapPage> {
     final popupTopNormal = 160.h;
 
     // Konum veya Zaman seçici modundaysak aşağıda dursun
-    final double collapsedHeight =
-        (widget.isLocationPicker || widget.isTimePicker) ? 110.h : 180.h;
+    final collapsedHeight = (widget.isLocationPicker || widget.isTimePicker)
+        ? 110.h
+        : 180.h;
 
     final popupTopCollapsed = size.height - (collapsedHeight + bottomPadding);
 
@@ -998,7 +998,7 @@ class _MapPageState extends State<MapPage> {
         decoration: BoxDecoration(
           color: const Color(0xFFDCEAF7),
           borderRadius: BorderRadius.circular(30.r),
-          border: Border.all(color: Colors.blue.withOpacity(0.3), width: 1),
+          border: Border.all(color: Colors.blue.withOpacity(0.3)),
           boxShadow: const [
             BoxShadow(
               color: Colors.black12,

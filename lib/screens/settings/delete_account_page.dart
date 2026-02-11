@@ -33,7 +33,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     final username = currentUser?.username != null
         ? '@${currentUser!.username}'
         : '@kullanici';
-    final bool hasUrl =
+    final hasUrl =
         profileImageUrl.isNotEmpty && profileImageUrl.startsWith('http');
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
@@ -92,8 +92,6 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                             as ImageProvider,
                   onBackgroundImageError: (_, __) =>
                       debugPrint('Avatar Load Error'),
-                  // Child artık null, çünkü boşsa ikon yerine direkt asset resmini gösteriyoruz
-                  child: null,
                 ),
                 SizedBox(width: 8.w),
                 Text(
@@ -195,7 +193,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
               height: 40.h,
               child: ElevatedButton(
                 onPressed: () {
-                  final UserRepository userRepository = getIt<UserRepository>()
+                  final userRepository = getIt<UserRepository>()
                     ..deleteUser(
                       _selectedReason,
                     );

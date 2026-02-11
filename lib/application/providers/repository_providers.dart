@@ -1,5 +1,6 @@
 // lib/application/providers/repository_providers.dart
 
+import 'package:get_it/get_it.dart';
 import 'package:outnest/data/repositories/chat_repository_impl.dart';
 import 'package:outnest/data/repositories/event_repository_impl.dart';
 import 'package:outnest/data/repositories/feed_repository_impl.dart';
@@ -13,7 +14,6 @@ import 'package:outnest/domain/repositories/feed_repository.dart';
 import 'package:outnest/domain/repositories/map_repository.dart';
 import 'package:outnest/domain/repositories/post_repository.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
-import 'package:get_it/get_it.dart';
 import 'package:outnest/domain/services/draft_post_service.dart';
 
 extension RepositoryModule on GetIt {

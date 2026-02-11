@@ -8,12 +8,6 @@ import 'package:outnest/domain/entities/user/user_entity.dart';
 
 @immutable
 class SessionState {
-  final UserEntity? user;
-  final List<EventEntity> ongoingEvents;
-  final List<EventEntity> upcomingEvents;
-  final List<CompactUserEntity> followers;
-  final List<CompactUserEntity> followees;
-
   const SessionState({
     this.user,
     this.ongoingEvents = const [],
@@ -21,6 +15,11 @@ class SessionState {
     this.followers = const [],
     this.followees = const [],
   });
+  final UserEntity? user;
+  final List<EventEntity> ongoingEvents;
+  final List<EventEntity> upcomingEvents;
+  final List<CompactUserEntity> followers;
+  final List<CompactUserEntity> followees;
 
   // Derived Getters
   int get followerCount => followers.length;

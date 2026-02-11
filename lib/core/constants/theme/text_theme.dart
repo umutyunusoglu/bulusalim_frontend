@@ -1,7 +1,7 @@
 // lib/core/constants/theme/text_theme.dart
 
-import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:flutter/material.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
 
 class AppTextTheme {
   // Light Tema Yazıları (Siyah Ağırlıklı)

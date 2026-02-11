@@ -57,7 +57,6 @@ class _ChangePhoneNumberPageState extends State<ChangePhoneNumberPage> {
         borderRadius: BorderRadius.circular(8.r),
         border: Border.all(
           color: AppColors.dividerColor,
-          width: 1,
         ),
       ),
     );
@@ -75,7 +74,6 @@ class _ChangePhoneNumberPageState extends State<ChangePhoneNumberPage> {
         color: AppColors.lightCloud,
         border: Border.all(
           color: AppColors.secondaryColor.withOpacity(0.3),
-          width: 1,
         ),
       ),
     );
@@ -121,7 +119,7 @@ class _ChangePhoneNumberPageState extends State<ChangePhoneNumberPage> {
             _buildButton(
               text: 'gönder',
               onPressed: () async {
-                String fullPhone = _phoneController.text.replaceAll(
+                var fullPhone = _phoneController.text.replaceAll(
                   ' ',
                   '',
                 ); // +905XXXXXXXXX
@@ -164,9 +162,6 @@ class _ChangePhoneNumberPageState extends State<ChangePhoneNumberPage> {
               defaultPinTheme: defaultPinTheme,
               focusedPinTheme: focusedPinTheme,
               submittedPinTheme: submittedPinTheme,
-              pinputAutovalidateMode: PinputAutovalidateMode.onSubmit,
-              showCursor: true,
-              keyboardType: TextInputType.number,
               cursor: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -190,7 +185,7 @@ class _ChangePhoneNumberPageState extends State<ChangePhoneNumberPage> {
               onPressed: () async {
                 if (_verificationId == null) return;
 
-                String code = _pinController.text;
+                var code = _pinController.text;
                 try {
                   // Yeni eklediğimiz metodu çağırıyoruz
                   await _authService.verifyAndChangePhoneNumber(
@@ -275,7 +270,6 @@ class _ChangePhoneNumberPageState extends State<ChangePhoneNumberPage> {
           borderRadius: BorderRadius.circular(50.r),
           borderSide: const BorderSide(
             color: AppColors.dividerColor,
-            width: 1,
           ),
         ),
         focusedBorder: OutlineInputBorder(
@@ -289,7 +283,6 @@ class _ChangePhoneNumberPageState extends State<ChangePhoneNumberPage> {
           borderRadius: BorderRadius.circular(50.r),
           borderSide: const BorderSide(
             color: AppColors.dividerColor,
-            width: 1,
           ),
         ),
       ),
@@ -349,7 +342,7 @@ class _PhoneNumberFormatter extends TextInputFormatter {
     }
 
     // +90 sonrası sadece rakamları al
-    String digitsOnly = newValue.text
+    var digitsOnly = newValue.text
         .replaceAll('+90 ', '')
         .replaceAll(RegExp(r'\D'), '');
 
@@ -359,8 +352,8 @@ class _PhoneNumberFormatter extends TextInputFormatter {
     }
 
     // Formatlama: +90 5XX XXX XX XX
-    String formatted = '+90 ';
-    for (int i = 0; i < digitsOnly.length; i++) {
+    var formatted = '+90 ';
+    for (var i = 0; i < digitsOnly.length; i++) {
       if (i == 3 || i == 6 || i == 8) {
         formatted += ' ';
       }

@@ -34,7 +34,7 @@ class _DebugVerificationScreenState extends State<DebugVerificationScreen> {
       // Sizin yazdığınız datasource metodunu çağırıyoruz
       final uniNames = await getIt<UniversityDatasource>().getUniversityOfMail(
         email,
-        "Turkiye",
+        'Turkiye',
       );
 
       setState(() {
@@ -44,11 +44,11 @@ class _DebugVerificationScreenState extends State<DebugVerificationScreen> {
         } else {
           _detectedUniversity = null;
           _errorMessage =
-              "Bu e-posta adresi tanınan bir üniversiteye ait değil.";
+              'Bu e-posta adresi tanınan bir üniversiteye ait değil.';
         }
       });
     } catch (e) {
-      _logger("Uni Check Error: $e");
+      _logger('Uni Check Error: $e');
     }
   }
 
@@ -64,7 +64,7 @@ class _DebugVerificationScreenState extends State<DebugVerificationScreen> {
         _emailController.text.trim(),
       );
 
-      _logger("OTP Gönderildi: ${_emailController.text}");
+      _logger('OTP Gönderildi: ${_emailController.text}');
       setState(() => _isCodeSent = true);
     } catch (e) {
       setState(
@@ -89,11 +89,11 @@ class _DebugVerificationScreenState extends State<DebugVerificationScreen> {
         _otpController.text.trim(),
       );
 
-      _logger("Doğrulama Başarılı!");
+      _logger('Doğrulama Başarılı!');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Başarıyla doğrulandı!"),
+            content: Text('Başarıyla doğrulandı!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -107,14 +107,14 @@ class _DebugVerificationScreenState extends State<DebugVerificationScreen> {
     }
   }
 
-  void _logger(String msg) => print("[DEBUG_AUTH]: $msg");
+  void _logger(String msg) => print('[DEBUG_AUTH]: $msg');
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Üniversite Doğrulama Debug")),
+      appBar: AppBar(title: const Text('Üniversite Doğrulama Debug')),
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -131,13 +131,13 @@ class _DebugVerificationScreenState extends State<DebugVerificationScreen> {
                 controller: _emailController,
                 onChanged: _onEmailChanged,
                 decoration: InputDecoration(
-                  labelText: "Üniversite E-postası",
+                  labelText: 'Üniversite E-postası',
                   errorText: _errorMessage,
                   prefixIcon: const Icon(Icons.email),
                   border: const OutlineInputBorder(),
                   helperText: _detectedUniversity != null
-                      ? "Tespit Edildi: $_detectedUniversity"
-                      : "Lütfen .edu uzantılı mailinizi girin",
+                      ? 'Tespit Edildi: $_detectedUniversity'
+                      : 'Lütfen .edu uzantılı mailinizi girin',
                   helperStyle: const TextStyle(
                     color: Colors.green,
                     fontWeight: FontWeight.bold,
@@ -154,11 +154,11 @@ class _DebugVerificationScreenState extends State<DebugVerificationScreen> {
                 ),
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text("DOĞRULAMA KODU GÖNDER"),
+                    : const Text('DOĞRULAMA KODU GÖNDER'),
               ),
             ] else ...[
               Text(
-                "${_emailController.text}\nadresine gönderilen kodu girin.",
+                '${_emailController.text}\nadresine gönderilen kodu girin.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 16),
               ),
@@ -168,7 +168,7 @@ class _DebugVerificationScreenState extends State<DebugVerificationScreen> {
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 24, letterSpacing: 8),
                 decoration: InputDecoration(
-                  labelText: "6 Haneli Kod",
+                  labelText: '6 Haneli Kod',
                   errorText: _errorMessage,
                   border: const OutlineInputBorder(),
                 ),
@@ -185,11 +185,11 @@ class _DebugVerificationScreenState extends State<DebugVerificationScreen> {
                 ),
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text("KODU ONAYLA"),
+                    : const Text('KODU ONAYLA'),
               ),
               TextButton(
                 onPressed: () => setState(() => _isCodeSent = false),
-                child: const Text("E-postayı Düzenle"),
+                child: const Text('E-postayı Düzenle'),
               ),
             ],
           ],
