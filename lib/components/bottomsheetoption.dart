@@ -62,9 +62,15 @@ class CustomActionBottomSheet extends StatelessWidget {
           SizedBox(height: 24.h),
 
           ...options.map((option) {
-            final color = option.isDestructive
+            // 1. Önce varsayılan rengi belirleyelim (Siyah veya Turuncu)
+            var itemColor = option.isDestructive
                 ? AppColors.primaryColor
                 : Colors.black87;
+
+            // 2. Eğer metin "Haritada Gör" içeriyorsa rengi yeşille ezelim
+            if (option.text.contains('Haritada Gör')) {
+              itemColor = const Color(0xFF218B3C);
+            }
 
             return Column(
               children: [
@@ -82,20 +88,21 @@ class CustomActionBottomSheet extends StatelessWidget {
                         Icon(
                           option.icon,
                           size: 24.sp,
-                          color: color,
+                          color: itemColor,
                         ),
                         SizedBox(width: 12.w),
                         Expanded(
                           child: Text(
                             option.text,
-                            style: baseTextStyle.copyWith(color: color),
+                            style: baseTextStyle.copyWith(
+                              color: itemColor,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-                // Son eleman değilse araya 8 birim boşluk koy
                 if (option != options.last) SizedBox(height: 8.h),
               ],
             );
