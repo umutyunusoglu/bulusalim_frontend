@@ -4,7 +4,7 @@ import 'package:get_it/get_it.dart';
 
 extension RepositoryModule on GetIt {
   void registerDatasources() {
-    this.registerLazySingleton<UniversityDatasource>(
+    registerLazySingleton<UniversityDatasource>(
       () => UniversityDataSourceImpl(
         logger: this(),
       ),

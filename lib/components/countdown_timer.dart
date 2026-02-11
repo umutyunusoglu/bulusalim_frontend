@@ -45,7 +45,7 @@ class CountdownTimerState extends State<CountdownTimer> {
 
   String _formatCountdown(DateTime startTime) {
     final now = DateTime.now();
-    final difference = startTime.difference(now);
+    final difference = now.difference(startTime);
 
     // Negatif süre kontrolü (Örn: Etkinlik başladıysa)
     if (difference.isNegative && widget.isEvent) {

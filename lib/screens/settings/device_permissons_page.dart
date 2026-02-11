@@ -5,10 +5,10 @@ import 'package:permission_handler/permission_handler.dart';
 
 class DevicePermissionsPage extends StatefulWidget {
   const DevicePermissionsPage({
-    super.key,
     required this.title,
     required this.description,
     required this.permission,
+    super.key,
   });
   final String title;
   final String description;

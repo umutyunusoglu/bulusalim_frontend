@@ -98,7 +98,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                   fontSize: 10.sp,
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
-                                  height: 1.0,
+                                  height: 1,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -123,7 +123,7 @@ class _NotificationPageState extends State<NotificationPage> {
 
           final notifications = snapshot.data ?? [];
           if (notifications.isEmpty) {
-            return const Center(child: Text("Bildirim yok"));
+            return const Center(child: Text('Bildirim yok'));
           }
 
           // --- GRUPLAMA MANTIĞI ---

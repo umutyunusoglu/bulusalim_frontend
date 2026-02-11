@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:outnest/app_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
@@ -76,14 +77,11 @@ class SettingsPage extends StatelessWidget {
                       Navigator.pop(context);
 
                       // 2. Perform the sign out
-                      await getIt<AuthService>().signOut();
+                      getIt<AuthService>().signOut();
 
                       // 3. Check if the widget is still in the tree before navigating
                       if (context.mounted) {
-                        await Navigator.pushReplacementNamed(
-                          context,
-                          '/welcome',
-                        );
+                        router.go('/welcome');
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -341,7 +339,7 @@ class SettingsPage extends StatelessWidget {
     BuildContext context,
     String profileImageUrl,
   ) {
-    final bool hasUrl =
+    final hasUrl =
         profileImageUrl.isNotEmpty && profileImageUrl.startsWith('http');
 
     return Padding(
@@ -366,8 +364,6 @@ class SettingsPage extends StatelessWidget {
                         as ImageProvider,
               onBackgroundImageError: (_, __) =>
                   debugPrint('Avatar Load Error'),
-              // İkon yerine artık arka planda asset resmi var, o yüzden child null
-              child: null,
             ),
             SizedBox(width: 12.w),
             Text(

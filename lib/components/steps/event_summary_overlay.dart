@@ -30,7 +30,7 @@ class EventSummaryOverlay extends StatelessWidget {
       university: currentUser.university,
     );
 
-    return Container(
+    return ColoredBox(
       color: Colors.black.withOpacity(0.5), // Arka plan karartması
       child: Center(
         child: Column(
@@ -48,7 +48,7 @@ class EventSummaryOverlay extends StatelessWidget {
                 shadows: [
                   Shadow(
                     offset: const Offset(0, 2),
-                    blurRadius: 4.0,
+                    blurRadius: 4,
                     color: Colors.black.withOpacity(0.5),
                   ),
                 ],

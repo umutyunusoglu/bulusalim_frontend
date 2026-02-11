@@ -9,7 +9,7 @@ class MockInboxRepository implements InboxRepository {
     final now = DateTime.now();
 
     const userImage =
-        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=150&auto=format&fit=crop";
+        'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=150&auto=format&fit=crop';
 
     const cinemaImage = userImage;
     final mockNotifications = <NotificationEntity>[
@@ -152,8 +152,8 @@ class MockInboxRepository implements InboxRepository {
   @override
   Stream<List<FollowNotificationEntity>> getFollowRequestsStream() {
     final now = DateTime.now();
-    const String userImage =
-        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=150&auto=format&fit=crop";
+    const userImage =
+        'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=150&auto=format&fit=crop';
 
     final requests = <FollowNotificationEntity>[
       // --- BUGÜN ---

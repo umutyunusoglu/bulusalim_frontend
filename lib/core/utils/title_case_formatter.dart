@@ -10,7 +10,7 @@ class TitleCaseFormatter extends TextInputFormatter {
     if (newValue.text.isEmpty) return newValue;
 
     // Metni kelimelere ayır ve her birinin ilk harfini büyüt
-    final String capitalizedText = newValue.text
+    final capitalizedText = newValue.text
         .split(' ')
         .map((word) {
           if (word.isEmpty) return word;

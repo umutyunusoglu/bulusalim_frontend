@@ -50,10 +50,6 @@ final router = GoRouter(
   initialLocation: '/welcome',
 
   redirect: (context, state) async {
-    final AuthService authService = getIt<AuthService>();
-    final UserRepository userRepository = getIt<UserRepository>();
-    final isLoggedIn = await authService.isUserLoggedIn();
-
     final goingTo = state.uri.toString();
     final isAuthRoute = [
       '/welcome',
@@ -62,6 +58,13 @@ final router = GoRouter(
       '/verification-code-field',
       '/login-verification',
     ].contains(goingTo);
+
+    if (!isAuthRoute) {
+      return null;
+    }
+    final authService = getIt<AuthService>();
+    final userRepository = getIt<UserRepository>();
+    final isLoggedIn = await authService.isUserLoggedIn();
 
     final isRegisterInfo = goingTo == '/register-info';
     final isDebugRoute = goingTo == '/debug';
@@ -128,7 +131,6 @@ final router = GoRouter(
         final extra = state.extra as Map<String, dynamic>?;
         final verificationID = extra?['verificationID'] as String?;
         return OtpVerificationPage(
-          isLogin: false,
           verificationID: verificationID,
         );
       },

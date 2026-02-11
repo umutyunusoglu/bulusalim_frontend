@@ -220,7 +220,7 @@ class EventRepositoryImpl implements EventRepository {
         .collection('users')
         .doc(userId)
         .collection('eventLog')
-        .where('status', whereIn: ['upcoming', 'ongoing'])
+        .where('status', whereIn: ['upcoming', 'ongoing', 'completed'])
         .snapshots()
         .asyncMap((snapshot) async {
           if (snapshot.docs.isEmpty) return [];
@@ -234,7 +234,6 @@ class EventRepositoryImpl implements EventRepository {
           // forceRefresh: true bu işi yapar.
           final enrichedEvents = await getEventsByIds(
             eventIds,
-            loadDetails: true,
             forceRefresh: true,
           );
           return enrichedEvents;
@@ -392,7 +391,7 @@ class EventRepositoryImpl implements EventRepository {
         final creatorId = eventDoc.data()?['creator']?['userID'] as String?;
 
         if (currentCount >= maxParticipants) {
-          throw Exception('Buluşma dolu!');
+          throw Exception('Etkinlik dolu!');
         }
 
         transaction
@@ -426,7 +425,7 @@ class EventRepositoryImpl implements EventRepository {
     try {
       // Önce Creator ID'yi bulmak için eventi çekiyoruz.
       final eventDoc = await _firestore.collection('events').doc(eventId).get();
-      if (!eventDoc.exists) throw Exception('Buluşma bulunamadı');
+      if (!eventDoc.exists) throw Exception('Etkinlik bulunamadı');
 
       final creatorId = eventDoc.data()?['creator']?['userID'] as String?;
 
@@ -478,6 +477,7 @@ class EventRepositoryImpl implements EventRepository {
       final participantRef = eventRef
           .collection('participants')
           .doc(user.userID);
+
       final rejectedUsersRef = eventRef
           .collection('rejectedUsers')
           .doc(user.userID);
@@ -495,19 +495,25 @@ class EventRepositoryImpl implements EventRepository {
         final currentCount = (eventDoc.data()?['participantCount'] ?? 0) as int;
         final creatorId = eventDoc.data()?['creator']?['userID'] as String?;
 
+        final newParticipantCount = currentCount - 1;
+
+        transaction.delete(participantRef);
+
+        if (newParticipantCount <= 0) {
+          transaction.delete(eventRef);
+        } else {
+          transaction.update(eventRef, {
+            'participantCount': newParticipantCount,
+          });
+        }
+
         transaction
-          ..delete(participantRef)
-          ..update(eventRef, {
-            'participantCount': currentCount > 0 ? currentCount - 1 : 0,
-          })
           ..set(userEventLogRef, {
             'status': UserEventStatusEnum.rejected.toString(),
             'updatedAt': FieldValue.serverTimestamp(),
           }, SetOptions(merge: true))
           ..set(rejectedUsersRef, user.toMap());
 
-        // --- TRIGGER ---
-        // Kurucu, katılımcıyı attığında listeden düştüğünü görmeli
         if (creatorId != null) {
           _triggerCreatorRefresh(transaction, null, creatorId, eventId);
         }
@@ -696,7 +702,6 @@ class EventRepositoryImpl implements EventRepository {
     throw UnimplementedError();
   }
 
-  @override
   Stream<List<UserEventEntity>> getUserEventsStream(Identifier userId) {
     return _firestore
         .collection('users')
