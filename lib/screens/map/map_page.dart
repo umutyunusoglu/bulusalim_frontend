@@ -85,6 +85,7 @@ class _MapPageState extends State<MapPage> {
   VisibilityEnum? _tempVisibility;
   PointAnnotation? _pickingMarker;
   String? _currentUserImageUrl;
+  bool? _tempShowOnMap;
 
   // --- MAPBOX ---
   late MapboxMap mapboxMap;
@@ -292,12 +293,17 @@ class _MapPageState extends State<MapPage> {
         _loadedEventIds.remove(event.eventID);
         return;
       }
+      if (event.location == null) {
+        _loadedEventIds.remove(event.eventID);
+        return;
+      }
+
       final annotation = await pointAnnotationManager!.create(
         PointAnnotationOptions(
           geometry: Point(
             coordinates: Position(
-              event.location.longitude,
-              event.location.latitude,
+              event.location!.longitude,
+              event.location!.latitude,
             ),
           ),
           image: customMarkerIcon,
@@ -616,12 +622,13 @@ class _MapPageState extends State<MapPage> {
   }
 
   void _flyToEvent(EventEntity event) {
+    if (event.location == null) return;
     mapboxMap.flyTo(
       CameraOptions(
         center: Point(
           coordinates: Position(
-            event.location.longitude,
-            event.location.latitude,
+            event.location!.longitude,
+            event.location!.latitude,
           ),
         ),
         padding: MbxEdgeInsets(top: 0, left: 0, bottom: 250.h, right: 0),
@@ -985,7 +992,10 @@ class _MapPageState extends State<MapPage> {
           onClose: _closeWizard,
           onNext: (v, g, h) => {
             _tempVisibility = VisibilityEnum.fromTurkishUI(v),
-            setState(() => _createEventStep = 4),
+            _tempShowOnMap = !h,
+            setState(
+              () => _createEventStep = 4,
+            ),
           },
         );
       case 4: // İsim
@@ -1093,6 +1103,7 @@ class _MapPageState extends State<MapPage> {
         precision: 7,
       ),
       visibility: _tempVisibility ?? VisibilityEnum.everyone,
+      showOnMap: _tempShowOnMap ?? true,
     );
   }
 
@@ -1150,6 +1161,7 @@ class _MapPageState extends State<MapPage> {
       isLocked: false,
       geohash: geohash,
       visibility: _tempVisibility ?? VisibilityEnum.everyone,
+      showOnMap: _tempShowOnMap ?? true,
     );
     await eventRepository.createEvent(event);
     _closeWizard();
