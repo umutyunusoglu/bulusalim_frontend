@@ -73,6 +73,7 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
                 child: CupertinoDatePicker(
                   initialDateTime: initialDateTime,
                   mode: CupertinoDatePickerMode.time,
+                  minimumDate: DateTime.now(),
                   use24hFormat: true,
                   onDateTimeChanged: (DateTime newDate) {
                     setState(() {

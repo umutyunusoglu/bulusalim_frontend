@@ -7,10 +7,22 @@ class CompactUserEntity extends Equatable {
     required this.username,
     required this.profileImageUrl,
     required this.university,
+    required this.fullname,
+    required this.isPrivate,
+    required this.bio,
   });
   factory CompactUserEntity.fromMap(Map<String, dynamic> map) {
     if (map.containsKey('university') == false) {
       map['university'] = null;
+    }
+    if (map.containsKey('bio') == false) {
+      map['bio'] = null;
+    }
+    if (map.containsKey('nameSurname') == false) {
+      map['nameSurname'] = null;
+    }
+    if (map.containsKey('isPrivate') == false) {
+      map['isPrivate'] = null;
     }
 
     return CompactUserEntity(
@@ -18,6 +30,9 @@ class CompactUserEntity extends Equatable {
       username: map['username'] as String,
       profileImageUrl: map['profileImageUrl'] as String,
       university: map['university'] as String?,
+      fullname: map['fullname'] as String?,
+      isPrivate: map['isPrivate'] as bool?,
+      bio: map['bio'] as String?,
     );
   }
 
@@ -26,12 +41,18 @@ class CompactUserEntity extends Equatable {
     String? username,
     String? profileImageUrl,
     String? university,
+    String? fullname,
+    bool? isPrivate,
+    String? bio,
   }) {
     return CompactUserEntity(
       userID: userID ?? this.userID,
       username: username ?? this.username,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       university: university ?? this.university,
+      fullname: fullname ?? this.fullname,
+      isPrivate: isPrivate ?? this.isPrivate,
+      bio: bio ?? this.bio,
     );
   }
 
@@ -41,6 +62,9 @@ class CompactUserEntity extends Equatable {
       'username': username,
       'profileImageUrl': profileImageUrl,
       'university': university ?? '',
+      'fullname': fullname,
+      'isPrivate': isPrivate,
+      'bio': bio ?? '',
     };
   }
 
@@ -50,5 +74,12 @@ class CompactUserEntity extends Equatable {
   final Identifier userID;
   final String username;
   final String profileImageUrl;
+
+  //For Profile
+  final String? fullname;
+  final bool? isPrivate;
+  final String? bio;
+
+  //University might not be verified
   final String? university;
 }

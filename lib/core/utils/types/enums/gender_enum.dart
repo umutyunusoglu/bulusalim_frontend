@@ -23,7 +23,7 @@ enum GenderEnum {
       case 'preferNotToSay' || 'belirtmek istemiyorum':
         return preferNotToSay;
       default:
-        throw ArgumentError('Unknown gender: $value');
+        return preferNotToSay;
     }
   }
 }

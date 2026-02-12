@@ -11,7 +11,8 @@ import 'package:outnest/domain/entities/user/user_hobby_entity.dart';
 
 abstract class UserRepository {
   // === User CRUD ===
-  Future<UserEntity?> getUser(Identifier userID);
+  Future<UserEntity?> getCurrentUser(Identifier userID);
+  Future<CompactUserEntity?> getUserPublicData(Identifier userID);
   Stream<UserEntity?> watchUser(String id);
   Future<void> createUser(UserEntity user);
   Future<void> updateUser(
