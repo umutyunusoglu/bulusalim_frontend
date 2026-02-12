@@ -43,7 +43,7 @@ class SecurityServiceImpl implements SecurityService {
     if (currentUserID == null || reportedUserID == null) return;
 
     final userRepository = getIt<UserRepository>();
-    final blockedUser = await userRepository.getUser(reportedUserID);
+    final blockedUser = await userRepository.getCurrentUser(reportedUserID);
     if (blockedUser == null) return;
 
     await _firestore
@@ -127,7 +127,10 @@ class SecurityServiceImpl implements SecurityService {
             userID: doc['userID'] as String,
             username: doc['username'] as String,
             profileImageUrl: doc['profileImageUrl'] as String,
-            university: '',
+            university: null,
+            fullname: null,
+            isPrivate: null,
+            bio: null,
           ),
         )
         .toList();

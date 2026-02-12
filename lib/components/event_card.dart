@@ -288,6 +288,9 @@ class _EventCardState extends State<EventCard> {
       username: widget.event.creator.username,
       profileImageUrl: widget.event.creator.profileImageUrl,
       university: widget.event.creator.university,
+      fullname: null,
+      isPrivate: null,
+      bio: null,
     );
 
     showModalBottomSheet(
@@ -322,6 +325,9 @@ class _EventCardState extends State<EventCard> {
           username: currentUser.username,
           profileImageUrl: currentUser.profileImageUrl,
           university: currentUser.university,
+          fullname: null,
+          isPrivate: null,
+          bio: null,
         ),
       );
 
@@ -331,6 +337,9 @@ class _EventCardState extends State<EventCard> {
           username: currentUser.username,
           profileImageUrl: currentUser.profileImageUrl,
           university: currentUser.university,
+          fullname: null,
+          isPrivate: null,
+          bio: null,
         ),
       );
     } catch (e) {

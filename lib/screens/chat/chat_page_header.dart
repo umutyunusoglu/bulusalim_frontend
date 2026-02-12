@@ -370,6 +370,9 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
       username: widget.event.creator.username,
       profileImageUrl: widget.creatorProfileImage,
       university: widget.event.creator.university,
+      fullname: null,
+      isPrivate: null,
+      bio: null,
     );
 
     showModalBottomSheet(
