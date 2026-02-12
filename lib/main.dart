@@ -68,6 +68,7 @@ Future<void> main() async {
       androidProvider: AndroidProvider.debug,
       appleProvider: AppleProvider.debug,
     );
+
     /*
     FirebaseFirestore.instance.useFirestoreEmulator(
       AppConfig.host,

@@ -188,6 +188,9 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
         username: currentUser.username,
         profileImageUrl: currentUser.profileImageUrl,
         university: currentUser.university,
+        fullname: null,
+        isPrivate: null,
+        bio: null,
       );
       eventRepository.removeParticipant(widget.eventID, compactUser);
     }
