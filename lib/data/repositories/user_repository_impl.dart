@@ -21,6 +21,8 @@ import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:outnest/domain/services/auth_service.dart';
+import 'package:outnest/domain/services/session_service.dart';
 
 class UserRepositoryImpl implements UserRepository {
   UserRepositoryImpl({
@@ -38,9 +40,18 @@ class UserRepositoryImpl implements UserRepository {
 
   // === User CRUD ===
   @override
-  Future<UserEntity?> getUser(Identifier userID) async {
+  Future<UserEntity?> getCurrentUser(Identifier userID) async {
     try {
       final uid = userID;
+
+      final currentUserID = getIt<SessionService>().currentUser?.userID;
+      if (currentUserID == null) {
+        return null;
+      }
+
+      if (currentUserID != uid) {
+        throw Exception("You can't access other people's data!");
+      }
 
       final userDocSnapshot = await _firestore
           .collection('users')
@@ -98,6 +109,32 @@ class UserRepositoryImpl implements UserRepository {
       );
     } on Exception catch (e) {
       _logger.error('User Repository Error: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<CompactUserEntity?> getUserPublicData(Identifier userID) async {
+    try {
+      // await kullanarak verinin gelmesini bekliyoruz
+      final doc = await _firestore
+          .collection('public_users')
+          .doc(userID.toString())
+          .get();
+
+      if (!doc.exists) {
+        _logger.info('Public user not found: $userID');
+        return null;
+      }
+
+      final data = doc.data();
+      if (data == null) return null;
+
+      return CompactUserEntity.fromMap(data);
+    } catch (e) {
+      _logger.error(
+        'Error fetching/parsing public user data for userID: $userID, error: $e',
+      );
       return null;
     }
   }
@@ -818,7 +855,7 @@ class UserRepositoryImpl implements UserRepository {
       'Sending follow request from user: $fromUserID to user: $toUserID',
     );
 
-    final fromUser = await getUser(fromUserID);
+    final fromUser = await getCurrentUser(fromUserID);
     if (fromUser == null) {
       _logger.error('From user not found: $fromUserID');
       return;
@@ -1039,6 +1076,7 @@ class UserRepositoryImpl implements UserRepository {
         .update({'status': status});
   }
 
+  //TODO: israfın amına koymak bu
   @override
   Future<int> getCompletedEventCount(Identifier userID) async {
     _logger.info('Getting completed event count for user: $userID');

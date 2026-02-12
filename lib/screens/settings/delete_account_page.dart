@@ -1,8 +1,11 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
+import 'package:outnest/app_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
+import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +20,8 @@ class DeleteAccountPage extends StatefulWidget {
 
 class _DeleteAccountPageState extends State<DeleteAccountPage> {
   String? _selectedReason;
+  // Yükleme durumunu takip etmek için değişken
+  bool _isLoading = false;
 
   final List<String> _reasons = [
     'Uygulamadan memnun kalmadım',
@@ -25,6 +30,37 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     'Teknik sorunlar',
     'Diğer',
   ];
+
+  // Hesabı silme fonksiyonu
+  Future<void> _handleDeleteAccount() async {
+    // Eğer zaten yükleniyorsa tekrar basılmasını engelle
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final userRepository = getIt<UserRepository>();
+
+      // Silme işlemini bekle
+      await userRepository.deleteUser(_selectedReason);
+
+      if (mounted) {
+        router.go("/welcome");
+      }
+    } catch (e) {
+      // Hata olursa yüklemeyi durdur ve logla
+      debugPrint("Hesap silinirken hata oluştu: $e");
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        // İsterseniz burada bir SnackBar ile hata mesajı gösterebilirsiniz.
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +71,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
         : '@kullanici';
     final hasUrl =
         profileImageUrl.isNotEmpty && profileImageUrl.startsWith('http');
+
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       appBar: _buildAppBar(),
@@ -83,7 +120,6 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                 CircleAvatar(
                   radius: 20.r,
                   backgroundColor: AppColors.dividerColor,
-                  // URL varsa CachedNetworkImageProvider, yoksa senin varsayılan asset resmin
                   backgroundImage: hasUrl
                       ? CachedNetworkImageProvider(
                           fixEmulatorUrl(profileImageUrl),
@@ -163,11 +199,14 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                       ),
                     );
                   }).toList(),
-                  onChanged: (newValue) {
-                    setState(() {
-                      _selectedReason = newValue;
-                    });
-                  },
+                  onChanged: _isLoading
+                      ? null
+                      : (newValue) {
+                          // Yüklenirken seçimi engelle
+                          setState(() {
+                            _selectedReason = newValue;
+                          });
+                        },
                 ),
               ),
             ),
@@ -192,31 +231,38 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
               width: 173.w,
               height: 40.h,
               child: ElevatedButton(
-                onPressed: () {
-                  final userRepository = getIt<UserRepository>()
-                    ..deleteUser(
-                      _selectedReason,
-                    );
-
-                  //TODO: Ana ekrana dönüp oturumu kapat
-                },
+                // Yükleniyorsa onPressed null olur (tıklanamaz), değilse fonksiyon çalışır
+                onPressed: _isLoading ? null : _handleDeleteAccount,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
+                  // Yüklenirken buton rengini biraz soluklaştırabilirsiniz
+                  disabledBackgroundColor: AppColors.primaryColor.withOpacity(
+                    0.6,
+                  ),
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24.r),
                   ),
                 ),
-                child: Text(
-                  'hesabı sil',
-                  style: TextStyle(
-                    fontFamily: 'SF Pro Display',
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                ),
+                child: _isLoading
+                    ? SizedBox(
+                        height: 20.h,
+                        width: 20.h,
+                        child: const CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text(
+                        'hesabı sil',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Display',
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
+                      ),
               ),
             ),
             SizedBox(height: 40.h),
@@ -236,7 +282,8 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
           color: AppColors.iconColor,
           size: 20.sp,
         ),
-        onPressed: () => Navigator.pop(context),
+        // Yüklenirken geri gitmeyi de engelleyebiliriz
+        onPressed: _isLoading ? null : () => Navigator.pop(context),
       ),
       title: Text(
         'Hesabı Sil',

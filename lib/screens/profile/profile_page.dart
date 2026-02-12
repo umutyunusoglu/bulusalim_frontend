@@ -170,7 +170,7 @@ class _ProfilePageState extends State<ProfilePage> {
       final userRepository = getIt<UserRepository>();
       final eventRepository = getIt<EventRepository>();
 
-      final user = await userRepository.getUser(widget.profileUserID);
+      final user = await userRepository.getUserPublicData(widget.profileUserID);
 
       final userEventsEnrolled = await userRepository.getUserEventLog(
         widget.profileUserID,
@@ -203,6 +203,7 @@ class _ProfilePageState extends State<ProfilePage> {
       final commonFollows = <CompactUserEntity>[];
 
       //Todo: optimize
+
       if (widget.profileUserID != currentUser?.userID) {
         for (final follower in myFollowers) {
           final isFollowing = await userRepository.isFollowing(
@@ -258,13 +259,13 @@ class _ProfilePageState extends State<ProfilePage> {
 
       setState(() {
         _username = user.username;
-        _fullName = user.nameSurname;
+        _fullName = user.fullname ?? '';
         _bio = user.bio ?? '';
         _school = user.university ?? 'Üniversite Doğrulanmadı';
         _avatarUrl = user.profileImageUrl;
 
         _isFollowing = isFollowing;
-        _isPrivateAccount = isPrivate;
+        _isPrivateAccount = isPrivate ?? false;
         _hasSentFollowRequest = hasSentFollowRequest;
 
         numberOfFollowers = followerCount;
