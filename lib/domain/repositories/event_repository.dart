@@ -10,11 +10,10 @@ abstract class EventRepository {
   Future<void> createEvent(EventEntity event);
   Future<void> updateEvent(String eventId, Map<String, dynamic> changes);
   Future<void> deleteEvent(Identifier eventId);
-  Future<EventEntity?> getEvent(Identifier eventId, {bool loadDetails = true});
+  Future<EventEntity?> getEvent(Identifier eventId);
   Future<List<EventEntity>> getEventsByIds(
-    List<Identifier> eventIds, {
-    bool loadDetails = true,
-  });
+    List<Identifier> eventIds,
+  );
   Future<EventEntity> enrichEventWithDetails(EventEntity event);
 
   Stream<List<EventEntity>> getEnrichedEventsOfUserStream(Identifier userId);
