@@ -9,6 +9,7 @@ import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/data/models/event/event_messages_model.dart';
 import 'package:outnest/data/models/event/event_model.dart';
+import 'package:outnest/data/models/user/pinned_post_model.dart';
 import 'package:outnest/data/models/user/user_event_model.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/feed/event/event_messages_entity.dart';
@@ -17,6 +18,7 @@ import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/entities/user/user_event_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/services/global_content_cache.dart';
+import 'package:outnest/domain/services/session_service.dart';
 
 class EventRepositoryImpl implements EventRepository {
   EventRepositoryImpl({
@@ -66,13 +68,77 @@ class EventRepositoryImpl implements EventRepository {
   @override
   Future<void> createEvent(EventEntity event) async {
     try {
+      final batch = _firestore.batch();
+
+      // 1. Referanslar
       final docRef = _firestore.collection('events').doc();
       final eventId = docRef.id;
+
       final userEventLogRef = _firestore
           .collection('users')
           .doc(event.creator.userID)
           .collection('eventLog')
           .doc(eventId);
+      final creatorParticipantRef = _firestore
+          .collection('events')
+          .doc(eventId)
+          .collection('participants')
+          .doc(event.creator.userID);
+      final sensitiveRef = _firestore
+          .collection('events')
+          .doc(eventId)
+          .collection('sensitive')
+          .doc('meta');
+
+      // Creator Entity Hazırlığı
+      final creatorAsParticipant = CompactUserEntity(
+        userID: event.creator.userID,
+        username: event.creator.username,
+        profileImageUrl: event.creator.profileImageUrl,
+        university: event.creator.university,
+      );
+
+      Geolocation? publicLocation;
+      String publicGeohash = '';
+
+      // Eğer haritada gösterilmesin denmişse (false),
+      // Location verisini NULL yapıyoruz. Böylece harita render edemez.
+      if (event.showOnMap == true && event.location != null) {
+        publicLocation = event.location;
+        publicGeohash = event.geohash;
+      } else {
+        publicLocation = null; // Haritadan silinir
+        publicGeohash = ''; // Aramadan silinir
+      }
+
+      // --- PUBLIC MODEL (Ana Doküman) ---
+      final publicEntity = event.copyWith(
+        eventID: eventId,
+        participantCount: 1,
+        participants: [creatorAsParticipant],
+
+        // Filtrelenmiş verileri basıyoruz:
+        location: publicLocation,
+        geohash: publicGeohash,
+      );
+
+      final publicModel = EventModel.fromEntity(publicEntity);
+
+      // --- SENSITIVE DATA (Yedek/Gerçek Veri) ---
+      // Haritada gizlense bile (showOnMap=false), verinin aslı burada durur.
+      // İleride detay sayfasında göstermek istersen buradan çekersin.
+      final sensitiveData = {
+        'realLocation': event.location != null
+            ? GeoPoint(event.location!.latitude, event.location!.longitude)
+            : null,
+        'realAddress': event.address, // Adresi de buraya yedekliyoruz
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      // --- BATCH COMMIT ---
+      batch.set(docRef, publicModel.toFirestore());
+      batch.set(sensitiveRef, sensitiveData);
+      batch.set(creatorParticipantRef, creatorAsParticipant.toMap());
 
       final userEvent = UserEventEntity(
         eventId: eventId,
@@ -80,40 +146,13 @@ class EventRepositoryImpl implements EventRepository {
         status: UserEventStatusEnum.upcoming,
         updatedAt: DateTime.now(),
       );
-
-      // Creator'ı hem Subcollection'a hem de Ana Dökümana ekliyoruz.
-      final eventWithId = event.copyWith(
-        eventID: eventId,
-        participantCount: 1,
-        participants: [
-          CompactUserEntity(
-            userID: event.creator.userID,
-            username: event.creator.username,
-            profileImageUrl: event.creator.profileImageUrl,
-            university: event.creator.university,
-            fullname: null,
-            isPrivate: null,
-            bio: null,
-          ),
-        ],
+      batch.set(
+        userEventLogRef,
+        UserEventModel.fromEntity(userEvent).toFirestore(),
       );
 
-      final eventModel = EventModel.fromEntity(eventWithId);
-      final userEventModel = UserEventModel.fromEntity(userEvent);
-
-      final creatorRef = _firestore
-          .collection('events')
-          .doc(eventId)
-          .collection('participants')
-          .doc(event.creator.userID);
-
-      final batch = _firestore.batch()
-        ..set(docRef, eventModel.toFirestore())
-        ..set(creatorRef, event.creator.toMap())
-        ..set(userEventLogRef, userEventModel.toFirestore());
-
       await batch.commit();
-      _logger.info('Event created with ID: $eventId');
+      _logger.info('Event created: $eventId. ShowOnMap: ${event.showOnMap}');
     } catch (e) {
       _logger.error('Failed to create event: $e');
       rethrow;
@@ -239,14 +278,75 @@ class EventRepositoryImpl implements EventRepository {
             eventIds,
             forceRefresh: true,
           );
-          return enrichedEvents;
+
+          final currentUserId = getIt<SessionService>().currentUser?.userID;
+
+          final finalEvents = await Future.wait(
+            enrichedEvents.map((event) async {
+              return await _injectSensitiveDataIfAuthorized(
+                event,
+                currentUserId,
+              );
+            }),
+          );
+          return finalEvents;
         });
+  }
+
+  /// Yardımcı Metod: Yetki kontrolü yapar ve gerekiyorsa hassas veriyi çeker
+  Future<EventEntity> _injectSensitiveDataIfAuthorized(
+    EventEntity event,
+    String? currentUserId,
+  ) async {
+    // Yetki Kontrolü:
+    // 1. Kullanıcı Creator mı?
+    final isCreator = event.creator.userID == currentUserId;
+    // 2. Kullanıcı Katılımcı mı?
+    final isParticipant = event.participants.any(
+      (p) => p.userID == currentUserId,
+    );
+
+    final hasAccess = isCreator || isParticipant;
+
+    // Eğer yetkisi yoksa, mevcut (kısıtlı/gizli) halini döndür
+    if (!hasAccess) {
+      return event;
+    }
+
+    // YETKİ VAR: Sensitive (Hassas) veriyi çek
+    try {
+      final sensitiveDoc = await _firestore
+          .collection('events')
+          .doc(event.eventID)
+          .collection('sensitive')
+          .doc('meta')
+          .get();
+
+      if (sensitiveDoc.exists && sensitiveDoc.data() != null) {
+        // Model'deki static helper ile veriyi parse et
+        final sensitiveData = EventModel.parseSensitiveData(
+          sensitiveDoc.data()!,
+        );
+
+        // Entity'yi gerçek verilerle güncelle (Merge)
+        return event.copyWith(
+          address: sensitiveData['address'] as String?,
+          location: sensitiveData['location'] as Geolocation?,
+        );
+      }
+    } catch (e) {
+      _logger.warn(
+        'Sensitive data fetch failed for event ${event.eventID}: $e',
+      );
+      // Hata olsa bile etkinliğin kısıtlı halini dönmek daha güvenli (Fail-safe)
+    }
+
+    return event;
   }
 
   @override
   Future<List<EventEntity>> getEventsByIds(
     List<Identifier> eventIds, {
-    bool loadDetails = true,
     bool forceRefresh = false,
   }) async {
     if (eventIds.isEmpty) return Future.value([]);
@@ -260,18 +360,13 @@ class EventRepositoryImpl implements EventRepository {
           .map((doc) => EventModel.fromFirestore(doc.data()).toEntity())
           .toList();
 
-      if (loadDetails) {
-        // Parametreyi aşağıya iletiyoruz
-        final enrichedEvents = await Future.wait(
-          data.map(
-            (event) =>
-                enrichEventWithDetails(event, forceRefresh: forceRefresh),
-          ),
-        );
-        return enrichedEvents;
-      } else {
-        return data;
-      }
+      final enrichedEvents = await Future.wait(
+        data.map(
+          (event) => enrichEventWithDetails(event, forceRefresh: forceRefresh),
+        ),
+      );
+
+      return enrichedEvents;
     } catch (e) {
       _logger.error('Failed to get events by IDs: $e');
       rethrow;
@@ -279,10 +374,7 @@ class EventRepositoryImpl implements EventRepository {
   }
 
   @override
-  Future<EventEntity?> getEvent(
-    Identifier eventId, {
-    bool loadDetails = true,
-  }) async {
+  Future<EventEntity?> getEvent(Identifier eventId) async {
     try {
       final doc = await _firestore.collection('events').doc(eventId).get();
 
@@ -291,11 +383,12 @@ class EventRepositoryImpl implements EventRepository {
       final eventModel = EventModel.fromFirestore(doc.data()!);
       final eventEntity = eventModel.toEntity();
 
-      if (!loadDetails) {
-        return eventEntity;
-      }
-
-      return await enrichEventWithDetails(eventEntity);
+      final enrichedEvent = await enrichEventWithDetails(eventEntity);
+      final finalEvent = await _injectSensitiveDataIfAuthorized(
+        enrichedEvent,
+        getIt<SessionService>().currentUser?.userID,
+      );
+      return finalEvent;
     } catch (e) {
       _logger.error('Failed to fetch event: $e');
       rethrow;
