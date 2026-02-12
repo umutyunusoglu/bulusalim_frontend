@@ -160,10 +160,14 @@ class SecurityServiceImpl implements SecurityService {
       final resizedImage = img.copyResize(image, width: 224, height: 224);
 
       // 2. Görseli modelin beklediği Float32 formatına dönüştür
-      final input = _preprocessImage(resizedImage);
+      final Float32List inputAsFloat = _preprocessImage(resizedImage);
 
-      // 3. Çıktı için yer ayır [1, 4] -> (drawings, neutral, porn, sexy)
-      final output = List<double>.filled(1 * 4, 0).reshape([1, 4]);
+      // 2. ÖNEMLİ: Veriyi [1, 224, 224, 3] şekline sok
+      // Float32List'i modelin beklediği 4 boyutlu yapıya zorluyoruz
+      final input = inputAsFloat.reshape([1, 224, 224, 3]);
+
+      // 3. Çıktı kısmını da reshape et
+      var output = List<double>.filled(4, 0).reshape([1, 4]);
 
       // 4. Modeli çalıştır
       _nswfImageModel!.run(input, output);

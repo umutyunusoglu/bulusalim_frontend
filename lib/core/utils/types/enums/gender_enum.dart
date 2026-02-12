@@ -9,17 +9,18 @@ enum GenderEnum {
   final String value;
 
   @override
-  String toString() => value.toLowerCase();
+  String toString() => value;
 
   static GenderEnum fromString(String value) {
-    switch (value) {
-      case 'male':
+    final lowercase = value.toLowerCase().trim();
+    switch (lowercase) {
+      case 'male' || 'erkek':
         return male;
-      case 'female':
+      case 'female' || 'kadın':
         return female;
-      case 'other':
+      case 'other' || 'diğer':
         return other;
-      case 'preferNotToSay':
+      case 'preferNotToSay' || 'belirtmek istemiyorum':
         return preferNotToSay;
       default:
         throw ArgumentError('Unknown gender: $value');
