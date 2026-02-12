@@ -62,6 +62,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _genderController = TextEditingController(
       text: user?.gender.toString() ?? '',
     );
+
     _dobController = TextEditingController(
       text: user?.birthDate != null
           ? '${user!.birthDate.day} ${_getMonthName(user.birthDate.month)} ${user.birthDate.year}'
