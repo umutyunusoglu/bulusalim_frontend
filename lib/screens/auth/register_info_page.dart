@@ -121,20 +121,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
       final name = _nameController.text.trim();
       final dob = _selectedDate!;
       GenderEnum gender;
-
-      switch (_genderDisplayController.text.trim().toLowerCase()) {
-        case 'kadın':
-          gender = GenderEnum.female;
-        case 'erkek':
-          gender = GenderEnum.male;
-
-        case 'belirtmek istemiyorum':
-          gender = GenderEnum.other;
-        case 'özel':
-          gender = GenderEnum.preferNotToSay;
-        default:
-          gender = GenderEnum.preferNotToSay;
-      }
+      gender = GenderEnum.fromString(_genderDisplayController.text);
 
       final interests = _selectedInterests;
       final File? profilePhoto; // Fotoğraf seçme işlemi eklenmeli.
