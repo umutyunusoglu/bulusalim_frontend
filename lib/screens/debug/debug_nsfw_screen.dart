@@ -50,7 +50,7 @@ class _NsfwDebugScreenState extends State<NsfwDebugScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("NSFW Model Debugger")),
+      appBar: AppBar(title: const Text('NSFW Model Debugger')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -68,7 +68,7 @@ class _NsfwDebugScreenState extends State<NsfwDebugScreen> {
                 ),
               )
             else
-              const Center(child: Text("Lütfen bir fotoğraf seçin")),
+              const Center(child: Text('Lütfen bir fotoğraf seçin')),
 
             const SizedBox(height: 20),
 
@@ -78,14 +78,14 @@ class _NsfwDebugScreenState extends State<NsfwDebugScreen> {
               ElevatedButton.icon(
                 onPressed: _pickAndAnalyze,
                 icon: const Icon(Icons.photo_library),
-                label: const Text("Galeriden Seç ve Analiz Et"),
+                label: const Text('Galeriden Seç ve Analiz Et'),
               ),
 
             const SizedBox(height: 30),
 
             if (_isSafe != null) ...[
               Text(
-                _isSafe! ? "DURUM: GÜVENLİ ✅" : "DURUM: RİSKLİ ❌",
+                _isSafe! ? 'DURUM: GÜVENLİ ✅' : 'DURUM: RİSKLİ ❌',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -94,13 +94,13 @@ class _NsfwDebugScreenState extends State<NsfwDebugScreen> {
               ),
               const Divider(height: 40),
               const Text(
-                "Model Tahminleri (Eşik Değerleri)",
+                'Model Tahminleri (Eşik Değerleri)',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
               // Eğer SecurityServiceImpl'da results'ı dışarı açtıysan buraya ProgressBar'lar eklenebilir.
-              _buildScoreBar("Porn", 0.4), // Örnek eşik gösterimi
-              _buildScoreBar("Sexy", 0.8),
+              _buildScoreBar('Porn', 0.4), // Örnek eşik gösterimi
+              _buildScoreBar('Sexy', 0.8),
             ],
           ],
         ),
@@ -114,7 +114,7 @@ class _NsfwDebugScreenState extends State<NsfwDebugScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("$label (Threshold: $threshold)"),
+          Text('$label (Threshold: $threshold)'),
           LinearProgressIndicator(value: threshold, color: Colors.orange),
         ],
       ),
