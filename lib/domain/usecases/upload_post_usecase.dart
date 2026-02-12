@@ -8,6 +8,7 @@ import 'package:outnest/domain/entities/hobby/hobby_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/post_repository.dart';
 import 'package:outnest/domain/services/file_service.dart';
+import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 
 class UploadPost {
@@ -16,15 +17,18 @@ class UploadPost {
     required PostRepository postRepository,
     required FileService fileService,
     required SessionService sessionService,
+    required SecurityService securityService,
   }) : _logger = logger,
        _postRepository = postRepository,
        _fileService = fileService,
-       _sessionService = sessionService;
+       _sessionService = sessionService,
+       _securityService = securityService;
 
   final LoggingService _logger;
   final PostRepository _postRepository;
   final FileService _fileService;
   final SessionService _sessionService;
+  final SecurityService _securityService;
 
   Future<PostEntity> call(
     EventEntity currentEvent,
@@ -39,6 +43,15 @@ class UploadPost {
     if (files.isNotEmpty) {
       for (final file in files) {
         final postname = file.path.split('/').last;
+
+        final isSafe = await _securityService.isImageSafe(file);
+
+        if (!isSafe) {
+          throw Exception(
+            'Image has unsafe content! Please contact us if there is any mistake.',
+          );
+        }
+
         final url = await _fileService.uploadFile(
           file,
           '${FileService.privateUsers}/${_sessionService.currentUser!.userID}/posts/images/$postname',
