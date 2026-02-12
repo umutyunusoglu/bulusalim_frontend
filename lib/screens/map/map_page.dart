@@ -429,6 +429,17 @@ class _MapPageState extends State<MapPage> {
   // --- MAP INIT ---
   Future<void> _onMapCreated(MapboxMap mapboxMap) async {
     this.mapboxMap = mapboxMap;
+
+    mapboxMap.compass.updateSettings(CompassSettings(enabled: false));
+
+    // Mapbox logosunu gizle
+    mapboxMap.logo.updateSettings(LogoSettings(enabled: false));
+
+    // Bilgi (i) butonunu gizle
+    mapboxMap.attribution.updateSettings(AttributionSettings(enabled: false));
+
+    // Ölçek çubuğunu gizle
+    mapboxMap.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
     await mapboxMap.gestures.updateSettings(
       GesturesSettings(
         scrollEnabled: true,
@@ -678,7 +689,8 @@ class _MapPageState extends State<MapPage> {
                   zoom: 13,
                 ),
                 onMapCreated: _onMapCreated,
-                styleUri: MapboxStyles.MAPBOX_STREETS,
+                styleUri:
+                    "mapbox://styles/outnestdev/cmldktm5b002o01r0bnvqdjgu",
                 onTapListener: _onMapBackgroundClick,
                 onCameraChangeListener: _onCameraChangeListener,
               ),
