@@ -430,16 +430,22 @@ class _MapPageState extends State<MapPage> {
   Future<void> _onMapCreated(MapboxMap mapboxMap) async {
     this.mapboxMap = mapboxMap;
 
-    mapboxMap.compass.updateSettings(CompassSettings(enabled: false));
+    unawaited(
+      mapboxMap.compass.updateSettings(CompassSettings(enabled: false)),
+    );
 
     // Mapbox logosunu gizle
-    mapboxMap.logo.updateSettings(LogoSettings(enabled: false));
+    unawaited(mapboxMap.logo.updateSettings(LogoSettings(enabled: false)));
 
     // Bilgi (i) butonunu gizle
-    mapboxMap.attribution.updateSettings(AttributionSettings(enabled: false));
+    unawaited(
+      mapboxMap.attribution.updateSettings(AttributionSettings(enabled: false)),
+    );
 
     // Ölçek çubuğunu gizle
-    mapboxMap.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
+    unawaited(
+      mapboxMap.scaleBar.updateSettings(ScaleBarSettings(enabled: false)),
+    );
     await mapboxMap.gestures.updateSettings(
       GesturesSettings(
         scrollEnabled: true,
@@ -696,7 +702,7 @@ class _MapPageState extends State<MapPage> {
               ),
             ),
             if (!_isCreatePopupVisible &&
-                !_isCardVisible &&
+                //  !_isCardVisible &&
                 !widget.isLocationPicker &&
                 !widget.isTimePicker)
               Positioned(
@@ -742,7 +748,7 @@ class _MapPageState extends State<MapPage> {
               ),
             // 2. KATEGORİ BAR
             if (!_isCreatePopupVisible &&
-                !_isCardVisible &&
+                //!_isCardVisible &&
                 !widget.isLocationPicker &&
                 !widget.isTimePicker)
               Positioned(
@@ -1107,6 +1113,9 @@ class _MapPageState extends State<MapPage> {
       username: currentUser.username,
       profileImageUrl: currentUser.profileImageUrl,
       university: currentUser.university,
+      fullname: currentUser.nameSurname,
+      isPrivate: currentUser.isPrivate,
+      bio: currentUser.bio,
     );
     final geohash = GeoHasher().encode(
       _tempLocation!.longitude,

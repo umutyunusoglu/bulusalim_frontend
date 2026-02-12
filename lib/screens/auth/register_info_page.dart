@@ -651,6 +651,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
             ),
 
             // 9. ARKADAŞLARINI EKLE
+            /*
             RegisterStepView(
               title: 'Arkadaşlarını Ekle',
               onNext: _nextPage,
@@ -677,7 +678,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
                 ],
               ),
             ),
-
+            */
             // 10. CİHAZ İZİNLERİ
             RegisterStepView(
               title: 'Cihaz İzinleri',
