@@ -33,6 +33,7 @@ class EventModel extends Model<EventEntity> {
     required this.isLocked,
     required this.geohash,
     required this.visibility,
+    required this.showOnMap,
   });
 
   @override
@@ -59,23 +60,35 @@ class EventModel extends Model<EventEntity> {
       isLocked: entity.isLocked,
       geohash: entity.geohash,
       visibility: entity.visibility,
+      showOnMap: entity.showOnMap,
     );
   }
 
   @override
   factory EventModel.fromFirestore(Map<String, dynamic> doc) {
-    final geolocation = doc['location'] as GeoPoint;
-    final location = Geolocation(
-      latitude: geolocation.latitude,
-      longitude: geolocation.longitude,
-    );
+    Geolocation? location;
+    String? geohash = doc['geohash'] as String?;
 
-    final geohasher = GeoHasher();
-    final geohash = geohasher.encode(
-      location.longitude,
-      location.latitude,
-      precision: 7,
-    );
+    if (doc['location'] != null) {
+      final geolocation = doc['location'] as GeoPoint;
+      location = Geolocation(
+        latitude: geolocation.latitude,
+        longitude: geolocation.longitude,
+      );
+
+      // Eğer geohash yoksa ama location varsa hesapla (Fallback)
+      if (geohash == null) {
+        final geohasher = GeoHasher();
+        geohash = geohasher.encode(
+          location.longitude,
+          location.latitude,
+          precision: 7,
+        );
+      }
+    }
+
+    // 2. Address kontrolü
+    final String? address = doc['address'] as String?;
 
     final creator = EventParticipantEntity.fromMap(
       doc['creator'] as Map<String, dynamic>,
@@ -131,12 +144,13 @@ class EventModel extends Model<EventEntity> {
       endTime: (doc['endTime'] as Timestamp?)?.toDate(),
       location: location,
       displayAddress: doc['displayAddress'] as String,
-      address: doc['address'] as String,
+      address: address,
       createdAt: (doc['createdAt'] as Timestamp).toDate(),
       updatedAt: (doc['updatedAt'] as Timestamp).toDate(),
       isLocked: (doc['isLocked'] as bool?) ?? false,
-      geohash: geohash,
+      geohash: geohash ?? '',
       visibility: visibility,
+      showOnMap: (doc['showOnMap'] as bool?) ?? false,
     );
   }
 
@@ -163,18 +177,24 @@ class EventModel extends Model<EventEntity> {
       'rejectedUsers': rejectedUsersMaps,
       'startTime': startTime,
       'endTime': endTime,
-      'location': GeoPoint(
-        location.latitude,
-        location.longitude,
-      ),
       'displayAddress': displayAddress,
-      'address': address,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
       'isLocked': isLocked,
       'geohash': geohash,
       'feedType': 'event',
       'visibility': visibility.toString(),
+      'showOnMap': showOnMap,
+    };
+  }
+
+  Map<String, dynamic> toPrivateFirestore() {
+    return {
+      'address': address,
+      'location': location != null
+          ? GeoPoint(location!.latitude, location!.longitude)
+          : null,
+      'updatedAt': FieldValue.serverTimestamp(),
     };
   }
 
@@ -201,7 +221,34 @@ class EventModel extends Model<EventEntity> {
       isLocked: isLocked,
       geohash: geohash,
       visibility: visibility,
+      showOnMap: showOnMap,
     );
+  }
+
+  static Map<String, dynamic> parseSensitiveData(Map<String, dynamic> doc) {
+    Geolocation? realLocation;
+    if (doc['realLocation'] != null) {
+      final geo = doc['realLocation'] as GeoPoint;
+      realLocation = Geolocation(
+        latitude: geo.latitude,
+        longitude: geo.longitude,
+      );
+    }
+
+    return {
+      'address': doc['realAddress'] as String?,
+      'location': realLocation,
+    };
+  }
+
+  Map<String, dynamic> toSensitiveFirestore() {
+    return {
+      'realAddress': address, // Entity'deki gerçek adres
+      'realLocation': location != null
+          ? GeoPoint(location!.latitude, location!.longitude)
+          : null, // Entity'deki gerçek konum
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
   }
 
   final Identifier eventId;
@@ -217,13 +264,13 @@ class EventModel extends Model<EventEntity> {
   final List<CompactUserEntity> rejectedUsers;
   final DateTime startTime;
   final DateTime? endTime;
-  final Geolocation location;
+  final Geolocation? location;
   final String displayAddress;
-  final String address;
+  final String? address;
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isLocked;
   final VisibilityEnum visibility;
-
   final String geohash;
+  final bool showOnMap;
 }

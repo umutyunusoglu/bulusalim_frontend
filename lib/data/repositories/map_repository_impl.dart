@@ -91,6 +91,7 @@ class MapRepositoryImpl implements MapRepository {
         futures.add(
           _firestore
               .collection('events')
+              .where('showOnMap', isEqualTo: true)
               .orderBy('geohash')
               .startAt([parentHash])
               .endAt([endHash])
@@ -110,6 +111,7 @@ class MapRepositoryImpl implements MapRepository {
               final eventModel = EventModel.fromFirestore(
                 doc.data()! as Map<String, dynamic>,
               );
+
               eventsToEnrich.add(eventModel.toEntity());
             } catch (e) {
               _logger.error('MapRepo Parse Error: $e');
