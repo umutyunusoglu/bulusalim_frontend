@@ -14,6 +14,7 @@ extension UseCaseModule on GetIt {
           postRepository: this(),
           sessionService: this(),
           logger: this(),
+          securityService: this(),
         ),
       )
       ..registerLazySingleton<ForceStartEvent>(
@@ -32,6 +33,7 @@ extension UseCaseModule on GetIt {
         () => UploadProfilePicture(
           fileService: this(),
           loggingService: this(),
+          securityService: this(),
         ),
       )
       ..registerLazySingleton<SendEventInvitation>(
