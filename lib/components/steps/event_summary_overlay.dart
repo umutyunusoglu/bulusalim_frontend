@@ -28,6 +28,9 @@ class EventSummaryOverlay extends StatelessWidget {
       username: currentUser.username,
       profileImageUrl: currentUser.profileImageUrl,
       university: currentUser.university,
+      fullname: null,
+      isPrivate: null,
+      bio: null,
     );
 
     return ColoredBox(

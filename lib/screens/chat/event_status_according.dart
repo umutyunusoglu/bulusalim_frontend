@@ -153,6 +153,9 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
       username: user.username,
       profileImageUrl: user.imageUrl,
       university: user.university,
+      fullname: null,
+      isPrivate: null,
+      bio: null,
     );
 
     try {
@@ -194,6 +197,9 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
         username: user.username,
         profileImageUrl: user.imageUrl,
         university: user.university,
+        fullname: null,
+        isPrivate: null,
+        bio: null,
       );
 
       await _eventRepository.removeParticipant(
