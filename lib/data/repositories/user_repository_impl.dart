@@ -361,7 +361,7 @@ class UserRepositoryImpl implements UserRepository {
   @override
   Future<bool> doesUsernameExist(String username) async {
     final querySnapshot = await _firestore
-        .collection('users')
+        .collection('public_users')
         .where('username', isEqualTo: username)
         .get();
 
