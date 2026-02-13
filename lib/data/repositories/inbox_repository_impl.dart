@@ -122,8 +122,8 @@ class InboxRepositoryImpl implements InboxRepository {
       title: (data['title'] as String?) ?? '',
       message: (data['message'] as String?) ?? (data['body'] as String?) ?? '',
       actionText: data['actionText'] as String?,
-      avatarUrl:
-          (data['avatarUrl'] as String?) ??
+      profileImageUrl:
+          (data['profileImageUrl'] as String?) ??
           FileService.defaultProfileImageUrl(),
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       isRead: (data['isRead'] as bool?) ?? false,
@@ -154,7 +154,7 @@ class InboxRepositoryImpl implements InboxRepository {
       userID: id,
       username: (data['username'] as String?) ?? 'Kullanıcı',
       profileImageUrl:
-          (data['profileUrl'] as String?) ??
+          (data['profileImageUrl'] as String?) ??
           FileService.defaultProfileImageUrl(),
       status: status,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),

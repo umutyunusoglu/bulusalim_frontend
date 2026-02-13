@@ -112,7 +112,7 @@ class SecurityServiceImpl implements SecurityService {
             username: doc['username'] as String,
             profileImageUrl: doc['profileImageUrl'] as String,
             university: null,
-            fullname: null,
+            nameSurname: null,
             isPrivate: null,
             bio: null,
           ),
@@ -146,7 +146,9 @@ class SecurityServiceImpl implements SecurityService {
       OrtEnv.instance.init();
 
       // Model dosyasını assetlerden oku
-      final rawAssetFile = await rootBundle.load('assets/nsfw/model.onnx');
+      final rawAssetFile = await rootBundle.load(
+        'assets/nsfw/small_model.onnx',
+      );
       final bytes = rawAssetFile.buffer.asUint8List();
 
       final sessionOptions = OrtSessionOptions();

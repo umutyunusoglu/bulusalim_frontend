@@ -5,7 +5,7 @@ import 'package:outnest/domain/services/file_service.dart';
 
 class SmallStackedAvatars extends StatelessWidget {
   const SmallStackedAvatars({
-    required this.avatarUrls,
+    required this.profileImageUrls,
     super.key,
     this.size = 28,
     this.overlap = 10,
@@ -13,7 +13,7 @@ class SmallStackedAvatars extends StatelessWidget {
     this.borderWidth = 1.5,
   });
 
-  final List<String> avatarUrls;
+  final List<String> profileImageUrls;
   final double size;
   final double overlap;
   final Color borderColor;
@@ -22,7 +22,7 @@ class SmallStackedAvatars extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // En fazla 3 avatar göster
-    final items = avatarUrls.take(3).toList();
+    final items = profileImageUrls.take(3).toList();
 
     // Toplam genişlik hesabı: (Adet * (Boyut - Örtüşme)) + Örtüşme
     // Örn: 3 resim, 24 boyut, 10 örtüşme -> (3 * 14) + 10 = 52 genişlik

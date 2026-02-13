@@ -67,7 +67,7 @@ class UploadPost {
       username: currentUser.username,
       profileImageUrl: currentUser.profileImageUrl,
       university: currentUser.university,
-      fullname: currentUser.nameSurname,
+      nameSurname: currentUser.nameSurname,
       isPrivate: currentUser.isPrivate,
       bio: currentUser.bio,
     );

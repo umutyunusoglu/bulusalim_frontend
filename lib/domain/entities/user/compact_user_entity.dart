@@ -7,7 +7,7 @@ class CompactUserEntity extends Equatable {
     required this.username,
     required this.profileImageUrl,
     required this.university,
-    required this.fullname,
+    required this.nameSurname,
     required this.isPrivate,
     required this.bio,
   });
@@ -30,7 +30,7 @@ class CompactUserEntity extends Equatable {
       username: map['username'] as String,
       profileImageUrl: map['profileImageUrl'] as String,
       university: map['university'] as String?,
-      fullname: map['fullname'] as String?,
+      nameSurname: map['nameSurname'] as String?,
       isPrivate: map['isPrivate'] as bool?,
       bio: map['bio'] as String?,
     );
@@ -41,7 +41,7 @@ class CompactUserEntity extends Equatable {
     String? username,
     String? profileImageUrl,
     String? university,
-    String? fullname,
+    String? nameSurname,
     bool? isPrivate,
     String? bio,
   }) {
@@ -50,7 +50,7 @@ class CompactUserEntity extends Equatable {
       username: username ?? this.username,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       university: university ?? this.university,
-      fullname: fullname ?? this.fullname,
+      nameSurname: nameSurname ?? this.nameSurname,
       isPrivate: isPrivate ?? this.isPrivate,
       bio: bio ?? this.bio,
     );
@@ -62,7 +62,7 @@ class CompactUserEntity extends Equatable {
       'username': username,
       'profileImageUrl': profileImageUrl,
       'university': university ?? '',
-      'fullname': fullname,
+      'nameSurname': nameSurname,
       'isPrivate': isPrivate,
       'bio': bio ?? '',
     };
@@ -76,7 +76,7 @@ class CompactUserEntity extends Equatable {
   final String profileImageUrl;
 
   //For Profile
-  final String? fullname;
+  final String? nameSurname;
   final bool? isPrivate;
   final String? bio;
 

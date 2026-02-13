@@ -224,11 +224,11 @@ class _ChatPageState extends State<ChatPage> {
                     ).format(message.createdAt);
 
                     String? username;
-                    String? avatarUrl;
+                    String? profileImageUrl;
 
                     if (!isMe) {
                       username = message.username;
-                      avatarUrl = message.profileImageUrl;
+                      profileImageUrl = message.profileImageUrl;
                     }
 
                     return Column(
@@ -240,7 +240,7 @@ class _ChatPageState extends State<ChatPage> {
                           time: timeString,
                           isCurrentUser: isMe,
                           username: username,
-                          userAvatarUrl: avatarUrl,
+                          userprofileImageUrl: profileImageUrl,
                         ),
                       ],
                     );

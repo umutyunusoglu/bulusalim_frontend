@@ -18,7 +18,7 @@ class MockInboxRepository implements InboxRepository {
         type: NotificationType.join,
         title: 'Bizimle beraber tracking yapmak ister misiniz???',
         message: 'buluşmasına katıldı.',
-        avatarUrl: userImage,
+        profileImageUrl: userImage,
         createdAt: now.subtract(const Duration(minutes: 46)),
       ),
       NotificationEntity(
@@ -26,7 +26,7 @@ class MockInboxRepository implements InboxRepository {
         title: 'yarkin.yoruk',
         message: 'seni Sinema Gecesi buluşmasına çağırıyor.',
         actionText: 'Buluşma kartını görüntüle.',
-        avatarUrl: userImage,
+        profileImageUrl: userImage,
         createdAt: now.subtract(const Duration(hours: 1)),
       ),
       NotificationEntity(
@@ -34,7 +34,7 @@ class MockInboxRepository implements InboxRepository {
         title: 'Katıldığın Sinema Gecesi',
         message: 'buluşması iptal edildi.',
         actionText: 'film temalı başka etkinliklere göz at.',
-        avatarUrl: userImage,
+        profileImageUrl: userImage,
         createdAt: now.subtract(const Duration(hours: 1, minutes: 10)),
       ),
 
@@ -43,21 +43,21 @@ class MockInboxRepository implements InboxRepository {
         type: NotificationType.updateTime,
         title: 'Katıldığın Sinema Gecesi',
         message: 'buluşmasının zamanı 25 Aralık 20.00 olarak güncellendi.',
-        avatarUrl: cinemaImage,
+        profileImageUrl: cinemaImage,
         createdAt: now.subtract(const Duration(hours: 24)),
       ),
       NotificationEntity(
         type: NotificationType.updateLocation,
         title: 'Katıldığın Sinema Gecesi',
         message: 'buluşmasının konumu Kült Kavaklıdere olarak güncellendi.',
-        avatarUrl: cinemaImage,
+        profileImageUrl: cinemaImage,
         createdAt: now.subtract(const Duration(hours: 25)),
       ),
       NotificationEntity(
         type: NotificationType.updateLocation,
         title: 'Katıldığın Sinema Gecesi',
         message: 'buluşmasının konumu Kült Kavaklıdere olarak güncellendi.',
-        avatarUrl: cinemaImage,
+        profileImageUrl: cinemaImage,
         createdAt: now.subtract(
           const Duration(hours: 26),
         ), // Tekrar eden bildirim örneği
@@ -66,28 +66,28 @@ class MockInboxRepository implements InboxRepository {
         type: NotificationType.warning,
         title: '',
         message: 'Gönderdiğin şikayet alındı ve süreç ile ilgileniyoruz.',
-        avatarUrl: '',
+        profileImageUrl: '',
         createdAt: now.subtract(const Duration(hours: 27)),
       ),
       NotificationEntity(
         type: NotificationType.tag,
         title: 'yarkin.yoruk',
         message: 'seni katıldığın Sinema Gecesi gönderisine etiketledi.',
-        avatarUrl: userImage,
+        profileImageUrl: userImage,
         createdAt: now.subtract(const Duration(days: 1)),
       ),
       NotificationEntity(
         type: NotificationType.badgeProgress,
         title: 'ABC rozetini kazanmak',
         message: 'sadece 2 🏃 koşu uzağında hemen buluşma oluştur ya da katıl.',
-        avatarUrl: '', // Rozet alanı
+        profileImageUrl: '', // Rozet alanı
         createdAt: now.subtract(const Duration(days: 1, hours: 2)),
       ),
       NotificationEntity(
         type: NotificationType.badgeWin,
         title: 'ABC rozetini kazandın!',
         message: 'Başarını görüntüle.',
-        avatarUrl: '', // Rozet alanı
+        profileImageUrl: '', // Rozet alanı
         createdAt: now.subtract(const Duration(days: 1, hours: 3)),
       ),
       NotificationEntity(
@@ -95,14 +95,14 @@ class MockInboxRepository implements InboxRepository {
         title: 'Katıldığın Sinema Gecesi',
         message:
             'buluşmasının yeni katılımcıları var. Kimlerin katıldığını gör.',
-        avatarUrl: userImage,
+        profileImageUrl: userImage,
         createdAt: now.subtract(const Duration(days: 2)),
       ),
       NotificationEntity(
         type: NotificationType.left,
         title: 'Katıldığın Sinema Gecesi',
         message: 'buluşmasından ayrılanlar var. Kimlerin ayrıldığını gör.',
-        avatarUrl: userImage,
+        profileImageUrl: userImage,
         createdAt: now.subtract(const Duration(days: 2, hours: 1)),
       ),
       NotificationEntity(
@@ -110,14 +110,14 @@ class MockInboxRepository implements InboxRepository {
         title: 'Sinema Gecesi',
         message:
             'buluşmasının süresi dolmak üzere. Çektiğin fotoğrafları paylaşmak için son 15 dakika!',
-        avatarUrl: userImage,
+        profileImageUrl: userImage,
         createdAt: now.subtract(const Duration(days: 2, hours: 4)),
       ),
       NotificationEntity(
         type: NotificationType.created,
         title: 'yarkin.yoruk',
         message: 'Çay buluşmasını oluşturdu. İlgini çekebilir.',
-        avatarUrl: userImage,
+        profileImageUrl: userImage,
         createdAt: now.subtract(const Duration(days: 3)),
       ),
       NotificationEntity(
@@ -125,14 +125,14 @@ class MockInboxRepository implements InboxRepository {
         title: 'Katıldığın Çay',
         message:
             'buluşmasının başlamasına 1 saat kaldı. Buluşmaya katılmayı unutma!',
-        avatarUrl: userImage,
+        profileImageUrl: userImage,
         createdAt: now.subtract(const Duration(days: 3, hours: 1)),
       ),
       NotificationEntity(
         type: NotificationType.earlyStart,
         title: 'Katıldığın Çay',
         message: 'buluşması saatinden erken başlatıldı. Buluşmayı kaçırma!',
-        avatarUrl: userImage,
+        profileImageUrl: userImage,
         createdAt: now.subtract(const Duration(days: 3, hours: 2)),
       ),
     ];
