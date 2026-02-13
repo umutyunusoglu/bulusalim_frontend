@@ -1,5 +1,5 @@
-import java.util.Properties
 import java.io.FileInputStream
+import java.util.Properties
 
 plugins {
     
@@ -22,12 +22,13 @@ dependencies {
     // When using the BoM, you don't specify versions in Firebase library dependencies
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-appcheck-playintegrity")
-    implementation ("com.google.android.recaptcha:recaptcha:18.5.1")
+    implementation("com.google.android.recaptcha:recaptcha:18.5.1")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
 
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
+
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
@@ -40,11 +41,18 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-        isCoreLibraryDesugaringEnabled = true   
+        isCoreLibraryDesugaringEnabled = true
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+    kotlinOptions { jvmTarget = JavaVersion.VERSION_11.toString() }
+
+    signingConfigs {
+        create("release") {
+            keyAlias = keystoreProperties["keyAlias"] as String
+            keyPassword = keystoreProperties["keyPassword"] as String
+            storeFile = keystoreProperties["storeFile"]?.let { file(it) }
+            storePassword = keystoreProperties["storePassword"] as String
+        }
     }
 
 
@@ -58,16 +66,17 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // TODO: Specify your own unique Application ID
+        // (https://developer.android.com/studio/build/application-id.html).
         applicationId = "app.outnest"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 26
         targetSdk = 35
-        versionCode = 9
-        versionName = "1.0.7"
+        versionCode = 10
+        versionName = "1.0.8"
         multiDexEnabled = true
-   }
+    }
 
     buildTypes {
         release {
@@ -78,6 +87,4 @@ android {
     }
 }
 
-flutter {
-    source = "../.."
-}
+flutter { source = "../.." }
