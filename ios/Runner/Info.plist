@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Profil fotoğrafı çekebilmeniz için kameraya erişmemiz gerekiyor.</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.social-networking</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -48,8 +52,6 @@
 	<string>Çevredeki etkinlik cihazlarıyla bağlantı kurabilmek için Bluetooth izni gerekiyor.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>Çevredeki etkinlik cihazlarıyla bağlantı kurabilmek için Bluetooth izni gerekiyor.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Profil fotoğrafınızı çekebilmek ve etkinliklerde fotoğraf paylaşabilmek için kameraya erişim izni gerekiyor.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Size en yakın etkinlikleri ve toplulukları gösterebilmek için konum izni gerekiyor.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
