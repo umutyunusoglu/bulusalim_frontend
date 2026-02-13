@@ -312,6 +312,7 @@ class PostRepositoryImpl implements PostRepository {
     try {
       await batch.commit();
     } catch (e) {
+      _logger.error('Failed to add emote to post: $e');
       rethrow;
     }
   }
