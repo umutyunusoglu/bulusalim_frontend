@@ -2,6 +2,7 @@ import java.io.FileInputStream
 import java.util.Properties
 
 plugins {
+    
     id("com.android.application")
     // START: FlutterFire Configuration
     id("com.google.gms.google-services")
@@ -44,6 +45,16 @@ android {
     }
 
     kotlinOptions { jvmTarget = JavaVersion.VERSION_11.toString() }
+
+    signingConfigs {
+        create("release") {
+            keyAlias = keystoreProperties["keyAlias"] as String
+            keyPassword = keystoreProperties["keyPassword"] as String
+            storeFile = keystoreProperties["storeFile"]?.let { file(it) }
+            storePassword = keystoreProperties["storePassword"] as String
+        }
+    }
+
 
     signingConfigs {
         create("release") {
