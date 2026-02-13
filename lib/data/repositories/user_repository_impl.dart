@@ -701,29 +701,29 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Future<void> addFollowee(
-    Identifier userID,
-    Followee followee,
-  ) async {
-    _logger.info('Adding followee for user: $userID');
+  Future<void> addFollowee(Identifier userID, Followee followee) async {
+    final batch = _firestore.batch();
 
-    final followeeData = {
-      'userID': followee.userID,
-      'username': followee.username,
-      'profileImageUrl': followee.profileImageUrl,
-      'createdAt': Timestamp.fromDate(followee.createdAt),
-    };
-
-    await _firestore
+    final followeeRef = _firestore
         .collection('users')
         .doc(userID)
         .collection('followees')
-        .doc(followee.userID)
-        .set(followeeData);
+        .doc(followee.userID);
 
-    await _firestore.collection('users').doc(userID).update({
-      'followeeCount': FieldValue.increment(1),
-    });
+    final userRef = _firestore.collection('users').doc(userID);
+
+    batch
+      ..set(followeeRef, {
+        'userID': followee.userID,
+        'username': followee.username,
+        'profileImageUrl': followee.profileImageUrl,
+        'createdAt': Timestamp.fromDate(followee.createdAt),
+      })
+      ..update(userRef, {
+        'followeeCount': FieldValue.increment(1),
+      });
+
+    await batch.commit();
   }
 
   @override
@@ -732,6 +732,7 @@ class UserRepositoryImpl implements UserRepository {
     Identifier followeeID,
   ) async {
     _logger.info('Removing followee for user: $userID');
+    final batch = _firestore.batch();
 
     await _firestore
         .collection('users')

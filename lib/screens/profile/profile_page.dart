@@ -334,10 +334,13 @@ class _ProfilePageState extends State<ProfilePage> {
     final currentUser = sessionService.currentUser;
     if (currentUser == null) return;
 
+    // 1. Durumu hemen değiştir (Optimistic Update)
+    final previousState = _isFollowing;
     setState(() => _isFollowing = !_isFollowing);
 
     try {
       if (_isFollowing) {
+        // Takip Etme İşlemi
         final me = Follower(
           userID: currentUser.userID,
           username: currentUser.username,
@@ -351,25 +354,42 @@ class _ProfilePageState extends State<ProfilePage> {
           createdAt: DateTime.now(),
         );
 
-        await Future.wait([
-          userRepository.addFollowee(currentUser.userID, target),
-          userRepository.addFollower(widget.profileUserID, me),
-        ]);
+        // Bekleyerek yapalım ki hata varsa catch'e düşsün
+        await userRepository.addFollowee(currentUser.userID, target);
+        await userRepository.addFollower(widget.profileUserID, me);
+
+        // Takipçi sayısını manuel artır (UI anlık güncellensin)
+        setState(() => numberOfFollowers++);
       } else {
-        await Future.wait([
-          userRepository.removeFollowee(
-            currentUser.userID,
-            widget.profileUserID,
-          ),
-          userRepository.removeFollower(
-            widget.profileUserID,
-            currentUser.userID,
-          ),
-        ]);
+        // Takibi Bırakma İşlemi
+        await userRepository.removeFollowee(
+          currentUser.userID,
+          widget.profileUserID,
+        );
+        await userRepository.removeFollower(
+          widget.profileUserID,
+          currentUser.userID,
+        );
+
+        // Takipçi sayısını manuel azalt
+        setState(() => numberOfFollowers--);
       }
     } catch (e) {
+      // 2. Hata olursa durumu eski haline döndür
+      debugPrint("Takip işlemi başarısız: $e");
       if (mounted) {
-        setState(() => _isFollowing = !_isFollowing);
+        setState(() {
+          _isFollowing = previousState;
+          // Sayacı da eski haline döndür
+          _isFollowing ? numberOfFollowers++ : numberOfFollowers--;
+        });
+
+        // Kullanıcıya hata bildirimi
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('İşlem başarısız oldu, lütfen tekrar deneyin.'),
+          ),
+        );
       }
     }
   }
@@ -853,7 +873,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 Expanded(
                   child: LoginButton(
                     label: _isFollowing
-                        ? 'takip ediyorsun'
+                        ? 'takibi bırak' // 'takip ediyorsun' yerine 'takibi bırak' yazarsan kullanıcı bastığını anlar
                         : (_isPrivateAccount && _hasSentFollowRequest)
                         ? 'istek gönderildi'
                         : 'takip et',
