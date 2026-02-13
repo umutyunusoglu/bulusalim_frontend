@@ -1,12 +1,16 @@
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/stacked_avatars.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
+import 'package:outnest/domain/repositories/feed_repository.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/services/file_service.dart';
+import 'package:outnest/domain/services/push_notifications_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/scaffold_with_navbar.dart';
 import 'package:outnest/screens/auth/login_page.dart';
@@ -63,6 +67,7 @@ final router = GoRouter(
     if (!isAuthRoute) {
       return null;
     }
+
     final authService = getIt<AuthService>();
     final userRepository = getIt<UserRepository>();
     final isLoggedIn = await authService.isUserLoggedIn();
@@ -87,9 +92,23 @@ final router = GoRouter(
       if (isUserRegistered) {
         // Kullanıcı kayıtlı ve ana uygulamaya girmek istiyor.
         // Eğer hala auth sayfalarındaysa /home'a at, değilse (yani zaten içerdeyse) gitmek istediği yere izin ver.
+
+        final pushService = getIt<PushNotificationsService>();
+        final sessionService = getIt<SessionService>();
+        await pushService.initialize();
+        await sessionService.init();
+        try {
+          final feedRepository = getIt<FeedRepository>();
+          await feedRepository.warmup();
+        } catch (e, stack) {
+          if (kDebugMode) debugPrint('Feed warmup hatası: $e');
+          await FirebaseCrashlytics.instance.recordError(e, stack);
+        }
+
         if (isAuthRoute || isRegisterInfo) {
           return '/home';
         }
+
         return null; // Mevcut rotasına devam etmesine izin ver (örn: /chat, /profile vs.)
       } else {
         // Kaydı tamam değilse ve register-info'da değilse oraya zorla

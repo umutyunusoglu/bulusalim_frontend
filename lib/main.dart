@@ -117,8 +117,6 @@ Future<void> main() async {
   await FirebaseAuth.instance.initializeRecaptchaConfig();
   final sessionService = getIt<SessionService>();
   final pushService = getIt<PushNotificationsService>();
-  await pushService.initialize();
-  await sessionService.init();
 
   await GoogleSignIn.instance.initialize();
 
@@ -131,12 +129,6 @@ Future<void> main() async {
 
   final feedRepository = getIt<FeedRepository>();
   // Warmup işlemi hata verirse uygulama açılışını engellemesin diye try-catch bloğu eklenebilir
-  try {
-    await feedRepository.warmup();
-  } catch (e, stack) {
-    if (kDebugMode) debugPrint('Feed warmup hatası: $e');
-    await FirebaseCrashlytics.instance.recordError(e, stack);
-  }
 
   getIt<UniversityDatasource>().initialize();
 
