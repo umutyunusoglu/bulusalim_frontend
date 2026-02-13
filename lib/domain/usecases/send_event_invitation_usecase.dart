@@ -14,7 +14,7 @@ class SendEventInvitation {
   Future<String?> call({
     required String toID,
     required String toUsername,
-    required String toAvatarUrl,
+    required String toprofileImageUrl,
     required String eventID,
     required String eventName,
   }) async {
@@ -23,7 +23,7 @@ class SendEventInvitation {
         {
           'toID': toID,
           'toUsername': toUsername,
-          'toAvatarUrl': toAvatarUrl,
+          'toprofileImageUrl': toprofileImageUrl,
           'eventID': eventID,
           'eventName': eventName,
         },

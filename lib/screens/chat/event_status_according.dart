@@ -153,7 +153,7 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
       username: user.username,
       profileImageUrl: user.imageUrl,
       university: user.university,
-      fullname: null,
+      nameSurname: null,
       isPrivate: null,
       bio: null,
     );
@@ -197,7 +197,7 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
         username: user.username,
         profileImageUrl: user.imageUrl,
         university: user.university,
-        fullname: null,
+        nameSurname: null,
         isPrivate: null,
         bio: null,
       );

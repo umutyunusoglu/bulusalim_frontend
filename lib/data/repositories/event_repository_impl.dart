@@ -96,7 +96,7 @@ class EventRepositoryImpl implements EventRepository {
         username: event.creator.username,
         profileImageUrl: event.creator.profileImageUrl,
         university: event.creator.university,
-        fullname: null,
+        nameSurname: null,
         isPrivate: null,
         bio: null,
       );

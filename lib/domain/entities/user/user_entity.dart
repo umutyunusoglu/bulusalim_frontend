@@ -45,7 +45,6 @@ class UserEntity extends Equatable {
     String? universityEmail,
     bool? isUniversityVerified,
     String? profileImageUrl,
-    String? avatarUrl,
     String? bio,
     String? phoneNumber,
     String? instagram,

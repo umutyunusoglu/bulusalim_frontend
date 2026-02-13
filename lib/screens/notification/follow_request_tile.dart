@@ -70,14 +70,14 @@ class FollowRequestTile extends StatelessWidget {
             final targetUserID = item.userID;
             final currentUser = sessionService.currentUser;
 
-            final targetUser = await userRepository.getCurrentUser(
+            final targetUser = await userRepository.getUserPublicData(
               targetUserID,
             );
 
-            if (targetUser!.isPrivate) {
+            if (targetUser?.isPrivate ?? false) {
               // Özel hesap, takip isteği gönder
               _logger.info(
-                'Özel hesaba takip isteği gönderiliyor: ${targetUser.username}',
+                'Özel hesaba takip isteği gönderiliyor: ${targetUser?.username}',
               );
 
               await userRepository.sendFollowRequest(

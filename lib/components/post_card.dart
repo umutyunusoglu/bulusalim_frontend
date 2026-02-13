@@ -419,7 +419,7 @@ class _PostCardState extends State<PostCard> {
     final tags = widget.post.hobbies.map((h) => h.name).toList();
 
     final username = widget.user?.username ?? 'Buluşalım Kullanıcısı';
-    final userAvatarUrl =
+    final userprofileImageUrl =
         widget.user?.profileImageUrl ?? FileService.defaultProfileImageUrl();
 
     final staticLocationName =
@@ -444,7 +444,7 @@ class _PostCardState extends State<PostCard> {
           children: [
             _buildHeader(
               context,
-              avatarUrl: userAvatarUrl,
+              profileImageUrl: userprofileImageUrl,
               username: username,
               location: staticLocationName,
             ),
@@ -468,13 +468,14 @@ class _PostCardState extends State<PostCard> {
 
   Widget _buildHeader(
     BuildContext context, {
-    required String avatarUrl,
+    required String profileImageUrl,
     required String username,
     required String location,
   }) {
     final theme = Theme.of(context);
     final isPostMine = widget.post.creator.userID == _myUserId;
-    final hasAvatarUrl = avatarUrl.isNotEmpty && avatarUrl.startsWith('http');
+    final hasprofileImageUrl =
+        profileImageUrl.isNotEmpty && profileImageUrl.startsWith('http');
 
     return Row(
       children: [
@@ -483,8 +484,8 @@ class _PostCardState extends State<PostCard> {
           child: CircleAvatar(
             radius: 20.r,
             backgroundColor: Colors.grey.shade200,
-            backgroundImage: hasAvatarUrl
-                ? CachedNetworkImageProvider(fixEmulatorUrl(avatarUrl))
+            backgroundImage: hasprofileImageUrl
+                ? CachedNetworkImageProvider(fixEmulatorUrl(profileImageUrl))
                 : AssetImage(FileService.defaultProfileImageUrl())
                       as ImageProvider,
           ),
@@ -673,7 +674,7 @@ class _PostCardState extends State<PostCard> {
           ),
           const Spacer(),
           SmallStackedAvatars(
-            avatarUrls: likedByAvatars,
+            profileImageUrls: likedByAvatars,
             size: 28.r,
             overlap: 10.r,
           ),

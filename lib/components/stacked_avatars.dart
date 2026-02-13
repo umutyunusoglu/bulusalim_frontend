@@ -56,7 +56,7 @@ class StackedAvatars extends StatelessWidget {
 
                     // Sol pozisyon: Her eleman (Boyut - Overlap) kadar sağa kayar
                     final leftPos = index * (avatarSize - overlap);
-                    final String avatarUrl = currentUser.imageUrl;
+                    final String profileImageUrl = currentUser.imageUrl;
                     final defaultAsset = FileService.defaultProfileImageUrl();
                     return Positioned(
                       left: leftPos,
@@ -76,10 +76,10 @@ class StackedAvatars extends StatelessWidget {
                           ),
                           child: ClipOval(
                             child:
-                                (avatarUrl != null &&
-                                    avatarUrl.startsWith('http'))
+                                (profileImageUrl != null &&
+                                    profileImageUrl.startsWith('http'))
                                 ? CachedNetworkImage(
-                                    imageUrl: fixEmulatorUrl(avatarUrl),
+                                    imageUrl: fixEmulatorUrl(profileImageUrl),
                                     fit: BoxFit.cover,
                                     width:
                                         avatarSize, // Boyutları net belirtmek fit: BoxFit.cover için önemlidir

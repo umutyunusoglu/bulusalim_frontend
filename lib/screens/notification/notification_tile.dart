@@ -122,10 +122,10 @@ class NotificationTile extends StatelessWidget {
             image: DecorationImage(
               // URL geçerliyse Network, değilse Asset kullan
               image:
-                  (notification.avatarUrl.isNotEmpty &&
-                      notification.avatarUrl.startsWith('http'))
+                  (notification.profileImageUrl.isNotEmpty &&
+                      notification.profileImageUrl.startsWith('http'))
                   ? CachedNetworkImageProvider(
-                      fixEmulatorUrl(notification.avatarUrl),
+                      fixEmulatorUrl(notification.profileImageUrl),
                     )
                   : AssetImage(FileService.defaultProfileImageUrl())
                         as ImageProvider,

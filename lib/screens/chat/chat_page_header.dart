@@ -314,7 +314,7 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
               username: currentUser.username,
               profileImageUrl: currentUser.profileImageUrl,
               university: currentUser.university,
-              fullname: null,
+              nameSurname: null,
               isPrivate: null,
               bio: null,
             );
@@ -388,7 +388,7 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
       username: widget.event.creator.username,
       profileImageUrl: widget.creatorProfileImage,
       university: widget.event.creator.university,
-      fullname: null,
+      nameSurname: null,
       isPrivate: null,
       bio: null,
     );

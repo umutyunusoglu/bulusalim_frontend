@@ -45,7 +45,7 @@ class _ProfilePageState extends State<ProfilePage> {
   int numberOfFollowers = 0;
   int numberOfFollowing = 0;
 
-  String _avatarUrl = '';
+  String _profileImageUrl = '';
   final List<String> _badges = [
     'assets/badge/badge1.png',
     'assets/badge/badge2.png',
@@ -175,6 +175,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (widget.profileUserID == getIt<SessionService>().currentUser?.userID) {
         user = getIt<SessionService>().currentUser;
       } else {
+        getIt<LoggingService>().debug("Others profi");
         user = await userRepository.getUserPublicData(widget.profileUserID);
       }
 
@@ -269,7 +270,7 @@ class _ProfilePageState extends State<ProfilePage> {
         _fullName = (user.nameSurname ?? '').toString();
         _bio = (user.bio ?? '').toString();
         _school = (user.university ?? 'Üniversite Doğrulanmadı').toString();
-        _avatarUrl = (user.profileImageUrl ?? '').toString();
+        _profileImageUrl = (user.profileImageUrl ?? '').toString();
 
         // Boolean değerler için 'is' kontrolü eklemek dynamic tipte hayat kurtarır
         _isFollowing = isFollowing == true;
@@ -346,7 +347,7 @@ class _ProfilePageState extends State<ProfilePage> {
         final target = Followee(
           userID: widget.profileUserID,
           username: _username,
-          profileImageUrl: _avatarUrl,
+          profileImageUrl: _profileImageUrl,
           createdAt: DateTime.now(),
         );
 
@@ -591,7 +592,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     await getIt<SendEventInvitation>().call(
                                       toID: widget.profileUserID,
                                       toUsername: _username,
-                                      toAvatarUrl: _avatarUrl,
+                                      toprofileImageUrl: _profileImageUrl,
                                       eventID: event.eventID,
                                       eventName: event.name ?? '',
                                     );
@@ -695,7 +696,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     final displayUsername = _username;
     final displayBio = _bio;
-    final displayAvatar = _avatarUrl;
+    final displayAvatar = _profileImageUrl;
     final displaySchool = _school;
     final displayFullName = _fullName;
     final numberOfEvents = this.numberOfEvents;
@@ -934,7 +935,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Row(
       children: [
         SmallStackedAvatars(
-          avatarUrls: avatars,
+          profileImageUrls: avatars,
           size: 24.r,
           overlap: 9.r,
           borderWidth: 0.sp,
