@@ -10,7 +10,6 @@ import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/security_service.dart';
-import 'package:tflite_flutter/tflite_flutter.dart';
 
 class SecurityServiceImpl implements SecurityService {
   SecurityServiceImpl({
@@ -24,16 +23,6 @@ class SecurityServiceImpl implements SecurityService {
   final FirebaseFirestore _firestore;
   final LoggingService _logger;
   final FirebaseFunctions _functions;
-
-  Future<void> initModel() async {
-    try {
-      _nswfImageModel = await Interpreter.fromAsset('assets/nsfw/model.tflite');
-
-      _logger.info('NSFW Modeli başarıyla yüklendi.');
-    } catch (e) {
-      _logger.error('NSFW Modeli yüklenirken hata oluştu: $e');
-    }
-  }
 
   @override
   Future<void> blockUser(ReportData reportData) async {
@@ -152,76 +141,6 @@ class SecurityServiceImpl implements SecurityService {
   }
 
   Future<bool> isImageSafe(File imageFile) async {
-    try {
-      if (_nswfImageModel == null) await initModel();
-
-      // 1. Görseli decode et ve 224x224 boyutuna getir
-      final rawBytes = await imageFile.readAsBytes();
-      final image = img.decodeImage(rawBytes);
-      if (image == null) return false;
-
-      final resizedImage = img.copyResize(image, width: 224, height: 224);
-
-      // 2. Görseli modelin beklediği Float32 formatına dönüştür
-      final Float32List inputAsFloat = _preprocessImage(resizedImage);
-
-      // 2. ÖNEMLİ: Veriyi [1, 224, 224, 3] şekline sok
-      // Float32List'i modelin beklediği 4 boyutlu yapıya zorluyoruz
-      final input = inputAsFloat.reshape([1, 224, 224, 3]);
-
-      // 3. Çıktı kısmını da reshape et
-      var output = List<double>.filled(4, 0).reshape([1, 4]);
-
-      // 4. Modeli çalıştır
-      _nswfImageModel!.run(input, output);
-
-      // 5. Sonuçları analiz et
-      final List<double> scores = (output[0] as List<dynamic>).cast<double>();
-      final results = <String, double>{
-        for (int i = 0; i < _labels.length; i++) _labels[i]: scores[i],
-      };
-
-      _logger.info('NSFW Skorları: $results');
-
-      // Güvenlik Mantığı:
-      // Porn skoru 0.4'ten büyükse veya Sexy skoru 0.8'den büyükse güvensiz kabul et.
-      if (results['porn']! > 0.4 || results['sexy']! > 0.8) {
-        _logger.warn('Güvensiz içerik tespit edildi.');
-        return false;
-      }
-
-      return true;
-    } catch (e) {
-      _logger.error('Görsel analizi sırasında hata: $e');
-      return false; // Hata durumunda tedbirli davranıp false dönebiliriz
-    }
+    return true;
   }
-
-  /// Görseli [-1, 1] aralığında normalize ederek Float32List'e çevirir
-  Float32List _preprocessImage(img.Image image) {
-    final floatBuffer = Float32List(1 * 224 * 224 * 3);
-    var pixelIndex = 0;
-
-    for (var y = 0; y < 224; y++) {
-      for (var x = 0; x < 224; x++) {
-        final pixel = image.getPixel(x, y);
-
-        // Manoj Bhor/MobileNetV2 standardı: (pixel - 127.5) / 127.5
-        floatBuffer[pixelIndex++] = (pixel.r - 127.5) / 127.5;
-        floatBuffer[pixelIndex++] = (pixel.g - 127.5) / 127.5;
-        floatBuffer[pixelIndex++] = (pixel.b - 127.5) / 127.5;
-      }
-    }
-    return floatBuffer;
-  }
-
-  void dispose() {
-    _nswfImageModel?.close();
-  }
-
-  @override
-  Interpreter? _nswfImageModel;
-
-  @override
-  final List<String> _labels = ['drawings', 'neutral', 'porn', 'sexy'];
 }
