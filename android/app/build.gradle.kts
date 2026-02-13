@@ -2,7 +2,6 @@ import java.io.FileInputStream
 import java.util.Properties
 
 plugins {
-    
     id("com.android.application")
     // START: FlutterFire Configuration
     id("com.google.gms.google-services")
@@ -55,15 +54,7 @@ android {
         }
     }
 
-
-    signingConfigs {
-        create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String
-            keyPassword = keystoreProperties["keyPassword"] as String
-            storeFile = keystoreProperties["storeFile"]?.let { file(it) }
-            storePassword = keystoreProperties["storePassword"] as String
-        }
-    }
+    
 
     defaultConfig {
         // TODO: Specify your own unique Application ID
@@ -73,8 +64,8 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 26
         targetSdk = 35
-        versionCode = 10
-        versionName = "1.0.8"
+        versionCode = 11
+        versionName = "1.0.8+hotfix"
         multiDexEnabled = true
     }
 

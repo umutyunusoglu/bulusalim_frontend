@@ -7,6 +7,8 @@ import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
+import 'package:outnest/domain/repositories/event_repository.dart';
+import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/usecases/force_start_event_usecase.dart';
 import 'package:outnest/domain/usecases/force_stop_event_usecase.dart';
 import 'package:outnest/screens/chat/chat_event_info_chip.dart';
@@ -303,6 +305,22 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
         confirmButtonText: 'ayrıl',
         confirmButtonColor: const Color(0xFF1F415B),
         onConfirm: () {
+          final sessionService = getIt<SessionService>();
+          final eventRepository = getIt<EventRepository>();
+          final currentUser = sessionService.currentUser;
+          if (currentUser != null) {
+            final compactUser = CompactUserEntity(
+              userID: currentUser.userID,
+              username: currentUser.username,
+              profileImageUrl: currentUser.profileImageUrl,
+              university: currentUser.university,
+              fullname: null,
+              isPrivate: null,
+              bio: null,
+            );
+            eventRepository.removeParticipant(widget.eventID, compactUser);
+          }
+
           context.pop();
         },
       ),
