@@ -54,7 +54,7 @@ class _SearchPageState extends State<SearchPage> {
     final searchTerm = query.toLowerCase();
 
     try {
-      final userRef = FirebaseFirestore.instance.collection('users');
+      final userRef = FirebaseFirestore.instance.collection('public_users');
       final eventRef = FirebaseFirestore.instance.collection('events');
 
       // İki tabloyu paralel (aynı anda) sorguluyoruz
