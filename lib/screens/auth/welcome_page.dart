@@ -97,14 +97,13 @@ class WelcomePage extends StatelessWidget {
                   ),
 
                   // DEBUG BUTONU
-                  /*
                   LoginButton(
                     label: 'Debug',
                     onPress: () => context.push('/debug'),
                     width: 205.w,
                     height: 48.h,
                     borderRadius: 40.r,
-                  ),*/
+                  ),
                   SizedBox(height: 8.h),
 
                   // YASAL METİNLER
