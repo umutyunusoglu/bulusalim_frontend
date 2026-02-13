@@ -221,15 +221,15 @@ class UserRepositoryImpl implements UserRepository {
 
     return _firestore.runTransaction((transaction) async {
       // 1. ADIM: Username daha önce alınmış mı kontrol et
-      final usernameQuery = await _firestore
-          .collection('users')
-          .where('username', isEqualTo: user.username)
-          .get();
+      final usernameQuery = doesUsernameExist(
+        user.username.toLowerCase(),
+      );
 
-      if (usernameQuery.docs.isNotEmpty) {
-        _logger.warn('Username already taken: ${user.username}');
+      if (await usernameQuery) {
+        _logger.warn(
+          'Username ${user.username} is already taken. UserID: ${user.userID}',
+        );
         throw Exception('username-already-exists');
-        // UI tarafında bu hatayı yakalayıp "Bu isim alınmış" diyebilirsin.
       }
 
       // 2. ADIM: Yeni doküman referansını al
