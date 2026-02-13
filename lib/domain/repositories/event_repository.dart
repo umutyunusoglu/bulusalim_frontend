@@ -17,6 +17,10 @@ abstract class EventRepository {
   Future<EventEntity> enrichEventWithDetails(EventEntity event);
 
   Stream<List<EventEntity>> getEnrichedEventsOfUserStream(Identifier userId);
+  Future<EventEntity> injectSensitiveDataIfAuthorized(
+    EventEntity event,
+    String? currentUserId,
+  );
 
   /// Messages Subcollection
   Future<void> addMessage(Identifier eventId, EventMessagesEntity message);

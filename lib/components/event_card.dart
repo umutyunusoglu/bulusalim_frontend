@@ -183,6 +183,23 @@ class _EventCardState extends State<EventCard> {
               onTap: () {
                 sheetContext.pop();
                 // TODO: Ayrılma servisini çağır
+
+                final currentUser = sessionService.currentUser;
+                if (currentUser != null) {
+                  final compactUser = CompactUserEntity(
+                    userID: currentUser.userID,
+                    username: currentUser.username,
+                    profileImageUrl: currentUser.profileImageUrl,
+                    university: currentUser.university,
+                    fullname: null,
+                    isPrivate: null,
+                    bio: null,
+                  );
+                  eventRepository.removeParticipant(
+                    widget.event.eventID,
+                    compactUser,
+                  );
+                }
               },
             ),
             // 4. İptal Et

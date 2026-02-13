@@ -2,6 +2,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:outnest/application/init_app.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/stacked_avatars.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
@@ -10,7 +11,6 @@ import 'package:outnest/domain/repositories/feed_repository.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/services/file_service.dart';
-import 'package:outnest/domain/services/push_notifications_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/scaffold_with_navbar.dart';
 import 'package:outnest/screens/auth/login_page.dart';
@@ -33,6 +33,7 @@ import 'package:outnest/screens/settings/edit_profile_page.dart';
 import 'package:outnest/screens/settings/settings.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
+bool _isAppInitialized = false;
 
 List<AvatarInfo> _mapToAvatarInfo(List<dynamic> rawList) {
   return rawList.map((e) {
@@ -50,78 +51,61 @@ List<AvatarInfo> _mapToAvatarInfo(List<dynamic> rawList) {
 
 final router = GoRouter(
   navigatorKey: _rootNavigatorKey,
-
-  // Başlangıç rotası
-  initialLocation: '/welcome',
-
+  initialLocation: '/home',
   redirect: (context, state) async {
     final goingTo = state.uri.toString();
-    final isAuthRoute = [
+    final authRoutes = [
       '/welcome',
       '/login',
       '/register',
       '/verification-code-field',
       '/login-verification',
-    ].contains(goingTo);
+    ];
 
-    if (!isAuthRoute) {
-      return null;
-    }
+    final isAuthRoute = authRoutes.contains(goingTo);
+    final isRegisterInfo = goingTo == '/register-info';
+    final isDebugRoute = goingTo == '/debug';
 
     final authService = getIt<AuthService>();
     final userRepository = getIt<UserRepository>();
     final isLoggedIn = await authService.isUserLoggedIn();
 
-    final isRegisterInfo = goingTo == '/register-info';
-    final isDebugRoute = goingTo == '/debug';
-
-    // 1. Giriş yapmamış kullanıcı
+    // 1. GİRİŞ YAPMAMIŞ KULLANICI
     if (!isLoggedIn) {
-      // Auth rotalarından birindeyse veya debug sayfasındaysa bırak gitsin
       if (isAuthRoute || isRegisterInfo || isDebugRoute) return null;
-      // Değilse welcome'a zorla
       return '/welcome';
     }
 
-    // 2. Giriş yapmış kullanıcı
-    if (isLoggedIn) {
-      final isUserRegistered = await userRepository.isUserRegistered(
-        authService.getCurrentUserID(),
-      );
+    // 2. GİRİŞ YAPMIŞ KULLANICI
+    final currentUserId = authService.getCurrentUserID();
+    final isUserRegistered = await userRepository.isUserRegistered(
+      currentUserId,
+    );
 
-      if (isUserRegistered) {
-        // Kullanıcı kayıtlı ve ana uygulamaya girmek istiyor.
-        // Eğer hala auth sayfalarındaysa /home'a at, değilse (yani zaten içerdeyse) gitmek istediği yere izin ver.
+    if (!isUserRegistered) {
+      if (isRegisterInfo) return null;
+      return '/register-info';
+    }
 
-        final pushService = getIt<PushNotificationsService>();
-        final sessionService = getIt<SessionService>();
-        await pushService.initialize();
-        await sessionService.init();
-        try {
-          final feedRepository = getIt<FeedRepository>();
-          await feedRepository.warmup();
-        } catch (e, stack) {
-          if (kDebugMode) debugPrint('Feed warmup hatası: $e');
-          await FirebaseCrashlytics.instance.recordError(e, stack);
-        }
-
-        if (isAuthRoute || isRegisterInfo) {
-          return '/home';
-        }
-
-        return null; // Mevcut rotasına devam etmesine izin ver (örn: /chat, /profile vs.)
-      } else {
-        // Kaydı tamam değilse ve register-info'da değilse oraya zorla
-        if (!isRegisterInfo) return '/register-info';
-        return null;
+    // --- INITIALIZATION ---
+    if (!_isAppInitialized) {
+      initApp();
+      _isAppInitialized = true;
+      try {
+        final feedRepository = getIt<FeedRepository>();
+        await feedRepository.warmup();
+      } catch (e, stack) {
+        if (kDebugMode) debugPrint('Warmup error: $e');
+        await FirebaseCrashlytics.instance.recordError(e, stack);
       }
     }
 
+    // Auth sayfalarındaysa içeri al
+    if (isAuthRoute || isRegisterInfo) return '/home';
+
     return null;
   },
-
   routes: [
-    // --- AUTH ROTALARI ---
     GoRoute(
       path: '/welcome',
       builder: (context, state) => const WelcomePage(),
@@ -134,10 +118,9 @@ final router = GoRouter(
       path: '/login-verification',
       builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>?;
-        final verificationID = extra?['verificationID'] as String?;
         return OtpVerificationPage(
           isLogin: true,
-          verificationID: verificationID,
+          verificationID: extra?['verificationID'] as String?,
         );
       },
     ),
@@ -149,9 +132,8 @@ final router = GoRouter(
       path: '/verification-code-field',
       builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>?;
-        final verificationID = extra?['verificationID'] as String?;
         return OtpVerificationPage(
-          verificationID: verificationID,
+          verificationID: extra?['verificationID'] as String?,
         );
       },
     ),
@@ -159,21 +141,17 @@ final router = GoRouter(
       path: '/register-info',
       builder: (context, state) => const RegisterInfoPage(),
     ),
-
-    // --- DEBUG ---
     GoRoute(
       path: '/debug',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => NsfwDebugScreen(),
     ),
 
-    // --- BOTTOM NAVIGATION BAR (SHELL) ---
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
         return ScaffoldWithNavbar(navigationShell: navigationShell);
       },
       branches: [
-        // BRANCH 1: MAP
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -182,7 +160,6 @@ final router = GoRouter(
             ),
           ],
         ),
-        // BRANCH 2: SEARCH
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -191,7 +168,6 @@ final router = GoRouter(
             ),
           ],
         ),
-        // BRANCH 3: HOME
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -200,6 +176,8 @@ final router = GoRouter(
               routes: [
                 GoRoute(
                   path: 'profile/:userId',
+                  // DİKKAT: Buradan parentNavigatorKey kaldırıldı çünkü branch içinde.
+                  // Eğer tam ekran olmasını istiyorsanız bu rotayı ShellRoute dışına taşımalısınız.
                   builder: (context, state) {
                     final userId = state.pathParameters['userId'] ?? '';
                     return ProfilePage(profileUserID: userId);
@@ -209,7 +187,6 @@ final router = GoRouter(
             ),
           ],
         ),
-        // BRANCH 4: CHAT LISTESI
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -218,7 +195,6 @@ final router = GoRouter(
             ),
           ],
         ),
-        // BRANCH 5: MY PROFILE
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -234,7 +210,7 @@ final router = GoRouter(
       ],
     ),
 
-    // --- FULL SCREEN (NAVBARSIZ) SAYFALAR ---
+    // --- ROOT ROTALARI (NAVBARSIZ) ---
     GoRoute(
       path: '/settings',
       parentNavigatorKey: _rootNavigatorKey,
@@ -242,7 +218,7 @@ final router = GoRouter(
       routes: [
         GoRoute(
           path: 'edit-profile',
-          parentNavigatorKey: _rootNavigatorKey,
+          // Child root zaten parent'ının navigator'ını kullanır
           builder: (context, state) => const EditProfilePage(),
         ),
       ],
@@ -257,8 +233,6 @@ final router = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const FollowRequestsPage(),
     ),
-
-    // HARİTA SEÇİCİLER
     GoRoute(
       path: '/pick-location-map',
       parentNavigatorKey: _rootNavigatorKey,
@@ -269,8 +243,6 @@ final router = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const MapPage(isTimePicker: true),
     ),
-
-    // KAMERA
     GoRoute(
       path: '/camera',
       parentNavigatorKey: _rootNavigatorKey,
@@ -280,17 +252,15 @@ final router = GoRouter(
         return CameraPage(event: event!);
       },
     ),
-
-    // --- SOHBET ODASI VE ALT ROTALARI ---
     GoRoute(
       path: '/chat/room/:eventID',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
         final eventID = state.pathParameters['eventID'] ?? '';
         final extra = state.extra as Map<String, dynamic>?;
-
-        final rawAvatars = (extra?['avatars'] as List?) ?? [];
-        final safeAvatars = _mapToAvatarInfo(rawAvatars);
+        final safeAvatars = _mapToAvatarInfo(
+          (extra?['avatars'] as List?) ?? [],
+        );
 
         return ChatPage(
           eventID: eventID,
@@ -305,18 +275,16 @@ final router = GoRouter(
         );
       },
       routes: [
-        // Child route: sadece 'settings' (parent eventID parametresini kullanır)
         GoRoute(
           path: 'settings',
           builder: (context, state) {
             final extra = state.extra as Map<String, dynamic>?;
-            final rawAvatars = (extra?['avatars'] as List?) ?? [];
-            final safeAvatars = _mapToAvatarInfo(rawAvatars);
-
             return EventSettingsPage(
               eventID: state.pathParameters['eventID'] ?? '',
               chatTitle: (extra?['title'] as String?) ?? 'Buluşma Ayarları',
-              participantAvatars: safeAvatars,
+              participantAvatars: _mapToAvatarInfo(
+                (extra?['avatars'] as List?) ?? [],
+              ),
               location: (extra?['location'] as String?) ?? '',
               participantStatus: (extra?['participants'] as String?) ?? '',
               remainingTime: (extra?['remainingTime'] as String?) ?? '',
@@ -326,22 +294,18 @@ final router = GoRouter(
         ),
       ],
     ),
-
-    // --- BAĞIMSIZ EVENT SETTINGS (EventCard / root çağrılar için) ---
     GoRoute(
       name: 'eventManagement',
       path: '/event-management/:mgmtID',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
-        final eventID = state.pathParameters['mgmtID'] ?? '';
         final extra = state.extra as Map<String, dynamic>?;
-        final rawAvatars = (extra?['avatars'] as List?) ?? [];
-        final safeAvatars = _mapToAvatarInfo(rawAvatars);
-
         return EventSettingsPage(
-          eventID: eventID,
+          eventID: state.pathParameters['mgmtID'] ?? '',
           chatTitle: (extra?['title'] as String?) ?? 'Buluşma Ayarları',
-          participantAvatars: safeAvatars,
+          participantAvatars: _mapToAvatarInfo(
+            (extra?['avatars'] as List?) ?? [],
+          ),
           location: (extra?['location'] as String?) ?? '',
           participantStatus: (extra?['participants'] as String?) ?? '',
           remainingTime: (extra?['remainingTime'] as String?) ?? '',

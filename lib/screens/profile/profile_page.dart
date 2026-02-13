@@ -11,6 +11,7 @@ import 'package:outnest/components/popup.dart';
 import 'package:outnest/components/private_account_view.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
@@ -261,30 +262,35 @@ class _ProfilePageState extends State<ProfilePage> {
       final isPrivate = user.isPrivate;
 
       if (!mounted) return;
-
       setState(() {
-        _username = user.username as String;
-        _fullName = user.fullname as String ?? '' as String;
-        _bio = user.bio as String ?? '';
-        _school =
-            user.university as String ?? 'Üniversite Doğrulanmadı' as String;
-        _avatarUrl = user.profileImageUrl as String;
+        // dynamic olduğu için [] operatörü veya nokta operatörü kullanılabilir
+        // null check (?.) ve null-coalescing (??) ile güvenliğe alıyoruz
+        _username = (user.username ?? '').toString();
+        _fullName = (user.nameSurname ?? '').toString();
+        _bio = (user.bio ?? '').toString();
+        _school = (user.university ?? 'Üniversite Doğrulanmadı').toString();
+        _avatarUrl = (user.profileImageUrl ?? '').toString();
 
-        _isFollowing = isFollowing;
-        _isPrivateAccount = isPrivate as bool ?? false;
-        _hasSentFollowRequest = hasSentFollowRequest;
+        // Boolean değerler için 'is' kontrolü eklemek dynamic tipte hayat kurtarır
+        _isFollowing = isFollowing == true;
+        _isPrivateAccount = isPrivate == true;
+        _hasSentFollowRequest = hasSentFollowRequest == true;
 
-        numberOfFollowers = followerCount;
-        numberOfFollowing = followeeCount;
-        numberOfEvents = completedEventCount;
+        // Sayısal verilerde hata almamak için 0'a yuvarlıyoruz
+        numberOfFollowers = followerCount ?? 0;
+        numberOfFollowing = followeeCount ?? 0;
+        numberOfEvents = completedEventCount ?? 0;
 
-        _commonFollowers = commonFollows;
+        _commonFollowers = commonFollows ?? [];
+        _currentEvents = enrolledEvents ?? [];
+        _consideredEvents = savedEvents ?? [];
 
-        _currentEvents = enrolledEvents;
-        _consideredEvents = savedEvents;
         _isLoadingEvents = false;
       });
     } catch (e) {
+      getIt<LoggingService>().error(
+        'Profil verisi alınırken hata oluştu $e',
+      );
       if (mounted) {
         setState(() {
           _isLoadingEvents = false;
@@ -687,17 +693,14 @@ class _ProfilePageState extends State<ProfilePage> {
     final sessionUser = getIt<SessionService>().currentUser;
     final isCurrentUser = widget.profileUserID == sessionUser?.userID;
 
-    final displayUsername = isCurrentUser ? sessionUser!.username : _username;
-    final displayBio = isCurrentUser ? (sessionUser!.bio ?? '') : _bio;
-    final displayAvatar = isCurrentUser
-        ? sessionUser!.profileImageUrl
-        : _avatarUrl;
-    final displaySchool = isCurrentUser
-        ? (sessionUser!.university ?? 'Üniversite Doğrulanmadı')
-        : _school;
-    final displayFullName = isCurrentUser
-        ? sessionUser!.nameSurname
-        : _fullName;
+    final displayUsername = _username;
+    final displayBio = _bio;
+    final displayAvatar = _avatarUrl;
+    final displaySchool = _school;
+    final displayFullName = _fullName;
+    final numberOfEvents = this.numberOfEvents;
+    final numberOfFollowers = this.numberOfFollowers;
+    final numberOfFollowing = this.numberOfFollowing;
 
     return Padding(
       padding: EdgeInsets.only(left: 16.w, right: 16.w, top: 30, bottom: 20.h),
