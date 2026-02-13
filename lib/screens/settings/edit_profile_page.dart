@@ -33,10 +33,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   bool _hideSavedEvents = false;
   String _profileImageUrl = '';
-  String _username = '';
+  String _nameSurname = '';
 
   bool _profileImageChanged = false;
 
+  late String _username;
   late String _previousName;
   late String _previousBio;
   late String _previousGender;
@@ -57,7 +58,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   void _initializeUserData() {
     final user = getIt<SessionService>().currentUser;
 
-    _nameController = TextEditingController(text: user?.username ?? '');
+    _nameController = TextEditingController(text: user?.nameSurname ?? '');
     _bioController = TextEditingController(text: user?.bio ?? '');
     _genderController = TextEditingController(
       text: user?.gender.toString() ?? '',
@@ -69,13 +70,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
           : '',
     );
     _username = user?.username ?? '';
+    _nameSurname = user?.nameSurname ?? '';
     _profileImageUrl = user?.profileImageUrl ?? '';
     _hideSavedEvents = user?.hideSavedEvents ?? false;
     _selectedGender = user?.gender ?? GenderEnum.preferNotToSay;
     _selectedDob = user?.birthDate ?? DateTime(2002, 1);
 
     // Önceki değerleri sakla
-    _previousName = user?.username ?? '';
+    _previousName = user?.nameSurname ?? '';
     _previousBio = user?.bio ?? '';
     _previousGender = user?.gender.toString() ?? '';
     _previousDob = _dobController.text;
@@ -587,7 +589,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ),
         SizedBox(height: 8.h),
         Text(
-          _username.isNotEmpty ? '@$_username' : '',
+          _nameSurname.isNotEmpty ? '@$_username' : '',
           style: TextStyle(
             fontFamily: 'SF Pro Display',
             fontSize: 14.sp,
@@ -638,7 +640,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       }
     }
     if (_nameController.text != _previousName) {
-      updatedData['username'] = _nameController.text.toLowerCase();
+      updatedData['nameSurname'] = _nameController.text.toLowerCase();
     }
     if (_bioController.text != _previousBio) {
       updatedData['bio'] = _bioController.text;
