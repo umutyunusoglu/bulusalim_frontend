@@ -170,7 +170,12 @@ class _ProfilePageState extends State<ProfilePage> {
       final userRepository = getIt<UserRepository>();
       final eventRepository = getIt<EventRepository>();
 
-      final user = await userRepository.getUserPublicData(widget.profileUserID);
+      var user;
+      if (widget.profileUserID == getIt<SessionService>().currentUser?.userID) {
+        user = getIt<SessionService>().currentUser;
+      } else {
+        user = await userRepository.getUserPublicData(widget.profileUserID);
+      }
 
       final userEventsEnrolled = await userRepository.getUserEventLog(
         widget.profileUserID,
@@ -221,7 +226,7 @@ class _ProfilePageState extends State<ProfilePage> {
       } else {
         isFollowing = await userRepository.isFollowing(
           currentUser!.userID,
-          user.userID,
+          user.userID as Identifier,
         );
       }
 
@@ -229,7 +234,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (!isFollowing) {
         hasSentFollowRequest = await userRepository.hasSentFollowRequest(
           currentUser!.userID,
-          user.userID,
+          user.userID as Identifier,
         );
       }
 
@@ -258,14 +263,15 @@ class _ProfilePageState extends State<ProfilePage> {
       if (!mounted) return;
 
       setState(() {
-        _username = user.username;
-        _fullName = user.fullname ?? '';
-        _bio = user.bio ?? '';
-        _school = user.university ?? 'Üniversite Doğrulanmadı';
-        _avatarUrl = user.profileImageUrl;
+        _username = user.username as String;
+        _fullName = user.fullname as String ?? '' as String;
+        _bio = user.bio as String ?? '';
+        _school =
+            user.university as String ?? 'Üniversite Doğrulanmadı' as String;
+        _avatarUrl = user.profileImageUrl as String;
 
         _isFollowing = isFollowing;
-        _isPrivateAccount = isPrivate ?? false;
+        _isPrivateAccount = isPrivate as bool ?? false;
         _hasSentFollowRequest = hasSentFollowRequest;
 
         numberOfFollowers = followerCount;
