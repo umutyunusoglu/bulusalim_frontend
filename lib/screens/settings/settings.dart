@@ -90,7 +90,7 @@ class _SettingsPageState extends State<SettingsPage>
       ),
     );
     // Sayfadan geri dönüldüğünde stateleri güncelle
-    _checkAllPermissions();
+    await _checkAllPermissions();
   }
 
   // --- POPUP FONKSİYONU ---
@@ -245,6 +245,7 @@ class _SettingsPageState extends State<SettingsPage>
                 permission: Permission.notification,
               ),
             ),
+            /*
             SettingsTile(
               title: 'Bluetooth',
               trailingText: getStatusText(_isBluetoothGranted), // DİNAMİK
@@ -254,7 +255,7 @@ class _SettingsPageState extends State<SettingsPage>
                     "Outnest uygulamasına yakındaki cihazlarla bağlantı kurmak için Bluetooth'u kullanmasına izin verilir.",
                 permission: Permission.bluetooth,
               ),
-            ),
+            ),*/
             SettingsTile(
               title: 'Konum Servisleri',
               trailingText: getStatusText(_isLocationGranted), // DİNAMİK
