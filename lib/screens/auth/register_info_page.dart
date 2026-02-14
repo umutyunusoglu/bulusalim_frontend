@@ -34,7 +34,8 @@ class RegisterInfoPage extends StatefulWidget {
   State<RegisterInfoPage> createState() => _RegisterInfoPageState();
 }
 
-class _RegisterInfoPageState extends State<RegisterInfoPage> {
+class _RegisterInfoPageState extends State<RegisterInfoPage>
+    with WidgetsBindingObserver {
   final PageController _pageController = PageController();
 
   // --- CONTROLLER'LAR ---
@@ -71,10 +72,12 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
   @override
   void initState() {
     super.initState();
+    _syncAllPermissions();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
     _usernameController.dispose();
     _nameController.dispose();
@@ -86,6 +89,14 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
       c.dispose();
     }
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Uygulama arka plandan ön plana geldiğinde (ayarlardan dönünce)
+    if (state == AppLifecycleState.resumed) {
+      _syncAllPermissions();
+    }
   }
 
   void _nextPage() {
@@ -687,60 +698,43 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
               customContent: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _buildPermissionRow(
+                  _buildPermissionTile(
                     title: 'Bildirimler',
                     description:
                         'Outnest uygulamasına bu cihaza güncellemeler ve önemli bildirimler göndermesine izin verilir.',
+                    permission: Permission.notification,
                     value: _permNotifications,
-                    onChanged: (val) => _handlePermissionToggle(
-                      val,
-                      Permission.notification,
-                      (newState) => _permNotifications = newState,
-                    ),
                   ),
-                  _buildPermissionRow(
+                  /*
+                  _buildPermissionTile(
                     title: 'Bluetooth',
                     description:
                         "Outnest uygulamasına yakındaki cihazlarla bağlantı kurmak için Bluetooth'u kullanmasına izin verilir.",
+                    permission: Permission.bluetooth,
                     value: _permBluetooth,
-                    onChanged: (val) => _handlePermissionToggle(
-                      val,
-                      Permission.bluetooth,
-                      (newState) => _permBluetooth = newState,
-                    ),
-                  ),
-                  _buildPermissionRow(
+                  ),*/
+                  _buildPermissionTile(
                     title: 'Konum Servisleri',
                     description:
-                        'Outnest uygulamasına bulunduğun konuma göre içerik ve öneriler sunmak için konum bilgine erişmesine izin verilir.',
+                        'Bulunduğun konuma göre içerik sunabilmemiz için konum bilgine erişilir.',
+                    permission: Permission.locationWhenInUse,
                     value: _permLocation,
-                    onChanged: (val) => _handlePermissionToggle(
-                      val,
-                      Permission.location,
-                      (newState) => _permLocation = newState,
-                    ),
                   ),
-                  _buildPermissionRow(
+
+                  _buildPermissionTile(
                     title: 'Kamera',
                     description:
-                        'Outnest uygulamasına fotoğraf ve video çekerek paylaşım yapabilmen için kameraya erişmesine izin verilir.',
+                        'Fotoğraf ve video çekebilmek için kameraya erişim gerekir.',
+                    permission: Permission.camera,
                     value: _permCamera,
-                    onChanged: (val) => _handlePermissionToggle(
-                      val,
-                      Permission.camera,
-                      (newState) => _permCamera = newState,
-                    ),
                   ),
-                  _buildPermissionRow(
+
+                  _buildPermissionTile(
                     title: 'Fotoğraflar',
                     description:
-                        'Outnest uygulamasına galerinden fotoğraf ve video seçip paylaşabilmen için fotoğraflarına erişmesine izin verilir.',
+                        'Galerinden içerik seçebilmek için fotoğraflara erişim gerekir.',
+                    permission: Permission.photos,
                     value: _permPhotos,
-                    onChanged: (val) => _handlePermissionToggle(
-                      val,
-                      Permission.photos,
-                      (newState) => _permPhotos = newState,
-                    ),
                   ),
 
                   // ALT BİLGİLENDİRME METİNLERİ
@@ -865,6 +859,24 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
     );
   }
 
+  Future<void> _syncAllPermissions() async {
+    final notification = await Permission.notification.status;
+    final bluetooth = await Permission.bluetooth.status;
+    final location = await Permission.locationWhenInUse.status;
+    final camera = await Permission.camera.status;
+    final photos = await Permission.photos.status;
+
+    if (!mounted) return;
+
+    setState(() {
+      _permNotifications = notification.isGranted;
+      _permBluetooth = bluetooth.isGranted;
+      _permLocation = location.isGranted;
+      _permCamera = camera.isGranted;
+      _permPhotos = photos.isGranted || photos.isLimited;
+    });
+  }
+
   Future<void> _pickImage(ImageSource source) async {
     try {
       final pickedFile = await _picker.pickImage(
@@ -887,111 +899,99 @@ class _RegisterInfoPageState extends State<RegisterInfoPage> {
     }
   } // --- İZİN YARDIMCI FONKSİYONLARI ---
 
-  Widget _buildPermissionRow({
+  Future<void> _handlePermissionTap(Permission permission) async {
+    final status = await permission.status;
+
+    // EĞER İZİN ZATEN VERİLDİYSE, FONKSİYONU DURDUR (KAPANAMAZ MANTIĞI)
+    if (status.isGranted || status.isLimited) {
+      return;
+    }
+
+    // İzin verilmemişse süreci başlat
+    final result = await permission.request();
+
+    if (!mounted) return;
+
+    if (result.isPermanentlyDenied) {
+      _showSettingsDialog();
+    }
+
+    await _syncAllPermissions();
+  }
+
+  Widget _buildPermissionTile({
     required String title,
     required String description,
-    required bool value,
-    required ValueChanged<bool> onChanged,
+    required Permission permission,
+    required bool value, // Bu değer _syncAllPermissions'dan geliyor
   }) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 12.h),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontFamily: 'SF Pro Display',
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.black,
-                  ),
-                ),
-                SizedBox(height: 2.h),
-                Text(
-                  description,
-                  style: TextStyle(
-                    fontFamily: 'SF Pro Display',
-                    fontSize: 12.sp,
-                    color: Colors.grey.shade400,
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(width: 16.w),
-
-          // SWITCH
-          GestureDetector(
-            onTap: () => onChanged(!value),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 42.w,
-              height: 24.h,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12.h),
-                color: value ? AppColors.primaryColor : Colors.grey.shade300,
-              ),
-              child: Stack(
-                alignment: Alignment.centerLeft,
+    return InkWell(
+      borderRadius: BorderRadius.circular(12.r),
+      // DEĞİŞİKLİK: Eğer değer true (izin verilmiş) ise onTap null olsun
+      onTap: value ? null : () => _handlePermissionTap(permission),
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 14.h),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AnimatedPositioned(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeInOut,
-                    left: value ? (42.w - 20.h - 2.w) : 2.w,
-                    child: Container(
-                      width: 20.h,
-                      height: 20.h,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 2,
-                            offset: Offset(0, 1),
-                          ),
-                        ],
-                      ),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w500,
+                      // DEĞİŞİKLİK: İzin verilince rengi hafifçe soluklaştırabilirsin (opsiyonel)
+                      color: value ? Colors.black87 : Colors.black,
+                    ),
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: Colors.grey.shade500,
+                      height: 1.3,
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-        ],
+            SizedBox(width: 12.w),
+            Row(
+              children: [
+                Icon(
+                  value ? Icons.check_circle : Icons.cancel,
+                  color: value ? AppColors.primaryColor : Colors.grey.shade400,
+                  size: 20.sp,
+                ),
+                SizedBox(width: 6.w),
+                Text(
+                  value ? 'İzin Verildi' : 'Kapalı',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w500,
+                    color: value
+                        ? AppColors.primaryColor
+                        : Colors.grey.shade500,
+                  ),
+                ),
+                SizedBox(width: 6.w),
+                // DEĞİŞİKLİK: İzin verildiyse sağdaki oku gizle
+                if (!value)
+                  Icon(
+                    Icons.chevron_right,
+                    size: 18.sp,
+                    color: Colors.grey.shade400,
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
-  }
-
-  Future<void> _handlePermissionToggle(
-    bool newValue,
-    Permission permission,
-    ValueChanged<bool> onStateChanged,
-  ) async {
-    if (newValue) {
-      // İzni açmak istiyor, sistem popup'ını göster
-      final status = await permission.request();
-
-      if (status.isGranted) {
-        setState(() => onStateChanged(true));
-      } else if (status.isPermanentlyDenied) {
-        // Kalıcı reddedilmişse ayarlara yönlendir
-        _showSettingsDialog();
-        setState(() => onStateChanged(false));
-      } else {
-        // Sadece reddedildi, switch kapalı kalsın
-        setState(() => onStateChanged(false));
-      }
-    } else {
-      // İzni kapatmak istiyor. (Sistem izni kodla kapanmaz ama app içi state kapanır)
-      setState(() => onStateChanged(false));
-    }
   }
 
   void _showSettingsDialog() {

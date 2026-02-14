@@ -1,7 +1,9 @@
-import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart'; // context.push için
 import 'package:permission_handler/permission_handler.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
 
 class DevicePermissionsPage extends StatefulWidget {
   const DevicePermissionsPage({
@@ -10,6 +12,7 @@ class DevicePermissionsPage extends StatefulWidget {
     required this.permission,
     super.key,
   });
+
   final String title;
   final String description;
   final Permission permission;
@@ -21,12 +24,13 @@ class DevicePermissionsPage extends StatefulWidget {
 class _DevicePermissionsPageState extends State<DevicePermissionsPage>
     with WidgetsBindingObserver {
   bool _isGranted = false;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _checkPermissionStatus();
+    _initialCheck();
   }
 
   @override
@@ -35,114 +39,147 @@ class _DevicePermissionsPageState extends State<DevicePermissionsPage>
     super.dispose();
   }
 
-  // Kullanıcı ayarlara gidip geri dönerse durumu güncelle
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _checkPermissionStatus();
-    }
-  }
-
-  Future<void> _checkPermissionStatus() async {
+  // Sayfa ilk açıldığında durum tespiti
+  Future<void> _initialCheck() async {
     final status = await widget.permission.status;
     if (mounted) {
       setState(() {
-        _isGranted = status.isGranted || status.isLimited;
+        _isGranted =
+            status.isGranted || status.isLimited || status.isProvisional;
       });
     }
   }
 
-  Future<void> _togglePermission(bool value) async {
-    if (value) {
-      // Switch AÇILDI -> İzin İste
-      // (Eğer daha önce reddedildiyse popup çıkmayabilir, bu Android/iOS kuralıdır)
-      final status = await widget.permission.request();
+  // Uygulama ön plana çıktığında (Ayarlardan veya Router'dan dönünce)
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _handleResume();
+    }
+  }
+
+  Future<void> _handleResume() async {
+    if (!mounted) return;
+
+    setState(() => _isLoading = true);
+
+    // İşletim sistemi ve Router geçişleri için bekleme süresi
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Polling: 3 kez kontrol et (OS izni geç güncellerse diye)
+    for (int i = 0; i < 3; i++) {
+      final status = await widget.permission.status;
+      final currentStatus =
+          status.isGranted || status.isLimited || status.isProvisional;
+
+      if (mounted) {
+        setState(() => _isGranted = currentStatus);
+      }
+
+      if (currentStatus) break; // İzin verildiyse döngüden çık
+      await Future.delayed(const Duration(milliseconds: 200));
+    }
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _togglePermission(bool newValue) async {
+    if (newValue) {
+      // Mevcut durumu kontrol et
+      final status = await widget.permission.status;
+
+      // Eğer daha önce reddedilmişse (normal veya kalıcı), direkt ayarlara gönder
+      if (status.isDenied || status.isPermanentlyDenied) {
+        await openAppSettings();
+        return;
+      }
+
+      // İlk kez isteniyorsa veya başka bir durumsa sistem popup'ını aç
+      final result = await widget.permission.request();
 
       if (mounted) {
         setState(() {
-          _isGranted = status.isGranted || status.isLimited;
+          _isGranted =
+              result.isGranted || result.isLimited || result.isProvisional;
         });
-      }
 
-      // Eğer kalıcı olarak reddedildiyse ayarlara yönlendir
-      if (status.isPermanentlyDenied) {
-        await openAppSettings();
+        // Eğer kullanıcı popup'tan reddettiyse ve biz ayarlara gitsin istiyorsak:
+        if (!result.isGranted && !result.isLimited) {
+          await openAppSettings();
+        }
       }
     } else {
-      // Switch KAPANDI -> Sistem iznini kapatmak için ayarlara gitmek gerekir
+      // İzni kapatmak için sistem ayarlarına yönlendir (Uygulama içinden kapatılamaz)
       await openAppSettings();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
-      appBar: _buildAppBar(),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 27.h),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Başlık ve Switch Satırı
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: AppColors.backgroundColor,
+          appBar: _buildAppBar(),
+          body: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 27.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      widget.title,
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Display',
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.onBackgroundColor,
+                      ),
+                    ),
+                    Transform.scale(
+                      scale: 0.8,
+                      child: Switch.adaptive(
+                        value: _isGranted,
+                        activeColor: Colors.white,
+                        activeTrackColor: AppColors.primaryColor,
+                        inactiveThumbColor: Colors.white,
+                        inactiveTrackColor: AppColors.dividerColor,
+                        onChanged: _togglePermission,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 8.h),
                 Text(
-                  widget.title,
+                  widget.description,
                   style: TextStyle(
                     fontFamily: 'SF Pro Display',
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.onBackgroundColor,
-                  ),
-                ),
-                Transform.scale(
-                  scale: 0.8,
-                  child: Switch.adaptive(
-                    value: _isGranted,
-                    activeColor: Colors.white,
-                    activeTrackColor: AppColors.primaryColor,
-                    inactiveThumbColor: Colors.white,
-                    inactiveTrackColor: AppColors.dividerColor,
-                    onChanged: _togglePermission,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.textGrey,
+                    height: 1.4,
                   ),
                 ),
               ],
             ),
-
-            // Açıklama Metni
-            Text(
-              widget.description,
-              style: TextStyle(
-                fontFamily: 'SF Pro Display',
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w400,
-                color: AppColors.textGrey,
-                height: 1.4,
-              ),
-            ),
-
-            SizedBox(height: 20.h),
-
-            // Gizlilik Linki
-            GestureDetector(
-              onTap: () {
-                debugPrint('Gizlilik politikasına gidiliyor...');
-              },
-              child: Text(
-                'Gizlilik ve veri kullanımı hakkında daha fazla bilgi al',
-                style: TextStyle(
-                  fontFamily: 'SF Pro Display',
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w400,
-                  color: AppColors.tertiaryColor,
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+
+        // Siyah ekran yerine yarı şeffaf Loading Overlay
+        if (_isLoading)
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withOpacity(0.3),
+              child: const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
