@@ -11,7 +11,7 @@ class ChatMessageBubble extends StatelessWidget {
     required this.time,
     required this.isCurrentUser,
     this.username,
-    this.userAvatarUrl,
+    this.userprofileImageUrl,
     super.key,
   });
 
@@ -19,7 +19,7 @@ class ChatMessageBubble extends StatelessWidget {
   final String time;
   final bool isCurrentUser;
   final String? username;
-  final String? userAvatarUrl;
+  final String? userprofileImageUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -86,10 +86,11 @@ class ChatMessageBubble extends StatelessWidget {
               width: 24.w,
               height: 24.w,
               child:
-                  (userAvatarUrl != null && userAvatarUrl!.startsWith('http'))
+                  (userprofileImageUrl != null &&
+                      userprofileImageUrl!.startsWith('http'))
                   ? CachedNetworkImage(
                       imageUrl: fixEmulatorUrl(
-                        userAvatarUrl!,
+                        userprofileImageUrl!,
                       ), // Emulator fix'i unutma
                       fadeInDuration: Duration.zero,
                       fit: BoxFit.cover,

@@ -201,41 +201,24 @@ class _ChatPageState extends State<ChatPage> {
         currentUserEntity =
             getIt<SessionService>().currentUser ?? currentUserEntity;
 
-        return Scaffold(
-          backgroundColor: Colors.white,
-          body: Column(
-            children: [
-              ChatPageHeader(
-                eventID: widget.eventID,
-                event: widget.event,
-                creatorID: widget.creatorID,
-                chatTitle: widget.chatTitle,
-                creatorProfileImage: widget.creatorProfileImage,
-                location: widget.location,
-                eventDate: widget.eventDate,
-                participantStatus: widget.participantStatus,
-                participantAvatars: widget.participantAvatars,
-                categoryIcon: _getCategoryIcon(),
-              ),
+                    String? username;
+                    String? profileImageUrl;
 
-              // Mesaj listesi
-              Expanded(
-                child: StreamBuilder<List<MessageEntity>>(
-                  stream: _chatRepository.getChatMessagesStream(widget.eventID),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
+                    if (!isMe) {
+                      username = message.username;
+                      profileImageUrl = message.profileImageUrl;
                     }
-                    final messages = snapshot.data ?? [];
-                    if (messages.isEmpty) {
-                      return Center(
-                        child: Text(
-                          'Sohbeti başlat...',
-                          style: TextStyle(
-                            color: AppColors.textGrey,
-                            fontSize: 14.sp,
-                            fontFamily: 'SF Pro Display',
-                          ),
+
+                    return Column(
+                      children: [
+                        if (showDateDivider)
+                          _buildDateDivider(dateDividerString),
+                        ChatMessageBubble(
+                          message: message.content,
+                          time: timeString,
+                          isCurrentUser: isMe,
+                          username: username,
+                          userprofileImageUrl: profileImageUrl,
                         ),
                       );
                     }

@@ -21,7 +21,7 @@ class NotificationEntity {
     required this.type,
     required this.title,
     required this.message,
-    required this.avatarUrl,
+    required this.profileImageUrl,
     required this.createdAt,
     this.actionText,
     this.isRead = false,
@@ -33,7 +33,7 @@ class NotificationEntity {
     String? title,
     String? message,
     String? actionText,
-    String? avatarUrl,
+    String? profileImageUrl,
     DateTime? createdAt,
     bool? isRead,
     String? eventId,
@@ -43,7 +43,7 @@ class NotificationEntity {
       title: title ?? this.title,
       message: message ?? this.message,
       actionText: actionText ?? this.actionText,
-      avatarUrl: avatarUrl ?? this.avatarUrl,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       createdAt: createdAt ?? this.createdAt,
       isRead: isRead ?? this.isRead,
       eventId: eventId ?? this.eventId,
@@ -55,7 +55,7 @@ class NotificationEntity {
   final String message; // Normal metin
   final String?
   actionText; // Renkli aksiyon metni (Örn: "Buluşma kartını görüntüle")
-  final String avatarUrl; // Profil resmi
+  final String profileImageUrl; // Profil resmi
   final DateTime createdAt;
   final bool isRead;
   final String? eventId;

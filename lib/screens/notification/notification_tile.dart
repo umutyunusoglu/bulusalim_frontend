@@ -53,29 +53,18 @@ class NotificationTile extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: Colors.grey.shade200,
-          ),
-          child: ClipOval(
-            child: isNetwork
-                ? CachedNetworkImage(
-                    imageUrl: fixEmulatorUrl(raw),
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      color: Colors.grey.shade100,
-                      child: Icon(
-                        Icons.person,
-                        color: Colors.grey.shade300,
-                        size: 20.sp,
-                      ),
-                    ),
-                    errorWidget: (context, url, error) => Image.asset(
-                      FileService.defaultProfileImageUrl(),
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                : Image.asset(
-                    FileService.defaultProfileImageUrl(),
-                    fit: BoxFit.cover,
-                  ),
+            image: DecorationImage(
+              // URL geçerliyse Network, değilse Asset kullan
+              image:
+                  (notification.profileImageUrl.isNotEmpty &&
+                      notification.profileImageUrl.startsWith('http'))
+                  ? CachedNetworkImageProvider(
+                      fixEmulatorUrl(notification.profileImageUrl),
+                    )
+                  : AssetImage(FileService.defaultProfileImageUrl())
+                        as ImageProvider,
+              fit: BoxFit.cover,
+            ),
           ),
         ),
         Positioned(

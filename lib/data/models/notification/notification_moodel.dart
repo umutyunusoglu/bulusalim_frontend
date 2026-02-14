@@ -16,7 +16,7 @@ class NotificationModel {
     required this.type,
     required this.title,
     required this.message,
-    required this.avatarUrl,
+    required this.profileImageUrl,
     required this.createdAt,
     this.isRead = false,
     this.actionUrl,
@@ -26,7 +26,7 @@ class NotificationModel {
   final NotificationType type;
   final String title; // Örn: "yarkin.yoruk" veya "Katıldığın..."
   final String message; // Örn: "seni Sinema Gecesi buluşmasına çağırıyor"
-  final String avatarUrl;
+  final String profileImageUrl;
   final DateTime createdAt;
   final bool isRead;
   final String? actionUrl; // Tıklanınca gidilecek yer (varsa)

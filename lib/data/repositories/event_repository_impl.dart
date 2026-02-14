@@ -96,7 +96,7 @@ class EventRepositoryImpl implements EventRepository {
         username: event.creator.username,
         profileImageUrl: event.creator.profileImageUrl,
         university: event.creator.university,
-        fullname: null,
+        nameSurname: null,
         isPrivate: null,
         bio: null,
       );
@@ -286,7 +286,7 @@ class EventRepositoryImpl implements EventRepository {
 
           final finalEvents = await Future.wait(
             enrichedEvents.map((event) async {
-              return await _injectSensitiveDataIfAuthorized(
+              return injectSensitiveDataIfAuthorized(
                 event,
                 currentUserId,
               );
@@ -297,34 +297,31 @@ class EventRepositoryImpl implements EventRepository {
   }
 
   /// Yardımcı Metod: Yetki kontrolü yapar ve gerekiyorsa hassas veriyi çeker
-  Future<EventEntity> _injectSensitiveDataIfAuthorized(
+  @override
+  Future<EventEntity> injectSensitiveDataIfAuthorized(
     EventEntity event,
     String? currentUserId,
   ) async {
     // Yetki Kontrolü:
-    // 1. Kullanıcı Creator mı?
     final isCreator = event.creator.userID == currentUserId;
     // 2. Kullanıcı Katılımcı mı?
     final isParticipant = event.participants.any(
       (p) => p.userID == currentUserId,
     );
+    // 3. Etkinlik Herkese Açık mı? (Kurallardaki showOnMap şartı)
+    final isPublicOnMap = event.showOnMap == true;
 
-    final hasAccess = isCreator || isParticipant;
+    final hasAccess = isCreator || isParticipant || isPublicOnMap;
 
-    // Eğer yetkisi yoksa, mevcut (kısıtlı/gizli) halini döndür
-    if (!hasAccess) {
-      return event;
-    }
+    if (!hasAccess) return event;
 
-    // YETKİ VAR: Sensitive (Hassas) veriyi çek
     try {
       final sensitiveDoc = await _firestore
           .collection('events')
           .doc(event.eventID)
           .collection('sensitive')
-          .doc('meta')
+          .doc('meta') // Kuralda {docId} demiştik, 'meta' olması sorun değil.
           .get();
-
       if (sensitiveDoc.exists && sensitiveDoc.data() != null) {
         // Model'deki static helper ile veriyi parse et
         final sensitiveData = EventModel.parseSensitiveData(
@@ -387,7 +384,7 @@ class EventRepositoryImpl implements EventRepository {
       final eventEntity = eventModel.toEntity();
 
       final enrichedEvent = await enrichEventWithDetails(eventEntity);
-      final finalEvent = await _injectSensitiveDataIfAuthorized(
+      final finalEvent = await injectSensitiveDataIfAuthorized(
         enrichedEvent,
         getIt<SessionService>().currentUser?.userID,
       );

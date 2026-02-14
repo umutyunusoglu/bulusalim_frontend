@@ -90,10 +90,23 @@ class _FollowRequestTileState extends State<FollowRequestTile> {
           bgColor: AppColors.primaryColor,
           textColor: Colors.white,
           onTap: () async {
-            if (currentUser == null) return;
-            try {
-              final targetUser = await userRepository.getCurrentUser(
-                widget.item.userID,
+            // TODO: Takip etme işlemi
+            _logger.info('Takip et butonuna tıklandı: ${item.username}');
+
+            final sessionService = getIt<SessionService>();
+            final userRepository = getIt<UserRepository>();
+
+            final targetUserID = item.userID;
+            final currentUser = sessionService.currentUser;
+
+            final targetUser = await userRepository.getUserPublicData(
+              targetUserID,
+            );
+
+            if (targetUser?.isPrivate ?? false) {
+              // Özel hesap, takip isteği gönder
+              _logger.info(
+                'Özel hesaba takip isteği gönderiliyor: ${targetUser?.username}',
               );
 
               if (targetUser?.isPrivate ?? false) {

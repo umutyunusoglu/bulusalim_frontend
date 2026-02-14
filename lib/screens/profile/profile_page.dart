@@ -10,6 +10,7 @@ import 'package:outnest/components/popup.dart';
 import 'package:outnest/components/private_account_view.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
@@ -43,7 +44,7 @@ class _ProfilePageState extends State<ProfilePage> {
   int numberOfFollowers = 0;
   int numberOfFollowing = 0;
 
-  String _avatarUrl = '';
+  String _profileImageUrl = '';
   final List<String> _badges = [
     'assets/badge/badge1.png',
     'assets/badge/badge2.png',
@@ -173,6 +174,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (widget.profileUserID == getIt<SessionService>().currentUser?.userID) {
         user = getIt<SessionService>().currentUser;
       } else {
+        getIt<LoggingService>().debug("Others profi");
         user = await userRepository.getUserPublicData(widget.profileUserID);
       }
 
@@ -260,30 +262,35 @@ class _ProfilePageState extends State<ProfilePage> {
       final isPrivate = user.isPrivate;
 
       if (!mounted) return;
-
       setState(() {
-        _username = user.username as String;
-        _fullName = user.fullname as String ?? '' as String;
-        _bio = user.bio as String ?? '';
-        _school =
-            user.university as String ?? 'Üniversite Doğrulanmadı' as String;
-        _avatarUrl = user.profileImageUrl as String;
+        // dynamic olduğu için [] operatörü veya nokta operatörü kullanılabilir
+        // null check (?.) ve null-coalescing (??) ile güvenliğe alıyoruz
+        _username = (user.username ?? '').toString();
+        _fullName = (user.nameSurname ?? '').toString();
+        _bio = (user.bio ?? '').toString();
+        _school = (user.university ?? 'Üniversite Doğrulanmadı').toString();
+        _profileImageUrl = (user.profileImageUrl ?? '').toString();
 
-        _isFollowing = isFollowing;
-        _isPrivateAccount = isPrivate as bool ?? false;
-        _hasSentFollowRequest = hasSentFollowRequest;
+        // Boolean değerler için 'is' kontrolü eklemek dynamic tipte hayat kurtarır
+        _isFollowing = isFollowing == true;
+        _isPrivateAccount = isPrivate == true;
+        _hasSentFollowRequest = hasSentFollowRequest == true;
 
-        numberOfFollowers = followerCount;
-        numberOfFollowing = followeeCount;
-        numberOfEvents = completedEventCount;
+        // Sayısal verilerde hata almamak için 0'a yuvarlıyoruz
+        numberOfFollowers = followerCount ?? 0;
+        numberOfFollowing = followeeCount ?? 0;
+        numberOfEvents = completedEventCount ?? 0;
 
-        _commonFollowers = commonFollows;
+        _commonFollowers = commonFollows ?? [];
+        _currentEvents = enrolledEvents ?? [];
+        _consideredEvents = savedEvents ?? [];
 
-        _currentEvents = enrolledEvents;
-        _consideredEvents = savedEvents;
         _isLoadingEvents = false;
       });
     } catch (e) {
+      getIt<LoggingService>().error(
+        'Profil verisi alınırken hata oluştu $e',
+      );
       if (mounted) {
         setState(() {
           _isLoadingEvents = false;
@@ -326,10 +333,13 @@ class _ProfilePageState extends State<ProfilePage> {
     final currentUser = sessionService.currentUser;
     if (currentUser == null) return;
 
+    // 1. Durumu hemen değiştir (Optimistic Update)
+    final previousState = _isFollowing;
     setState(() => _isFollowing = !_isFollowing);
 
     try {
       if (_isFollowing) {
+        // Takip Etme İşlemi
         final me = Follower(
           userID: currentUser.userID,
           username: currentUser.username,
@@ -339,29 +349,46 @@ class _ProfilePageState extends State<ProfilePage> {
         final target = Followee(
           userID: widget.profileUserID,
           username: _username,
-          profileImageUrl: _avatarUrl,
+          profileImageUrl: _profileImageUrl,
           createdAt: DateTime.now(),
         );
 
-        await Future.wait([
-          userRepository.addFollowee(currentUser.userID, target),
-          userRepository.addFollower(widget.profileUserID, me),
-        ]);
+        // Bekleyerek yapalım ki hata varsa catch'e düşsün
+        await userRepository.addFollowee(currentUser.userID, target);
+        await userRepository.addFollower(widget.profileUserID, me);
+
+        // Takipçi sayısını manuel artır (UI anlık güncellensin)
+        setState(() => numberOfFollowers++);
       } else {
-        await Future.wait([
-          userRepository.removeFollowee(
-            currentUser.userID,
-            widget.profileUserID,
-          ),
-          userRepository.removeFollower(
-            widget.profileUserID,
-            currentUser.userID,
-          ),
-        ]);
+        // Takibi Bırakma İşlemi
+        await userRepository.removeFollowee(
+          currentUser.userID,
+          widget.profileUserID,
+        );
+        await userRepository.removeFollower(
+          widget.profileUserID,
+          currentUser.userID,
+        );
+
+        // Takipçi sayısını manuel azalt
+        setState(() => numberOfFollowers--);
       }
     } catch (e) {
+      // 2. Hata olursa durumu eski haline döndür
+      debugPrint("Takip işlemi başarısız: $e");
       if (mounted) {
-        setState(() => _isFollowing = !_isFollowing);
+        setState(() {
+          _isFollowing = previousState;
+          // Sayacı da eski haline döndür
+          _isFollowing ? numberOfFollowers++ : numberOfFollowers--;
+        });
+
+        // Kullanıcıya hata bildirimi
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('İşlem başarısız oldu, lütfen tekrar deneyin.'),
+          ),
+        );
       }
     }
   }
@@ -584,7 +611,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     await getIt<SendEventInvitation>().call(
                                       toID: widget.profileUserID,
                                       toUsername: _username,
-                                      toAvatarUrl: _avatarUrl,
+                                      toprofileImageUrl: _profileImageUrl,
                                       eventID: event.eventID,
                                       eventName: event.name ?? '',
                                     );
@@ -686,17 +713,14 @@ class _ProfilePageState extends State<ProfilePage> {
     final sessionUser = getIt<SessionService>().currentUser;
     final isCurrentUser = widget.profileUserID == sessionUser?.userID;
 
-    final displayUsername = isCurrentUser ? sessionUser!.username : _username;
-    final displayBio = isCurrentUser ? (sessionUser!.bio ?? '') : _bio;
-    final displayAvatar = isCurrentUser
-        ? sessionUser!.profileImageUrl
-        : _avatarUrl;
-    final displaySchool = isCurrentUser
-        ? (sessionUser!.university ?? 'Üniversite Doğrulanmadı')
-        : _school;
-    final displayFullName = isCurrentUser
-        ? sessionUser!.nameSurname
-        : _fullName;
+    final displayUsername = _username;
+    final displayBio = _bio;
+    final displayAvatar = _profileImageUrl;
+    final displaySchool = _school;
+    final displayFullName = _fullName;
+    final numberOfEvents = this.numberOfEvents;
+    final numberOfFollowers = this.numberOfFollowers;
+    final numberOfFollowing = this.numberOfFollowing;
 
     return Padding(
       padding: EdgeInsets.only(left: 16.w, right: 16.w, top: 30, bottom: 20.h),
@@ -848,7 +872,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 Expanded(
                   child: LoginButton(
                     label: _isFollowing
-                        ? 'takip ediyorsun'
+                        ? 'takibi bırak' // 'takip ediyorsun' yerine 'takibi bırak' yazarsan kullanıcı bastığını anlar
                         : (_isPrivateAccount && _hasSentFollowRequest)
                         ? 'istek gönderildi'
                         : 'takip et',
@@ -930,7 +954,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Row(
       children: [
         SmallStackedAvatars(
-          avatarUrls: avatars,
+          profileImageUrls: avatars,
           size: 24.r,
           overlap: 9.r,
           borderWidth: 0.sp,

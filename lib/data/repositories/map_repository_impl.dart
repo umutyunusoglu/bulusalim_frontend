@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_geohash/dart_geohash.dart';
 import 'package:dio/dio.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
 // min, max, clamp için
 
 import 'package:outnest/core/constants/configs/app_config.dart';
@@ -15,6 +16,7 @@ import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/map_repository.dart';
 import 'package:outnest/domain/services/global_content_cache.dart';
 import 'package:outnest/domain/services/in_memory_cache.dart';
+import 'package:outnest/domain/services/session_service.dart';
 
 // FIX: Magic Numbers Lookup Table'a taşındı.
 // Her precision seviyesi için yaklaşık derece (lat, lon) boyutları.
@@ -123,8 +125,19 @@ class MapRepositoryImpl implements MapRepository {
           eventsToEnrich.map((e) => _eventRepository.enrichEventWithDetails(e)),
         );
 
+        final String? currentUserId =
+            getIt<SessionService>().currentUser?.userID;
+        final locationInjectedEvents = await Future.wait(
+          enrichedEvents.map((e) async {
+            return await _eventRepository.injectSensitiveDataIfAuthorized(
+              e,
+              currentUserId,
+            );
+          }),
+        );
+
         // Zenginleştirilmiş verileri cache'e yazıyoruz
-        for (final entity in enrichedEvents) {
+        for (final entity in locationInjectedEvents) {
           // Global Cache (Detay sayfası için hazır olsun)
           _globalCache.cacheEntity(entity);
           // Map Cache (Harita gösterimi için)
@@ -261,7 +274,9 @@ class MapRepositoryImpl implements MapRepository {
         lat = (location['latitude'] as num?)?.toDouble();
         lng = (location['longitude'] as num?)?.toDouble();
       }
-    } catch (_) {}
+    } catch (e) {
+      _logger.error('Event konum verisi hatalı formatta: $e');
+    }
 
     if (lat == null || lng == null) return false;
 

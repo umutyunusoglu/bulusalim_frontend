@@ -157,7 +157,9 @@ class InboxRepositoryImpl implements InboxRepository {
       title: (data['title'] as String?) ?? '',
       message: (data['message'] as String?) ?? (data['body'] as String?) ?? '',
       actionText: data['actionText'] as String?,
-      avatarUrl: resolvedAvatar,
+      profileImageUrl:
+          (data['profileImageUrl'] as String?) ??
+          FileService.defaultProfileImageUrl(),
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       isRead: (data['isRead'] as bool?) ?? false,
       eventId: data['eventId'] as String?,
@@ -183,7 +185,9 @@ class InboxRepositoryImpl implements InboxRepository {
     return FollowNotificationEntity(
       userID: id,
       username: (data['username'] as String?) ?? 'Kullanıcı',
-      profileImageUrl: resolvedProfile,
+      profileImageUrl:
+          (data['profileImageUrl'] as String?) ??
+          FileService.defaultProfileImageUrl(),
       status: status,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );

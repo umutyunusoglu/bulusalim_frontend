@@ -188,7 +188,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
         username: currentUser.username,
         profileImageUrl: currentUser.profileImageUrl,
         university: currentUser.university,
-        fullname: null,
+        nameSurname: null,
         isPrivate: null,
         bio: null,
       );
