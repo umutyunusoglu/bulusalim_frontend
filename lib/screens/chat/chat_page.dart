@@ -15,8 +15,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 
-// NOT: Firestore importu kaldırıldı çünkü UI katmanında işi yok.
-
 class ChatPage extends StatefulWidget {
   const ChatPage({
     required this.eventID,
@@ -48,13 +46,17 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   late final ChatRepository _chatRepository;
   final ScrollController _scrollController = ScrollController();
-  final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
-  UserEntity? currentUser = getIt<SessionService>().currentUser;
+
+  // SessionService'ten gelen entity (nullable)
+  UserEntity? currentUserEntity = getIt<SessionService>().currentUser;
 
   @override
   void initState() {
     super.initState();
     _chatRepository = getIt<ChatRepository>();
+    // currentUserEntity runtime'da değişebiliyorsa (ör. async yükleniyorsa)
+    // dinleme ekleyebilirsiniz; burada getIt üzerinden anlık alıyoruz.
+    currentUserEntity = getIt<SessionService>().currentUser;
   }
 
   @override
@@ -64,16 +66,33 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _handleSendMessage(String text) async {
-    if (currentUser == null) return;
+    // Güvenlik: currentUserEntity null ise gönderme yapma
+    final cu = getIt<SessionService>().currentUser ?? currentUserEntity;
+    if (cu == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Kullanıcı bilgisi yüklenemedi. Mesaj gönderilemiyor.'),
+        ),
+      );
+      return;
+    }
+
+    if (text.trim().isEmpty) return;
+
     final message = MessageEntity(
-      content: text,
-      senderID: currentUser!.userID,
-      username: currentUser!.username,
-      profileImageUrl: currentUser!.profileImageUrl,
+      content: text.trim(),
+      senderID: cu.userID,
+      username: cu.username,
+      profileImageUrl: cu.profileImageUrl,
       createdAt: DateTime.now(),
     );
 
-    await _chatRepository.sendMessage(widget.eventID, message).then((_) {
+    try {
+      // eventID boş olmasın diye kontrol
+      if (widget.eventID.isEmpty) {
+        throw Exception('Geçersiz eventID');
+      }
+      await _chatRepository.sendMessage(widget.eventID, message);
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           0,
@@ -81,7 +100,14 @@ class _ChatPageState extends State<ChatPage> {
           curve: Curves.easeOut,
         );
       }
-    });
+    } catch (e) {
+      debugPrint('Chat send error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Mesaj gönderilemedi. Lütfen tekrar deneyin.'),
+        ),
+      );
+    }
   }
 
   String _getCategoryIcon() {
@@ -94,7 +120,6 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Map<String, String> _getSenderDetails(String senderID) {
-    // Bu metod mantığına dokunulmadı, mevcut haliyle bırakıldı.
     var imagePath = '';
     var name = 'Bilinmeyen Kullanıcı';
 
@@ -107,7 +132,9 @@ class _ChatPageState extends State<ChatPage> {
       try {
         final user = widget.participantAvatars.firstWhere(
           (u) {
-            final uid = (u is Map) ? u['userID'] : u.userID;
+            final uid = (u is Map)
+                ? (u['userID'] as String?) ?? ''
+                : (u.userID as String? ?? '');
             return uid == senderID;
           },
           orElse: () => null,
@@ -142,124 +169,150 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          ChatPageHeader(
-            eventID: widget.eventID,
-            event: widget.event,
-            creatorID: widget.creatorID,
-            chatTitle: widget.chatTitle,
-            creatorProfileImage:
-                widget.creatorProfileImage, // Tekrar fetch etmeye gerek yok
-            location: widget.location,
-            eventDate: widget.eventDate,
-            participantStatus: widget.participantStatus,
-            participantAvatars: widget.participantAvatars,
-            categoryIcon: _getCategoryIcon(), // Helper metoddan geliyor
-          ),
+    // Auth durumunu beklemek ve uid'nin kesin olmasını sağlamak için authStateChanges kullanıyoruz.
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, authSnap) {
+        // waiting aşamasında yükleme gösterebilirsiniz
+        if (authSnap.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-          // 2. MESAJ LİSTESİ (Burası Clean Architecture'a uygun Repository Stream'i)
-          Expanded(
-            child: StreamBuilder<List<MessageEntity>>(
-              stream: _chatRepository.getChatMessagesStream(
-                widget.eventID,
-              ), // Dokunulmadı
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final messages = snapshot.data ?? [];
-                if (messages.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'Sohbeti başlat...',
-                      style: TextStyle(
-                        color: AppColors.textGrey,
-                        fontSize: 14.sp,
-                        fontFamily: 'SF Pro Display',
-                      ),
-                    ),
-                  );
-                }
-                return ListView.builder(
-                  controller: _scrollController,
-                  reverse: true,
-                  padding: EdgeInsets.only(
-                    left: 16.w,
-                    right: 16.w,
-                    bottom: 0.h,
-                    top: 10.h,
-                  ),
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final message = messages[index];
-                    final isMe = message.senderID == currentUserId;
+        final firebaseUser = authSnap.data;
+        if (firebaseUser == null) {
+          // Giriş yoksa kullanıcıya bilgilendirme gösterin (veya login sayfasına yönlendirin)
+          return const Scaffold(
+            body: Center(child: Text('Giriş yapılmamış. Lütfen giriş yapın.')),
+          );
+        }
 
-                    // --- Tarih Ayracı Mantığı Başlangıç ---
-                    bool showDateDivider = false;
+        // eventID boşsa hata vermeden kullanıcıya bilgi göster:
+        if (widget.eventID.isEmpty) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Sohbet')),
+            body: const Center(child: Text('Geçersiz sohbet bilgisi.')),
+          );
+        }
 
-                    if (index == messages.length - 1) {
-                      showDateDivider = true;
-                    } else {
-                      final prevMessage = messages[index + 1];
-                      final currentMsgDate = message.createdAt;
-                      final prevMsgDate = prevMessage.createdAt;
+        final currentUserId = firebaseUser.uid;
+        // currentUserEntity'yi güncelle (session service boşsa fallback user bilgisi kullanılabilir)
+        currentUserEntity =
+            getIt<SessionService>().currentUser ?? currentUserEntity;
 
-                      if (currentMsgDate.year != prevMsgDate.year ||
-                          currentMsgDate.month != prevMsgDate.month ||
-                          currentMsgDate.day != prevMsgDate.day) {
-                        showDateDivider = true;
-                      }
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: Column(
+            children: [
+              ChatPageHeader(
+                eventID: widget.eventID,
+                event: widget.event,
+                creatorID: widget.creatorID,
+                chatTitle: widget.chatTitle,
+                creatorProfileImage: widget.creatorProfileImage,
+                location: widget.location,
+                eventDate: widget.eventDate,
+                participantStatus: widget.participantStatus,
+                participantAvatars: widget.participantAvatars,
+                categoryIcon: _getCategoryIcon(),
+              ),
+
+              // Mesaj listesi
+              Expanded(
+                child: StreamBuilder<List<MessageEntity>>(
+                  stream: _chatRepository.getChatMessagesStream(widget.eventID),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
                     }
-
-                    final String dateDividerString = _getFormattedDate(
-                      message.createdAt,
-                    );
-                    // --- Tarih Ayracı Mantığı Bitiş ---
-
-                    final timeString = DateFormat(
-                      'HH:mm',
-                    ).format(message.createdAt);
-
-                    String? username;
-                    String? avatarUrl;
-
-                    if (!isMe) {
-                      username = message.username;
-                      avatarUrl = message.profileImageUrl;
-                    }
-
-                    return Column(
-                      children: [
-                        if (showDateDivider)
-                          _buildDateDivider(dateDividerString),
-                        ChatMessageBubble(
-                          message: message.content,
-                          time: timeString,
-                          isCurrentUser: isMe,
-                          username: username,
-                          userAvatarUrl: avatarUrl,
+                    final messages = snapshot.data ?? [];
+                    if (messages.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'Sohbeti başlat...',
+                          style: TextStyle(
+                            color: AppColors.textGrey,
+                            fontSize: 14.sp,
+                            fontFamily: 'SF Pro Display',
+                          ),
                         ),
-                      ],
+                      );
+                    }
+                    return ListView.builder(
+                      controller: _scrollController,
+                      reverse: true,
+                      padding: EdgeInsets.only(
+                        left: 16.w,
+                        right: 16.w,
+                        bottom: 0.h,
+                        top: 10.h,
+                      ),
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        final message = messages[index];
+                        final isMe = message.senderID == currentUserId;
+
+                        bool showDateDivider = false;
+                        if (index == messages.length - 1) {
+                          showDateDivider = true;
+                        } else {
+                          final prevMessage = messages[index + 1];
+                          final currentMsgDate = message.createdAt;
+                          final prevMsgDate = prevMessage.createdAt;
+
+                          if (currentMsgDate.year != prevMsgDate.year ||
+                              currentMsgDate.month != prevMsgDate.month ||
+                              currentMsgDate.day != prevMsgDate.day) {
+                            showDateDivider = true;
+                          }
+                        }
+
+                        final dateDividerString = _getFormattedDate(
+                          message.createdAt,
+                        );
+                        final timeString = DateFormat(
+                          'HH:mm',
+                        ).format(message.createdAt);
+
+                        String? username;
+                        String? avatarUrl;
+
+                        if (!isMe) {
+                          username = message.username;
+                          avatarUrl = message.profileImageUrl;
+                        }
+
+                        return Column(
+                          children: [
+                            if (showDateDivider)
+                              _buildDateDivider(dateDividerString),
+                            ChatMessageBubble(
+                              message: message.content,
+                              time: timeString,
+                              isCurrentUser: isMe,
+                              username: username,
+                              userAvatarUrl: avatarUrl,
+                            ),
+                          ],
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
-          ),
+                ),
+              ),
 
-          // 3. INPUT ALANI
-          ChatInputBar(
-            onSend: (text) => _handleSendMessage(text),
+              // Input
+              ChatInputBar(
+                onSend: (text) => _handleSendMessage(text),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  // Tarihi "Bugün", "Dün" veya "11 Şubat" şeklinde formatlar
   String _getFormattedDate(DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -275,7 +328,6 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  // Tarih ayracı tasarımı
   Widget _buildDateDivider(String date) {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 20.h),

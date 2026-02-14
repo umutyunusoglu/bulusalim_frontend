@@ -46,12 +46,11 @@ class _NotificationPageState extends State<NotificationPage> {
           style: TextStyle(
             fontFamily: 'SF Pro Display',
             fontWeight: FontWeight.w700,
-            fontSize: 18.sp, // Figma standardı
+            fontSize: 18.sp,
             color: Colors.black,
           ),
         ),
         actions: [
-          // --- TAKİP İSTEKLERİ İKONU ---
           Padding(
             padding: EdgeInsets.only(right: 16.w),
             child: GestureDetector(
@@ -71,7 +70,6 @@ class _NotificationPageState extends State<NotificationPage> {
                         size: 26,
                       ),
                     ),
-                    // Bildirim Sayısı Badge
                     StreamBuilder<int>(
                       stream: _inboxRepository.getUnreadCountStream(),
                       builder: (context, snapshot) {
@@ -121,16 +119,19 @@ class _NotificationPageState extends State<NotificationPage> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final notifications = snapshot.data ?? [];
+          final notifications = (snapshot.data ?? []).toList();
+
           if (notifications.isEmpty) {
             return const Center(child: Text('Bildirim yok'));
           }
+
+          // Tercihe bağlı: bildirimleri tarihe göre yeni->eski sıralama
+          notifications.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
           // --- GRUPLAMA MANTIĞI ---
           final now = DateTime.now();
           final today = notifications.where((n) {
             final diff = now.difference(n.createdAt);
-            // Son 24 saat içindeyse "Bugün" kabul ediyoruz
             return diff.inHours < 24;
           }).toList();
 
@@ -141,7 +142,6 @@ class _NotificationPageState extends State<NotificationPage> {
           return ListView(
             padding: EdgeInsets.zero,
             children: [
-              // BUGÜN LİSTESİ
               if (today.isNotEmpty) ...[
                 _buildSectionHeader('Bugün'),
                 ...today.map(
@@ -151,8 +151,6 @@ class _NotificationPageState extends State<NotificationPage> {
                   ),
                 ),
               ],
-
-              // ESKİLER LİSTESİ
               if (others.isNotEmpty) ...[
                 SizedBox(height: 10.h),
                 _buildSectionHeader('Son 7 Gün'),
@@ -171,7 +169,6 @@ class _NotificationPageState extends State<NotificationPage> {
     );
   }
 
-  // Başlık Stili
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: EdgeInsets.only(left: 16.w, top: 16.h, bottom: 8.h),

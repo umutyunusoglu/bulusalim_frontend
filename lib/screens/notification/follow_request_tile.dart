@@ -12,158 +12,163 @@ import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-class FollowRequestTile extends StatelessWidget {
-  FollowRequestTile({required this.item, super.key});
-
+class FollowRequestTile extends StatefulWidget {
+  const FollowRequestTile({required this.item, super.key});
   final FollowNotificationEntity item;
+
+  @override
+  State<FollowRequestTile> createState() => _FollowRequestTileState();
+}
+
+class _FollowRequestTileState extends State<FollowRequestTile> {
   final LoggingService _logger = getIt<LoggingService>();
+  late FollowStatus _currentStatus;
 
-  // Sağ taraftaki aksiyon butonlarını oluşturur
+  @override
+  void initState() {
+    super.initState();
+    _currentStatus = widget.item.status;
+  }
+
+  String _resolveAvatarUrl() {
+    final raw = (widget.item.profileImageUrl ?? '').trim();
+    if (raw.isEmpty || raw.startsWith('gs://')) return '';
+    return fixEmulatorUrl(raw);
+  }
+
+  Widget _buildButton({
+    required String text,
+    required Color bgColor,
+    required Color textColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 7.h),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 11.sp,
+            color: textColor,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildTrailingAction() {
-    switch (item.status) {
-      // DURUM 1: Takip Ediliyor
+    final userRepository = getIt<UserRepository>();
+    final sessionService = getIt<SessionService>();
+    final currentUser = sessionService.currentUser;
+
+    switch (_currentStatus) {
       case FollowStatus.following:
-        return Container(
-          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF2F2F7),
-            borderRadius: BorderRadius.circular(20.r),
-          ),
-          child: Text(
-            'takip ediliyor',
-            style: TextStyle(
-              fontSize: 10.sp,
-              color: AppColors.tertiaryColor,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+        return _buildButton(
+          text: 'takip ediliyor',
+          bgColor: const Color(0xFFF2F2F7),
+          textColor: const Color(0xFF3A3A3C),
+          onTap: () {},
         );
 
-      // DURUM 2: İstek Gönderildi
       case FollowStatus.sent:
-        return Container(
-          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF2F2F7),
-            borderRadius: BorderRadius.circular(20.r),
-          ),
-          child: Text(
-            'istek gönderildi',
-            style: TextStyle(
-              fontSize: 10.sp,
-              color: AppColors.tertiaryColor,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+        return _buildButton(
+          text: 'istek gönderildi',
+          bgColor: const Color(0xFFF2F2F7),
+          textColor: const Color(0xFF3A3A3C),
+          onTap: () {},
         );
 
-      // DURUM 3: Takip Et
       case FollowStatus.none:
-        return GestureDetector(
+        return _buildButton(
+          text: 'takip et',
+          bgColor: AppColors.primaryColor,
+          textColor: Colors.white,
           onTap: () async {
-            // TODO: Takip etme işlemi
-            _logger.info('Takip et butonuna tıklandı: ${item.username}');
-
-            final sessionService = getIt<SessionService>();
-            final userRepository = getIt<UserRepository>();
-
-            final targetUserID = item.userID;
-            final currentUser = sessionService.currentUser;
-
-            final targetUser = await userRepository.getCurrentUser(
-              targetUserID,
-            );
-
-            if (targetUser!.isPrivate) {
-              // Özel hesap, takip isteği gönder
-              _logger.info(
-                'Özel hesaba takip isteği gönderiliyor: ${targetUser.username}',
+            if (currentUser == null) return;
+            try {
+              final targetUser = await userRepository.getCurrentUser(
+                widget.item.userID,
               );
 
-              await userRepository.sendFollowRequest(
-                currentUser!.userID,
-                targetUserID,
-                true,
-              );
+              if (targetUser?.isPrivate ?? false) {
+                // Gizli hesap: İstek gönderildi durumuna geç
+                await userRepository.sendFollowRequest(
+                  currentUser.userID,
+                  widget.item.userID,
+                  true,
+                );
+                if (mounted) setState(() => _currentStatus = FollowStatus.sent);
+              } else {
+                // Açık hesap: Takip ediliyor durumuna geç
+                await userRepository.addFollowee(
+                  currentUser.userID,
+                  FriendEntity(
+                    userID: widget.item.userID,
+                    username: widget.item.username ?? '',
+                    profileImageUrl: widget.item.profileImageUrl ?? '',
+                    createdAt: DateTime.now(),
+                  ),
+                );
+                if (mounted)
+                  setState(() => _currentStatus = FollowStatus.following);
+              }
+            } catch (e) {
+              _logger.error('Follow error: $e');
             }
           },
-
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
-            decoration: BoxDecoration(
-              color: AppColors.primaryColor,
-              borderRadius: BorderRadius.circular(20.r),
-            ),
-            child: Text(
-              'takip et',
-              style: TextStyle(
-                fontSize: 10.sp,
-                color: Colors.white,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
         );
 
-      // DURUM 4: Kabul Et / Sil
       case FollowStatus.pending:
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            GestureDetector(
-              onTap: () {
-                final sessionService = getIt<SessionService>();
-                final userRepository = getIt<UserRepository>();
-
-                final targetUserID = item.userID;
-                final currentUser = sessionService.currentUser;
-
-                final follower = FriendEntity(
-                  userID: targetUserID,
-                  username: item.username,
-                  profileImageUrl: item.profileImageUrl,
-                  createdAt: DateTime.now(),
-                );
-
-                userRepository.addFollower(currentUser!.userID, follower);
+            _buildButton(
+              text: 'kabul et',
+              bgColor: AppColors.primaryColor,
+              textColor: Colors.white,
+              onTap: () async {
+                if (currentUser == null) return;
+                try {
+                  await userRepository.addFollower(
+                    currentUser.userID,
+                    FriendEntity(
+                      userID: widget.item.userID,
+                      username: widget.item.username ?? '',
+                      profileImageUrl: widget.item.profileImageUrl ?? '',
+                      createdAt: DateTime.now(),
+                    ),
+                  );
+                  if (mounted)
+                    setState(() => _currentStatus = FollowStatus.following);
+                } catch (e) {
+                  _logger.error('Accept error: $e');
+                }
               },
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryColor,
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                child: Text(
-                  'kabul et',
-                  style: TextStyle(
-                    fontSize: 10.sp,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
             ),
-
-            SizedBox(width: 4.w),
-            GestureDetector(
-              onTap: () {
-                // TODO: Silme işlemi
+            SizedBox(width: 6.w),
+            _buildButton(
+              text: 'sil',
+              bgColor: const Color(0xFFF2F2F7),
+              textColor: const Color(0xFF3A3A3C),
+              onTap: () async {
+                if (currentUser == null) return;
+                try {
+                  await userRepository.cancelFollowRequest(
+                    currentUser.userID,
+                    widget.item.userID,
+                  );
+                  if (mounted)
+                    setState(() => _currentStatus = FollowStatus.none);
+                } catch (e) {
+                  _logger.error('Delete error: $e');
+                }
               },
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF2F2F7),
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                child: Text(
-                  'sil',
-                  style: TextStyle(
-                    fontSize: 10.sp,
-                    color: AppColors.tertiaryColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
             ),
           ],
         );
@@ -172,101 +177,69 @@ class FollowRequestTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Özel formatı ('tr_short') sisteme tanıtıyoruz
-    timeago.setLocaleMessages('tr_short', TrShortMessages());
+    final avatarUrl = _resolveAvatarUrl();
+
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // 1. AVATAR
-          CircleAvatar(
-            radius: 16.r,
-            backgroundColor:
-                Colors.grey.shade200, // Resim yüklenene kadar boş kalmasın
-            backgroundImage:
-                (item.profileImageUrl.isNotEmpty &&
-                    item.profileImageUrl.startsWith('http'))
-                ? CachedNetworkImageProvider(
-                    fixEmulatorUrl(item.profileImageUrl),
-                  )
-                : AssetImage(FileService.defaultProfileImageUrl())
-                      as ImageProvider,
-            onBackgroundImageError: (_, __) => debugPrint('Small Avatar Error'),
+          SizedBox(
+            width: 44.r,
+            height: 44.r,
+            child: ClipOval(
+              child: avatarUrl.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: avatarUrl,
+                      fit: BoxFit.cover,
+                      errorWidget: (context, url, error) => Image.asset(
+                        'assets/defaults/default_profile.jpg',
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : Image.asset(
+                      'assets/defaults/default_profile.jpg',
+                      fit: BoxFit.cover,
+                    ),
+            ),
           ),
           SizedBox(width: 12.w),
-
-          // 2. METİN
           Expanded(
             child: RichText(
               text: TextSpan(
                 style: TextStyle(
                   fontFamily: 'SF Pro Display',
-                  fontSize: 12.sp,
+                  fontSize: 13.sp,
                   color: Colors.black,
-                  height: 1.3,
+                  height: 1.2,
                 ),
                 children: [
                   TextSpan(
-                    text: '${item.username} ',
-                    style: const TextStyle(fontWeight: FontWeight.w500),
+                    text: '${widget.item.username ?? 'Kullanıcı'} ',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   TextSpan(
-                    text: item.message.replaceAll('\n', ' ').trim(),
+                    text: (widget.item.message ?? '')
+                        .replaceAll('\n', ' ')
+                        .trim(),
                     style: const TextStyle(fontWeight: FontWeight.w400),
                   ),
-                  // Zaman Bilgisi
                   TextSpan(
                     text:
-                        ' ${timeago.format(item.createdAt, locale: 'tr_short')}',
+                        ' ${timeago.format(widget.item.createdAt, locale: 'tr_short')}',
                     style: TextStyle(
                       color: Colors.grey.shade400,
-                      fontSize: 12.sp,
+                      fontSize: 11.sp,
                     ),
                   ),
                 ],
               ),
             ),
           ),
-
-          // 3. BUTONLAR
+          SizedBox(width: 8.w),
           _buildTrailingAction(),
         ],
       ),
     );
   }
-}
-
-class TrShortMessages implements timeago.LookupMessages {
-  @override
-  String prefixAgo() => '';
-  @override
-  String prefixFromNow() => '';
-  @override
-  String suffixAgo() => '';
-  @override
-  String suffixFromNow() => '';
-  @override
-  String lessThanOneMinute(int seconds) => 'şimdi';
-  @override
-  String aboutAMinute(int minutes) => '1dk';
-  @override
-  String minutes(int minutes) => '${minutes}dk';
-  @override
-  String aboutAnHour(int minutes) => '1sa';
-  @override
-  String hours(int hours) => '${hours}sa';
-  @override
-  String aDay(int hours) => '1gn';
-  @override
-  String days(int days) => '${days}gn';
-  @override
-  String aboutAMonth(int days) => '1ay';
-  @override
-  String months(int months) => '${months}ay';
-  @override
-  String aboutAYear(int year) => '1yl';
-  @override
-  String years(int years) => '${years}yl';
-  @override
-  String wordSeparator() => ' ';
 }

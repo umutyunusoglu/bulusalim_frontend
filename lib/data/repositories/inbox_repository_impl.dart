@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:outnest/domain/entities/notification/follow_notification_entity.dart'; // <--- 1. YENİ ENTITY IMPORT
+import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:outnest/domain/entities/notification/follow_notification_entity.dart';
 import 'package:outnest/domain/entities/notification/notification_entity.dart';
 import 'package:outnest/domain/repositories/inbox_repository.dart';
 import 'package:outnest/domain/services/file_service.dart';
@@ -9,10 +10,12 @@ class InboxRepositoryImpl implements InboxRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  // Basit in-memory cache -> aynı gs:// için tekrar getDownloadURL çağrısını engeller
+  final Map<String, String> _downloadUrlCache = {};
+
   String get _userId => _auth.currentUser?.uid ?? '';
 
   // 1. GENEL BİLDİRİMLER
-
   @override
   Stream<List<NotificationEntity>> getNotificationsStream() {
     if (_userId.isEmpty) return Stream.value([]);
@@ -23,11 +26,12 @@ class InboxRepositoryImpl implements InboxRepository {
         .collection('notifications')
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) {
-          return snapshot.docs.map((doc) {
+        .asyncMap((snapshot) async {
+          final futures = snapshot.docs.map((doc) async {
             final data = doc.data();
-            return _mapFirestoreToEntity(doc.id, data);
+            return await _mapFirestoreToEntityAsync(doc.id, data);
           }).toList();
+          return await Future.wait(futures);
         });
   }
 
@@ -42,11 +46,12 @@ class InboxRepositoryImpl implements InboxRepository {
         .collection('followNotifications')
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) {
-          return snapshot.docs.map((doc) {
+        .asyncMap((snapshot) async {
+          final futures = snapshot.docs.map((doc) async {
             final data = doc.data();
-            return _mapFirestoreToFollowEntity(doc.id, data);
+            return await _mapFirestoreToFollowEntityAsync(doc.id, data);
           }).toList();
+          return await Future.wait(futures);
         });
   }
 
@@ -74,57 +79,85 @@ class InboxRepositoryImpl implements InboxRepository {
         .update({'isRead': true});
   }
 
-  // MAPPERS
+  // ---- HELPERS ----
+  Future<String> _resolveStorageOrUrl(String? rawUrl) async {
+    final url = (rawUrl ?? '').trim();
+
+    if (url.isEmpty) {
+      return FileService.defaultProfileImageUrl();
+    }
+
+    // Eğer zaten http veya https ise direkt döndür
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+
+    // Eğer doğrudan Firebase Storage public download url ise (ör. firebase storage host link) return
+    if (url.contains('firebasestorage.googleapis.com')) {
+      return url;
+    }
+
+    // gs:// formatı için cache kontrolü ve getDownloadURL
+    if (url.startsWith('gs://')) {
+      // Cache'de varsa hızlı return
+      if (_downloadUrlCache.containsKey(url)) {
+        return _downloadUrlCache[url]!;
+      }
+
+      try {
+        final ref = firebase_storage.FirebaseStorage.instance.refFromURL(url);
+        final downloadUrl = await ref.getDownloadURL();
+        // Cache'le
+        _downloadUrlCache[url] = downloadUrl;
+        return downloadUrl;
+      } catch (e) {
+        // Hata durumunda fallback
+        // Loglama için print (isteğe göre LoggingService ile değiştirin)
+        print('InboxRepositoryImpl: getDownloadURL failed for $url -> $e');
+        return FileService.defaultProfileImageUrl();
+      }
+    }
+
+    // Diğer formatlar (ör: storage path without gs://) için deneme:
+    // Eğer "users/avatars/..." gibi path geliyorsa ref().child ile deneyebiliriz.
+    if (!url.contains('/') || url.split('/').length < 2) {
+      // muhtemelen geçersiz -> fallback
+      return FileService.defaultProfileImageUrl();
+    }
+
+    try {
+      // Deneme: treat as path under root
+      final ref = firebase_storage.FirebaseStorage.instance.ref().child(url);
+      final downloadUrl = await ref.getDownloadURL();
+      // Cache key olarak path kullan
+      _downloadUrlCache[url] = downloadUrl;
+      return downloadUrl;
+    } catch (e) {
+      print(
+        'InboxRepositoryImpl: fallback getDownloadURL failed for path $url -> $e',
+      );
+      return FileService.defaultProfileImageUrl();
+    }
+  }
+
+  // MAPPERS (ASYNCHRONOUS)
   // Mapper 1: Genel Bildirimler
-  NotificationEntity _mapFirestoreToEntity(
+  Future<NotificationEntity> _mapFirestoreToEntityAsync(
     String id,
     Map<String, dynamic> data,
-  ) {
-    NotificationType type;
+  ) async {
+    final typeString = (data['type'] as String?) ?? '';
+    final type = _notificationTypeFromString(typeString);
 
-    switch (data['type']) {
-      case 'join':
-        type = NotificationType.join;
-      case 'invite':
-        type = NotificationType.invite;
-      case 'cancel':
-        type = NotificationType.cancel;
-      case 'updateTime':
-        type = NotificationType.updateTime;
-      case 'updateLocation':
-        type = NotificationType.updateLocation;
-      case 'warning':
-        type = NotificationType.warning;
-      case 'tag':
-        type = NotificationType.tag;
-      case 'badgeWin':
-        type = NotificationType.badgeWin;
-      case 'badgeProgress':
-        type = NotificationType.badgeProgress;
-      case 'participants':
-        type = NotificationType.participants;
-      case 'left':
-        type = NotificationType.left;
-      case 'timeEnding':
-        type = NotificationType.timeEnding;
-      case 'created':
-        type = NotificationType.created;
-      case 'startingSoon':
-        type = NotificationType.startingSoon;
-      case 'earlyStart':
-        type = NotificationType.earlyStart;
-      default:
-        type = NotificationType.join;
-    }
+    final rawAvatar = (data['avatarUrl'] as String?) ?? '';
+    final resolvedAvatar = await _resolveStorageOrUrl(rawAvatar);
 
     return NotificationEntity(
       type: type,
       title: (data['title'] as String?) ?? '',
       message: (data['message'] as String?) ?? (data['body'] as String?) ?? '',
       actionText: data['actionText'] as String?,
-      avatarUrl:
-          (data['avatarUrl'] as String?) ??
-          FileService.defaultProfileImageUrl(),
+      avatarUrl: resolvedAvatar,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       isRead: (data['isRead'] as bool?) ?? false,
       eventId: data['eventId'] as String?,
@@ -132,32 +165,78 @@ class InboxRepositoryImpl implements InboxRepository {
   }
 
   // Mapper 2: Takip İstekleri
-  FollowNotificationEntity _mapFirestoreToFollowEntity(
+  Future<FollowNotificationEntity> _mapFirestoreToFollowEntityAsync(
     String id,
     Map<String, dynamic> data,
-  ) {
-    FollowStatus status;
+  ) async {
+    final statusString = (data['status'] as String?) ?? '';
+    final status = _followStatusFromString(statusString);
 
-    // Firestore'daki string'i Enum'a çeviriyoruz
-    switch (data['status']) {
-      case 'following':
-        status = FollowStatus.following;
-      case 'sent':
-        status = FollowStatus.sent;
-      case 'pending':
-        status = FollowStatus.pending;
-      default:
-        status = FollowStatus.none;
-    }
+    // Bazı koleksiyonlarda alan adı profileUrl veya profileImageUrl olabilir; ikisini de kontrol ediyoruz
+    final rawProfile =
+        (data['profileUrl'] as String?) ??
+        (data['profileImageUrl'] as String?) ??
+        (data['avatarUrl'] as String?);
+
+    final resolvedProfile = await _resolveStorageOrUrl(rawProfile);
 
     return FollowNotificationEntity(
       userID: id,
       username: (data['username'] as String?) ?? 'Kullanıcı',
-      profileImageUrl:
-          (data['profileUrl'] as String?) ??
-          FileService.defaultProfileImageUrl(),
+      profileImageUrl: resolvedProfile,
       status: status,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
+  }
+
+  // String -> Enum yardımcıları
+  NotificationType _notificationTypeFromString(String s) {
+    switch (s) {
+      case 'invite':
+        return NotificationType.invite;
+      case 'cancel':
+        return NotificationType.cancel;
+      case 'updateTime':
+        return NotificationType.updateTime;
+      case 'updateLocation':
+        return NotificationType.updateLocation;
+      case 'warning':
+        return NotificationType.warning;
+      case 'tag':
+        return NotificationType.tag;
+      case 'badgeWin':
+        return NotificationType.badgeWin;
+      case 'badgeProgress':
+        return NotificationType.badgeProgress;
+      case 'participants':
+        return NotificationType.participants;
+      case 'left':
+        return NotificationType.left;
+      case 'timeEnding':
+        return NotificationType.timeEnding;
+      case 'created':
+        return NotificationType.created;
+      case 'startingSoon':
+        return NotificationType.startingSoon;
+      case 'earlyStart':
+        return NotificationType.earlyStart;
+      case 'join':
+      default:
+        return NotificationType.join;
+    }
+  }
+
+  FollowStatus _followStatusFromString(String s) {
+    switch (s) {
+      case 'following':
+        return FollowStatus.following;
+      case 'sent':
+        return FollowStatus.sent;
+      case 'pending':
+        return FollowStatus.pending;
+      case 'none':
+      default:
+        return FollowStatus.none;
+    }
   }
 }

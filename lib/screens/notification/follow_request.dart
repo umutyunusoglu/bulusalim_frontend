@@ -37,7 +37,7 @@ class _FollowRequestsPageState extends State<FollowRequestsPage> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Bildirimler',
+          'Takip İstekleri',
           style: TextStyle(
             fontFamily: 'SF Pro Display',
             fontWeight: FontWeight.w700,
@@ -63,12 +63,18 @@ class _FollowRequestsPageState extends State<FollowRequestsPage> {
             return const Center(child: CircularProgressIndicator());
           }
 
+          if (snapshot.hasError) {
+            return Center(child: Text('Bir hata oluştu: ${snapshot.error}'));
+          }
+
           final items = snapshot.data ?? [];
           if (items.isEmpty) {
             return const Center(child: Text('Takip isteği yok'));
           }
 
-          // GRUPLAMA MANTIĞI
+          // Tarihe göre sıralama (yeni üstte)
+          items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
           final now = DateTime.now();
           final today = items.where((n) {
             final diff = now.difference(n.createdAt);
@@ -80,7 +86,6 @@ class _FollowRequestsPageState extends State<FollowRequestsPage> {
           return ListView(
             padding: EdgeInsets.zero,
             children: [
-              // MAVİ BAŞLIK
               Padding(
                 padding: EdgeInsets.only(left: 16.w, top: 10.h, bottom: 5.h),
                 child: Text(
@@ -93,22 +98,13 @@ class _FollowRequestsPageState extends State<FollowRequestsPage> {
                   ),
                 ),
               ),
-
               if (today.isNotEmpty) ...[
                 _buildSectionHeader('Bugün'),
                 ...today.map((item) => FollowRequestTile(item: item)),
               ],
-
               if (others.isNotEmpty) ...[
                 SizedBox(height: 10.h),
                 _buildSectionHeader('Son 7 Gün'),
-                ...others.map((item) => FollowRequestTile(item: item)),
-              ],
-
-              if (others.isNotEmpty) ...[
-                SizedBox(height: 10.h),
-                _buildSectionHeader('Daha Eski'),
-                // Demo amaçlı tekrar gösteriyoruz
                 ...others.map((item) => FollowRequestTile(item: item)),
               ],
               SizedBox(height: 20.h),

@@ -105,7 +105,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
 
   Future<void> _checkAllPermissions() async {
     // Sistem ayarlarındaki değişikliğin yansıması için küçük bir bekleme iyi oluyor
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 700));
 
     try {
       final nStatus = await Permission.notification.status;
@@ -132,6 +132,73 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
     }
   }
 
+  // Genel permission request helper:
+  // - Eğer izin zaten varsa true döner.
+  // - Eğer izin istenebiliyorsa request eder.
+  // - Eğer kalıcı reddedildiyse openAppSettings() çağırır ve false döner.
+  Future<bool> _ensurePermission(
+    Permission permission, {
+    bool showSettingsIfPermanentlyDenied = true,
+  }) async {
+    try {
+      final status = await permission.status;
+      if (status.isGranted) return true;
+
+      if (status.isPermanentlyDenied || status.isRestricted) {
+        if (showSettingsIfPermanentlyDenied) {
+          _showOpenSettingsDialog(permission);
+        }
+        return false;
+      }
+
+      // request
+      final result = await permission.request();
+      if (result.isGranted) return true;
+
+      if (result.isPermanentlyDenied && showSettingsIfPermanentlyDenied) {
+        _showOpenSettingsDialog(permission);
+      }
+      return false;
+    } catch (e) {
+      print("DEBUG ERROR: _ensurePermission hata: $e");
+      return false;
+    } finally {
+      // küçük gecikmeyle izinleri tekrar eşitle
+      Future.delayed(const Duration(milliseconds: 400), _checkAllPermissions);
+    }
+  }
+
+  void _showOpenSettingsDialog(Permission permission) {
+    // Kullanıcıyı ayarlara yönlendirmeden önce onay alabiliriz
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('İzin Gerekli'),
+        content: const Text(
+          'Bu işlemi yapmak için uygulama ayarlarından izni açmanız gerekiyor. Ayarlara gitmek ister misiniz?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Vazgeç'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              await openAppSettings();
+              // Ayarlardan dönüşte kontroller lifecycle veya _checkAllPermissions ile güncellenecek
+              Future.delayed(
+                const Duration(milliseconds: 700),
+                _checkAllPermissions,
+              );
+            },
+            child: const Text('Ayarlar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _handlePermissionToggle(
     bool newValue,
     Permission permission,
@@ -151,40 +218,28 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
           return;
         }
 
-        if (status.isPermanentlyDenied) {
-          // Kalıcı reddedilmiş -> Ayarlara yönlendir
-          print("DEBUG: İzin kalıcı reddedilmiş, ayarlara yönlendiriliyor...");
-          await openAppSettings();
-          // Kullanıcı ayarlardan döndüğünde lifecycle resumed ile _checkAllPermissions çağrılacak
+        if (status.isPermanentlyDenied || status.isRestricted) {
+          // Kalıcı reddedilmiş -> Ayarlara yönlendir (kullanıcı onayı ile)
+          _showOpenSettingsDialog(permission);
           return;
         }
 
-        // Diğer durumlarda (denied, restricted vb.) permission.request() deneyelim
-        print("DEBUG: İzin popup'ı gösteriliyor...");
-        final result = await permission.request();
-        print("DEBUG: Popup sonucu: $result");
-
-        if (result.isGranted) {
+        // Diğer durumlarda (denied vb.) permission.request() deneyelim
+        final granted = await _ensurePermission(permission);
+        if (granted) {
           updateState(true);
         } else {
-          // Kullanıcı reddetti -> ayarlara yönlendiriyoruz (isteğe bağlı açık uyarı da gösterilebilir)
-          print("DEBUG: İzin hala reddedildi. Ayarlara yönlendiriliyor...");
-          await openAppSettings();
+          updateState(false);
         }
       } else {
         // Kullanıcı izni kapatmak istiyor - uygulama içinden kapatma yok, Ayarlar'a yönlendir
-        print(
-          "DEBUG: Kullanıcı izni kapatmak istedi, ayarlara yönlendiriliyor...",
-        );
-        await openAppSettings();
+        _showOpenSettingsDialog(permission);
       }
     } catch (e) {
       print("DEBUG ERROR: _handlePermissionToggle sırasında hata: $e");
     } finally {
-      // İzin değişmiş olabilir; lifecycle veya burada tekrar kontrol ederek güncelle
-      // _checkAllPermissions() lifecycle ile de çağrılacak, ama burada da çağırmak güvenli:
+      // İzin değişmiş olabilir; kontrol et
       if (mounted) {
-        // küçük gecikme ile kontrol edelim
         Future.delayed(
           const Duration(milliseconds: 600),
           () => _checkAllPermissions(),
@@ -402,6 +457,37 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
         )
       : context.pop();
 
+  // Helpers for picking images with permission flow
+  Future<void> _pickFromCamera() async {
+    final granted = await _ensurePermission(Permission.camera);
+    if (!granted) return;
+    try {
+      final picked = await _picker.pickImage(source: ImageSource.camera);
+      if (picked != null) {
+        setState(() => _selectedImage = File(picked.path));
+        _checkAllPermissions();
+      }
+    } catch (e) {
+      print("DEBUG ERROR: _pickFromCamera hata: $e");
+      _showError('Kamera ile fotoğraf alınırken hata oluştu.');
+    }
+  }
+
+  Future<void> _pickFromGallery() async {
+    final granted = await _ensurePermission(Permission.photos);
+    if (!granted) return;
+    try {
+      final picked = await _picker.pickImage(source: ImageSource.gallery);
+      if (picked != null) {
+        setState(() => _selectedImage = File(picked.path));
+        _checkAllPermissions();
+      }
+    } catch (e) {
+      print("DEBUG ERROR: _pickFromGallery hata: $e");
+      _showError('Galeriden fotoğraf seçilirken hata oluştu.');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -499,6 +585,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
               readOnly: true,
               onTapInput: _showGenderPicker,
             ),
+            // PROFIL FOTOĞRAFI ADIMI - geliştirildi
             RegisterStepView(
               title: 'Profil Fotoğrafı',
               onNext: _nextPage,
@@ -509,16 +596,19 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                     builder: (context) => CustomActionBottomSheet(
                       options: [
                         BottomSheetOption(
-                          icon: Icons.image,
-                          text: 'Galeri',
+                          icon: Icons.camera_alt,
+                          text: 'Fotoğraf Çek',
                           onTap: () async {
-                            final f = await _picker.pickImage(
-                              source: ImageSource.gallery,
-                            );
-                            if (f != null) {
-                              setState(() => _selectedImage = File(f.path));
-                              Navigator.pop(context);
-                            }
+                            Navigator.pop(context);
+                            await _pickFromCamera();
+                          },
+                        ),
+                        BottomSheetOption(
+                          icon: Icons.image,
+                          text: 'Fotoğraflardan Seç',
+                          onTap: () async {
+                            Navigator.pop(context);
+                            await _pickFromGallery();
                           },
                         ),
                       ],
@@ -527,11 +617,16 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                 },
                 child: CircleAvatar(
                   radius: 70.r,
+                  backgroundColor: Colors.grey.shade100,
                   backgroundImage: _selectedImage != null
                       ? FileImage(_selectedImage!)
                       : null,
                   child: _selectedImage == null
-                      ? Icon(Icons.camera_alt, size: 45.sp)
+                      ? Icon(
+                          Icons.camera_alt,
+                          size: 45.sp,
+                          color: Colors.grey.shade600,
+                        )
                       : null,
                 ),
               ),
