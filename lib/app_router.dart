@@ -65,11 +65,14 @@ final router = GoRouter(
     ].contains(goingTo);
 
     if (!isAuthRoute) {
-      return null;
+      // Auth route değilse ve kullanıcı giriş yapmamışsa aşağıda yakalanır,
+      // şimdilik null döndürüp akışa bırakıyoruz, aşağıda kontrol edilecek.
     }
 
     final authService = getIt<AuthService>();
     final userRepository = getIt<UserRepository>();
+
+    // AuthService genelde hafiftir (cache'den okur), her seferinde çağrılmasında sakınca yoktur.
     final isLoggedIn = await authService.isUserLoggedIn();
 
     final isRegisterInfo = goingTo == '/register-info';
@@ -77,42 +80,62 @@ final router = GoRouter(
 
     // 1. Giriş yapmamış kullanıcı
     if (!isLoggedIn) {
-      // Auth rotalarından birindeyse veya debug sayfasındaysa bırak gitsin
+      // ÖNEMLİ: Kullanıcı çıkış yaptıysa flag'i sıfırla ki tekrar girdiğinde init çalışsın.
+      _isAppInitialized = false;
+
       if (isAuthRoute || isRegisterInfo || isDebugRoute) return null;
-      // Değilse welcome'a zorla
       return '/welcome';
     }
 
     // 2. Giriş yapmış kullanıcı
     if (isLoggedIn) {
-      final isUserRegistered = await userRepository.isUserRegistered(
-        authService.getCurrentUserID(),
-      );
+      // --- DEĞİŞİKLİK BURADA BAŞLIYOR ---
 
-      if (isUserRegistered) {
-        // Kullanıcı kayıtlı ve ana uygulamaya girmek istiyor.
-        // Eğer hala auth sayfalarındaysa /home'a at, değilse (yani zaten içerdeyse) gitmek istediği yere izin ver.
+      // Eğer uygulama henüz initialize edilmediyse kontrolleri yap
+      if (!_isAppInitialized) {
+        final isUserRegistered = await userRepository.isUserRegistered(
+          authService.getCurrentUserID(),
+        );
 
-        final pushService = getIt<PushNotificationsService>();
-        final sessionService = getIt<SessionService>();
-        await pushService.initialize();
-        await sessionService.init();
-        try {
-          final feedRepository = getIt<FeedRepository>();
-          await feedRepository.warmup();
-        } catch (e, stack) {
-          if (kDebugMode) debugPrint('Feed warmup hatası: $e');
-          await FirebaseCrashlytics.instance.recordError(e, stack);
+        if (isUserRegistered) {
+          // Kullanıcı kayıtlı, servisleri BİR KERE başlat.
+          final pushService = getIt<PushNotificationsService>();
+          final sessionService = getIt<SessionService>();
+
+          await pushService.initialize();
+          await sessionService.init();
+
+          try {
+            final feedRepository = getIt<FeedRepository>();
+            await feedRepository.warmup();
+          } catch (e, stack) {
+            if (kDebugMode) debugPrint('Feed warmup hatası: $e');
+            await FirebaseCrashlytics.instance.recordError(e, stack);
+          }
+
+          // Her şey başarılı, flag'i true yap. Artık sayfa geçişlerinde buraya girmeyecek.
+          _isAppInitialized = true;
+
+          // Eğer login/welcome sayfalarındaysa home'a at
+          if (isAuthRoute || isRegisterInfo) {
+            return '/home';
+          }
+          return null; // Gitmek istediği yere izin ver
+        } else {
+          // Kayıtlı değilse register-info'ya zorla
+          if (!isRegisterInfo) return '/register-info';
+          return null;
         }
-
+      }
+      // --- UYGULAMA ZATEN INITIALIZE EDİLMİŞSE ---
+      else {
+        // Kullanıcı zaten içeride ve init olmuş.
+        // Sadece yanlışlıkla auth sayfalarına dönmesini engelle.
         if (isAuthRoute || isRegisterInfo) {
           return '/home';
         }
 
-        return null; // Mevcut rotasına devam etmesine izin ver (örn: /chat, /profile vs.)
-      } else {
-        // Kaydı tamam değilse ve register-info'da değilse oraya zorla
-        if (!isRegisterInfo) return '/register-info';
+        // Diğer tüm durumlar (chat, profil vs.) için geçişe izin ver.
         return null;
       }
     }
