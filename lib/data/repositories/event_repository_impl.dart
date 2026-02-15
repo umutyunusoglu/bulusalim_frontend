@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dart_geohash/dart_geohash.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/event_role_enum.dart';
@@ -164,8 +165,38 @@ class EventRepositoryImpl implements EventRepository {
 
   @override
   Future<void> updateEvent(String eventId, Map<String, dynamic> changes) async {
+    final locationChanged = changes.containsKey('location');
+
+    if (locationChanged) {
+      final privateChanges = changes.entries.where(
+        (entry) => entry.key == 'location' || entry.key == 'address',
+      );
+
+      await _firestore
+          .collection('events')
+          .doc(eventId)
+          .collection('sensitive')
+          .doc('meta')
+          .update(
+            {
+              ...Map.fromEntries(privateChanges),
+              'updatedAt': FieldValue.serverTimestamp(),
+            },
+          );
+    }
+
+    final publicChanges = Map<String, dynamic>.from(changes)
+      ..removeWhere((key, _) {
+        return key == 'location' || key == 'address';
+      });
+
+    if (publicChanges.isEmpty) {
+      // Sadece konum veya adres değişmiş, ana dokümanda güncelleme yapmaya gerek yok
+      return;
+    }
+
     try {
-      await _firestore.collection('events').doc(eventId).update(changes);
+      await _firestore.collection('events').doc(eventId).update(publicChanges);
       _globalCache.removeEntity(eventId); // Değişiklik sonrası cache temizliği
     } catch (e) {
       _logger.error('Failed to update event partial: $e');
