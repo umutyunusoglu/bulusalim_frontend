@@ -91,7 +91,7 @@ Future<void> main() async {
     }
 
     const testUserId = 'user1@test.com';
-
+""
     if (testUserId == 'A') {
       if (authInstance.currentUser != null) {
         await authInstance.signOut();
