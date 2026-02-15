@@ -11,6 +11,7 @@ import 'package:outnest/domain/repositories/feed_repository.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/services/file_service.dart';
+import 'package:outnest/domain/services/push_notifications_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/scaffold_with_navbar.dart';
 import 'package:outnest/screens/auth/login_page.dart';
@@ -51,57 +52,70 @@ List<AvatarInfo> _mapToAvatarInfo(List<dynamic> rawList) {
 
 final router = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: '/home',
+  initialLocation: '/welcome',
+
   redirect: (context, state) async {
     final goingTo = state.uri.toString();
-    final authRoutes = [
+    final isAuthRoute = [
       '/welcome',
       '/login',
       '/register',
       '/verification-code-field',
       '/login-verification',
-    ];
+    ].contains(goingTo);
 
-    final isAuthRoute = authRoutes.contains(goingTo);
-    final isRegisterInfo = goingTo == '/register-info';
-    final isDebugRoute = goingTo == '/debug';
+    if (!isAuthRoute) {
+      return null;
+    }
 
     final authService = getIt<AuthService>();
     final userRepository = getIt<UserRepository>();
     final isLoggedIn = await authService.isUserLoggedIn();
 
-    // 1. GİRİŞ YAPMAMIŞ KULLANICI
+    final isRegisterInfo = goingTo == '/register-info';
+    final isDebugRoute = goingTo == '/debug';
+
+    // 1. Giriş yapmamış kullanıcı
     if (!isLoggedIn) {
+      // Auth rotalarından birindeyse veya debug sayfasındaysa bırak gitsin
       if (isAuthRoute || isRegisterInfo || isDebugRoute) return null;
+      // Değilse welcome'a zorla
       return '/welcome';
     }
 
-    // 2. GİRİŞ YAPMIŞ KULLANICI
-    final currentUserId = authService.getCurrentUserID();
-    final isUserRegistered = await userRepository.isUserRegistered(
-      currentUserId,
-    );
+    // 2. Giriş yapmış kullanıcı
+    if (isLoggedIn) {
+      final isUserRegistered = await userRepository.isUserRegistered(
+        authService.getCurrentUserID(),
+      );
 
-    if (!isUserRegistered) {
-      if (isRegisterInfo) return null;
-      return '/register-info';
-    }
+      if (isUserRegistered) {
+        // Kullanıcı kayıtlı ve ana uygulamaya girmek istiyor.
+        // Eğer hala auth sayfalarındaysa /home'a at, değilse (yani zaten içerdeyse) gitmek istediği yere izin ver.
 
-    // --- INITIALIZATION ---
-    if (!_isAppInitialized) {
-      initApp();
-      _isAppInitialized = true;
-      try {
-        final feedRepository = getIt<FeedRepository>();
-        await feedRepository.warmup();
-      } catch (e, stack) {
-        if (kDebugMode) debugPrint('Warmup error: $e');
-        await FirebaseCrashlytics.instance.recordError(e, stack);
+        final pushService = getIt<PushNotificationsService>();
+        final sessionService = getIt<SessionService>();
+        await pushService.initialize();
+        await sessionService.init();
+        try {
+          final feedRepository = getIt<FeedRepository>();
+          await feedRepository.warmup();
+        } catch (e, stack) {
+          if (kDebugMode) debugPrint('Feed warmup hatası: $e');
+          await FirebaseCrashlytics.instance.recordError(e, stack);
+        }
+
+        if (isAuthRoute || isRegisterInfo) {
+          return '/home';
+        }
+
+        return null; // Mevcut rotasına devam etmesine izin ver (örn: /chat, /profile vs.)
+      } else {
+        // Kaydı tamam değilse ve register-info'da değilse oraya zorla
+        if (!isRegisterInfo) return '/register-info';
+        return null;
       }
     }
-
-    // Auth sayfalarındaysa içeri al
-    if (isAuthRoute || isRegisterInfo) return '/home';
 
     return null;
   },
