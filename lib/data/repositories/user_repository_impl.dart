@@ -486,6 +486,7 @@ class UserRepositoryImpl implements UserRepository {
       eventId: event.eventID,
       role: EventRoleEnum.fromString(event.currentUserRole ?? 'participant'),
       status: UserEventStatusEnum.saved,
+      isActive: true,
       updatedAt: DateTime.now(),
     );
 

@@ -8,6 +8,7 @@ class UserEventEntity extends Equatable {
     required this.eventId,
     required this.role,
     required this.status,
+    required this.isActive,
     required this.updatedAt,
   });
 
@@ -20,12 +21,14 @@ class UserEventEntity extends Equatable {
     Identifier? eventId,
     EventRoleEnum? role,
     UserEventStatusEnum? status,
+    bool? isActive,
     DateTime? updatedAt,
   }) {
     return UserEventEntity(
       eventId: eventId ?? this.eventId,
       role: role ?? this.role,
       status: status ?? this.status,
+      isActive: isActive ?? this.isActive,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -33,5 +36,6 @@ class UserEventEntity extends Equatable {
   final Identifier eventId;
   final EventRoleEnum role;
   final UserEventStatusEnum status;
+  final bool isActive;
   final DateTime updatedAt;
 }

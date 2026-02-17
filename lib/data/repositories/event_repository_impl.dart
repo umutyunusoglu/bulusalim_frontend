@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dart_geohash/dart_geohash.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/event_role_enum.dart';
@@ -103,7 +102,7 @@ class EventRepositoryImpl implements EventRepository {
       );
 
       Geolocation? publicLocation;
-      String publicGeohash = '';
+      var publicGeohash = '';
 
       // Eğer haritada gösterilmesin denmişse (false),
       // Location verisini NULL yapıyoruz. Böylece harita render edemez.
@@ -140,14 +139,16 @@ class EventRepositoryImpl implements EventRepository {
       };
 
       // --- BATCH COMMIT ---
-      batch.set(docRef, publicModel.toFirestore());
-      batch.set(sensitiveRef, sensitiveData);
-      batch.set(creatorParticipantRef, creatorAsParticipant.toMap());
+      batch
+        ..set(docRef, publicModel.toFirestore())
+        ..set(sensitiveRef, sensitiveData)
+        ..set(creatorParticipantRef, creatorAsParticipant.toMap());
 
       final userEvent = UserEventEntity(
         eventId: eventId,
         role: EventRoleEnum.creator,
         status: UserEventStatusEnum.upcoming,
+        isActive: true,
         updatedAt: DateTime.now(),
       );
       batch.set(
@@ -297,6 +298,7 @@ class EventRepositoryImpl implements EventRepository {
         .doc(userId)
         .collection('eventLog')
         .where('status', whereIn: ['upcoming', 'ongoing', 'completed'])
+        .where('isActive', isEqualTo: true)
         .snapshots()
         .asyncMap((snapshot) async {
           if (snapshot.docs.isEmpty) return [];
@@ -305,9 +307,6 @@ class EventRepositoryImpl implements EventRepository {
               .map((doc) => UserEventModel.fromFirestore(doc.data()).eventID)
               .toList();
 
-          // Stream tetiklendiğinde (bizim log güncellememiz sayesinde),
-          // Cache'e bakmadan doğrudan Firestore'dan en güncel veriyi çekecek.
-          // forceRefresh: true bu işi yapar.
           final enrichedEvents = await getEventsByIds(
             eventIds,
             forceRefresh: true,
@@ -456,6 +455,7 @@ class EventRepositoryImpl implements EventRepository {
         eventId: eventId,
         role: EventRoleEnum.participant,
         status: UserEventStatusEnum.pending,
+        isActive: true,
         updatedAt: DateTime.now(),
       );
 
