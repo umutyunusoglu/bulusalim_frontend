@@ -39,7 +39,6 @@ class EventCard extends StatefulWidget {
   final EventEntity event;
   final List<CompactUserEntity> participants;
   final bool showJoinButton;
-
   @override
   State<EventCard> createState() => _EventCardState();
 }
@@ -48,6 +47,7 @@ class _EventCardState extends State<EventCard> {
   late final LoggingService logger;
   late final EventRepository eventRepository;
   late final SessionService sessionService;
+  bool _amIFollowingCreator = false;
 
   late _EventJoinStatus _joinStatus;
 
@@ -61,9 +61,24 @@ class _EventCardState extends State<EventCard> {
     logger = getIt<LoggingService>();
     eventRepository = getIt<EventRepository>();
     sessionService = getIt<SessionService>();
+    _updateFollowingStatus();
+    sessionService.stateListenable.addListener(_updateFollowingStatus);
 
     _calculateJoinStatus();
     _checkIfSaved();
+  }
+
+  void _updateFollowingStatus() {
+    if (!mounted) return;
+
+    final myFollowees = sessionService.stateListenable.value?.followees ?? [];
+    final isFollowing = myFollowees.any(
+      (u) => u.userID == widget.event.creator.userID,
+    );
+
+    setState(() {
+      _amIFollowingCreator = isFollowing;
+    });
   }
 
   // --- GÜVENLİ DURUM HESAPLAMA ---
@@ -224,6 +239,16 @@ class _EventCardState extends State<EventCard> {
                 sheetContext.pop();
               },
             )*/
+            if (_amIFollowingCreator)
+              BottomSheetOption(
+                icon: Icons.person_remove_outlined,
+                text: "Takibi Bırak",
+                onTap: () {
+                  sheetContext.pop(); // Önce bottom sheet'i kapatıyoruz
+
+                  _handleUnfollowUser();
+                },
+              ),
             BottomSheetOption(
               icon: Icons.exit_to_app_outlined,
               text: 'Buluşmadan Ayrıl',
@@ -311,6 +336,28 @@ class _EventCardState extends State<EventCard> {
       logger.error('Block user failed: $e');
     }
     if (sheetContext.mounted) sheetContext.pop();
+  }
+
+  Future<void> _handleUnfollowUser() async {
+    try {
+      final currentUser = sessionService.currentUser;
+      await getIt<UserRepository>().removeFollowee(
+        currentUser!.userID,
+        widget.event.creator.userID,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Takip bırakıldı.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('İşlem başarısız.')),
+        );
+      }
+    }
   }
 
   Future<void> _handleReportEvent(BuildContext sheetContext) async {
