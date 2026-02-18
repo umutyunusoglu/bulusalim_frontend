@@ -22,27 +22,29 @@ class EmojiChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Yarıçapı bir değişkene alalım ki hem dıştaki gölge kutusunda
-    // hem de içteki kırpma işleminde aynı değeri kullanalım.
     final borderRadius = BorderRadius.circular(30.r);
 
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      // --- YENİ DIŞ KATMAN (GÖLGE İÇİN) ---
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
         decoration: BoxDecoration(
-          borderRadius: borderRadius, // İçerideki yuvarlaklıkla aynı olmalı
+          borderRadius: borderRadius,
           boxShadow: [
+            // GÖLGE AYARI (YUMUŞATILDI):
             BoxShadow(
-              color: Colors.black.withOpacity(0.15), // Hafif siyah gölge
-              blurRadius: 8.0, // Gölgenin yumuşaklığı (bulanıklığı)
-              offset: const Offset(0, 4), // Gölgenin konumu (biraz aşağıda)
-              spreadRadius: 0, // Gölgenin yayılma miktarı
+              color: isSelected
+                  ? color.withOpacity(
+                      0.25,
+                    ) // Eskiden 0.6 idi, şimdi çok hafif renk veriyor
+                  : Colors.black.withOpacity(0.1),
+              blurRadius: 8.0, // Gölgenin yayılması sınırlandı
+              offset: const Offset(0, 4),
+              spreadRadius: 0,
             ),
           ],
         ),
-        // --- ESKİ YAPI (İÇERİK VE BLUR) ---
         child: ClipRRect(
           borderRadius: borderRadius,
           child: BackdropFilter(
@@ -53,16 +55,22 @@ class EmojiChip extends StatelessWidget {
               constraints: BoxConstraints(
                 minWidth: 60.w,
               ),
-              padding: EdgeInsets.symmetric(horizontal: 6.w),
+              padding: EdgeInsets.symmetric(horizontal: 10.w),
               decoration: BoxDecoration(
+                // ARKA PLAN RENGİ (YUMUŞATILDI):
+                // Seçiliyse: Çok hafif bir renk tonu atıyoruz (Tint)
                 color: isSelected
-                    ? Colors.white.withOpacity(0.4)
-                    : Colors.white.withOpacity(0.25),
+                    ? color.withOpacity(
+                        0.2,
+                      ) // Eskiden 0.5 idi, şimdi daha cam gibi
+                    : Colors.white.withOpacity(0.2),
+
                 borderRadius: borderRadius,
                 border: Border.all(
+                  // Kenarlık rengini biraz belirgin tuttum ki şekil kaybolmasın
                   color: isSelected
-                      ? color.withOpacity(0.8)
-                      : Colors.white.withOpacity(0.1),
+                      ? color.withOpacity(0.5)
+                      : Colors.white.withOpacity(0.15),
                   width: 1.0,
                 ),
               ),
@@ -74,24 +82,28 @@ class EmojiChip extends StatelessWidget {
                     Text(
                       emoji!,
                       style: TextStyle(
-                        fontSize: 18.sp,
+                        fontSize: 16.sp,
                         height: 1.2,
                       ),
                     )
                   else if (icon != null)
                     Icon(
                       icon,
-                      color: isSelected ? color : Colors.white,
-                      size: 18.sp,
+                      color: Colors.white,
+                      size: 16.sp,
                     ),
-                  SizedBox(width: 4.w),
+
+                  SizedBox(width: 6.w),
+
                   Text(
                     text,
                     style: TextStyle(
                       color: Colors.white,
-                      fontFamily: 'Sf Pro Display',
-                      fontWeight: FontWeight.w500,
-                      fontSize: 18.sp,
+                      fontFamily: 'SF Pro Display',
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                      fontSize: 14.sp,
                       height: 1.2,
                     ),
                   ),

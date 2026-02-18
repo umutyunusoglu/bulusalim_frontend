@@ -652,7 +652,7 @@ class _PostCardState extends State<PostCard> {
         children: [
           // 1. Kalp
           EmojiChip(
-            icon: Icons.favorite,
+            emoji: '❤️',
             text: '$_likeCount',
             color: Colors.red,
             isSelected: _isLikedByMe,
@@ -673,7 +673,7 @@ class _PostCardState extends State<PostCard> {
 
           // 3. Yumurta
           EmojiChip(
-            icon: Icons.egg, // Veya emoji: '🥚'
+            emoji: '🥚',
             text: '$_eggCount',
             color: Colors.white,
             isSelected: _isEggedByMe,
