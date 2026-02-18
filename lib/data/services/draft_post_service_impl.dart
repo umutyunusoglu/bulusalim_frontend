@@ -15,7 +15,7 @@ class DraftPostServiceImpl implements DraftPostService {
     await prefs.setStringList('draft_$eventId', paths);
   }
 
-  /// Belirtilen etkinlik ID'si için kayıtlı fotoğrafları getirir.
+  /// Belirtilen buluşma ID'si için kayıtlı fotoğrafları getirir.
   @override
   Future<List<File>> getDraft(String eventId) async {
     final prefs = await SharedPreferences.getInstance();

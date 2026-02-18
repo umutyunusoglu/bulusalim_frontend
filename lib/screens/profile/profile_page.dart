@@ -681,16 +681,16 @@ class _ProfilePageState extends State<ProfilePage> {
 
     if (currentUser == null) return;
 
-    // Aktif etkinlikleri al
+    // Aktif buluşmaleri al
     final activeEvents =
         sessionService.currentState.ongoingEvents +
         sessionService.currentState.upcomingEvents;
 
     if (activeEvents.isEmpty) {
-      // 0 Etkinlik -> Hata Mesajı
+      // 0 buluşma -> Hata Mesajı
       _showNoShareableEventDialog(context);
     } else {
-      // 1 veya Daha Fazla Etkinlik -> Seçim/Paylaşım Dialogu
+      // 1 veya Daha Fazla buluşma -> Seçim/Paylaşım Dialogu
       _showShareSelectionDialog(context, activeEvents);
     }
   }

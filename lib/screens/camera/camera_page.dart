@@ -22,7 +22,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   CameraController? _controller;
   List<File> _takenPhotos = [];
   bool _isCameraInitialized = false;
-  int _selectedCameraIndex = 0; // Arka/Ön kamera değişimi için
+  int _selectedCameraIndex = 0;
 
   @override
   void initState() {
@@ -72,18 +72,26 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   Future<void> _takePhoto() async {
     if (_controller == null ||
         !_controller!.value.isInitialized ||
-        _takenPhotos.length >= 3) {
+        _takenPhotos.length >= 3)
       return;
-    }
 
     try {
       final photo = await _controller!.takePicture();
       final croppedFile = await ImageCropper().cropImage(
         sourcePath: photo.path,
         aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
-        compressQuality: 70,
+        compressQuality: 80,
         uiSettings: [
-          IOSUiSettings(title: 'Düzenle', aspectRatioLockEnabled: true),
+          IOSUiSettings(
+            title: 'Kırp',
+            aspectRatioLockEnabled: true,
+            resetAspectRatioEnabled: false,
+          ),
+          AndroidUiSettings(
+            toolbarTitle: 'Kırp',
+            lockAspectRatio: true,
+            hideBottomControls: true,
+          ),
         ],
       );
 
@@ -116,203 +124,295 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     const primaryColor = AppColors.primaryColor;
     const sfPro = 'SF Pro Display';
 
+    final double sidePadding = 16.w;
+    final double topPadding = 110.h;
+    final double bottomBlackAreaHeight = 261.h; // Alt siyah panel yüksekliği
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double focusSize = screenWidth - (sidePadding * 2);
+
     return Scaffold(
       backgroundColor: Colors.black,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 1. Üst Alan: Canlı Kamera Önizleme
-            Expanded(
-              flex: 5,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (_isCameraInitialized &&
-                      _controller != null &&
-                      _controller!.value.isInitialized)
-                    CameraPreview(_controller!)
-                  else
-                    const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    ),
+      body: Stack(
+        children: [
+          // 1. KATMAN: KAMERA ÖNİZLEME
+          if (_isCameraInitialized && _controller != null)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: bottomBlackAreaHeight,
+              child: ClipRect(
+                child: FittedBox(
+                  fit: BoxFit.cover,
+                  child: SizedBox(
+                    width: _controller!.value.previewSize!.height,
+                    height: _controller!.value.previewSize!.width,
+                    child: CameraPreview(_controller!),
+                  ),
+                ),
+              ),
+            ),
 
-                  // Kılavuz Kare
-                  Center(
-                    child: Container(
-                      width: 320.w,
-                      height: 320.w,
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
-                        ),
-                        borderRadius: BorderRadius.circular(16.r),
+          // 2. KATMAN: SAYDAM OVERLAY (Kamera üzerindeki maske)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: bottomBlackAreaHeight,
+            child: IgnorePointer(
+              child: CustomPaint(
+                painter: HoleOverlayPainter(
+                  holeSize: focusSize,
+                  topOffset: topPadding,
+                  sideOffset: sidePadding,
+                  borderRadius: 20.r,
+                  overlayColor: Colors.black.withOpacity(0.5),
+                ),
+              ),
+            ),
+          ),
+
+          // 3. KATMAN: UI ELEMANLARI
+          SafeArea(
+            child: Stack(
+              children: [
+                // Üst Kapat Butonu
+                Positioned(
+                  top: 10.h,
+                  right: 10.w,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                    onPressed: () => context.pop(),
+                  ),
+                ),
+
+                // Beyaz Çerçeve
+                Positioned(
+                  top: topPadding - MediaQuery.of(context).padding.top,
+                  left: sidePadding,
+                  child: Container(
+                    width: focusSize,
+                    height: focusSize,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20.r),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.8),
+                        width: 2.w,
                       ),
                     ),
                   ),
+                ),
 
-                  // Kapat Butonu
-                  Positioned(
-                    top: 10.h,
-                    right: 10.w,
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.close,
-                        color: Colors.white,
-                        size: 30,
-                      ),
-                      onPressed: () => context.pop(),
-                    ),
-                  ),
+                // KAMERA BUTONLARI (SAYDAM KISIMDA - Siyah panelin hemen üstünde)
+                Positioned(
+                  bottom: bottomBlackAreaHeight + 10.h,
+                  left: 0,
+                  right: 0,
+                  child: _buildActionButtons(primaryColor),
+                ),
 
-                  // Kamera Kontrolleri (Flaş, Deklanşör, Çevir)
-                  Positioned(
-                    bottom: 20.h,
-                    left: 0,
-                    right: 0,
-                    child: Row(
+                // ALT SİYAH PANEL (Sadece Slotlar ve Alt Butonlar)
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Container(
+                    height: bottomBlackAreaHeight,
+                    width: double.infinity,
+                    color: Colors.black,
+                    padding: EdgeInsets.symmetric(vertical: 20.h),
+                    child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        IconButton(
-                          icon: const Icon(Icons.flash_on, color: Colors.white),
-                          onPressed: () {},
-                        ),
-                        GestureDetector(
-                          onTap: _takePhoto,
-                          child: Container(
-                            width: 75.w,
-                            height: 75.w,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: primaryColor,
-                                width: 4.w,
-                              ),
-                            ),
-                            padding: EdgeInsets.all(4.w),
-                            child: const DecoratedBox(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.flip_camera_ios,
-                            color: Colors.white,
-                          ),
-                          onPressed: _toggleCamera,
-                        ),
+                        _buildPhotoSlots(),
+                        _buildBottomActionButtons(primaryColor, sfPro),
                       ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-
-            // 2. Alt Alan: Slotlar ve Paylaş
-            Container(
-              height: 220.h,
-              padding: EdgeInsets.symmetric(horizontal: 20.w),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Fotoğraf Slotları ve Silme Butonları
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(3, (index) {
-                      final hasPhoto = index < _takenPhotos.length;
-                      return Column(
-                        children: [
-                          Container(
-                            width: 85.w,
-                            height: 85.w,
-                            margin: EdgeInsets.symmetric(horizontal: 6.w),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12.r),
-                              border: Border.all(color: Colors.white10),
-                              image: hasPhoto
-                                  ? DecorationImage(
-                                      image: FileImage(_takenPhotos[index]),
-                                      fit: BoxFit.cover,
-                                    )
-                                  : null,
-                            ),
-                          ),
-                          if (hasPhoto)
-                            IconButton(
-                              onPressed: () => _removePhoto(index),
-                              icon: const Icon(
-                                Icons.delete_outline,
-                                color: Colors.white54,
-                                size: 20,
-                              ),
-                            )
-                          else
-                            const SizedBox(height: 48), // Boşluk koruma
-                        ],
-                      );
-                    }),
-                  ),
-                  SizedBox(height: 10.h),
-                  // Paylaş ve Geri Dön Butonları
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => context.pop(),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: primaryColor),
-                            shape: const StadiumBorder(),
-                          ),
-                          child: const Text(
-                            'buluşmaya dön',
-                            style: TextStyle(
-                              fontFamily: sfPro,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 15.w),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            if (_takenPhotos.isNotEmpty) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => NewPostPage(
-                                    takenPhotos: _takenPhotos,
-                                    event: widget.event,
-                                  ),
-                                ),
-                              );
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
-                            shape: const StadiumBorder(),
-                          ),
-                          child: const Text(
-                            'paylaş',
-                            style: TextStyle(
-                              fontFamily: sfPro,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+
+  Widget _buildActionButtons(Color primaryColor) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 40.w),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.flash_on, color: Colors.white),
+            onPressed: () {},
+          ),
+          GestureDetector(
+            onTap: _takePhoto,
+            child: Container(
+              width: 75.w,
+              height: 75.w,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: primaryColor, width: 4.w),
+              ),
+              padding: EdgeInsets.all(4.w),
+              child: const DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.flip_camera_ios, color: Colors.white),
+            onPressed: _toggleCamera,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPhotoSlots() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(3, (index) {
+        final hasPhoto = index < _takenPhotos.length;
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: 10.w),
+          child: Column(
+            children: [
+              Container(
+                width: 100.w,
+                height: 100.w,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(color: Colors.white24),
+                  image: hasPhoto
+                      ? DecorationImage(
+                          image: FileImage(_takenPhotos[index]),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                ),
+              ),
+              if (hasPhoto)
+                GestureDetector(
+                  onTap: () => _removePhoto(index),
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 12.h),
+                    child: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.white54,
+                      size: 24,
+                    ),
+                  ),
+                )
+              else
+                SizedBox(height: 24.h),
+            ],
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildBottomActionButtons(Color primaryColor, String sfPro) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () => context.pop(),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: primaryColor),
+                padding: EdgeInsets.symmetric(vertical: 10.h),
+                shape: const StadiumBorder(),
+              ),
+              child: Text(
+                'buluşmaya dön',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: 15.w),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () {
+                if (_takenPhotos.isNotEmpty) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NewPostPage(
+                        takenPhotos: _takenPhotos,
+                        event: widget.event,
+                      ),
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                padding: EdgeInsets.symmetric(vertical: 10.h),
+                shape: const StadiumBorder(),
+              ),
+              child: Text(
+                'paylaş',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 16.sp,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class HoleOverlayPainter extends CustomPainter {
+  final double holeSize;
+  final double topOffset;
+  final double sideOffset;
+  final double borderRadius;
+  final Color overlayColor;
+
+  HoleOverlayPainter({
+    required this.holeSize,
+    required this.topOffset,
+    required this.sideOffset,
+    required this.borderRadius,
+    required this.overlayColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final backgroundPath = Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    final holeRect = Rect.fromLTWH(sideOffset, topOffset, holeSize, holeSize);
+    final holePath = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(holeRect, Radius.circular(borderRadius)),
+      );
+    final finalPath = Path.combine(
+      PathOperation.difference,
+      backgroundPath,
+      holePath,
+    );
+    canvas.drawPath(finalPath, Paint()..color = overlayColor);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

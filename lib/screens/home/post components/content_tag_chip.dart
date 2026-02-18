@@ -36,7 +36,7 @@ class ContentTagChip extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontFamily: 'Urbanist',
+              fontFamily: 'Sf Pro Display',
               color: chipColor,
               fontSize: 12.sp,
               fontWeight: FontWeight.w600,

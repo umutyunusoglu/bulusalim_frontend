@@ -31,7 +31,7 @@ class TabItem extends StatelessWidget {
           child: Text(
             label,
             style: TextStyle(
-              fontFamily: 'Urbanist',
+              fontFamily: 'Sf Pro Display',
               fontSize: 16.sp,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
               color: isSelected ? activeColor : passiveColor,

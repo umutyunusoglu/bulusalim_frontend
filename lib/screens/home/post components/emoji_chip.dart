@@ -56,7 +56,7 @@ class EmojiChip extends StatelessWidget {
               style: TextStyle(
                 // Seçiliyse canlı renk, değilse beyaz
                 color: isSelected ? color : Colors.white,
-                fontFamily: 'Urbanist',
+                fontFamily: 'Sf Pro Display',
                 fontWeight: isSelected
                     ? FontWeight.w700
                     : FontWeight.w500, // Seçilince kalınlaşsın
