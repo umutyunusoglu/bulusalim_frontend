@@ -99,7 +99,7 @@ class _SearchPageState extends State<SearchPage> {
               controller: _searchController,
               onChanged: _onSearchChanged,
               decoration: InputDecoration(
-                hintText: 'Kullanıcı veya Etkinlik ara...',
+                hintText: 'Kullanıcı veya buluşma ara...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
@@ -177,7 +177,7 @@ class _SearchPageState extends State<SearchPage> {
                     }),
                   ],
 
-                  // --- Etkinlik Sonuçları ---
+                  // --- buluşma Sonuçları ---
                   if (_eventResults.isNotEmpty) ...[
                     const Padding(
                       padding: EdgeInsets.fromLTRB(16, 16, 16, 8),

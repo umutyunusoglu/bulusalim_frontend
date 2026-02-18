@@ -418,7 +418,7 @@ class _EventCardState extends State<EventCard> {
           left: 16.w,
           right: 16.w,
           bottom: 12.h,
-          top: 25.h,
+          top: 24.h,
         ),
         child: Stack(
           clipBehavior: Clip.none,
@@ -431,11 +431,12 @@ class _EventCardState extends State<EventCard> {
                 bumpOffset: 24.h,
               ),
               child: SizedBox(
-                height: 204.h,
+                // İstenilen Kart Gövde Yüksekliği
+                height: 212.h,
                 width: double.infinity,
                 child: Stack(
                   children: [
-                    // 1. ÜST SATIR
+                    // 1. ÜST SATIR (Başlık ve İkonlar)
                     Positioned(
                       top: 30.h,
                       left: 0,
@@ -523,7 +524,7 @@ class _EventCardState extends State<EventCard> {
                       ),
                     ),
 
-                    // 3. BUTON
+                    // 3. KATIL BUTONU
                     if (widget.showJoinButton)
                       Positioned(
                         bottom: 12.h,
@@ -541,6 +542,7 @@ class _EventCardState extends State<EventCard> {
                 ),
               ),
             ),
+
             Positioned(
               top: -24.h,
               child: SizedBox(
@@ -558,6 +560,8 @@ class _EventCardState extends State<EventCard> {
                 ),
               ),
             ),
+
+            // AVATARLAR
             Positioned(
               top: 80.h,
               left: 0,

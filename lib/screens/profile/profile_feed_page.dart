@@ -60,7 +60,7 @@ class _ProfilePostFeedPageState extends State<ProfilePostFeedPage> {
           style: TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
-            fontFamily: 'Urbanist',
+            fontFamily: 'Sf Pro Display',
           ),
         ),
       ),

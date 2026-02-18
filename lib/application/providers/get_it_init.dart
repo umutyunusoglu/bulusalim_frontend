@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:outnest/application/providers/datasource_providers.dart';
 import 'package:outnest/application/providers/firebase_providers.dart';
@@ -18,4 +19,8 @@ Future<void> getItSetup() async {
     ..registerDatasources()
     ..registerUsecases();
   await getIt.allReady();
+  getIt.registerSingleton<ValueNotifier<int>>(
+    ValueNotifier(0),
+    instanceName: 'homeScrollTrigger',
+  );
 }

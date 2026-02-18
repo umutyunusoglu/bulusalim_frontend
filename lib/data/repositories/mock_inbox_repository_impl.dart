@@ -33,7 +33,7 @@ class MockInboxRepository implements InboxRepository {
         type: NotificationType.cancel,
         title: 'Katıldığın Sinema Gecesi',
         message: 'buluşması iptal edildi.',
-        actionText: 'film temalı başka etkinliklere göz at.',
+        actionText: 'film temalı başka buluşmalara göz at.',
         profileImageUrl: userImage,
         createdAt: now.subtract(const Duration(hours: 1, minutes: 10)),
       ),
