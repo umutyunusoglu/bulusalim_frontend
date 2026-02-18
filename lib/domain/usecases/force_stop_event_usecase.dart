@@ -21,7 +21,7 @@ class ForceStopEvent {
     try {
       _logger.info('Force stopping event: ${currentEvent.eventID}');
 
-      // 1. Etkinlik durumunu güncelle
+      // 1. buluşma durumunu güncelle
       await _eventRepository.updateEvent(
         currentEvent.eventID,
         {'status': EventStatusEnum.completed.value},

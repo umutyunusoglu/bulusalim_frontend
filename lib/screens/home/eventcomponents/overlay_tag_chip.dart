@@ -36,7 +36,7 @@ class OverlayTagChip extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontFamily: 'Urbanist',
+              fontFamily: 'Sf Pro Display',
               color: Colors.white,
               fontSize: 10.sp,
               fontWeight: FontWeight.w600,
