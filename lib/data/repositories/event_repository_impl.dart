@@ -35,7 +35,7 @@ class EventRepositoryImpl implements EventRepository {
 
   // --- HELPER: TRIGGER CREATOR ---
   /// Bu metod, bir değişiklik olduğunda (katılma, çıkma, reddetme vb.)
-  /// Etkinlik sahibinin (Creator) `eventLog` kaydını güncelleyerek
+  /// buluşma sahibinin (Creator) `eventLog` kaydını güncelleyerek
   /// onun ekranındaki Stream'in tetiklenmesini sağlar.
   void _triggerCreatorRefresh(
     Transaction? transaction,
@@ -338,7 +338,7 @@ class EventRepositoryImpl implements EventRepository {
     final isParticipant = event.participants.any(
       (p) => p.userID == currentUserId,
     );
-    // 3. Etkinlik Herkese Açık mı? (Kurallardaki showOnMap şartı)
+    // 3. buluşma Herkese Açık mı? (Kurallardaki showOnMap şartı)
     final isPublicOnMap = event.showOnMap == true;
 
     final hasAccess = isCreator || isParticipant || isPublicOnMap;
@@ -430,7 +430,7 @@ class EventRepositoryImpl implements EventRepository {
   @override
   Future<void> requestJoin(String eventId, CompactUserEntity user) async {
     try {
-      // 1. Etkinlik sahibini (Creator) bulmalıyız ki onu dürtebilelim.
+      // 1. buluşma sahibini (Creator) bulmalıyız ki onu dürtebilelim.
       final eventDoc = await _firestore.collection('events').doc(eventId).get();
       if (!eventDoc.exists) throw Exception('Buluşma bulunamadı');
 
@@ -511,14 +511,14 @@ class EventRepositoryImpl implements EventRepository {
 
       await _firestore.runTransaction((transaction) async {
         final eventDoc = await transaction.get(eventRef);
-        if (!eventDoc.exists) throw Exception('Etkinlik bulunamadı');
+        if (!eventDoc.exists) throw Exception('buluşma bulunamadı');
 
         final currentCount = (eventDoc.data()?['participantCount'] ?? 0) as int;
         const maxParticipants = AppConfig.eventCapacity;
         final creatorId = eventDoc.data()?['creator']?['userID'] as String?;
 
         if (currentCount >= maxParticipants) {
-          throw Exception('Etkinlik dolu!');
+          throw Exception('buluşma dolu!');
         }
 
         transaction
@@ -552,7 +552,7 @@ class EventRepositoryImpl implements EventRepository {
     try {
       // Önce Creator ID'yi bulmak için eventi çekiyoruz.
       final eventDoc = await _firestore.collection('events').doc(eventId).get();
-      if (!eventDoc.exists) throw Exception('Etkinlik bulunamadı');
+      if (!eventDoc.exists) throw Exception('buluşma bulunamadı');
 
       final creatorId = eventDoc.data()?['creator']?['userID'] as String?;
 
@@ -617,7 +617,7 @@ class EventRepositoryImpl implements EventRepository {
 
       await _firestore.runTransaction((transaction) async {
         final eventDoc = await transaction.get(eventRef);
-        if (!eventDoc.exists) throw Exception('Etkinlik bulunamadı');
+        if (!eventDoc.exists) throw Exception('buluşma bulunamadı');
 
         final currentCount = (eventDoc.data()?['participantCount'] ?? 0) as int;
         final creatorId = eventDoc.data()?['creator']?['userID'] as String?;
@@ -745,7 +745,7 @@ class EventRepositoryImpl implements EventRepository {
     EventEntity event,
     Identifier userID,
   ) {
-    // 1. Etkinlik dolu mu?
+    // 1. buluşma dolu mu?
     if (event.participantCount >= AppConfig.eventCapacity) {
       return false;
     }

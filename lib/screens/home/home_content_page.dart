@@ -1,7 +1,6 @@
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/physics.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/event_card.dart';
 import 'package:outnest/components/post_card.dart';
@@ -23,20 +22,44 @@ class HomeContentPage extends StatefulWidget {
 class _HomeContentPageState extends State<HomeContentPage> {
   final ScrollController _scrollController = ScrollController();
 
-  // Interface'imiz (Reactive yapıya uygun olan)
+  // Interface'imiz
   final FeedRepository _feedRepository = getIt<FeedRepository>();
 
-  // Fetch eşiği (Sayfanın sonuna ne kadar yaklaşınca yüklesin)
+  // Fetch eşiği
   final int _nextPageThreshold = AppConfig.feedFetchThreshold;
 
   bool _isInitialLoading = false;
   @override
   void initState() {
     super.initState();
-    _feedRepository..switchFeedType(widget.feedType);
-    _initFeed();
+    _feedRepository
+      ..switchFeedType(widget.feedType)
+      ..refresh();
+
     // 2. Scroll dinleyicisi (Pagination için)
     _scrollController.addListener(_onScroll);
+
+    // Home butonuna basıldığında tetiklenen sinyali dinliyoruz
+    if (getIt.isRegistered<ValueNotifier<int>>(
+      instanceName: 'homeScrollTrigger',
+    )) {
+      getIt<ValueNotifier<int>>(
+        instanceName: 'homeScrollTrigger',
+      ).addListener(_scrollToTopIfActive);
+    }
+  }
+
+  // YUKARI SARMA
+  void _scrollToTopIfActive() {
+    // 1. Sayfa o an ekranda mı (mounted)?
+    // 2. Controller listeye bağlı mı (hasClients)?
+    if (mounted && _scrollController.hasClients) {
+      _scrollController.animateTo(
+        0, // En başa git
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   Future<void> _initFeed() async {
@@ -52,8 +75,9 @@ class _HomeContentPageState extends State<HomeContentPage> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.hasClients &&
+        _scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200) {
       // 200px kala yükle
       _feedRepository.loadMore();
     }
@@ -61,6 +85,15 @@ class _HomeContentPageState extends State<HomeContentPage> {
 
   @override
   void dispose() {
+    // Sayfadan çıkarken dinlemeyi bırakıyoruz (Memory leak olmasın)
+    if (getIt.isRegistered<ValueNotifier<int>>(
+      instanceName: 'homeScrollTrigger',
+    )) {
+      getIt<ValueNotifier<int>>(
+        instanceName: 'homeScrollTrigger',
+      ).removeListener(_scrollToTopIfActive);
+    }
+
     _scrollController.dispose();
     super.dispose();
   }
@@ -69,19 +102,11 @@ class _HomeContentPageState extends State<HomeContentPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: RefreshIndicator(
-        // Pull-to-refresh: Repository'deki state'i sıfırlar
         onRefresh: () async => _feedRepository.refresh(),
-
-        // ANA AKIŞ: Repository'nin Stream'ini dinliyoruz
         child: StreamBuilder<List<FeedEntity>>(
           stream: _feedRepository.feedStream,
           builder: (context, snapshot) {
             // 1. Yükleniyor veya Veri Yok Durumu
-
-            if (_isInitialLoading) {
-              return _buildInitialLoading();
-            }
-
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -91,7 +116,6 @@ class _HomeContentPageState extends State<HomeContentPage> {
 
             final items = snapshot.data!;
 
-            // 2. Listeyi Çiz
             return ListView.builder(
               controller: _scrollController,
               physics: const SlowFeedPhysics(),
@@ -178,7 +202,6 @@ class _LiveEventItemState extends State<_LiveEventItem> {
   }
 }
 
-// --- SCROLL  ---
 class SlowFeedPhysics extends BouncingScrollPhysics {
   const SlowFeedPhysics({super.parent});
 
@@ -189,7 +212,7 @@ class SlowFeedPhysics extends BouncingScrollPhysics {
 
   @override
   double applyPhysicsToUserOffset(ScrollMetrics metrics, double offset) {
-    return offset * 0.85; // Parmakla kaydırma hızı (%15 yavaşlatıldı)
+    return offset * 0.85;
   }
 
   @override
@@ -200,6 +223,6 @@ class SlowFeedPhysics extends BouncingScrollPhysics {
     return super.createBallisticSimulation(
       metrics,
       velocity * 0.75,
-    ); // Fırlatma hızı (%25 yavaşlatıldı)
+    );
   }
 }
