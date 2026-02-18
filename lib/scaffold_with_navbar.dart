@@ -1,21 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:outnest/application/providers/get_it_init.dart'; // GetIt'i import etmeyi unutma!
 
 class ScaffoldWithNavbar extends StatelessWidget {
   const ScaffoldWithNavbar({
     required this.navigationShell,
-    Key? key,
-  }) : super(key: key ?? const ValueKey<String>('ScaffoldWithNavbar'));
+    super.key,
+  });
 
-  // Bu değişken, şu an hangi sekmede olduğumuzu ve navigasyon durumunu tutar
   final StatefulNavigationShell navigationShell;
 
   void _goBranch(int index) {
-    navigationShell.goBranch(
-      index,
-      // Kullanıcı zaten olduğu sekmeye tekrar tıklarsa, o sekmeyi en başa sar
-      initialLocation: index == navigationShell.currentIndex,
-    );
+    // Eğer şu an Home'daysak (2) VE tekrar Home'a (2) basıldıysa...
+    if (navigationShell.currentIndex == 2 && index == 2) {
+      // GetIt'teki sinyali tetikle (Sayıyı arttır)
+      // Bu sinyal HomeContentPage'deki dinleyiciyi çalıştıracak.
+      getIt<ValueNotifier<int>>(instanceName: 'homeScrollTrigger').value++;
+    } else {
+      // Diğer durumlar için standart GoRouter geçişi yap
+      navigationShell.goBranch(
+        index,
+        initialLocation: index == navigationShell.currentIndex,
+      );
+    }
   }
 
   @override
@@ -23,18 +30,10 @@ class ScaffoldWithNavbar extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      // Body artık dinamik! GoRouter buraya Home, Map veya Profil sayfasını kendisi koyacak.
       body: navigationShell,
-
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
-          border: Border(
-            //barın üstündeki ince çizgi
-            // top: BorderSide(
-            //   color: theme.dividerColor.withOpacity(0.1),
-            //   width: 1,
-            // ),
-          ),
+          border: Border(),
         ),
         child: BottomNavigationBar(
           currentIndex: navigationShell.currentIndex,
@@ -48,34 +47,28 @@ class ScaffoldWithNavbar extends StatelessWidget {
           showSelectedLabels: false,
           showUnselectedLabels: false,
           elevation: 0,
-
-          // DİKKAT: Bu sıra, Router'daki branch sırasıyla AYNI OLMALIDIR.
           items: const [
-            // 1. Map (Harita)
+            // Index 0: Map
             BottomNavigationBarItem(
               icon: Icon(Icons.map_outlined, size: 25),
               label: 'Map',
             ),
-
-            // 2. Search (Arama)
+            // Index 1: Search
             BottomNavigationBarItem(
               icon: Icon(Icons.search, size: 25),
               label: 'Search',
             ),
-
-            // 3. Home (Ana Sayfa) - ORTADA
+            // Index 2: Home
             BottomNavigationBarItem(
               icon: Icon(Icons.home_outlined, size: 25),
               label: 'Home',
             ),
-
-            // 4. Chat (Sohbet)
+            // Index 3: Chat
             BottomNavigationBarItem(
               icon: Icon(Icons.chat_bubble_outline, size: 25),
               label: 'Chat',
             ),
-
-            // 5. Profile (Profil)
+            // Index 4: Profile
             BottomNavigationBarItem(
               icon: Icon(Icons.person_outline, size: 25),
               label: 'Profile',
