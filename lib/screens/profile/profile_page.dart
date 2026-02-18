@@ -944,8 +944,6 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ),
           ],
-
-          // --- 4. ORTAK TAKİPÇİLER ---
           SizedBox(height: 12.h),
           _buildFollowedBySection(context),
         ],

@@ -13,6 +13,7 @@ class RegisterStepView extends StatelessWidget {
     this.controller,
     this.hintText,
     this.description,
+    this.enabled = true,
     this.buttonText = 'devam',
     this.keyboardType,
     this.inputFormatters,
@@ -29,6 +30,7 @@ class RegisterStepView extends StatelessWidget {
   final VoidCallback onNext;
   final String? hintText;
   final String? description;
+  final bool enabled;
   final String buttonText;
   final TextInputType? keyboardType;
   final VoidCallback? onSkip;
@@ -96,16 +98,17 @@ class RegisterStepView extends StatelessWidget {
             customContent!
           else if (controller != null)
             GestureDetector(
-              onTap: onTapInput,
+              onTap: enabled ? onTapInput : null,
               child: AbsorbPointer(
-                absorbing: readOnly,
+                absorbing: !enabled || readOnly,
                 child: AuthInput(
                   controller: controller!,
-                  onChanged: onChanged, // Buraya bağla
+                  onChanged: enabled ? onChanged : null, // Buraya bağla
                   hintText: hintText,
                   keyboardType: keyboardType,
                   textInputAction: TextInputAction.next,
-                  onSubmitted: (_) => _handleNext(context),
+                  onSubmitted: (_) => enabled ? _handleNext(context) : null,
+                  enabled: enabled,
                   inputFormatters: inputFormatters,
                 ),
               ),

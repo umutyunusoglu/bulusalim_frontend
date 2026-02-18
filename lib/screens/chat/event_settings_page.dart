@@ -10,7 +10,9 @@ import 'package:outnest/components/stacked_avatars.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/core/utils/types/types.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/services/file_service.dart';
@@ -20,6 +22,7 @@ import 'package:outnest/screens/chat/event_avatar_badge.dart';
 class EventSettingsPage extends StatefulWidget {
   const EventSettingsPage({
     required this.eventID,
+    required this.event,
     required this.chatTitle,
     required this.participantAvatars,
     required this.location,
@@ -36,6 +39,7 @@ class EventSettingsPage extends StatefulWidget {
   final String participantStatus;
   final String remainingTime;
   final String creatorID;
+  final EventEntity event;
 
   @override
   State<EventSettingsPage> createState() => _EventSettingsPageState();
@@ -61,7 +65,10 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
 
   Future<void> _fetchCurrentEventData() async {
     try {
-      final data = await eventRepository.getEvent(widget.eventID);
+      final data = await eventRepository.injectSensitiveDataIfAuthorized(
+        widget.event,
+        sessionService.currentUser?.userID,
+      );
 
       if (data != null && mounted) {
         setState(() {
@@ -90,7 +97,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
       _logger.debug('Yeni konum seçildi: $result');
       final newDisplayAddress = result['displayAddress'] as String;
       final newAddress = result['address'] as String;
-      final newLocation = result['location'] as GeoPoint;
+      final newLocation = result['location'] as Geolocation;
 
       if (!mounted) return;
       setState(() {
@@ -240,8 +247,8 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     final isCreator =
         currentUser != null && currentUser.userID == widget.creatorID;
 
-    final profileImage = widget.participantAvatars.isNotEmpty
-        ? widget.participantAvatars.first.imageUrl
+    final profileImage = widget.event.creator.profileImageUrl != null
+        ? widget.event.creator.profileImageUrl
         : FileService.defaultProfileImageUrl();
 
     var dateString = 'Yükleniyor...';

@@ -102,7 +102,7 @@ class EventRepositoryImpl implements EventRepository {
       );
 
       Geolocation? publicLocation;
-      String publicGeohash = '';
+      var publicGeohash = '';
 
       // Eğer haritada gösterilmesin denmişse (false),
       // Location verisini NULL yapıyoruz. Böylece harita render edemez.
@@ -139,14 +139,16 @@ class EventRepositoryImpl implements EventRepository {
       };
 
       // --- BATCH COMMIT ---
-      batch.set(docRef, publicModel.toFirestore());
-      batch.set(sensitiveRef, sensitiveData);
-      batch.set(creatorParticipantRef, creatorAsParticipant.toMap());
+      batch
+        ..set(docRef, publicModel.toFirestore())
+        ..set(sensitiveRef, sensitiveData)
+        ..set(creatorParticipantRef, creatorAsParticipant.toMap());
 
       final userEvent = UserEventEntity(
         eventId: eventId,
         role: EventRoleEnum.creator,
         status: UserEventStatusEnum.upcoming,
+        isActive: true,
         updatedAt: DateTime.now(),
       );
       batch.set(
@@ -164,8 +166,38 @@ class EventRepositoryImpl implements EventRepository {
 
   @override
   Future<void> updateEvent(String eventId, Map<String, dynamic> changes) async {
+    final locationChanged = changes.containsKey('location');
+
+    if (locationChanged) {
+      final privateChanges = changes.entries.where(
+        (entry) => entry.key == 'location' || entry.key == 'address',
+      );
+
+      await _firestore
+          .collection('events')
+          .doc(eventId)
+          .collection('sensitive')
+          .doc('meta')
+          .update(
+            {
+              ...Map.fromEntries(privateChanges),
+              'updatedAt': FieldValue.serverTimestamp(),
+            },
+          );
+    }
+
+    final publicChanges = Map<String, dynamic>.from(changes)
+      ..removeWhere((key, _) {
+        return key == 'location' || key == 'address';
+      });
+
+    if (publicChanges.isEmpty) {
+      // Sadece konum veya adres değişmiş, ana dokümanda güncelleme yapmaya gerek yok
+      return;
+    }
+
     try {
-      await _firestore.collection('events').doc(eventId).update(changes);
+      await _firestore.collection('events').doc(eventId).update(publicChanges);
       _globalCache.removeEntity(eventId); // Değişiklik sonrası cache temizliği
     } catch (e) {
       _logger.error('Failed to update event partial: $e');
@@ -266,6 +298,7 @@ class EventRepositoryImpl implements EventRepository {
         .doc(userId)
         .collection('eventLog')
         .where('status', whereIn: ['upcoming', 'ongoing', 'completed'])
+        .where('isActive', isEqualTo: true)
         .snapshots()
         .asyncMap((snapshot) async {
           if (snapshot.docs.isEmpty) return [];
@@ -274,9 +307,6 @@ class EventRepositoryImpl implements EventRepository {
               .map((doc) => UserEventModel.fromFirestore(doc.data()).eventID)
               .toList();
 
-          // Stream tetiklendiğinde (bizim log güncellememiz sayesinde),
-          // Cache'e bakmadan doğrudan Firestore'dan en güncel veriyi çekecek.
-          // forceRefresh: true bu işi yapar.
           final enrichedEvents = await getEventsByIds(
             eventIds,
             forceRefresh: true,
@@ -425,6 +455,7 @@ class EventRepositoryImpl implements EventRepository {
         eventId: eventId,
         role: EventRoleEnum.participant,
         status: UserEventStatusEnum.pending,
+        isActive: true,
         updatedAt: DateTime.now(),
       );
 
