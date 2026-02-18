@@ -67,6 +67,7 @@ dependencies:
   image_cropper: ^11.0.0
   recaptcha_enterprise_flutter: ^18.8.2
   onnxruntime: ^1.4.1
+  geolocator: ^14.0.2
 
 dev_dependencies:
   build_runner: ^2.7.1

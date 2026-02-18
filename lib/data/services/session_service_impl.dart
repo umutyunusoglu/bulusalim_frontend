@@ -1,6 +1,7 @@
 // lib/core/services/session/session_service_impl.dart
 
 import 'dart:async';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
@@ -68,6 +69,7 @@ class SessionServiceImpl implements SessionService {
     await _cancelUserStreams();
 
     if (userId == null) {
+      await FirebaseAnalytics.instance.setUserId(id: userId);
       // 2. Logout: State'i tamamen sıfırla
       _stateNotifier.value = SessionState.empty;
       _logger.info('Session ended.');

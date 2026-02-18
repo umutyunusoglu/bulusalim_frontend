@@ -6,10 +6,10 @@ abstract class InboxRepository {
   Stream<List<NotificationEntity>> getNotificationsStream();
 
   // Bildirimi okundu işaretlemek için
-  Future<void> markAsRead(String notificationId);
+  Future<void> updateFollowNotificationRead(String notificationId);
 
   // Okunmamış bildirim sayısı (Badge için)
-  Stream<int> getUnreadCountStream();
+  Future<bool> hasUnreadFollowRequest();
 
   Stream<List<FollowNotificationEntity>> getFollowRequestsStream();
 }

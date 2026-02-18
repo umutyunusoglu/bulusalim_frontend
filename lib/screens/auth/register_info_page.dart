@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +35,29 @@ class RegisterInfoPage extends StatefulWidget {
   State<RegisterInfoPage> createState() => _RegisterInfoPageState();
 }
 
+enum RegisterStep {
+  username,
+  name,
+  dob,
+  universityEmail,
+  universityOtp,
+  gender,
+  profilePhoto,
+  interests,
+  permissions,
+}
+
+final Map<RegisterStep, RegisterStep> backSteps = {
+  RegisterStep.name: RegisterStep.username,
+  RegisterStep.dob: RegisterStep.name,
+  RegisterStep.universityEmail: RegisterStep.dob,
+  RegisterStep.universityOtp: RegisterStep.universityEmail,
+  RegisterStep.gender: RegisterStep.universityEmail,
+  RegisterStep.profilePhoto: RegisterStep.gender,
+  RegisterStep.interests: RegisterStep.profilePhoto,
+  RegisterStep.permissions: RegisterStep.interests,
+};
+
 class _RegisterInfoPageState extends State<RegisterInfoPage>
     with WidgetsBindingObserver {
   final PageController _pageController = PageController();
@@ -52,6 +76,8 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
   bool _permCamera = false;
   bool _permPhotos = false;
 
+  final _logger = getIt<LoggingService>();
+
   final List<TextEditingController> _eduOtpControllers = List.generate(
     6,
     (index) => TextEditingController(),
@@ -65,6 +91,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
 
   String? _detectedUniversity;
   bool _isSendingEmail = false;
+  bool _isVerifyingEmail = false;
 
   File? _selectedImage;
   final ImagePicker _picker = ImagePicker();
@@ -108,10 +135,21 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
 
   void _prevPage() {
     if (_currentIndex > 0) {
-      _pageController.previousPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      final currentStep = RegisterStep.values[_currentIndex];
+      final backStep = backSteps[currentStep]!;
+      final backIndex = RegisterStep.values.indexOf(backStep);
+
+      if (_currentIndex - backIndex > 1) {
+        _pageController.jumpToPage(
+          backIndex,
+        );
+      } else {
+        _pageController.animateToPage(
+          backIndex,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
     } else {
       context.pop();
     }
@@ -497,6 +535,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
               title: 'Üniversite Doğrulama',
               controller: _universityController,
               hintText: '@edu.tr',
+              enabled: !_isSendingEmail,
               buttonText: _isSendingEmail ? 'gönderiliyor...' : 'kod gönder',
               // Kullanıcı maili yazarken anlık kontrol:
               onChanged: _onUniversityEmailChanged,
@@ -514,6 +553,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
               },
 
               onNext: () async {
+                if (_isSendingEmail) return;
                 setState(() => _isSendingEmail = true);
                 try {
                   print(FirebaseAuth.instance.currentUser?.uid);
@@ -522,23 +562,43 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                   );
                   if (!mounted) return;
                   _nextPage(); // Başarılıysa OTP sayfasına geç
-                } catch (e) {
-                  if (mounted) _showError(e.toString());
+                } on FirebaseFunctionsException catch (error) {
+                  if (mounted) {
+                    if (error.code == 'resource-exhausted') {
+                      _showError(
+                        'Çok fazla mail yollama isteği gönderdiniz. Lütfen 1 dakika sonra tekrar deneyin!',
+                      );
+
+                      _logger.error(
+                        'FirebaseAuthException: ${error.code} - ${error.message}',
+                      );
+                    } else {
+                      _logger.error(
+                        'Bir hata oluştu: ${error.code} - ${error.message}',
+                      );
+                    }
+                    _logger.error('Verification email gönderilemedi: $error');
+                  }
                 } finally {
                   if (mounted) setState(() => _isSendingEmail = false);
                 }
               },
-              onSkip: () => _pageController.jumpToPage(5),
+              onSkip: !_isSendingEmail
+                  ? () => _pageController.jumpToPage(RegisterStep.gender.index)
+                  : null,
             ),
 
             RegisterStepView(
               title: 'Doğrulama Kodu',
               buttonText: 'onayla',
+              enabled: !_isVerifyingEmail,
               description:
                   '${_universityController.text} adresine gelen kodu giriniz.',
               customContent: OtpRow(controllers: _eduOtpControllers),
 
               onNext: () async {
+                if (_isVerifyingEmail) return;
+                setState(() => _isVerifyingEmail = true);
                 final otpCode = _eduOtpControllers.map((c) => c.text).join();
                 try {
                   // Debug ekranındaki verifyEmail logic'i:
@@ -548,10 +608,15 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                     _detectedUniversity!,
                     otpCode,
                   );
+
                   if (!mounted) return;
+                  setState(() => _isVerifyingEmail = false);
                   _nextPage(); // Başarılıysa devam et
                 } catch (e) {
-                  if (mounted) _showError('Kod hatalı veya geçersiz: $e');
+                  if (mounted) {
+                    _showError('Kod hatalı veya geçersiz: $e');
+                    setState(() => _isVerifyingEmail = true);
+                  }
                 }
               },
             ),
@@ -801,6 +866,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
   Timer? _debounce;
 
   void _onUniversityEmailChanged(String email) {
+    if (_isSendingEmail) return;
     if (_debounce?.isActive ?? false) _debounce!.cancel();
 
     _debounce = Timer(const Duration(milliseconds: 500), () {

@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart'; // context.pop() için
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
@@ -12,157 +13,321 @@ import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-class FollowRequestTile extends StatelessWidget {
-  FollowRequestTile({required this.item, super.key});
+// Durum Enum'ı
+enum FollowStatus { pending, following, sent, none }
+
+class FollowRequestTile extends StatefulWidget {
+  const FollowRequestTile({required this.item, super.key});
 
   final FollowNotificationEntity item;
+
+  @override
+  State<FollowRequestTile> createState() => _FollowRequestTileState();
+}
+
+class _FollowRequestTileState extends State<FollowRequestTile> {
   final LoggingService _logger = getIt<LoggingService>();
+  final SessionService _sessionService = getIt<SessionService>();
+  final UserRepository _userRepository = getIt<UserRepository>();
 
-  // Sağ taraftaki aksiyon butonlarını oluşturur
-  Widget _buildTrailingAction() {
-    switch (item.status) {
-      // DURUM 1: Takip Ediliyor
+  FollowStatus? _currentStatus;
+  bool _isLoadingInitialStatus = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _calculateInitialStatus();
+  }
+
+  // --- BAŞLANGIÇ DURUMU HESAPLAMA ---
+  Future<void> _calculateInitialStatus() async {
+    if (!mounted) return;
+    final item = widget.item;
+
+    final myFollowers = _sessionService.currentState?.followers ?? [];
+    final myFollowees = _sessionService.currentState?.followees ?? [];
+
+    final amIFollowing = myFollowees.any((f) => f.userID == item.userID);
+    final isMyFollower = myFollowers.any((f) => f.userID == item.userID);
+
+    final isRequestSent = await _userRepository.isFollowRequestPending(
+      _sessionService.currentUser!.userID,
+      item.userID,
+    );
+
+    FollowStatus status = FollowStatus.pending;
+
+    if (amIFollowing) {
+      status = FollowStatus.following;
+    } else if (isRequestSent) {
+      status = FollowStatus.sent;
+    } else if (isMyFollower && !amIFollowing) {
+      status = FollowStatus.none; // Geri takip et (Takip et butonu çıkar)
+    } else {
+      status = FollowStatus.none; // Takip et
+    }
+
+    if (mounted) {
+      setState(() {
+        _currentStatus = status;
+        _isLoadingInitialStatus = false;
+      });
+    }
+  }
+
+  // --- ANA BUTON TIKLAMA MANTIĞI (ONPRESS) ---
+  Future<void> _onMainButtonTap() async {
+    final targetUserID = widget.item.userID;
+
+    // 1. Zaten takip ediyorsak -> Dialog aç ve silmeyi sor
+    if (_currentStatus == FollowStatus.following) {
+      _showUnfollowDialog(context);
+      return;
+    }
+
+    // 2. İstek zaten gönderilmişse -> İsteği geri çek
+    if (_currentStatus == FollowStatus.sent) {
+      await _cancelFollowRequest();
+      return;
+    }
+
+    // 3. Hiçbiri değilse (Takip Et durumu) -> Gizli mi değil mi kontrol et ve işlem yap
+    // Kullanıcının gizlilik durumunu bilmediğimiz için hızlıca çekiyoruz
+    final targetUser = await _userRepository.getUserPublicData(targetUserID);
+    final isPrivate = targetUser?.isPrivate ?? false;
+
+    if (isPrivate) {
+      await _sendFollowRequest();
+    } else {
+      await _performDirectFollow();
+    }
+  }
+
+  // --- 1. TAKİBİ BIRAKMA (UNFOLLOW) ---
+  Future<void> _performUnfollow() async {
+    final currentUser = _sessionService.currentUser;
+    if (currentUser == null) return;
+
+    // Optimistic Update: Hemen takibi bırakmış gibi göster
+    final previousStatus = _currentStatus;
+    setState(() => _currentStatus = FollowStatus.none);
+
+    try {
+      await _userRepository.removeFollowee(
+        currentUser.userID,
+        widget.item.userID,
+      );
+      await _userRepository.removeFollower(
+        widget.item.userID,
+        currentUser.userID,
+      );
+      // Not: removeFollowee çağrıldığında SessionService muhtemelen kendini günceller
+    } catch (e) {
+      _handleError(e, previousStatus);
+    }
+  }
+
+  // --- 2. DİREKT TAKİP ETME (PUBLIC ACCOUNT) ---
+  Future<void> _performDirectFollow() async {
+    final currentUser = _sessionService.currentUser;
+    if (currentUser == null) return;
+
+    // Optimistic Update: Hemen takip ediyor gibi göster
+    final previousStatus = _currentStatus;
+    setState(() => _currentStatus = FollowStatus.following);
+
+    try {
+      final me = Follower(
+        userID: currentUser.userID,
+        username: currentUser.username,
+        profileImageUrl: currentUser.profileImageUrl,
+        createdAt: DateTime.now(),
+      );
+
+      final target = Followee(
+        userID: widget.item.userID,
+        username: widget.item.username,
+        profileImageUrl: widget.item.profileImageUrl,
+        createdAt: DateTime.now(),
+      );
+
+      await _userRepository.addFollowee(currentUser.userID, target);
+      await _userRepository.addFollower(widget.item.userID, me);
+    } catch (e) {
+      _handleError(e, previousStatus);
+    }
+  }
+
+  // --- 3. İSTEK GÖNDERME (PRIVATE ACCOUNT) ---
+  Future<void> _sendFollowRequest() async {
+    final currentUser = _sessionService.currentUser;
+    if (currentUser == null) return;
+
+    // Optimistic Update: İstek gönderildi yap
+    final previousStatus = _currentStatus;
+    setState(() => _currentStatus = FollowStatus.sent);
+
+    try {
+      await _userRepository.sendFollowRequest(
+        currentUser.userID,
+        widget.item.userID,
+        false, // isAccepted başlangıçta false
+      );
+    } catch (e) {
+      _handleError(e, previousStatus);
+    }
+  }
+
+  // --- 4. İSTEĞİ GERİ ÇEKME ---
+  Future<void> _cancelFollowRequest() async {
+    final currentUser = _sessionService.currentUser;
+    if (currentUser == null) return;
+
+    // Optimistic Update: Takip et butonuna geri dön
+    final previousStatus = _currentStatus;
+    setState(() => _currentStatus = FollowStatus.none);
+
+    try {
+      await _userRepository.cancelFollowRequest(
+        currentUser.userID,
+        widget.item.userID,
+      );
+    } catch (e) {
+      _handleError(e, previousStatus);
+    }
+  }
+
+  // --- YARDIMCI: HATA YÖNETİMİ ---
+  void _handleError(Object error, FollowStatus? previousStatus) {
+    debugPrint("İşlem başarısız: $error");
+    if (mounted) {
+      // Durumu geri al (Rollback)
+      setState(() => _currentStatus = previousStatus);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('İşlem başarısız oldu, lütfen tekrar deneyin.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+  }
+
+  // --- DIALOG ---
+  void _showUnfollowDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        // Popup widget'ınız yoksa AlertDialog kullanın
+        title: Text(
+          '${widget.item.username} hesabını takip etmeyi bırakmak istediğine emin misin?',
+          style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'Bu hesabı tekrardan takip etmek için istek tekrardan göndermen gerekecek.',
+          style: TextStyle(fontSize: 14.sp),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Vazgeç", style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(
+              backgroundColor: const Color(0xFF5D6B82),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pop(context); // Dialogu kapat
+              _performUnfollow(); // Silme işlemini başlat
+            },
+            child: const Text("Takibi Bırak"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- ARAYÜZ (WIDGETS) ---
+  Widget _buildActionContent() {
+    if (_isLoadingInitialStatus) {
+      return SizedBox(
+        width: 20.w,
+        height: 20.h,
+        child: const CircularProgressIndicator(strokeWidth: 2),
+      );
+    }
+
+    switch (_currentStatus) {
       case FollowStatus.following:
-        return Container(
-          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF2F2F7),
-            borderRadius: BorderRadius.circular(20.r),
-          ),
-          child: Text(
-            'takip ediliyor',
-            style: TextStyle(
-              fontSize: 10.sp,
-              color: AppColors.tertiaryColor,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        );
-
-      // DURUM 2: İstek Gönderildi
-      case FollowStatus.sent:
-        return Container(
-          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF2F2F7),
-            borderRadius: BorderRadius.circular(20.r),
-          ),
-          child: Text(
-            'istek gönderildi',
-            style: TextStyle(
-              fontSize: 10.sp,
-              color: AppColors.tertiaryColor,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        );
-
-      // DURUM 3: Takip Et
-      case FollowStatus.none:
         return GestureDetector(
-          onTap: () async {
-            // TODO: Takip etme işlemi
-            _logger.info('Takip et butonuna tıklandı: ${item.username}');
-
-            final sessionService = getIt<SessionService>();
-            final userRepository = getIt<UserRepository>();
-
-            final targetUserID = item.userID;
-            final currentUser = sessionService.currentUser;
-
-            final targetUser = await userRepository.getUserPublicData(
-              targetUserID,
-            );
-
-            if (targetUser?.isPrivate ?? false) {
-              // Özel hesap, takip isteği gönder
-              _logger.info(
-                'Özel hesaba takip isteği gönderiliyor: ${targetUser?.username}',
-              );
-
-              await userRepository.sendFollowRequest(
-                currentUser!.userID,
-                targetUserID,
-                true,
-              );
-            }
-          },
-
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
-            decoration: BoxDecoration(
-              color: AppColors.primaryColor,
-              borderRadius: BorderRadius.circular(20.r),
-            ),
-            child: Text(
-              'takip et',
-              style: TextStyle(
-                fontSize: 10.sp,
-                color: Colors.white,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+          onTap: _onMainButtonTap, // Tıklayınca dialog açar
+          child: _buildStatusContainer(
+            'takip ediliyor',
+            const Color(0xFFF2F2F7),
+            AppColors.tertiaryColor,
           ),
         );
 
-      // DURUM 4: Kabul Et / Sil
+      case FollowStatus.sent:
+        return GestureDetector(
+          onTap: _onMainButtonTap, // Tıklayınca isteği geri çeker
+          child: _buildStatusContainer(
+            'istek gönderildi',
+            const Color(0xFFF2F2F7),
+            AppColors.tertiaryColor,
+          ),
+        );
+
+      case FollowStatus.none:
+      case null:
+        return GestureDetector(
+          onTap: _onMainButtonTap, // Gizli/Açık kontrolü yapıp takip eder
+          child: _buildStatusContainer(
+            'takip et',
+            AppColors.primaryColor,
+            Colors.white,
+            isElevated: true, // Gölge var
+          ),
+        );
+
       case FollowStatus.pending:
+        // Bu tile "sana gelen istek" ise (bildirim)
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             GestureDetector(
-              onTap: () {
-                final sessionService = getIt<SessionService>();
-                final userRepository = getIt<UserRepository>();
-
-                final targetUserID = item.userID;
-                final currentUser = sessionService.currentUser;
-
+              onTap: () async {
+                // Kabul etme mantığı buraya (basitçe)
+                final currentUser = _sessionService.currentUser;
                 final follower = FriendEntity(
-                  userID: targetUserID,
-                  username: item.username,
-                  profileImageUrl: item.profileImageUrl,
+                  userID: widget.item.userID,
+                  username: widget.item.username,
+                  profileImageUrl: widget.item.profileImageUrl,
                   createdAt: DateTime.now(),
                 );
-
-                userRepository.addFollower(currentUser!.userID, follower);
+                await _userRepository.addFollower(
+                  currentUser!.userID,
+                  follower,
+                );
+                // Burayı da optimistic yapmak gerekebilir ama şimdilik bırakıyoruz
               },
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryColor,
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                child: Text(
-                  'kabul et',
-                  style: TextStyle(
-                    fontSize: 10.sp,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+              child: _buildStatusContainer(
+                'kabul et',
+                AppColors.primaryColor,
+                Colors.white,
+                isElevated: true, // Gölge var
               ),
             ),
-
             SizedBox(width: 4.w),
             GestureDetector(
               onTap: () {
-                // TODO: Silme işlemi
+                // Silme/Reddetme mantığı
               },
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF2F2F7),
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                child: Text(
-                  'sil',
-                  style: TextStyle(
-                    fontSize: 10.sp,
-                    color: AppColors.tertiaryColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+              child: _buildStatusContainer(
+                'sil',
+                const Color(0xFFF2F2F7),
+                AppColors.tertiaryColor,
               ),
             ),
           ],
@@ -170,32 +335,59 @@ class FollowRequestTile extends StatelessWidget {
     }
   }
 
+  Widget _buildStatusContainer(
+    String text,
+    Color bgColor,
+    Color textColor, {
+    bool isElevated = false,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20.r),
+        boxShadow: isElevated
+            ? [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  offset: const Offset(0, 2),
+                  blurRadius: 4,
+                ),
+              ]
+            : null,
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 10.sp,
+          color: textColor,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Özel formatı ('tr_short') sisteme tanıtıyoruz
     timeago.setLocaleMessages('tr_short', TrShortMessages());
+    // ... (Build metodunun geri kalanı, Avatar ve RichText kısımları aynı)
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       child: Row(
         children: [
-          // 1. AVATAR
           CircleAvatar(
             radius: 16.r,
-            backgroundColor:
-                Colors.grey.shade200, // Resim yüklenene kadar boş kalmasın
+            backgroundColor: Colors.grey.shade200,
             backgroundImage:
-                (item.profileImageUrl.isNotEmpty &&
-                    item.profileImageUrl.startsWith('http'))
+                (widget.item.profileImageUrl.isNotEmpty &&
+                    widget.item.profileImageUrl.startsWith('http'))
                 ? CachedNetworkImageProvider(
-                    fixEmulatorUrl(item.profileImageUrl),
+                    fixEmulatorUrl(widget.item.profileImageUrl),
                   )
                 : AssetImage(FileService.defaultProfileImageUrl())
                       as ImageProvider,
-            onBackgroundImageError: (_, __) => debugPrint('Small Avatar Error'),
           ),
           SizedBox(width: 12.w),
-
-          // 2. METİN
           Expanded(
             child: RichText(
               text: TextSpan(
@@ -207,17 +399,16 @@ class FollowRequestTile extends StatelessWidget {
                 ),
                 children: [
                   TextSpan(
-                    text: '${item.username} ',
+                    text: '${widget.item.username} ',
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                   TextSpan(
-                    text: item.message.replaceAll('\n', ' ').trim(),
+                    text: widget.item.message.replaceAll('\n', ' ').trim(),
                     style: const TextStyle(fontWeight: FontWeight.w400),
                   ),
-                  // Zaman Bilgisi
                   TextSpan(
                     text:
-                        ' ${timeago.format(item.createdAt, locale: 'tr_short')}',
+                        ' ${timeago.format(widget.item.createdAt, locale: 'tr_short')}',
                     style: TextStyle(
                       color: Colors.grey.shade400,
                       fontSize: 12.sp,
@@ -227,16 +418,16 @@ class FollowRequestTile extends StatelessWidget {
               ),
             ),
           ),
-
-          // 3. BUTONLAR
-          _buildTrailingAction(),
+          _buildActionContent(),
         ],
       ),
     );
   }
 }
 
+// ... TrShortMessages sınıfı aynı
 class TrShortMessages implements timeago.LookupMessages {
+  // ... (Önceki kod ile aynı)
   @override
   String prefixAgo() => '';
   @override

@@ -10,6 +10,7 @@ class UserEventModel extends Model<UserEventEntity> {
     required this.eventID,
     required this.role,
     required this.updatedAt,
+    required this.isActive,
     required this.status,
   });
 
@@ -19,6 +20,7 @@ class UserEventModel extends Model<UserEventEntity> {
       eventID: entity.eventId,
       role: entity.role,
       status: entity.status,
+      isActive: entity.isActive,
       updatedAt: entity.updatedAt,
     );
   }
@@ -29,6 +31,7 @@ class UserEventModel extends Model<UserEventEntity> {
       eventID: doc['eventID'] as Identifier,
       role: EventRoleEnum.fromString(doc['role'] as String),
       status: UserEventStatusEnum.fromString(doc['status'] as String),
+      isActive: doc['isActive'] as bool? ?? true,
       updatedAt: (doc['updatedAt'] as Timestamp).toDate(),
     );
   }
@@ -39,6 +42,7 @@ class UserEventModel extends Model<UserEventEntity> {
       'eventID': eventID,
       'role': role.toString(),
       'status': status.toString(),
+      'isActive': isActive,
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
@@ -49,6 +53,7 @@ class UserEventModel extends Model<UserEventEntity> {
       eventId: eventID,
       role: role,
       status: status,
+      isActive: isActive,
       updatedAt: updatedAt,
     );
   }
@@ -56,5 +61,6 @@ class UserEventModel extends Model<UserEventEntity> {
   final Identifier eventID;
   final EventRoleEnum role;
   final UserEventStatusEnum status;
+  final bool isActive;
   final DateTime updatedAt;
 }

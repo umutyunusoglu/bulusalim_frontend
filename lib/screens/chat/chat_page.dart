@@ -151,8 +151,7 @@ class _ChatPageState extends State<ChatPage> {
             event: widget.event,
             creatorID: widget.creatorID,
             chatTitle: widget.chatTitle,
-            creatorProfileImage:
-                widget.creatorProfileImage, // Tekrar fetch etmeye gerek yok
+            creatorProfileImage: widget.creatorProfileImage,
             location: widget.location,
             eventDate: widget.eventDate,
             participantStatus: widget.participantStatus,

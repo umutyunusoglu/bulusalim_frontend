@@ -2,8 +2,10 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/data/models/organization/organization_model.dart';
+import 'package:outnest/data/models/post/post_model.dart';
 import 'package:outnest/domain/datasources/university_datasource.dart';
 import 'package:outnest/domain/entities/organization/organization_entity.dart';
+import 'package:outnest/domain/services/remote_config_service.dart';
 
 class UniversityDataSourceImpl implements UniversityDatasource {
   UniversityDataSourceImpl({required this.logger});
@@ -21,7 +23,17 @@ class UniversityDataSourceImpl implements UniversityDatasource {
 
     try {
       logger.debug('Caching universities from local asset...');
-      final response = await rootBundle.loadString(_assetPath);
+      final RemoteConfigService remoteConfig = getIt<RemoteConfigService>();
+
+      var response = '';
+      try {
+        logger.debug('Attempting to fetch universities from Remote Config...');
+        response = await remoteConfig.getValue<String>('universities');
+      } catch (e) {
+        logger.error('Remote Config fetch failed, falling back to asset: $e');
+        response = await rootBundle.loadString(_assetPath);
+      }
+
       final data = json.decode(response) as List<dynamic>;
 
       _cachedUniversities = data.map((item) {

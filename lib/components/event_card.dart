@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/bottomsheetoption.dart';
 import 'package:outnest/components/eventcardbackgroundpainter.dart';
+import 'package:outnest/components/popup.dart';
 import 'package:outnest/components/stacked_avatars.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
@@ -27,8 +28,6 @@ enum _EventJoinStatus {
   joined, // 3. Katıldın
 }
 
-//TODO: Participants!
-
 class EventCard extends StatefulWidget {
   const EventCard({
     required this.event,
@@ -40,7 +39,6 @@ class EventCard extends StatefulWidget {
   final EventEntity event;
   final List<CompactUserEntity> participants;
   final bool showJoinButton;
-
   @override
   State<EventCard> createState() => _EventCardState();
 }
@@ -49,6 +47,7 @@ class _EventCardState extends State<EventCard> {
   late final LoggingService logger;
   late final EventRepository eventRepository;
   late final SessionService sessionService;
+  bool _amIFollowingCreator = false;
 
   late _EventJoinStatus _joinStatus;
 
@@ -62,9 +61,24 @@ class _EventCardState extends State<EventCard> {
     logger = getIt<LoggingService>();
     eventRepository = getIt<EventRepository>();
     sessionService = getIt<SessionService>();
+    _updateFollowingStatus();
+    sessionService.stateListenable.addListener(_updateFollowingStatus);
 
     _calculateJoinStatus();
     _checkIfSaved();
+  }
+
+  void _updateFollowingStatus() {
+    if (!mounted) return;
+
+    final myFollowees = sessionService.stateListenable.value?.followees ?? [];
+    final isFollowing = myFollowees.any(
+      (u) => u.userID == widget.event.creator.userID,
+    );
+
+    setState(() {
+      _amIFollowingCreator = isFollowing;
+    });
   }
 
   // --- GÜVENLİ DURUM HESAPLAMA ---
@@ -162,6 +176,7 @@ class _EventCardState extends State<EventCard> {
                     'remainingTime':
                         'Buluşma Zamanı: ${widget.event.startTime}',
                     'creatorID': widget.event.creator.userID,
+                    'event': widget.event,
                   },
                 );
               },
@@ -182,8 +197,6 @@ class _EventCardState extends State<EventCard> {
               isDestructive: true,
               onTap: () {
                 sheetContext.pop();
-                // TODO: Ayrılma servisini çağır
-
                 final currentUser = sessionService.currentUser;
                 if (currentUser != null) {
                   final compactUser = CompactUserEntity(
@@ -210,19 +223,57 @@ class _EventCardState extends State<EventCard> {
               onTap: () async {
                 sheetContext.pop();
                 // TODO: İptal etme servisini çağır
+                _onCancelEventTap();
+                if (mounted) setState(() => isVisible = false);
               },
             ),
           ]
           // BAŞKASININ ETKİNLİĞİ İSE
           else ...[
             // 1. Paylaş
+            /*
             BottomSheetOption(
               icon: Icons.share_outlined,
               text: 'Buluşmayı Paylaş',
               onTap: () {
                 sheetContext.pop();
               },
+            )*/
+            if (_amIFollowingCreator)
+              BottomSheetOption(
+                icon: Icons.person_remove_outlined,
+                text: "Takibi Bırak",
+                onTap: () {
+                  sheetContext.pop(); // Önce bottom sheet'i kapatıyoruz
+
+                  _handleUnfollowUser();
+                },
+              ),
+            BottomSheetOption(
+              icon: Icons.exit_to_app_outlined,
+              text: 'Buluşmadan Ayrıl',
+              isDestructive: true,
+              onTap: () {
+                sheetContext.pop();
+                final currentUser = sessionService.currentUser;
+                if (currentUser != null) {
+                  final compactUser = CompactUserEntity(
+                    userID: currentUser.userID,
+                    username: currentUser.username,
+                    profileImageUrl: currentUser.profileImageUrl,
+                    university: currentUser.university,
+                    nameSurname: null,
+                    isPrivate: null,
+                    bio: null,
+                  );
+                  eventRepository.removeParticipant(
+                    widget.event.eventID,
+                    compactUser,
+                  );
+                }
+              },
             ),
+
             // 2. Engelle
             BottomSheetOption(
               icon: Icons.person_off_outlined,
@@ -248,6 +299,25 @@ class _EventCardState extends State<EventCard> {
     );
   }
 
+  void _onCancelEventTap() {
+    showDialog<void>(
+      context: context,
+      builder: (context) => Popup(
+        title:
+            '"${widget.event.name}" buluşmasını iptal etmek istediğinize emin misiniz?',
+        description:
+            'Buluşmayı iptal etmeniz durumunda katılımcılara bildirim gönderilecektir.',
+        confirmButtonText: 'iptal et',
+        confirmButtonColor: const Color(0xFF1F415B),
+        onConfirm: () async {
+          if (mounted) context.pop();
+
+          await eventRepository.deleteEvent(widget.event.eventID);
+        },
+      ),
+    );
+  }
+
   Future<void> _handleBlockUser(BuildContext sheetContext) async {
     final currentUser = sessionService.currentUser;
     if (currentUser == null) return;
@@ -266,6 +336,28 @@ class _EventCardState extends State<EventCard> {
       logger.error('Block user failed: $e');
     }
     if (sheetContext.mounted) sheetContext.pop();
+  }
+
+  Future<void> _handleUnfollowUser() async {
+    try {
+      final currentUser = sessionService.currentUser;
+      await getIt<UserRepository>().removeFollowee(
+        currentUser!.userID,
+        widget.event.creator.userID,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Takip bırakıldı.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('İşlem başarısız.')),
+        );
+      }
+    }
   }
 
   Future<void> _handleReportEvent(BuildContext sheetContext) async {
@@ -383,23 +475,16 @@ class _EventCardState extends State<EventCard> {
     getIt<RemoteConfigService>();
     final categories = AppConfig.categories;
 
-    final displayAvatars = [
-      AvatarInfo(
-        userId: widget.event.creator.userID,
-        imageUrl: widget.event.creator.profileImageUrl,
-      ),
-    ];
+    final displayAvatars = <AvatarInfo>[];
 
     if (widget.participants.isNotEmpty) {
       displayAvatars.addAll(
-        widget.participants
-            .where((user) => user.userID != widget.event.creator.userID)
-            .map(
-              (user) => AvatarInfo(
-                userId: user.userID,
-                imageUrl: user.profileImageUrl,
-              ),
-            ),
+        widget.participants.map(
+          (user) => AvatarInfo(
+            userId: user.userID,
+            imageUrl: user.profileImageUrl,
+          ),
+        ),
       );
     }
 
@@ -567,7 +652,19 @@ class _EventCardState extends State<EventCard> {
               left: 0,
               right: 0,
               child: Center(
-                child: StackedAvatars(avatarDataList: displayAvatars),
+                child: GestureDetector(
+                  behavior: HitTestBehavior
+                      .opaque, // Boş alanlara tıklamayı da yakalar
+                  onTap: () {
+                    _showParticipantsBottomSheet();
+                  },
+                  child: AbsorbPointer(
+                    // Bu widget, altındaki tüm etkileşimi (click, scroll vb.) engeller
+                    child: StackedAvatars(
+                      avatarDataList: displayAvatars,
+                    ),
+                  ),
+                ),
               ),
             ),
           ],

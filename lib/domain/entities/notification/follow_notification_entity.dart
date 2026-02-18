@@ -1,3 +1,6 @@
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/domain/services/session_service.dart';
+
 enum FollowStatus {
   following, // "takip ediliyor" (Gri Chip)
   sent, // "istek gönderildi" (Mavi yazılı Gri Chip)
@@ -10,18 +13,17 @@ class FollowNotificationEntity {
     required this.userID,
     required this.username,
     required this.profileImageUrl,
-    required this.status,
     required this.createdAt,
   }) {
-    switch (status) {
-      case FollowStatus.following:
-        message = 'seni takip etmeye başladı.';
-      case FollowStatus.sent:
-        message = 'seni takip etmeye başladı.';
-      case FollowStatus.none:
-        message = 'seni takip etmeye başladı.';
-      case FollowStatus.pending:
-        message = 'seni takip etmek istiyor.';
+    final SessionService sessionService = getIt<SessionService>();
+
+    final isItFollowingMe =
+        sessionService.currentState!.followers.contains(userID) ?? false;
+
+    if (isItFollowingMe) {
+      message = "seni takip etmeye başladı.";
+    } else {
+      message = "seni takip etmek istiyor.";
     }
   }
 
@@ -29,6 +31,5 @@ class FollowNotificationEntity {
   final String username;
   final String profileImageUrl;
   late final String message;
-  final FollowStatus status;
   final DateTime createdAt;
 }

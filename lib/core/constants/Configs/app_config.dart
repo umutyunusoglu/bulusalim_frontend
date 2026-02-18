@@ -38,6 +38,15 @@ class AppConfig {
     ) {
       return Map<String, String>.from(value);
     });
+
+    try {
+      isFeedPatternEnabled =
+          await remoteConfigService.getValue<bool>('feed_pattern_enabled') ??
+          false;
+    } catch (e) {
+      debugPrint('Remote Config hatası: $e');
+      isFeedPatternEnabled = false;
+    }
   }
 
   static late String host;
@@ -64,6 +73,8 @@ class AppConfig {
   static const String hiveBoxName = 'app_data_box';
 
   static late String mapBoxAccessTokenKey;
+
+  static late bool isFeedPatternEnabled;
 
   static const String baseUrl =
       'https://us-central1-bulusalim-e8e7c.cloudfunctions.net';

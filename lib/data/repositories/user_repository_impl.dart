@@ -486,6 +486,7 @@ class UserRepositoryImpl implements UserRepository {
       eventId: event.eventID,
       role: EventRoleEnum.fromString(event.currentUserRole ?? 'participant'),
       status: UserEventStatusEnum.saved,
+      isActive: true,
       updatedAt: DateTime.now(),
     );
 
@@ -679,6 +680,9 @@ class UserRepositoryImpl implements UserRepository {
         .collection('followers')
         .doc(follower.userID)
         .set(followerData);
+    _logger.info(
+      'Follower added for user: $userID, follower: ${follower.userID}',
+    );
   }
 
   @override
@@ -847,6 +851,28 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
+  Future<bool> isFollowRequestPending(
+    String fromUserID,
+    String toUserID,
+  ) async {
+    final value = await _firestore
+        .collection('users')
+        .doc(toUserID)
+        .collection('followRequests')
+        .doc(fromUserID)
+        .get()
+        .then((doc) => doc.exists)
+        .catchError((e) {
+          _logger.error(
+            'Error checking follow request from user: $fromUserID to user: $toUserID, error: $e',
+          );
+          return false;
+        });
+
+    return value;
+  }
+
+  @override
   Future<void> sendFollowRequest(
     Identifier fromUserID,
     Identifier toUserID,
@@ -855,14 +881,17 @@ class UserRepositoryImpl implements UserRepository {
     _logger.info(
       'Sending follow request from user: $fromUserID to user: $toUserID',
     );
+    //TODO: Başarısız olursa kullanıcıya bildirim gösterilecek şekilde error handling ekle
 
     final fromUser = await getCurrentUser(fromUserID);
     if (fromUser == null) {
       _logger.error('From user not found: $fromUserID');
       return;
     }
-
-    await _firestore
+    _logger.info(
+      'Follow request sent from user: $fromUserID to user: $toUserID',
+    );
+    _firestore
         .collection('users')
         .doc(toUserID)
         .collection('followRequests')
@@ -874,6 +903,9 @@ class UserRepositoryImpl implements UserRepository {
           'createdAt': FieldValue.serverTimestamp(),
         });
 
+    _logger.info(
+      'Follow request sent from user: $fromUserID to user: $toUserID',
+    );
     if (fromNotification) {
       _firestore
           .collection('users')

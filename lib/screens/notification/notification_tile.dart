@@ -152,7 +152,7 @@ class NotificationTile extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // 1. GÖRSEL ALANI
             _buildMainAvatar(),
@@ -184,16 +184,24 @@ class NotificationTile extends StatelessWidget {
                           text: '${notification.message} ',
                           style: const TextStyle(fontWeight: FontWeight.w400),
                         ),
+
                         // AKSİYON METNİ
+
+                        /*
                         if (notification.actionText != null)
                           TextSpan(
                             text: notification.actionText,
                             style: const TextStyle(
-                              color: AppColors.primaryColor, // Turuncu/Pembe
-                              fontWeight: FontWeight.w600,
+                              color: AppColors
+                                  .darkBackgroundColor, // Turuncu/Pembe
+                              fontWeight: FontWeight.w400,
                             ),
-                          ),
-
+                          ),*/
+                        WidgetSpan(
+                          child: SizedBox(
+                            width: 2.w,
+                          ), // İstediğin boşluk miktarını buraya yaz
+                        ),
                         // ZAMAN BİLGİSİ
                         TextSpan(
                           text: timeago.format(
@@ -202,7 +210,7 @@ class NotificationTile extends StatelessWidget {
                           ),
                           style: TextStyle(
                             fontFamily: 'SF Pro Display',
-                            fontSize: 12.sp,
+                            fontSize: 10.sp,
                             color: const Color(0xFF9E9E9E),
                           ),
                         ),

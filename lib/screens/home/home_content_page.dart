@@ -1,3 +1,5 @@
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/event_card.dart';
@@ -26,6 +28,7 @@ class _HomeContentPageState extends State<HomeContentPage> {
   // Fetch eşiği
   final int _nextPageThreshold = AppConfig.feedFetchThreshold;
 
+  bool _isInitialLoading = false;
   @override
   void initState() {
     super.initState();
@@ -33,7 +36,7 @@ class _HomeContentPageState extends State<HomeContentPage> {
       ..switchFeedType(widget.feedType)
       ..refresh();
 
-    // 2. Scroll dinleyicisi
+    // 2. Scroll dinleyicisi (Pagination için)
     _scrollController.addListener(_onScroll);
 
     // Home butonuna basıldığında tetiklenen sinyali dinliyoruz
@@ -56,6 +59,18 @@ class _HomeContentPageState extends State<HomeContentPage> {
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
       );
+    }
+  }
+
+  Future<void> _initFeed() async {
+    setState(() => _isInitialLoading = true);
+    try {
+      await _feedRepository.warmup();
+    } catch (e, stack) {
+      if (kDebugMode) debugPrint('Feed warmup hatası: $e');
+      await FirebaseCrashlytics.instance.recordError(e, stack);
+    } finally {
+      if (mounted) setState(() => _isInitialLoading = false);
     }
   }
 
@@ -91,6 +106,7 @@ class _HomeContentPageState extends State<HomeContentPage> {
         child: StreamBuilder<List<FeedEntity>>(
           stream: _feedRepository.feedStream,
           builder: (context, snapshot) {
+            // 1. Yükleniyor veya Veri Yok Durumu
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -123,6 +139,10 @@ class _HomeContentPageState extends State<HomeContentPage> {
         ),
       ),
     );
+  }
+
+  Widget _buildInitialLoading() {
+    return const Center(child: CircularProgressIndicator());
   }
 
   Widget _buildEmptyState() {
