@@ -7,11 +7,13 @@ import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/core/utils/types/enums/feed_type.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/services/file_service.dart';
+import 'package:outnest/domain/services/remote_config_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/screens/home/home_content_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart' as url_launcher;
 
 class MockEvent {
   MockEvent({this.name, this.imageUrls});
@@ -335,6 +337,47 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ],
+            ),
+            Positioned(
+              right: 20.w,
+              bottom: 100.h,
+              child: GestureDetector(
+                onTap: () async {
+                  String url;
+                  try {
+                    url = await getIt<RemoteConfigService>().getValue<String>(
+                      'feedback_url',
+                    );
+                  } catch (e) {
+                    url = 'https://outnest.app/';
+                  }
+
+                  await url_launcher.launchUrl(
+                    Uri.parse(url),
+                  );
+                },
+                child: Container(
+                  width: 56.w, // Alttaki butonun genişliği ile aynı
+                  height: 90.w, // Alttaki butonun yüksekliği ile aynı
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.green, // Yuvarlağın arka plan rengi
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.question_mark,
+                    size: 32.w, // İkon boyutunu biraz büyüttük
+                    color: AppColors.backgroundColor,
+                  ),
+                ),
+              ),
             ),
             Positioned(
               right: 16.w,

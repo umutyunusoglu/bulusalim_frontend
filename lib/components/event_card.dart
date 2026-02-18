@@ -475,23 +475,16 @@ class _EventCardState extends State<EventCard> {
     getIt<RemoteConfigService>();
     final categories = AppConfig.categories;
 
-    final displayAvatars = [
-      AvatarInfo(
-        userId: widget.event.creator.userID,
-        imageUrl: widget.event.creator.profileImageUrl,
-      ),
-    ];
+    final displayAvatars = <AvatarInfo>[];
 
     if (widget.participants.isNotEmpty) {
       displayAvatars.addAll(
-        widget.participants
-            .where((user) => user.userID != widget.event.creator.userID)
-            .map(
-              (user) => AvatarInfo(
-                userId: user.userID,
-                imageUrl: user.profileImageUrl,
-              ),
-            ),
+        widget.participants.map(
+          (user) => AvatarInfo(
+            userId: user.userID,
+            imageUrl: user.profileImageUrl,
+          ),
+        ),
       );
     }
 

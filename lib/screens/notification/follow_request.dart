@@ -45,16 +45,6 @@ class _FollowRequestsPageState extends State<FollowRequestsPage> {
             color: Colors.black,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.notifications_none,
-              color: Colors.black,
-              size: 24.sp,
-            ),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: StreamBuilder<List<FollowNotificationEntity>>(
         stream: _inboxRepository.getFollowRequestsStream(),
@@ -63,19 +53,46 @@ class _FollowRequestsPageState extends State<FollowRequestsPage> {
             return const Center(child: CircularProgressIndicator());
           }
 
+          // En güncel ID'yi al ve okunmamışları "okundu" yap
+          if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+            final latestId = snapshot.data!.first.userID;
+
+            _inboxRepository.updateFollowNotificationRead(latestId);
+          }
           final items = snapshot.data ?? [];
           if (items.isEmpty) {
             return const Center(child: Text('Takip isteği yok'));
           }
-
-          // GRUPLAMA MANTIĞI
           final now = DateTime.now();
-          final today = items.where((n) {
-            final diff = now.difference(n.createdAt);
-            return diff.inHours < 24 && now.day == n.createdAt.day;
-          }).toList();
 
-          final others = items.where((n) => !today.contains(n)).toList();
+          // 3 Ayrı Sepet Oluşturuyoruz
+          final today = <FollowNotificationEntity>[];
+          final lastWeek = <FollowNotificationEntity>[];
+          final older = <FollowNotificationEntity>[];
+
+          for (var item in items) {
+            // 1. Timezone güvenliği için local saate çevir
+            final date = item.createdAt.toLocal();
+
+            // 2. Takvim günü kontrolü (Bugün mü?)
+            final isToday =
+                date.year == now.year &&
+                date.month == now.month &&
+                date.day == now.day;
+
+            if (isToday) {
+              today.add(item);
+            } else {
+              // Bugün değilse, farka bak
+              final diff = now.difference(date);
+
+              if (diff.inDays <= 7) {
+                lastWeek.add(item); // Son 7 gün (Bugün hariç)
+              } else {
+                older.add(item); // 7 günden eski
+              }
+            }
+          }
 
           return ListView(
             padding: EdgeInsets.zero,
@@ -99,17 +116,17 @@ class _FollowRequestsPageState extends State<FollowRequestsPage> {
                 ...today.map((item) => FollowRequestTile(item: item)),
               ],
 
-              if (others.isNotEmpty) ...[
+              if (older.isNotEmpty) ...[
                 SizedBox(height: 10.h),
                 _buildSectionHeader('Son 7 Gün'),
-                ...others.map((item) => FollowRequestTile(item: item)),
+                ...older.map((item) => FollowRequestTile(item: item)),
               ],
 
-              if (others.isNotEmpty) ...[
+              if (older.isNotEmpty) ...[
                 SizedBox(height: 10.h),
                 _buildSectionHeader('Daha Eski'),
                 // Demo amaçlı tekrar gösteriyoruz
-                ...others.map((item) => FollowRequestTile(item: item)),
+                ...older.map((item) => FollowRequestTile(item: item)),
               ],
               SizedBox(height: 20.h),
             ],

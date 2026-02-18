@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -18,9 +19,6 @@ import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/app_theme.dart';
 import 'package:outnest/domain/datasources/university_datasource.dart';
-import 'package:outnest/domain/repositories/feed_repository.dart';
-import 'package:outnest/domain/services/push_notifications_service.dart';
-import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/firebase_options.dart';
 
 Future<void> main() async {
@@ -43,15 +41,25 @@ Future<void> main() async {
     debugPrint('Firebase başlatma hatası: $e');
   }
 
-  // 2. Crashlytics Entegrasyonu (Production için Kritik)
-  // Flutter hatalarını Crashlytics'e bildirir.
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  FlutterError.onError = (details) {
+    if (kDebugMode) {
+      FlutterError.dumpErrorToConsole(details);
+    } else {
+      FirebaseCrashlytics.instance.recordFlutterError(details);
+    }
+  };
 
-  // Asenkron hataları yakalar (Platform channel hataları vb.)
   PlatformDispatcher.instance.onError = (error, stack) {
+    if (kDebugMode) {
+      print('Asenkron Hata: $error');
+      return false;
+    }
+
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     return true;
   };
+
+  FirebaseAnalytics analytics = FirebaseAnalytics.instance;
 
   await dotenv.load();
 
@@ -115,19 +123,8 @@ Future<void> main() async {
   // 5. Servisleri Başlatma
   await FirebaseMessaging.instance.setAutoInitEnabled(true);
   await FirebaseAuth.instance.initializeRecaptchaConfig();
-  final sessionService = getIt<SessionService>();
-  final pushService = getIt<PushNotificationsService>();
 
   await GoogleSignIn.instance.initialize();
-
-  // Session logunu sadece debug'da görelim, production loglarını kirletmeyelim
-  if (kDebugMode) {
-    debugPrint(
-      'Oturum servisi başlatıldı. Durum: ${sessionService.currentUser != null ? "Giriş Var" : "Giriş Yok"}',
-    );
-  }
-
-  final feedRepository = getIt<FeedRepository>();
 
   getIt<UniversityDatasource>().initialize();
 
@@ -146,7 +143,6 @@ class MainApp extends StatelessWidget {
       builder: (context, child) {
         return GestureDetector(
           onTap: () {
-            // Klavyeyi kapatma mantığı
             final currentFocus = FocusScope.of(context);
             if (!currentFocus.hasPrimaryFocus &&
                 currentFocus.focusedChild != null) {
@@ -154,7 +150,7 @@ class MainApp extends StatelessWidget {
             }
           },
           child: MaterialApp.router(
-            debugShowCheckedModeBanner: false, // Banner kapalı
+            debugShowCheckedModeBanner: false,
             routerConfig: router,
             scrollBehavior: const MaterialScrollBehavior().copyWith(
               dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse},

@@ -72,35 +72,27 @@ class _NotificationPageState extends State<NotificationPage> {
                       ),
                     ),
                     // Bildirim Sayısı Badge
-                    StreamBuilder<int>(
-                      stream: _inboxRepository.getUnreadCountStream(),
+                    FutureBuilder<bool>(
+                      future: _inboxRepository.hasUnreadFollowRequest(),
                       builder: (context, snapshot) {
-                        final count = snapshot.data ?? 0;
-                        if (count <= 0) return const SizedBox();
+                        final hasUnread = snapshot.data ?? false;
+                        if (!snapshot.hasData || snapshot.data == false) {
+                          return const SizedBox.shrink();
+                        }
 
                         return Positioned(
-                          right: -2,
-                          top: -2,
+                          right: 0,
+                          top: 0,
                           child: Container(
-                            padding: EdgeInsets.all(4.w),
-                            constraints: BoxConstraints(
-                              minWidth: 16.w,
-                              minHeight: 16.w,
-                            ),
-                            decoration: const BoxDecoration(
-                              color: AppColors.salmonPink,
+                            width: 10.w, // Küçük, şık bir nokta boyutu
+                            height: 10.w,
+                            decoration: BoxDecoration(
+                              color: AppColors.darkPrimaryColor,
                               shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Text(
-                                count > 99 ? '99+' : count.toString(),
-                                style: TextStyle(
-                                  fontSize: 10.sp,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  height: 1,
-                                ),
-                                textAlign: TextAlign.center,
+                              // İkonun üzerinde daha "temiz" durması için beyaz bir çerçeve
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 1.5,
                               ),
                             ),
                           ),
@@ -128,16 +120,20 @@ class _NotificationPageState extends State<NotificationPage> {
 
           // --- GRUPLAMA MANTIĞI ---
           final now = DateTime.now();
-          final today = notifications.where((n) {
+
+          // Yöntem 1: Tek döngü ile ayırma (En Performanslısı)
+          // Listeyi bir kere döner ve ikiye ayırır.
+          final today = <NotificationEntity>[];
+          final others = <NotificationEntity>[];
+
+          for (var n in notifications) {
             final diff = now.difference(n.createdAt);
-            // Son 24 saat içindeyse "Bugün" kabul ediyoruz
-            return diff.inHours < 24;
-          }).toList();
-
-          final others = notifications
-              .where((n) => !today.contains(n))
-              .toList();
-
+            if (diff.inHours < 24) {
+              today.add(n);
+            } else {
+              others.add(n);
+            }
+          }
           return ListView(
             padding: EdgeInsets.zero,
             children: [

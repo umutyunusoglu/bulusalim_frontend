@@ -680,6 +680,9 @@ class UserRepositoryImpl implements UserRepository {
         .collection('followers')
         .doc(follower.userID)
         .set(followerData);
+    _logger.info(
+      'Follower added for user: $userID, follower: ${follower.userID}',
+    );
   }
 
   @override
@@ -845,6 +848,28 @@ class UserRepositoryImpl implements UserRepository {
         .get();
 
     return snapshot.size;
+  }
+
+  @override
+  Future<bool> isFollowRequestPending(
+    String fromUserID,
+    String toUserID,
+  ) async {
+    final value = await _firestore
+        .collection('users')
+        .doc(toUserID)
+        .collection('followRequests')
+        .doc(fromUserID)
+        .get()
+        .then((doc) => doc.exists)
+        .catchError((e) {
+          _logger.error(
+            'Error checking follow request from user: $fromUserID to user: $toUserID, error: $e',
+          );
+          return false;
+        });
+
+    return value;
   }
 
   @override

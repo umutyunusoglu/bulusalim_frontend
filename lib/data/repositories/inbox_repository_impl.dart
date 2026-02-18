@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:outnest/data/models/post/post_model.dart';
 import 'package:outnest/domain/entities/notification/follow_notification_entity.dart'; // <--- 1. YENİ ENTITY IMPORT
 import 'package:outnest/domain/entities/notification/notification_entity.dart';
 import 'package:outnest/domain/repositories/inbox_repository.dart';
 import 'package:outnest/domain/services/file_service.dart';
+import 'package:outnest/domain/services/persistance_service.dart';
 
 class InboxRepositoryImpl implements InboxRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -51,27 +53,60 @@ class InboxRepositoryImpl implements InboxRepository {
   }
 
   @override
-  Stream<int> getUnreadCountStream() {
-    if (_userId.isEmpty) return Stream.value(0);
+  Future<bool> hasUnreadFollowRequest() async {
+    if (_userId.isEmpty) return false;
 
-    return _firestore
+    final persistenceService = getIt<PersistanceService>();
+
+    // 1. Cihaza kaydedilmiş son ID'yi al
+    final lastSavedId = await persistenceService.getString(
+      'lastFollowRequestId',
+    );
+
+    final snapshot = await _firestore
         .collection('users')
         .doc(_userId)
-        .collection('notifications')
-        .where('isRead', isEqualTo: false)
-        .snapshots()
-        .map((snapshot) => snapshot.docs.length);
+        .collection('followNotifications')
+        .orderBy('createdAt', descending: true)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) {
+      return false;
+    }
+
+    final latestIdFromFirestore = snapshot.docs.first.id;
+
+    if (lastSavedId == null) {
+      await persistenceService.saveString(
+        'lastFollowRequestId',
+        latestIdFromFirestore,
+      );
+      return true;
+    }
+
+    // Eğer cihazdaki ID, Firestore'dakinden farklıysa yeni bir şeyler gelmiş demektir
+    if (lastSavedId != latestIdFromFirestore) {
+      return true;
+    }
+
+    return false;
   }
 
   @override
-  Future<void> markAsRead(String notificationId) async {
-    if (_userId.isEmpty) return;
-    await _firestore
-        .collection('users')
-        .doc(_userId)
-        .collection('notifications')
-        .doc(notificationId)
-        .update({'isRead': true});
+  Future<void> updateFollowNotificationRead(String notificationId) async {
+    try {
+      final persistenceService = getIt<PersistanceService>();
+      await persistenceService.saveString(
+        'lastFollowRequestId',
+        notificationId,
+      );
+
+      print("Bildirim okundu olarak işaretlendi: $notificationId");
+    } catch (e) {
+      // Hata yönetimi: Loglama yapabilirsin
+      print("Bildirim güncellenirken hata oluştu: $e");
+    }
   }
 
   // MAPPERS
@@ -156,7 +191,6 @@ class InboxRepositoryImpl implements InboxRepository {
       profileImageUrl:
           (data['profileImageUrl'] as String?) ??
           FileService.defaultProfileImageUrl(),
-      status: status,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
