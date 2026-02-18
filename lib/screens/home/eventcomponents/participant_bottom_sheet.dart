@@ -72,6 +72,7 @@ class ParticipantsBottomSheet extends StatelessWidget {
               itemCount: totalCount,
               itemBuilder: (context, index) {
                 final isCreatorItem = index == 0;
+
                 final user = isCreatorItem
                     ? creator
                     : otherParticipants[index - 1];

@@ -451,6 +451,7 @@ class _PostCardState extends State<PostCard> {
 
     final staticLocationName =
         widget.post.displayAddress ?? 'Konum Bilgisi Yok';
+
     final participantAvatars = widget.post.participants
         .take(3)
         .map((p) => p.profileImageUrl)

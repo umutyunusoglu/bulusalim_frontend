@@ -29,12 +29,15 @@ class _HomeContentPageState extends State<HomeContentPage> {
   final int _nextPageThreshold = AppConfig.feedFetchThreshold;
 
   bool _isInitialLoading = false;
+
   @override
   void initState() {
     super.initState();
     _feedRepository
       ..switchFeedType(widget.feedType)
       ..refresh();
+
+    _initFeed();
 
     // 2. Scroll dinleyicisi (Pagination için)
     _scrollController.addListener(_onScroll);
@@ -106,6 +109,10 @@ class _HomeContentPageState extends State<HomeContentPage> {
         child: StreamBuilder<List<FeedEntity>>(
           stream: _feedRepository.feedStream,
           builder: (context, snapshot) {
+            if (_isInitialLoading) {
+              return _buildInitialLoading();
+            }
+
             // 1. Yükleniyor veya Veri Yok Durumu
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -154,7 +161,8 @@ class _HomeContentPageState extends State<HomeContentPage> {
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () => _feedRepository.refresh(),
-            child: const Text('Yenile'),
+            //loading
+            child: const Text(''),
           ),
         ],
       ),
