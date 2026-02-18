@@ -47,7 +47,7 @@ class CountdownTimerState extends State<CountdownTimer> {
     final now = DateTime.now();
     final difference = now.difference(startTime);
 
-    // Negatif süre kontrolü (Örn: Etkinlik başladıysa)
+    // Negatif süre kontrolü (Örn: buluşma başladıysa)
     if (difference.isNegative && widget.isEvent) {
       return 'Başladı';
     }
@@ -72,7 +72,7 @@ class CountdownTimerState extends State<CountdownTimer> {
     final theme = Theme.of(context);
 
     final defaultStyle = theme.textTheme.labelLarge?.copyWith(
-      fontFamily: 'Urbanist',
+      fontFamily: 'Sf Pro Display',
       color: Colors.white,
       fontSize: 10,
       fontWeight: FontWeight.w500,

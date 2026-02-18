@@ -21,7 +21,7 @@ class PostCard extends StatefulWidget {
   const PostCard({
     required this.post,
     required this.user,
-    this.onPinToggle, // Callback eklendi
+    this.onPinToggle,
     this.onPostDeleted,
 
     super.key,
@@ -650,24 +650,30 @@ class _PostCardState extends State<PostCard> {
       padding: EdgeInsets.symmetric(horizontal: 0.w),
       child: Row(
         children: [
+          // 1. Kalp
           EmojiChip(
-            icon: Icons.favorite,
+            emoji: '❤️',
             text: '$_likeCount',
             color: Colors.red,
             isSelected: _isLikedByMe,
             onTap: () => _handleEmoteTap(EmoteEnum.heart),
           ),
+
           SizedBox(width: 12.w),
+
           EmojiChip(
-            icon: Icons.chat_rounded,
+            emoji: '👏',
             text: '$_clapCount',
             color: Colors.amber,
             isSelected: _isClappedByMe,
             onTap: () => _handleEmoteTap(EmoteEnum.clap),
           ),
+
           SizedBox(width: 12.w),
+
+          // 3. Yumurta
           EmojiChip(
-            icon: Icons.egg,
+            emoji: '🥚',
             text: '$_eggCount',
             color: Colors.white,
             isSelected: _isEggedByMe,
