@@ -17,7 +17,7 @@ class AvatarInfo {
 class StackedAvatars extends StatelessWidget {
   const StackedAvatars({
     required this.avatarDataList,
-    this.size = 50,
+    this.size = 60,
     super.key,
   });
 
@@ -28,19 +28,26 @@ class StackedAvatars extends StatelessWidget {
   Widget build(BuildContext context) {
     if (avatarDataList.isEmpty) return const SizedBox.shrink();
 
-    // 1. Ayarlar
-    final avatarSize = size.w;
-    final overlap = (size * 0.5).w;
+    // 1. Dinamik Boyut Ayarları
+    // ScreenUtil (.w) kullanarak ölçekleme yapıyoruz
+    final double avatarSize = size.w;
 
-    // İlk 3 kişiyi alıyoruz
+    // Üst üste binme miktarı (Yarı yarıya binmesi için boyurun yarısı)
+    final double overlap = (size * 0.5).w;
+
+    // Her bir avatarın ne kadar sağa kayacağı (Görünen kısım)
+    final double shiftAmount = avatarSize - overlap;
+
+    // Sadece ilk 3 kişiyi alıyoruz
     final items = avatarDataList.take(3).toList();
-    final count = items.length;
+    final int count = items.length;
 
     // 2. Toplam Genişlik Hesabı
-    // İlk avatarın tam boyutu + diğerlerinin görünen kısmı (boyut - overlap)
-    var totalWidth = avatarSize;
+    // Formül: (İlk Avatarın Tam Boyu) + ((Kişi Sayısı - 1) * Kayma Miktarı)
+    // Örnek (3 kişi, 60 boyut): 60 + (2 * 30) = 120 genişlik
+    double totalWidth = avatarSize;
     if (count > 1) {
-      totalWidth += (count - 1) * (avatarSize - overlap);
+      totalWidth += (count - 1) * shiftAmount;
     }
 
     return SizedBox(
@@ -48,71 +55,62 @@ class StackedAvatars extends StatelessWidget {
       width: totalWidth,
       child: Stack(
         clipBehavior: Clip.none,
-        children:
-            List.generate(
-                  count,
-                  (index) {
-                    final currentUser = items[index];
+        children: List.generate(count, (index) {
+          final currentUser = items[index];
 
-                    // Sol pozisyon: Her eleman (Boyut - Overlap) kadar sağa kayar
-                    final leftPos = index * (avatarSize - overlap);
-                    final String profileImageUrl = currentUser.imageUrl;
-                    final defaultAsset = FileService.defaultProfileImageUrl();
-                    return Positioned(
-                      left: leftPos,
-                      top: 0,
-                      bottom: 0,
-                      child: GestureDetector(
-                        onTap: () {
-                          if (currentUser.userId.isNotEmpty) {
-                            context.push('/home/profile/${currentUser.userId}');
-                          }
-                        },
-                        child: Container(
+          // Pozisyon hesaplama: index * 30 (0, 30, 60...)
+          final double leftPos = index * shiftAmount;
+
+          final String profileImageUrl = currentUser.imageUrl;
+          final String defaultAsset = FileService.defaultProfileImageUrl();
+
+          return Positioned(
+            left: leftPos,
+            top: 0,
+            bottom: 0,
+            // reversed kullandığımız için z-index (derinlik) sırası doğru oturacaktır.
+            // Index 0 (En soldaki) en üstte kalacak.
+            child: GestureDetector(
+              onTap: () {
+                if (currentUser.userId.isNotEmpty) {
+                  // URL oluştururken path parametresini düzgün veriyoruz
+                  context.push('/home/profile/${currentUser.userId}');
+                }
+              },
+              child: Container(
+                width: avatarSize,
+                height: avatarSize,
+                child: ClipOval(
+                  child:
+                      (profileImageUrl.isNotEmpty &&
+                          profileImageUrl.startsWith('http'))
+                      ? CachedNetworkImage(
+                          imageUrl: fixEmulatorUrl(profileImageUrl),
+                          fit: BoxFit.cover,
                           width: avatarSize,
                           height: avatarSize,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
+                          placeholder: (context, url) => ColoredBox(
+                            color: Colors.grey.shade200,
+                            child: const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
                           ),
-                          child: ClipOval(
-                            child:
-                                (profileImageUrl != null &&
-                                    profileImageUrl.startsWith('http'))
-                                ? CachedNetworkImage(
-                                    imageUrl: fixEmulatorUrl(profileImageUrl),
-                                    fit: BoxFit.cover,
-                                    width:
-                                        avatarSize, // Boyutları net belirtmek fit: BoxFit.cover için önemlidir
-                                    height: avatarSize,
-                                    placeholder: (context, url) => ColoredBox(
-                                      color: Colors.grey.shade200,
-                                      child: const Center(
-                                        child: CircularProgressIndicator(),
-                                      ),
-                                    ),
-                                    errorWidget: (context, url, error) =>
-                                        Image.asset(
-                                          defaultAsset,
-                                          fit: BoxFit.cover,
-                                        ),
-                                  )
-                                : Image.asset(
-                                    defaultAsset,
-                                    fit: BoxFit.cover,
-                                    width: avatarSize,
-                                    height: avatarSize,
-                                  ),
+                          errorWidget: (context, url, error) => Image.asset(
+                            defaultAsset,
+                            fit: BoxFit.cover,
                           ),
+                        )
+                      : Image.asset(
+                          defaultAsset,
+                          fit: BoxFit.cover,
+                          width: avatarSize,
+                          height: avatarSize,
                         ),
-                      ),
-                    );
-                  },
-                )
-                // reversed: Listeyi ters çeviriyoruz ki ilk eleman (index 0)
-                // yığının en üstünde (en sağda veya en solda çizim sırasına göre) görünsün.
-                // Bu haliyle: Index 0 EN ÜSTTE durur.
-                .reversed
-                .toList(),
+                ),
+              ),
+            ),
+          );
+        }).reversed.toList(),
       ),
     );
   }

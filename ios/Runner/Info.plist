@@ -45,13 +45,13 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>Çevredeki etkinlik cihazlarıyla bağlantı kurabilmek için Bluetooth izni gerekiyor.</string>
+	<string>Çevredeki buluşma cihazlarıyla bağlantı kurabilmek için Bluetooth izni gerekiyor.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>Çevredeki etkinlik cihazlarıyla bağlantı kurabilmek için Bluetooth izni gerekiyor.</string>
+	<string>Çevredeki buluşma cihazlarıyla bağlantı kurabilmek için Bluetooth izni gerekiyor.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Profil fotoğrafınızı çekebilmek ve etkinliklerde fotoğraf paylaşabilmek için kameraya erişim izni gerekiyor.</string>
+	<string>Profil fotoğrafınızı çekebilmek ve buluşmalerde fotoğraf paylaşabilmek için kameraya erişim izni gerekiyor.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Size en yakın etkinlikleri ve toplulukları gösterebilmek için konum izni gerekiyor.</string>
+	<string>Size en yakın buluşmaleri ve toplulukları gösterebilmek için konum izni gerekiyor.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Profil fotoğrafı seçebilmek ve galeriye fotoğraf kaydedebilmek için erişim izni gerekiyor.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>

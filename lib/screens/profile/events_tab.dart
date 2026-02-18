@@ -124,7 +124,7 @@ class ProfileEventsTab extends StatelessWidget {
         child: Text(
           title,
           style: TextStyle(
-            fontFamily: 'Urbanist',
+            fontFamily: 'Sf Pro Display',
             fontSize: 14.sp,
             fontWeight: FontWeight.bold,
             // Aktifse Primary (Turuncu), değilse Secondary (Mavi)
@@ -146,7 +146,7 @@ class ProfileEventsTab extends StatelessWidget {
           style: TextStyle(
             color: theme.disabledColor, // Gri yerine disabledColor
             fontSize: 14.sp,
-            fontFamily: 'Urbanist',
+            fontFamily: 'Sf Pro Display',
           ),
         ),
       ),
