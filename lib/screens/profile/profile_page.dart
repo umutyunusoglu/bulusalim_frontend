@@ -704,7 +704,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // --- HEADER ALANI ---
+  // HEADER ALANI
   Widget _buildProfileHeader(BuildContext context) {
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
@@ -712,29 +712,50 @@ class _ProfilePageState extends State<ProfilePage> {
     final onSurface = theme.colorScheme.onSurface;
 
     final sessionUser = getIt<SessionService>().currentUser;
+    // Kullanıcının kendi profili mi kontrolü
     final isCurrentUser = widget.profileUserID == sessionUser?.userID;
 
-    final displayUsername = _username;
-    final displayBio = _bio;
-    final displayAvatar = _profileImageUrl;
-    final displaySchool = _school;
-    final displayFullName = _fullName;
-    final numberOfEvents = this.numberOfEvents;
-    final numberOfFollowers = this.numberOfFollowers;
-    final numberOfFollowing = this.numberOfFollowing;
-
     return Padding(
-      padding: EdgeInsets.only(left: 16.w, right: 16.w, top: 30, bottom: 20.h),
+      padding: EdgeInsets.only(
+        left: 16.w,
+        right: 16.w,
+        top: isCurrentUser ? 30.h : 10.h,
+        bottom: 20.h,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // --- 1. GERİ BUTONU (SADECE BAŞKASININ PROFİLİNDE GÖRÜNÜR) ---
+          if (!isCurrentUser)
+            Padding(
+              padding: EdgeInsets.only(bottom: 12.h),
+              child: GestureDetector(
+                onTap: () => context.pop(),
+                child: Container(
+                  color: Colors.transparent,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.arrow_back_ios_new,
+                        size: 22.sp,
+                        color: onSurface,
+                      ),
+                      SizedBox(width: 4.w),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          //  2. PROFİL FOTO VE İSİM ALANI
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: EdgeInsets.only(top: 25.h),
+                padding: EdgeInsets.only(top: 15.h),
                 child: ProfilePhoto(
-                  profileImageUrl: displayAvatar,
+                  profileImageUrl: _profileImageUrl,
                   badgeUrls: _badges,
                 ),
               ),
@@ -749,12 +770,12 @@ class _ProfilePageState extends State<ProfilePage> {
                       children: [
                         Expanded(
                           child: Padding(
-                            padding: EdgeInsets.only(top: 15.h),
+                            padding: EdgeInsets.only(top: 5.h),
                             child: Row(
                               children: [
                                 Flexible(
                                   child: Text(
-                                    displayFullName,
+                                    _fullName,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontFamily: 'SF Pro Display',
@@ -771,7 +792,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   child: Row(
                                     children: [
                                       Text(
-                                        displayUsername,
+                                        _username,
                                         style: TextStyle(
                                           fontFamily: 'SF Pro Display',
                                           fontWeight: FontWeight.w400,
@@ -792,7 +813,8 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                         ),
-                        if (isCurrentUser) // Sadece profil sahibi ise göster
+                        // AYARLAR BUTONU (Sadece kendi profilinde)
+                        if (isCurrentUser)
                           GestureDetector(
                             onTap: () {
                               context.push('/settings');
@@ -803,11 +825,13 @@ class _ProfilePageState extends State<ProfilePage> {
                               size: 24.sp,
                             ),
                           )
-                        else // Başkasının profili ise yer kaplamaması için boş SizedBox
+                        else
                           SizedBox(width: 24.sp),
                       ],
                     ),
                     SizedBox(height: 9.h),
+
+                    // İSTATİSTİKLER
                     Padding(
                       padding: const EdgeInsets.only(right: 26),
                       child: Row(
@@ -829,8 +853,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                     SizedBox(height: 13.h),
+
+                    // BIO
                     Text(
-                      displayBio,
+                      _bio,
                       style: TextStyle(
                         fontFamily: 'SF Pro Display',
                         fontSize: 12.sp,
@@ -839,6 +865,8 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                     SizedBox(height: 12.h),
+
+                    // OKUL
                     Row(
                       children: [
                         Icon(
@@ -849,7 +877,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         SizedBox(width: 4.w),
                         Expanded(
                           child: Text(
-                            displaySchool,
+                            _school,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontFamily: 'SF Pro Display',
@@ -866,6 +894,8 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ],
           ),
+
+          // --- 3. TAKİP ET BUTONLARI (Sadece başkasının profilinde) ---
           if (!isCurrentUser) ...[
             SizedBox(height: 12.h),
             Row(
@@ -873,7 +903,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 Expanded(
                   child: LoginButton(
                     label: _isFollowing
-                        ? 'takibi bırak' // 'takip ediyorsun' yerine 'takibi bırak' yazarsan kullanıcı bastığını anlar
+                        ? 'takibi bırak'
                         : (_isPrivateAccount && _hasSentFollowRequest)
                         ? 'istek gönderildi'
                         : 'takip et',
@@ -892,9 +922,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     backgroundColor: _isFollowing
                         ? const Color(0xFF5D6B82)
                         : ((_isPrivateAccount && _hasSentFollowRequest)
-                              ? const Color(
-                                  0xFFF2F2F7,
-                                )
+                              ? const Color(0xFFF2F2F7)
                               : primaryColor),
                     textColor:
                         (_isPrivateAccount &&
@@ -902,22 +930,22 @@ class _ProfilePageState extends State<ProfilePage> {
                             !_isFollowing)
                         ? const Color(0xFF5D6B82)
                         : Colors.white,
-
                     borderColor: Colors.transparent,
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-
                 if (_isFollowing || !_isPrivateAccount) ...[
                   SizedBox(width: 8.w),
                   AnnouncementButton(
-                    onTap: _handleAnnouncementPress, // Fonksiyon bağlandı
+                    onTap: _handleAnnouncementPress,
                   ),
                 ],
               ],
             ),
           ],
+
+          // --- 4. ORTAK TAKİPÇİLER ---
           SizedBox(height: 12.h),
           _buildFollowedBySection(context),
         ],
