@@ -536,10 +536,11 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
                                         'location': widget.location,
                                         'participants':
                                             widget.participantStatus,
-                                        'date': widget.eventDate,
+                                        'startTime': widget.eventDate,
                                         'creatorID': widget.creatorID,
                                         'creatorProfileImage':
                                             widget.creatorProfileImage,
+                                        'event': widget.event,
                                       },
                                     );
                                   } else {

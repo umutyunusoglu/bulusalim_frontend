@@ -85,6 +85,16 @@ class FollowRequestTile extends StatelessWidget {
                 targetUserID,
                 true,
               );
+            } else {
+              await userRepository.addFollower(
+                currentUser!.userID,
+                FriendEntity(
+                  userID: targetUserID,
+                  username: item.username,
+                  profileImageUrl: item.profileImageUrl,
+                  createdAt: DateTime.now(),
+                ),
+              );
             }
           },
 
@@ -126,6 +136,7 @@ class FollowRequestTile extends StatelessWidget {
                 );
 
                 userRepository.addFollower(currentUser!.userID, follower);
+                //TODO: Takip isteği kabul edildikten sonra bildirim düzenleme işlemi
               },
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),

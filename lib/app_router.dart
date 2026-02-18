@@ -1,13 +1,9 @@
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:outnest/application/init_app.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/stacked_avatars.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
-import 'package:outnest/domain/repositories/feed_repository.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/services/file_service.dart';
@@ -102,16 +98,8 @@ final router = GoRouter(
           final pushService = getIt<PushNotificationsService>();
           final sessionService = getIt<SessionService>();
 
-          await pushService.initialize();
+          pushService.initialize();
           await sessionService.init();
-
-          try {
-            final feedRepository = getIt<FeedRepository>();
-            await feedRepository.warmup();
-          } catch (e, stack) {
-            if (kDebugMode) debugPrint('Feed warmup hatası: $e');
-            await FirebaseCrashlytics.instance.recordError(e, stack);
-          }
 
           // Her şey başarılı, flag'i true yap. Artık sayfa geçişlerinde buraya girmeyecek.
           _isAppInitialized = true;
@@ -295,6 +283,7 @@ final router = GoRouter(
       builder: (context, state) {
         final eventID = state.pathParameters['eventID'] ?? '';
         final extra = state.extra as Map<String, dynamic>?;
+
         final safeAvatars = _mapToAvatarInfo(
           (extra?['avatars'] as List?) ?? [],
         );
@@ -306,11 +295,12 @@ final router = GoRouter(
           participantAvatars: safeAvatars,
           location: (extra?['location'] as String?) ?? '',
           participantStatus: (extra?['participants'] as String?) ?? '',
-          eventDate: extra?['date'] as DateTime? ?? DateTime.now(),
+          eventDate: extra?['startTime'] as DateTime? ?? DateTime.now(),
           creatorID: (extra?['creatorID'] as String?) ?? '',
           creatorProfileImage: (extra?['creatorProfileImage'] as String?) ?? '',
         );
       },
+
       routes: [
         GoRoute(
           path: 'settings',
@@ -326,6 +316,7 @@ final router = GoRouter(
               participantStatus: (extra?['participants'] as String?) ?? '',
               remainingTime: (extra?['remainingTime'] as String?) ?? '',
               creatorID: (extra?['creatorID'] as String?) ?? '',
+              event: extra?['event'] as EventEntity,
             );
           },
         ),
@@ -347,6 +338,7 @@ final router = GoRouter(
           participantStatus: (extra?['participants'] as String?) ?? '',
           remainingTime: (extra?['remainingTime'] as String?) ?? '',
           creatorID: (extra?['creatorID'] as String?) ?? '',
+          event: extra?['event'] as EventEntity,
         );
       },
     ),

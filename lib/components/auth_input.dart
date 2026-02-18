@@ -9,6 +9,7 @@ class AuthInput extends StatelessWidget {
     this.hintText,
     this.isPassword = false,
     this.keyboardType,
+    this.enabled = true,
     this.textInputAction,
     this.onSubmitted,
     this.textAlign = TextAlign.center,
@@ -26,6 +27,7 @@ class AuthInput extends StatelessWidget {
   final Function(String)? onSubmitted;
   final TextAlign textAlign;
   final String? prefixText;
+  final bool enabled;
   final List<TextInputFormatter>? inputFormatters;
   final Widget? prefixIcon;
   final Function(String)? onChanged;
@@ -69,6 +71,7 @@ class AuthInput extends StatelessWidget {
                   obscureText: isPassword,
                   textInputAction: textInputAction,
                   keyboardType: keyboardType,
+                  enabled: enabled,
                   onSubmitted: onSubmitted,
                   inputFormatters: inputFormatters,
                   cursorColor: const Color(0xFF1F4668),
@@ -103,6 +106,7 @@ class AuthInput extends StatelessWidget {
       keyboardType: keyboardType,
       onSubmitted: onSubmitted,
       onChanged: onChanged,
+      enabled: enabled,
       inputFormatters: inputFormatters,
       cursorColor: const Color(0xFF1F4668),
       style: textStyle,

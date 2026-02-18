@@ -1,3 +1,5 @@
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
@@ -27,15 +29,26 @@ class _HomeContentPageState extends State<HomeContentPage> {
   // Fetch eşiği (Sayfanın sonuna ne kadar yaklaşınca yüklesin)
   final int _nextPageThreshold = AppConfig.feedFetchThreshold;
 
+  bool _isInitialLoading = false;
   @override
   void initState() {
     super.initState();
-    _feedRepository
-      ..switchFeedType(widget.feedType)
-      ..refresh();
-
+    _feedRepository..switchFeedType(widget.feedType);
+    _initFeed();
     // 2. Scroll dinleyicisi (Pagination için)
     _scrollController.addListener(_onScroll);
+  }
+
+  Future<void> _initFeed() async {
+    setState(() => _isInitialLoading = true);
+    try {
+      await _feedRepository.warmup();
+    } catch (e, stack) {
+      if (kDebugMode) debugPrint('Feed warmup hatası: $e');
+      await FirebaseCrashlytics.instance.recordError(e, stack);
+    } finally {
+      if (mounted) setState(() => _isInitialLoading = false);
+    }
   }
 
   void _onScroll() {
@@ -64,6 +77,11 @@ class _HomeContentPageState extends State<HomeContentPage> {
           stream: _feedRepository.feedStream,
           builder: (context, snapshot) {
             // 1. Yükleniyor veya Veri Yok Durumu
+
+            if (_isInitialLoading) {
+              return _buildInitialLoading();
+            }
+
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -97,6 +115,10 @@ class _HomeContentPageState extends State<HomeContentPage> {
         ),
       ),
     );
+  }
+
+  Widget _buildInitialLoading() {
+    return const Center(child: CircularProgressIndicator());
   }
 
   Widget _buildEmptyState() {

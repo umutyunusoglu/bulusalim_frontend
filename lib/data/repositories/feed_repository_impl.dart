@@ -13,6 +13,7 @@ import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/feed_repository.dart';
 import 'package:outnest/domain/services/global_content_cache.dart';
+import 'package:outnest/domain/services/remote_config_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -41,7 +42,7 @@ class FeedRepositoryImpl implements FeedRepository {
 
   DocumentSnapshot? _lastPostDoc;
   DocumentSnapshot? _lastEventDoc;
-
+  bool _isPatternEnabled = AppConfig.isFeedPatternEnabled;
   // Karıştırma paterni (P: Post, E: Event)
   int _patternIndex = 0;
   static const List<String> _flatPattern = [
@@ -259,13 +260,12 @@ class FeedRepositoryImpl implements FeedRepository {
   }
 
   // --- MERGE & PROCESS ---
-
   Future<List<FeedEntity>> _mergeAndProcessResults(
     List<DocumentSnapshot> postDocs,
     List<DocumentSnapshot> eventDocs,
     UserEntity user,
     List<String> followeeIds,
-    Set<String> blockedIds, // Parametre olarak ekledik
+    Set<String> blockedIds,
   ) async {
     final resultBatch = <FeedEntity>[];
     final postQueue = List<DocumentSnapshot>.from(postDocs);
@@ -273,44 +273,86 @@ class FeedRepositoryImpl implements FeedRepository {
 
     while ((postQueue.isNotEmpty || eventQueue.isNotEmpty) &&
         resultBatch.length < AppConfig.feedBatchSize) {
-      final type = _flatPattern[_patternIndex % _flatPattern.length];
-      var added = false;
+      bool added = false;
 
-      if (type == 'P') {
-        if (postQueue.isNotEmpty) {
-          added = await _tryAddPost(
-            postQueue,
-            resultBatch,
-            blockedIds,
-          ); // blockedIds eklendi
-        } else if (eventQueue.isNotEmpty) {
-          added = await _tryAddEvent(
-            eventQueue,
-            resultBatch,
-            user,
-            followeeIds,
-            blockedIds,
-          ); // eklendi
+      // --- MOD KONTROLÜ ---
+      if (_isPatternEnabled) {
+        // A. PATTERN MANTIĞI (Mevcut kodun)
+        final type = _flatPattern[_patternIndex % _flatPattern.length];
+
+        if (type == 'P') {
+          if (postQueue.isNotEmpty) {
+            added = await _tryAddPost(postQueue, resultBatch, blockedIds);
+          } else if (eventQueue.isNotEmpty) {
+            added = await _tryAddEvent(
+              eventQueue,
+              resultBatch,
+              user,
+              followeeIds,
+              blockedIds,
+            );
+          }
+        } else {
+          // Type == 'E'
+          if (eventQueue.isNotEmpty) {
+            added = await _tryAddEvent(
+              eventQueue,
+              resultBatch,
+              user,
+              followeeIds,
+              blockedIds,
+            );
+          } else if (postQueue.isNotEmpty) {
+            added = await _tryAddPost(postQueue, resultBatch, blockedIds);
+          }
         }
+
+        // Sadece pattern modunda index artmalı
+        if (added) _patternIndex++;
       } else {
+        // B. ZAMAN SIRALI MANTIK (Kronolojik)
+        // İki listenin en başındaki elemanların tarihlerini karşılaştır.
+
+        DateTime? postTime;
+        DateTime? eventTime;
+
+        if (postQueue.isNotEmpty) {
+          final data = postQueue.first.data() as Map<String, dynamic>;
+          postTime = (data['createdAt'] as Timestamp).toDate();
+        }
+
         if (eventQueue.isNotEmpty) {
+          final data = eventQueue.first.data() as Map<String, dynamic>;
+          eventTime = (data['createdAt'] as Timestamp).toDate();
+        }
+
+        // Karşılaştırma: Hangisi daha yeniyse (büyükse) onu işlemeye çalış
+        if (postTime != null && eventTime != null) {
+          if (postTime.isAfter(eventTime)) {
+            added = await _tryAddPost(postQueue, resultBatch, blockedIds);
+          } else {
+            added = await _tryAddEvent(
+              eventQueue,
+              resultBatch,
+              user,
+              followeeIds,
+              blockedIds,
+            );
+          }
+        } else if (postTime != null) {
+          // Sadece post kaldıysa
+          added = await _tryAddPost(postQueue, resultBatch, blockedIds);
+        } else if (eventTime != null) {
+          // Sadece event kaldıysa
           added = await _tryAddEvent(
             eventQueue,
             resultBatch,
             user,
             followeeIds,
             blockedIds,
-          ); // eklendi
-        } else if (postQueue.isNotEmpty) {
-          added = await _tryAddPost(
-            postQueue,
-            resultBatch,
-            blockedIds,
-          ); // eklendi
+          );
         }
       }
-
-      if (added) _patternIndex++;
     }
     return resultBatch;
   }
@@ -458,7 +500,7 @@ class FeedRepositoryImpl implements FeedRepository {
     if (user != null) {
       _logger.info('✅ Warmup: User found. Triggering initial refresh...');
 
-      refresh();
+      await refresh();
     } else {
       _logger.warn(
         '⚠️ Warmup: Timeout waiting for user. Initial refresh skipped.',

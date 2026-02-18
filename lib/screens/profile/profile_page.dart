@@ -918,8 +918,10 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ),
           ],
-          SizedBox(height: 12.h),
-          _buildFollowedBySection(context),
+          if (!isCurrentUser) ...[
+            SizedBox(height: 12.h),
+            _buildFollowedBySection(context),
+          ],
         ],
       ),
     );

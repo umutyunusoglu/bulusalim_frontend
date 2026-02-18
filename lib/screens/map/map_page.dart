@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:ui' as ui;
+import 'package:geolocator/geolocator.dart' hide Position;
 import 'package:intl/intl.dart';
 import 'package:dart_geohash/dart_geohash.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +21,8 @@ import 'package:outnest/components/steps/location_selection_step.dart';
 import 'package:outnest/components/steps/time_selection_step.dart';
 import 'package:outnest/components/steps/visibility_selection_step.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
+import 'package:outnest/core/constants/theme/app_theme.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/event_role_enum.dart';
@@ -34,6 +37,7 @@ import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/screens/map/map_people_filter.dart';
 import 'package:outnest/screens/map/map_time_filter.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({
@@ -54,6 +58,8 @@ class _MapPageState extends State<MapPage> {
   final LoggingService _logger = getIt<LoggingService>();
   final MapRepository _mapRepository = getIt<MapRepository>();
 
+  Geolocation? _userLocation = null;
+
   // --- STATE ---
   final Map<String, String> _categories = AppConfig.categories;
   String? _selectedCategory;
@@ -73,6 +79,7 @@ class _MapPageState extends State<MapPage> {
   // 0:Kategori, 1:Konum, 2:Zaman, 3:Görünürlük, 4:İsim
   bool _isCreatePopupVisible = false;
   bool _isPickingFromMap = false;
+  bool _isLocationPermissionGranted = false;
 
   // --- GEÇİCİ VERİLER ---
   String? _tempCategory;
@@ -124,6 +131,58 @@ class _MapPageState extends State<MapPage> {
       _createEventStep = 2; // Zaman adımı
       _tempCategory = 'Genel';
       _isPickingFromMap = false;
+    }
+
+    _initializeLocation();
+  }
+
+  Future<void> _initializeLocation() async {
+    // 1. İzin Kontrolü
+    var status = await Permission.locationWhenInUse.status;
+    if (status.isDenied) {
+      status = await Permission.locationWhenInUse.request();
+    }
+
+    if (status.isGranted) {
+      // 2. Konumu Al (geolocator paketini kullandığını varsayıyorum)
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      // 3. State'i güncelle
+      if (mounted) {
+        setState(() {
+          _userLocation = Geolocation(
+            latitude: position.latitude,
+            longitude: position.longitude,
+          );
+          _isLocationPermissionGranted = true;
+        });
+        _logger.info(
+          'Kullanıcı konumu alındı: (${position.latitude}, ${position.longitude})',
+        );
+      }
+
+      _logger.info('Kullanıcı konumu alındı ve harita kaydırıldı.');
+    } else {
+      _logger.warn('Konum izni reddedildi. Harita konumu alınamayacak.');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Konum izni reddedildi. Harita konumu alınamayacak.',
+            ),
+          ),
+        );
+
+        setState(() {
+          _userLocation = Geolocation(
+            latitude: 40.9819,
+            longitude: 29.0254,
+          );
+          _isLocationPermissionGranted = false;
+        });
+      }
     }
   }
 
@@ -674,6 +733,9 @@ class _MapPageState extends State<MapPage> {
         !widget.isLocationPicker &&
         !widget.isTimePicker;
 
+    if (_userLocation == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     return PopScope(
       canPop: canPop,
       onPopInvokedWithResult: (didPop, result) {
@@ -698,7 +760,12 @@ class _MapPageState extends State<MapPage> {
               child: MapWidget(
                 key: const ValueKey('mapWidget'),
                 cameraOptions: CameraOptions(
-                  center: Point(coordinates: Position(29.0254, 40.9819)),
+                  center: Point(
+                    coordinates: Position(
+                      _userLocation!.longitude,
+                      _userLocation!.latitude,
+                    ),
+                  ),
                   zoom: 13,
                 ),
                 onMapCreated: _onMapCreated,
@@ -709,7 +776,7 @@ class _MapPageState extends State<MapPage> {
               ),
             ),
             if (!_isCreatePopupVisible &&
-                //  !_isCardVisible &&
+                // /  !_isCardVisible &&
                 !widget.isLocationPicker &&
                 !widget.isTimePicker)
               Positioned(
@@ -723,6 +790,7 @@ class _MapPageState extends State<MapPage> {
                     children: [
                       // Zaman Filtresi
                       Expanded(
+                        flex: 2,
                         child: MapTimeFilter(
                           onChanged: (range) {
                             setState(() => _filterTimeRange = range);
@@ -732,22 +800,26 @@ class _MapPageState extends State<MapPage> {
                       ),
 
                       // Yeni Küçük Kişi Filtresi
-                      MapPeopleFilter(
-                        options: const [
-                          'herkes',
-                          'takipçiler',
-                          'okul',
-                          'kümeler',
-                        ],
-                        initial: 'herkes',
-                        onChanged: (val) {
-                          setState(
-                            () => _filterPeople = VisibilityEnum.fromTurkishUI(
-                              val,
-                            ),
-                          );
-                          _applyLocalFilters();
-                        },
+                      Expanded(
+                        flex: 1,
+                        child: MapPeopleFilter(
+                          options: const [
+                            'herkes',
+                            'takipçiler',
+                            'okul',
+                            'kümeler',
+                          ],
+                          initial: 'herkes',
+                          onChanged: (val) {
+                            setState(
+                              () =>
+                                  _filterPeople = VisibilityEnum.fromTurkishUI(
+                                    val,
+                                  ),
+                            );
+                            _applyLocalFilters();
+                          },
+                        ),
                       ),
                     ],
                   ),
@@ -883,6 +955,88 @@ class _MapPageState extends State<MapPage> {
                 child: Center(child: _buildMapSelectionButton()),
               ),
 
+            if (_isLocationPermissionGranted)
+              Positioned(
+                bottom: 40.h,
+                left: 16.w,
+                child: GestureDetector(
+                  onTap: () async {
+                    try {
+                      // A. Bilinen son konumu anında göster (Gecikme 0ms)
+                      final lastKnown = await Geolocator.getLastKnownPosition();
+                      if (lastKnown != null) {
+                        mapboxMap.flyTo(
+                          CameraOptions(
+                            center: Point(
+                              coordinates: Position(
+                                lastKnown.longitude,
+                                lastKnown.latitude,
+                              ),
+                            ),
+                            zoom: 15.0,
+                          ),
+                          MapAnimationOptions(duration: 1000),
+                        );
+                      }
+
+                      // B. Güncel konumu orta hassasiyetle iste (Daha hızlı)
+                      final position =
+                          await Geolocator.getCurrentPosition(
+                            desiredAccuracy: LocationAccuracy.medium,
+                            timeLimit: const Duration(
+                              seconds: 4,
+                            ), // Zaman aşımı koymak hayat kurtarır
+                          ).catchError(
+                            (e) => lastKnown!,
+                          ); // Hata alırsan eskisini kullan
+
+                      mapboxMap.flyTo(
+                        CameraOptions(
+                          center: Point(
+                            coordinates: Position(
+                              position.longitude,
+
+                              position.latitude,
+                            ),
+                          ),
+                          zoom: 15.0,
+                        ),
+                        MapAnimationOptions(duration: 1000),
+                      );
+                      setState(() {
+                        _userLocation = Geolocation(
+                          latitude: position.latitude,
+                          longitude: position.longitude,
+                        );
+                      });
+                    } catch (e) {
+                      _logger.error("Hata: $e");
+                    }
+                  },
+
+                  child: Container(
+                    width: 50.w, // Tıklanabilirlik için biraz büyüttüm
+                    height: 50.w,
+                    decoration: BoxDecoration(
+                      color: Colors
+                          .white, // Standart konum butonu genelde beyaz olur
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.my_location,
+                      color: AppColors.darkPrimaryColor,
+                      size: 24.sp,
+                    ),
+                  ),
+                ),
+              ),
             // 7. FAB
             if (!_isCreatePopupVisible &&
                 !_isCardVisible &&
