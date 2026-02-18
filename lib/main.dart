@@ -128,7 +128,6 @@ Future<void> main() async {
   }
 
   final feedRepository = getIt<FeedRepository>();
-  // Warmup işlemi hata verirse uygulama açılışını engellemesin diye try-catch bloğu eklenebilir
 
   getIt<UniversityDatasource>().initialize();
 

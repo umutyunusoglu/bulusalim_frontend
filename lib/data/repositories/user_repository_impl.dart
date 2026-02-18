@@ -856,14 +856,17 @@ class UserRepositoryImpl implements UserRepository {
     _logger.info(
       'Sending follow request from user: $fromUserID to user: $toUserID',
     );
+    //TODO: Başarısız olursa kullanıcıya bildirim gösterilecek şekilde error handling ekle
 
     final fromUser = await getCurrentUser(fromUserID);
     if (fromUser == null) {
       _logger.error('From user not found: $fromUserID');
       return;
     }
-
-    await _firestore
+    _logger.info(
+      'Follow request sent from user: $fromUserID to user: $toUserID',
+    );
+    _firestore
         .collection('users')
         .doc(toUserID)
         .collection('followRequests')
@@ -875,6 +878,9 @@ class UserRepositoryImpl implements UserRepository {
           'createdAt': FieldValue.serverTimestamp(),
         });
 
+    _logger.info(
+      'Follow request sent from user: $fromUserID to user: $toUserID',
+    );
     if (fromNotification) {
       _firestore
           .collection('users')

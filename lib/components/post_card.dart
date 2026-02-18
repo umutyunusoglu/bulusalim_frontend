@@ -7,6 +7,7 @@ import 'package:outnest/core/utils/types/enums/emote_enum.dart';
 import 'package:outnest/domain/entities/feed/post/post_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/post_repository.dart';
+import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
@@ -56,6 +57,9 @@ class _PostCardState extends State<PostCard> {
   bool _isClappedByMe = false;
   bool _isEggedByMe = false;
 
+  bool _amIFollowingPostCreator = false;
+  bool _isPostMine = false;
+
   // Pin durumunu yerel state'te tutuyoruz
   bool _isPinned = false;
 
@@ -77,9 +81,25 @@ class _PostCardState extends State<PostCard> {
     _eggCount = widget.post.emoteCounts[EmoteEnum.egg] ?? 0;
 
     // Başlangıç değerini widget'tan al
+    _updateFollowingStatus();
+    _sessionService.stateListenable.addListener(_updateFollowingStatus);
     _isPinned = widget.post.isPinned;
+    _isPostMine = widget.post.creator.userID == _myUserId;
 
     _checkExistingEmotes();
+  }
+
+  void _updateFollowingStatus() {
+    if (!mounted) return;
+
+    final myFollowees = _sessionService.stateListenable.value?.followees ?? [];
+    final isFollowing = myFollowees.any(
+      (u) => u.userID == widget.post.creator.userID,
+    );
+
+    setState(() {
+      _amIFollowingPostCreator = isFollowing;
+    });
   }
 
   // Parent widget güncellenirse (örneğin liste yenilenirse) state'i senkronize et
@@ -124,6 +144,7 @@ class _PostCardState extends State<PostCard> {
   @override
   void dispose() {
     _pageController.dispose();
+    _sessionService.stateListenable.removeListener(_updateFollowingStatus);
     super.dispose();
   }
 
@@ -280,7 +301,11 @@ class _PostCardState extends State<PostCard> {
   Future<void> _handleUnfollowUser() async {
     Navigator.pop(context);
     try {
-      //TODO
+      await getIt<UserRepository>().removeFollowee(
+        _myUserId,
+        widget.post.creator.userID,
+      );
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Takip bırakıldı.')),
@@ -352,13 +377,14 @@ class _PostCardState extends State<PostCard> {
                 ),
               ),
               SizedBox(height: 20.h),
-              _buildOptionItem(
-                context,
-                icon: Icons.person_remove_outlined,
-                text: 'Takibi Bırak',
-                color: Colors.black,
-                onTap: _handleUnfollowUser,
-              ),
+              if (_amIFollowingPostCreator)
+                _buildOptionItem(
+                  context,
+                  icon: Icons.person_remove_outlined,
+                  text: 'Takibi Bırak',
+                  color: Colors.black,
+                  onTap: _handleUnfollowUser,
+                ),
               _buildOptionItem(
                 context,
                 icon: Icons.block_outlined,

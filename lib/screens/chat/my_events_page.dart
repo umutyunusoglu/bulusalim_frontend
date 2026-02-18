@@ -173,7 +173,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
                                         : 'Konum Yok',
                                     'participants':
                                         '${item.event.participants.length}/${item.event.capacity}',
-                                    'time': 'Bugün 21:00', // TODO: Formatla
+                                    'startTime': item.event.startTime,
                                     'creatorID': item.event.creator.userID,
                                     'creatorProfileImage': safeCreatorImage,
                                     'avatars': item.event.participants,
