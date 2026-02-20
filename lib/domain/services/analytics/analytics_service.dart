@@ -30,49 +30,86 @@ import 'package:outnest/domain/services/analytics/event_configs/update_event_nam
 import 'package:outnest/domain/services/analytics/event_configs/update_event_start_time_analytics_config.dart';
 import 'package:outnest/domain/services/analytics/event_configs/update_event_visibility_analytics_config.dart';
 
+extension on Map<String, dynamic> {
+  /// Converts all boolean values to 1/0 for Firebase compatibility
+  Map<String, dynamic> cleanForFirebaseAnalytics() {
+    return map((key, value) {
+      if (value is bool) return MapEntry(key, value ? 1 : 0);
+      return MapEntry(key, value);
+    });
+  }
+}
+
 abstract class AnalyticsService {
   Future<void> logAnalytic(String eventName, Map<String, dynamic> parameters);
 
   Future<void> logUniversityVerified(
     UniversityVerificationAnalyticsConfig config,
   ) async {
-    await logAnalytic(AnalyticsEvents.universityVerified, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.universityVerified,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logSelectGender(SelectGenderAnalyticsConfig config) async {
-    await logAnalytic(AnalyticsEvents.selectGender, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.selectGender,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logSelectHobbies(SelectHobbiesAnalyticsConfig config) async {
-    await logAnalytic(AnalyticsEvents.selectHobbies, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.selectHobbies,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logSelectFeed(SelectFeedAnalyticsConfig config) async {
-    await logAnalytic(AnalyticsEvents.selectFeed, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.selectFeed,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logSendEmote(SendEmoteAnalyticsConfig config) async {
-    await logAnalytic(AnalyticsEvents.sendEmote, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.sendEmote,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logRemoveEmote(RemoveEmoteAnalyticsConfig config) async {
-    await logAnalytic(AnalyticsEvents.removeEmote, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.removeEmote,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logSendJoinRequestToEvent(
     SendJoinRequestToEventAnalyticsConfig config,
   ) async {
-    await logAnalytic(AnalyticsEvents.sendJoinRequestToEvent, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.sendJoinRequestToEvent,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logClickSaveEvent(ClickSaveEventAnalyticsConfig config) async {
-    await logAnalytic(AnalyticsEvents.clickSaveEvent, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.clickSaveEvent,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logClickViewEventOnMap(
     ClickViewEventOnMapAnalyticsConfig config,
   ) async {
-    await logAnalytic(AnalyticsEvents.clickViewEventOnMap, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.clickViewEventOnMap,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logClickViewEventParticipants(
@@ -80,105 +117,167 @@ abstract class AnalyticsService {
   ) async {
     await logAnalytic(
       AnalyticsEvents.clickViewEventParticipants,
-      config.toMap(),
+      config.toMap().cleanForFirebaseAnalytics(),
     );
   }
 
   Future<void> logPinPost(PinPostAnalyticsConfig config) async {
-    await logAnalytic(AnalyticsEvents.pinPost, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.pinPost,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logUnpinPost(UnpinPostAnalyticsConfig config) async {
-    await logAnalytic(AnalyticsEvents.unpinPost, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.unpinPost,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logCreatePost(CreatePostAnalyticsConfig config) async {
-    await logAnalytic(AnalyticsEvents.createPost, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.createPost,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logSendEventInvitation(
     SendEventInvitationAnalyticsConfig config,
   ) async {
-    await logAnalytic(AnalyticsEvents.sendEventInvitation, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.sendEventInvitation,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logFilterMapByCategory(
     FilterMapByCategoryAnalyticsConfig config,
   ) async {
-    await logAnalytic(AnalyticsEvents.filterMapByCategory, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.filterMapByCategory,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logFilterMapByTime(FilterMapByTimeAnalyticsConfig config) async {
-    await logAnalytic(AnalyticsEvents.filterMapByTime, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.filterMapByTime,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logFilterMapByVisibility(
     FilterMapByVisibilityAnalyticsConfig config,
   ) async {
-    await logAnalytic(AnalyticsEvents.filterMapByVisibility, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.filterMapByVisibility,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logCreateEvent(CreateEventAnalyticsConfig config) async {
-    await logAnalytic(AnalyticsEvents.createEvent, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.createEvent,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logFailEventCreation(
     FailEventCreationAnalyticsConfig config,
   ) async {
-    await logAnalytic(AnalyticsEvents.failEventCreation, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.failEventCreation,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logForceStartEvent(ForceStartEventAnalyticsConfig config) async {
-    await logAnalytic(AnalyticsEvents.forceStartEvent, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.forceStartEvent,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logForceStopEvent(ForceStopEventAnalyticsConfig config) async {
-    await logAnalytic(AnalyticsEvents.forceStopEvent, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.forceStopEvent,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logUpdateEventName(UpdateEventNameAnalyticsConfig config) async {
-    await logAnalytic(AnalyticsEvents.updateEventName, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.updateEventName,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logUpdateEventStartTime(
     UpdateEventStartTimeAnalyticsConfig config,
   ) async {
-    await logAnalytic(AnalyticsEvents.updateEventStartTime, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.updateEventStartTime,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logUpdateEventVisibility(
     UpdateEventVisibilityAnalyticsConfig config,
   ) async {
-    await logAnalytic(AnalyticsEvents.updateEventVisibility, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.updateEventVisibility,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logUpdateEventLockedStatus(
     UpdateEventLockedStatusAnalyticsConfig config,
   ) async {
-    await logAnalytic(AnalyticsEvents.updateEventLockedStatus, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.updateEventLockedStatus,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logLeaveEvent(LeaveEventAnalyticsConfig config) async {
-    await logAnalytic(AnalyticsEvents.leaveEvent, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.leaveEvent,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logCancelEvent(CancelEventAnalyticsConfig config) async {
-    await logAnalytic(AnalyticsEvents.cancelEvent, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.cancelEvent,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logSelectProfileSegment(
     SelectProfileSegmentAnalyticsConfig config,
   ) async {
-    await logAnalytic(AnalyticsEvents.selectProfileSegment, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.selectProfileSegment,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   Future<void> logClickHideSavedEvents(
     ClickHideSavedEventsAnalyticsConfig config,
   ) async {
-    await logAnalytic(AnalyticsEvents.clickHideSavedEvents, config.toMap());
+    await logAnalytic(
+      AnalyticsEvents.clickHideSavedEvents,
+      config.toMap().cleanForFirebaseAnalytics(),
+    );
   }
 
   void logUpdateEventLocation(
     UpdateEventLocationAnalyticsConfig updateEventLocationAnalyticsConfig,
-  ) {}
+  ) {
+    logAnalytic(
+      AnalyticsEvents.updateEventLocation,
+      updateEventLocationAnalyticsConfig.toMap().cleanForFirebaseAnalytics(),
+    );
+  }
 }
