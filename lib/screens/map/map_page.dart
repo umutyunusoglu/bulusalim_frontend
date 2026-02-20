@@ -1408,7 +1408,7 @@ class _MapPageState extends State<MapPage> {
           ),
         );
 
-      () => _closeWizard(CreateEventStepEnum.summary, completed: true);
+      _closeWizard(CreateEventStepEnum.summary, completed: true);
     } catch (e) {
       _logger.error('Etkinlik oluşturulurken hata: $e');
       // Hata durumunda kullanıcıya bildirim göstermek isteyebilirsiniz
