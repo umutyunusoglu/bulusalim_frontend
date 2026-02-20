@@ -9,11 +9,16 @@ import 'package:outnest/components/stacked_avatars.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/enums/screen_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart'
     show EventRepository;
 import 'package:outnest/domain/repositories/user_repository.dart';
+import 'package:outnest/domain/services/analytics/analytics_service.dart';
+import 'package:outnest/domain/services/analytics/event_configs/click_save_event_analytics_config.dart';
+import 'package:outnest/domain/services/analytics/event_configs/click_view_event_participants_analytics_config.dart';
+import 'package:outnest/domain/services/analytics/event_configs/send_join_request_to_event_analytics_config.dart';
 import 'package:outnest/domain/services/remote_config_service.dart';
 import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
@@ -32,11 +37,13 @@ class EventCard extends StatefulWidget {
   const EventCard({
     required this.event,
     required this.participants,
+    required this.screen,
     this.showJoinButton = true,
     super.key,
   });
 
   final EventEntity event;
+  final ScreenEnum screen;
   final List<CompactUserEntity> participants;
   final bool showJoinButton;
   @override
@@ -130,6 +137,14 @@ class _EventCardState extends State<EventCard> {
     final userRepository = getIt<UserRepository>();
     setState(() => isSaved = !isSaved);
     try {
+      getIt<AnalyticsService>().logClickSaveEvent(
+        ClickSaveEventAnalyticsConfig(
+          eventID: widget.event.eventID,
+          value: isSaved,
+          screen: widget.screen,
+        ),
+      );
+
       if (isSaved) {
         await userRepository.saveEvent(currentUser.userID, widget.event);
       } else {
@@ -402,6 +417,12 @@ class _EventCardState extends State<EventCard> {
       bio: null,
     );
 
+    getIt<AnalyticsService>().logClickViewEventParticipants(
+      ClickViewEventParticipantsAnalyticsConfig(
+        eventID: widget.event.eventID,
+      ),
+    );
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -451,8 +472,73 @@ class _EventCardState extends State<EventCard> {
           bio: null,
         ),
       );
+
+      final participants = widget.event.participants
+          .map((p) => p.userID)
+          .toList(growable: true);
+
+      final sameUniversityAsCreator =
+          sessionService.currentUser?.university != null &&
+          sessionService.currentUser!.university ==
+              widget.event.creator.university;
+
+      final numberOfFollowerParticipants = widget.event.participants
+          .where(
+            (p) =>
+                sessionService.stateListenable.value?.followers.any(
+                  (u) => u.userID == p.userID,
+                ) ??
+                false,
+          )
+          .length;
+
+      final numberOfNonFollowerParticipants =
+          widget.event.participants.length - numberOfFollowerParticipants;
+
+      final numberOfFolloweeParticipants = widget.event.participants
+          .where(
+            (p) =>
+                sessionService.stateListenable.value?.followees.any(
+                  (u) => u.userID == p.userID,
+                ) ??
+                false,
+          )
+          .length;
+
+      final numberOfNonFolloweeParticipants =
+          widget.event.participants.length - numberOfFolloweeParticipants;
+
+      final numberOfSameUniversityParticipants = widget.event.participants
+          .where((p) => p.university == sessionService.currentUser?.university)
+          .length;
+
+      getIt<AnalyticsService>().logSendJoinRequestToEvent(
+        SendJoinRequestToEventAnalyticsConfig(
+          eventID: widget.event.id,
+          numberOfParticipants: widget.event.participantCount,
+          numberOfFollowerParticipants: numberOfFollowerParticipants,
+          numberOfNonFollowerParticipants: numberOfNonFollowerParticipants,
+          numberOfFolloweeParticipants: numberOfFolloweeParticipants,
+          numberOfNonFolloweeParticipants: numberOfNonFolloweeParticipants,
+          sameUniversityAsCreator: sameUniversityAsCreator,
+          numberOfSameUniversityParticipants:
+              numberOfSameUniversityParticipants,
+
+          showOnMap: widget.event.showOnMap,
+          remainingTimeToStart: widget.event.startTime.difference(
+            DateTime.now(),
+          ),
+          eventStartTime: widget.event.startTime,
+          eventVisibility: widget.event.visibility.toString(),
+          category: widget.event.hobbies.isNotEmpty
+              ? widget.event.hobbies[0]
+              : 'null',
+          screen: widget.screen,
+        ),
+      );
     } catch (e) {
       logger.error('Join request failed: $e');
+
       if (mounted) {
         setState(() {
           _joinStatus = _EventJoinStatus.canJoin;

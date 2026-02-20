@@ -1,8 +1,11 @@
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
+import 'package:outnest/data/models/user/pinned_post_model.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
+import 'package:outnest/domain/services/analytics/analytics_service.dart';
+import 'package:outnest/domain/services/analytics/event_configs/force_stop_event_analytics_config.dart';
 
 class ForceStopEvent {
   ForceStopEvent({
@@ -64,6 +67,13 @@ class ForceStopEvent {
 
       _logger.info(
         'Event ${currentEvent.eventID} and all participant logs updated to completed.',
+      );
+
+      getIt<AnalyticsService>().logForceStopEvent(
+        ForceStopEventAnalyticsConfig(
+          eventID: enrichedEvent.eventID,
+          timeToEventToStop: DateTime.now().difference(enrichedEvent.startTime),
+        ),
       );
     } catch (e) {
       _logger.error('Error in ForceStopEvent: $e');

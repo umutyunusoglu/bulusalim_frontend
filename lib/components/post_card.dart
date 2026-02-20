@@ -8,6 +8,11 @@ import 'package:outnest/domain/entities/feed/post/post_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/post_repository.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
+import 'package:outnest/domain/services/analytics/analytics_service.dart';
+import 'package:outnest/domain/services/analytics/event_configs/pin_post_analytics_config.dart';
+import 'package:outnest/domain/services/analytics/event_configs/remove_emote_analytics_config.dart';
+import 'package:outnest/domain/services/analytics/event_configs/send_emote_analytics_config.dart';
+import 'package:outnest/domain/services/analytics/event_configs/unpin_post_analytics_config.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
@@ -199,14 +204,39 @@ class _PostCardState extends State<PostCard> {
     });
 
     try {
+      final analytics = getIt<AnalyticsService>();
+
+      final amIFollowingPostCreator = _amIFollowingPostCreator;
+      final amIFolloweeOfPostCreator =
+          _sessionService.stateListenable.value?.followees.any(
+            (u) => u.userID == widget.post.creator.userID,
+          ) ??
+          false;
       if (isSelectedCurrent) {
         await _postRepository.removeEmoteFromPost(
           widget.post.id,
           _myUserId,
           emote,
         );
+
+        analytics.logRemoveEmote(
+          RemoveEmoteAnalyticsConfig(
+            postID: widget.post.id,
+            value: emote,
+            isFollower: amIFollowingPostCreator,
+            isFollowee: amIFolloweeOfPostCreator,
+          ),
+        );
       } else {
         await _postRepository.addEmoteToPost(widget.post.id, _myUserId, emote);
+        analytics.logSendEmote(
+          SendEmoteAnalyticsConfig(
+            postID: widget.post.id,
+            value: emote,
+            isFollower: amIFollowingPostCreator,
+            isFollowee: amIFolloweeOfPostCreator,
+          ),
+        );
       }
     } on Exception catch (e) {
       if (mounted) {
@@ -333,10 +363,16 @@ class _PostCardState extends State<PostCard> {
     widget.onPinToggle?.call(newStatus);
 
     try {
+      final analytics = getIt<AnalyticsService>();
+
       if (newStatus) {
         await _postRepository.pinPost(widget.post.id, _myUserId);
+        analytics.logPinPost(PinPostAnalyticsConfig(postID: widget.post.id));
       } else {
         await _postRepository.unpinPost(widget.post.id, _myUserId);
+        analytics.logUnpinPost(
+          UnpinPostAnalyticsConfig(postID: widget.post.id),
+        );
       }
     } catch (e) {
       // 3. Hata olursa işlemi geri al

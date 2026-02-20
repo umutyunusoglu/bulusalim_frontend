@@ -25,14 +25,21 @@ import 'package:outnest/core/constants/theme/app_theme.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/enums/create_event_step_enum.dart';
 import 'package:outnest/core/utils/types/enums/event_role_enum.dart';
 import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
+import 'package:outnest/core/utils/types/enums/screen_enum.dart';
 import 'package:outnest/core/utils/types/enums/visibility_enum.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/map_repository.dart';
+import 'package:outnest/domain/services/analytics/analytics_service.dart';
+import 'package:outnest/domain/services/analytics/event_configs/create_event_analytics_config.dart';
+import 'package:outnest/domain/services/analytics/event_configs/fail_event_creation_analytics_config.dart';
+import 'package:outnest/domain/services/analytics/event_configs/filter_map_by_time_analytics_config.dart';
+import 'package:outnest/domain/services/analytics/event_configs/filter_map_by_visibility_analytics_config.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/screens/map/map_people_filter.dart';
@@ -93,6 +100,9 @@ class _MapPageState extends State<MapPage> {
   PointAnnotation? _pickingMarker;
   String? _currentUserImageUrl;
   bool? _tempShowOnMap;
+
+  bool _isLocationSearchUsed = false;
+  bool _isNameSuggestionUsed = false;
 
   // --- MAPBOX ---
   late MapboxMap mapboxMap;
@@ -193,6 +203,7 @@ class _MapPageState extends State<MapPage> {
     _clickListener?.cancel();
     _pageController.dispose();
     _markerImageCache.clear();
+    _filterDebounce?.cancel();
     if (pointAnnotationManager != null) {
       try {
         pointAnnotationManager!.deleteAll();
@@ -205,7 +216,23 @@ class _MapPageState extends State<MapPage> {
 
   // --- YARDIMCI METODLAR ---
 
-  void _closeWizard() {
+  void _closeWizard(
+    CreateEventStepEnum closedAtStep, {
+    bool completed = false,
+  }) {
+    if (!completed) {
+      getIt<AnalyticsService>().logFailEventCreation(
+        FailEventCreationAnalyticsConfig(
+          failStep: closedAtStep,
+          category: _tempCategory,
+          isLocationSearched: _tempLocation != null && _isLocationSearchUsed,
+          hasStartTime: _tempDate != null && _tempTime != null,
+          visibility: _tempVisibility ?? VisibilityEnum.everyone,
+          showOnMap: _tempShowOnMap ?? false,
+          isNameSuggestionUsed: _tempEventName != null && _isNameSuggestionUsed,
+        ),
+      );
+    }
     _removePickingMarker();
     setState(() {
       _tempCategory = null;
@@ -277,12 +304,6 @@ class _MapPageState extends State<MapPage> {
     } catch (e) {
       _logger.error('Error creating picking marker: $e');
     }
-  }
-
-  // --- FETCH & MARKER YÖNETİMİ ---
-  Future<void> _onCategoryChanged() async {
-    if (_isDisposed) return;
-    _applyLocalFilters();
   }
 
   bool _isWithinRange(DateTime dt, DateTimeRange range) {
@@ -711,6 +732,7 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
+  Timer? _filterDebounce;
   // --- BUILD ---
   @override
   Widget build(BuildContext context) {
@@ -794,7 +816,20 @@ class _MapPageState extends State<MapPage> {
                         child: MapTimeFilter(
                           onChanged: (range) {
                             setState(() => _filterTimeRange = range);
-                            _applyLocalFilters();
+
+                            if (_filterDebounce?.isActive ?? false)
+                              _filterDebounce!.cancel();
+
+                            _filterDebounce = Timer(
+                              const Duration(milliseconds: 200),
+                              () {
+                                _applyLocalFilters();
+
+                                getIt<AnalyticsService>().logFilterMapByTime(
+                                  FilterMapByTimeAnalyticsConfig(time: range),
+                                );
+                              },
+                            );
                           },
                         ),
                       ),
@@ -817,7 +852,23 @@ class _MapPageState extends State<MapPage> {
                                     val,
                                   ),
                             );
-                            _applyLocalFilters();
+
+                            if (_filterDebounce?.isActive ?? false)
+                              _filterDebounce!.cancel();
+
+                            _filterDebounce = Timer(
+                              const Duration(milliseconds: 200),
+                              () {
+                                _applyLocalFilters();
+
+                                getIt<AnalyticsService>()
+                                    .logFilterMapByVisibility(
+                                      FilterMapByVisibilityAnalyticsConfig(
+                                        visibility: _filterPeople,
+                                      ),
+                                    );
+                              },
+                            );
                           },
                         ),
                       ),
@@ -849,12 +900,31 @@ class _MapPageState extends State<MapPage> {
                             label: key,
                             emoji: _categories[key] ?? '',
                             isSelected: _selectedCategory == key,
-                            onTap: () => setState(() {
-                              _selectedCategory = _selectedCategory == key
-                                  ? null
-                                  : key;
-                              _onCategoryChanged();
-                            }),
+                            onTap: () {
+                              setState(() {
+                                _selectedCategory = _selectedCategory == key
+                                    ? null
+                                    : key;
+                              });
+
+                              if (_filterDebounce?.isActive ?? false) {
+                                _filterDebounce!.cancel();
+                              }
+
+                              _filterDebounce = Timer(
+                                const Duration(milliseconds: 200),
+                                () {
+                                  _applyLocalFilters();
+
+                                  getIt<AnalyticsService>()
+                                      .logFilterMapByVisibility(
+                                        FilterMapByVisibilityAnalyticsConfig(
+                                          visibility: _filterPeople,
+                                        ),
+                                      );
+                                },
+                              );
+                            },
                           ),
                         );
                       },
@@ -877,6 +947,7 @@ class _MapPageState extends State<MapPage> {
                       ),
                       event: _selectedEvent!,
                       participants: _selectedEvent!.participants,
+                      screen: ScreenEnum.map,
                     )
                   : const SizedBox.shrink(),
             ),
@@ -901,7 +972,7 @@ class _MapPageState extends State<MapPage> {
                 Positioned.fill(
                   child: EventSummaryOverlay(
                     previewEvent: _createPreviewEvent(),
-                    onCancel: _closeWizard,
+                    onCancel: () => _closeWizard(CreateEventStepEnum.summary),
                     onConfirm: _confirmEventCreation,
                   ),
                 )
@@ -1063,7 +1134,7 @@ class _MapPageState extends State<MapPage> {
         return CategorySelectionStep(
           initialSelectedCategory: _tempCategory,
           categories: _categories,
-          onClose: _closeWizard,
+          onClose: () => _closeWizard(CreateEventStepEnum.category),
           onNext: (c) => setState(() {
             _tempCategory = c;
             _createEventStep = 1;
@@ -1086,19 +1157,20 @@ class _MapPageState extends State<MapPage> {
 
           hideCloseButton: widget.isLocationPicker,
 
-          onClose: _closeWizard,
+          onClose: () => _closeWizard(CreateEventStepEnum.location),
           // Picker modundaysak Geri butonu sayfayı kapatır
           onBack: widget.isLocationPicker
               ? () => context.pop()
               : () => setState(() => _createEventStep = 0),
 
           // Picker modundaysak İlerle butonu veriyi geri döndürür
-          onNext: (address, displayAddress, location) {
+          onNext: (address, displayAddress, location, isLocationSearched) {
             if (widget.isLocationPicker) {
               context.pop({
                 'displayAddress': displayAddress,
                 'address': address,
                 'location': location,
+                'isLocationSearched': isLocationSearched,
               });
             } else {
               setState(() {
@@ -1106,6 +1178,7 @@ class _MapPageState extends State<MapPage> {
                 _tempAddress = address;
                 _tempDisplayAddress = displayAddress;
                 _createEventStep = 2;
+                _isLocationSearchUsed = isLocationSearched;
               });
             }
           },
@@ -1118,7 +1191,9 @@ class _MapPageState extends State<MapPage> {
               : () => setState(() => _createEventStep = 1),
 
           // Kapat butonu: TimePicker modundaysak null yapıyoruz
-          onClose: widget.isTimePicker ? null : _closeWizard,
+          onClose: widget.isTimePicker
+              ? null
+              : () => _closeWizard(CreateEventStepEnum.time),
 
           // X Butonunu gizle
           hideCloseButton: widget.isTimePicker,
@@ -1143,7 +1218,7 @@ class _MapPageState extends State<MapPage> {
       case 3: // Görünürlük
         return VisibilitySelectionStep(
           onBack: () => setState(() => _createEventStep = 2),
-          onClose: _closeWizard,
+          onClose: () => _closeWizard(CreateEventStepEnum.visibility),
           onNext: (v, g, h) => {
             _tempVisibility = VisibilityEnum.fromTurkishUI(v),
             _tempShowOnMap = !h,
@@ -1155,10 +1230,11 @@ class _MapPageState extends State<MapPage> {
       case 4: // İsim
         return EventNameStep(
           onBack: () => setState(() => _createEventStep = 3),
-          onClose: _closeWizard,
-          onNext: (n) => setState(() {
+          onClose: () => _closeWizard(CreateEventStepEnum.name),
+          onNext: (n, s) => setState(() {
             _tempEventName = n;
             _createEventStep = 5;
+            _isNameSuggestionUsed = s;
           }),
           category: _tempCategory ?? 'Kahve',
         );
@@ -1262,63 +1338,81 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> _confirmEventCreation() async {
-    final eventRepository = getIt<EventRepository>();
-    final currentUser = getIt<SessionService>().currentUser!;
-    final date = _tempDate ?? DateTime.now();
-    final time = _tempTime ?? TimeOfDay.now();
-    final startTime = DateTime(
-      date.year,
-      date.month,
-      date.day,
-      time.hour,
-      time.minute,
-    );
-    final currentUserCompact = CompactUserEntity(
-      userID: currentUser.userID,
-      username: currentUser.username,
-      profileImageUrl: currentUser.profileImageUrl,
-      university: currentUser.university,
-      nameSurname: currentUser.nameSurname,
-      isPrivate: currentUser.isPrivate,
-      bio: currentUser.bio,
-    );
-    final geohash = GeoHasher().encode(
-      _tempLocation!.longitude,
-      _tempLocation!.latitude,
-      precision: 7,
-    );
-    final event = EventEntity(
-      eventID: '',
-      name: _tempEventName ?? '',
-      hobbies: _tempCategory != null ? [_tempCategory!] : ['Genel'],
-      creator: EventParticipantEntity(
+    try {
+      final eventRepository = getIt<EventRepository>();
+      final currentUser = getIt<SessionService>().currentUser!;
+      final date = _tempDate ?? DateTime.now();
+      final time = _tempTime ?? TimeOfDay.now();
+      final startTime = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
+      final currentUserCompact = CompactUserEntity(
         userID: currentUser.userID,
         username: currentUser.username,
         profileImageUrl: currentUser.profileImageUrl,
-        role: EventRoleEnum.creator,
-        eventScore: 0,
         university: currentUser.university,
-      ),
-      capacity: AppConfig.eventCapacity,
-      participants: [currentUserCompact],
-      requestPool: [],
-      status: EventStatusEnum.upcoming,
-      rejectedUsers: [],
-      startTime: startTime,
-      endTime: null,
-      location: _tempLocation!,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-      displayAddress: _tempDisplayAddress ?? '',
-      address: _tempAddress ?? '',
-      participantCount: 1,
-      isLocked: false,
-      geohash: geohash,
-      visibility: _tempVisibility ?? VisibilityEnum.everyone,
-      showOnMap: _tempShowOnMap ?? true,
-    );
-    await eventRepository.createEvent(event);
-    _closeWizard();
+        nameSurname: currentUser.nameSurname,
+        isPrivate: currentUser.isPrivate,
+        bio: currentUser.bio,
+      );
+      final geohash = GeoHasher().encode(
+        _tempLocation!.longitude,
+        _tempLocation!.latitude,
+        precision: 7,
+      );
+      final event = EventEntity(
+        eventID: '',
+        name: _tempEventName ?? '',
+        hobbies: _tempCategory != null ? [_tempCategory!] : ['Genel'],
+        creator: EventParticipantEntity(
+          userID: currentUser.userID,
+          username: currentUser.username,
+          profileImageUrl: currentUser.profileImageUrl,
+          role: EventRoleEnum.creator,
+          eventScore: 0,
+          university: currentUser.university,
+        ),
+        capacity: AppConfig.eventCapacity,
+        participants: [currentUserCompact],
+        requestPool: [],
+        status: EventStatusEnum.upcoming,
+        rejectedUsers: [],
+        startTime: startTime,
+        endTime: null,
+        location: _tempLocation!,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        displayAddress: _tempDisplayAddress ?? '',
+        address: _tempAddress ?? '',
+        participantCount: 1,
+        isLocked: false,
+        geohash: geohash,
+        visibility: _tempVisibility ?? VisibilityEnum.everyone,
+        showOnMap: _tempShowOnMap ?? true,
+      );
+      await eventRepository.createEvent(event);
+
+      final analytics = getIt<AnalyticsService>()
+        ..logCreateEvent(
+          CreateEventAnalyticsConfig(
+            category: _tempCategory ?? 'diğer',
+            isLocationSearched: _isLocationSearchUsed,
+            hasStartTime: _tempTime != null,
+            visibility: _tempVisibility ?? VisibilityEnum.everyone,
+            showOnMap: _tempShowOnMap ?? true,
+            isNameSuggestionUsed: _isNameSuggestionUsed,
+          ),
+        );
+
+      () => _closeWizard(CreateEventStepEnum.summary, completed: true);
+    } catch (e) {
+      _logger.error('Etkinlik oluşturulurken hata: $e');
+      // Hata durumunda kullanıcıya bildirim göstermek isteyebilirsiniz
+    }
   }
 }
 

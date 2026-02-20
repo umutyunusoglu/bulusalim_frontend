@@ -1,9 +1,12 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/services/analytics/analytics_service.dart';
+import 'package:outnest/domain/services/analytics/event_configs/force_start_event_analytics_config.dart';
 
 class ForceStartEvent {
   ForceStartEvent({
@@ -26,6 +29,13 @@ class ForceStartEvent {
 
       if (response.statusCode == 200) {
         _logger.info('Event started by server.');
+
+        getIt<AnalyticsService>().logForceStartEvent(
+          ForceStartEventAnalyticsConfig(
+            eventID: currentEvent.eventID,
+            timeToEventStart: currentEvent.startTime.difference(DateTime.now()),
+          ),
+        );
       }
     } catch (e) {
       _logger.error('Error: $e');

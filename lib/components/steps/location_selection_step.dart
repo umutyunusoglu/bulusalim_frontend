@@ -26,7 +26,7 @@ class LocationSelectionStep extends StatefulWidget {
   });
 
   final VoidCallback onBack;
-  final Function(String, String, Geolocation) onNext;
+  final Function(String, String, Geolocation, bool) onNext;
   final Geolocation? initialLocation;
   final String? initialAddress;
   final String? initialDisplayAddress;
@@ -45,7 +45,7 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
   String? _selectedAddress;
   String? _selectedDisplayAddress;
   Geolocation? _selectedLocation;
-
+  bool _isLocationSearchUsed = false;
   final MapRepository _mapRepository = getIt<MapRepository>();
   List<Place> _places = [];
   bool _isLoading = false;
@@ -76,6 +76,8 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
         _selectedLocation = widget.initialLocation;
         _selectedAddress = widget.initialAddress;
         _selectedDisplayAddress = widget.initialDisplayAddress;
+
+        _isLocationSearchUsed = false;
 
         final newText = widget.initialAddress ?? '';
         if (_searchController.text != newText) {
@@ -243,6 +245,8 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
                                       place.displayAddress;
 
                                   _searchController.text = place.adresss;
+
+                                  _isLocationSearchUsed = true;
                                 });
                               },
                               borderRadius: BorderRadius.circular(8.r),
@@ -338,6 +342,7 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
                       _selectedAddress!,
                       display,
                       _selectedLocation!,
+                      _isLocationSearchUsed,
                     );
                   }
                 },

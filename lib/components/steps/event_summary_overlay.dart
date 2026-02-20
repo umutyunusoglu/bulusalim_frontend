@@ -1,6 +1,7 @@
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/event_card.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/core/utils/types/enums/screen_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/services/session_service.dart';
@@ -68,6 +69,7 @@ class EventSummaryOverlay extends StatelessWidget {
                 child: EventCard(
                   event: previewEvent,
                   participants: [creator],
+                  screen: ScreenEnum.map,
                   showJoinButton: false, // Katıl butonu gizli
                 ),
               ),

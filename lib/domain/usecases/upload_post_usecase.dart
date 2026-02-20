@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/emote_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
@@ -7,6 +8,8 @@ import 'package:outnest/domain/entities/feed/post/post_entity.dart';
 import 'package:outnest/domain/entities/hobby/hobby_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/post_repository.dart';
+import 'package:outnest/domain/services/analytics/analytics_service.dart';
+import 'package:outnest/domain/services/analytics/event_configs/create_post_analytics_config.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
@@ -98,6 +101,20 @@ class UploadPost {
 
     _logger.info('Uploading post: ${post.postID}');
     await _postRepository.createPost(post, isPinned);
+
+    getIt<AnalyticsService>().logCreatePost(
+      CreatePostAnalyticsConfig(
+        eventID: currentEvent.eventID,
+        numberOfPhotosInPost: uploadUrls.length,
+        showParticipants: showParticipants,
+        addToDump: addToDump,
+        pinPost: isPinned,
+        postID: post.postID,
+        timeElapsedAfterEventStart: DateTime.now().difference(
+          currentEvent.startTime,
+        ),
+      ),
+    );
 
     _logger.info('Post uploaded: ${post.postID}');
     return post;

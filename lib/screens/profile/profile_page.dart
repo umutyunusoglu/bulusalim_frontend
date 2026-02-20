@@ -12,6 +12,7 @@ import 'package:outnest/components/private_account_view.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/enums/profile_segment_enum.dart';
 import 'package:outnest/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
@@ -21,6 +22,9 @@ import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
 import 'package:outnest/domain/entities/user/session_state.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
+import 'package:outnest/domain/services/analytics/analytics_service.dart';
+import 'package:outnest/domain/services/analytics/event_configs/select_profile_segment_analytics_config.dart';
+import 'package:outnest/domain/services/analytics/event_configs/send_event_invitation_analytics_config.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/usecases/send_event_invitation_usecase.dart';
@@ -628,6 +632,14 @@ class _ProfilePageState extends State<ProfilePage> {
                                   ),
                                 );
 
+                                getIt<AnalyticsService>()
+                                    .logSendEventInvitation(
+                                      SendEventInvitationAnalyticsConfig(
+                                        eventID: event.eventID,
+                                        toUserID: widget.profileUserID,
+                                      ),
+                                    );
+
                                 debugPrint(
                                   'Buluşma paylaşıldı: ${event.name}',
                                 );
@@ -701,6 +713,12 @@ class _ProfilePageState extends State<ProfilePage> {
       index,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
+    );
+
+    getIt<AnalyticsService>().logSelectProfileSegment(
+      SelectProfileSegmentAnalyticsConfig(
+        segment: ProfileSegmentEnum.values[index],
+      ),
     );
   }
 
@@ -1058,16 +1076,19 @@ class _ProfilePageState extends State<ProfilePage> {
                 controller: _pageController,
                 onPageChanged: (index) {
                   setState(() => _selectedTabIndex = index);
+
+                  getIt<AnalyticsService>().logSelectProfileSegment(
+                    SelectProfileSegmentAnalyticsConfig(
+                      segment: ProfileSegmentEnum.values[index],
+                    ),
+                  );
                 },
                 children: [
                   if (!_isPrivateAccount || _isFollowing) ...[
-                    // --- DÜZELTME: ProfileGridTab'e callback ekliyoruz ---
-                    // Lütfen ProfileGridTab widget'ınızı bu callback'i (onPinChanged)
-                    // kabul edecek şekilde güncelleyin.
                     ProfileGridTab(
                       pinnedPosts: _pinnedPosts,
                       activePosts: _activePosts,
-                      onPinChanged: _handlePinStatusChange, // <-- BÖYLE EKLEYİN
+                      onPinChanged: _handlePinStatusChange,
                     ),
                     ProfileEventsTab(
                       currentEvents: _currentEvents,
