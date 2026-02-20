@@ -564,16 +564,25 @@ class _EventCardState extends State<EventCard> {
     final displayAvatars = <AvatarInfo>[];
 
     if (widget.participants.isNotEmpty) {
+      // 1. Önce creator'ı bul ve ekle
+      final creatorEntry = widget.participants
+          .where((u) => u.userID == widget.event.creator.userID)
+          .map((u) => AvatarInfo(userId: u.userID, imageUrl: u.profileImageUrl))
+          .firstOrNull;
+
+      if (creatorEntry != null) {
+        displayAvatars.add(creatorEntry);
+      }
+
+      // 2. Creator dışındakileri ekle
       displayAvatars.addAll(
-        widget.participants.map(
-          (user) => AvatarInfo(
-            userId: user.userID,
-            imageUrl: user.profileImageUrl,
-          ),
-        ),
+        widget.participants
+            .where((u) => u.userID != widget.event.creator.userID)
+            .map(
+              (u) => AvatarInfo(userId: u.userID, imageUrl: u.profileImageUrl),
+            ),
       );
     }
-
     final categoryIcon = widget.event.hobbies.isNotEmpty
         ? categories[widget.event.hobbies[0]] ?? ''
         : '🎉';
