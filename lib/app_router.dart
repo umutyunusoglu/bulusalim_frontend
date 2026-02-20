@@ -63,6 +63,7 @@ final router = GoRouter(
     if (!isAuthRoute) {
       // Auth route değilse ve kullanıcı giriş yapmamışsa aşağıda yakalanır,
       // şimdilik null döndürüp akışa bırakıyoruz, aşağıda kontrol edilecek.
+      return null;
     }
 
     final authService = getIt<AuthService>();
