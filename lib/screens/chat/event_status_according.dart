@@ -91,6 +91,12 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
       }
     }
 
+    loadedParticipants.sort((a, b) {
+      if (a.userId == widget.event.creator.userID) return -1;
+      if (b.userId == widget.event.creator.userID) return 1;
+      return 0;
+    });
+
     final pendingParticipants = <ParticipantItem>[];
 
     for (final request in widget.event.requestPool) {
@@ -384,6 +390,8 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
 
   // --- ONAYLI SATIRI (PEMBE EKSİ) ---
   Widget _buildApprovedRow(ParticipantItem user) {
+    final bool isCreator = widget.event.creator.userID == user.userId;
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       child: Row(
@@ -392,20 +400,53 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
           SizedBox(width: 12.w),
 
           Expanded(
-            child: Text(
-              user.username,
-              style: TextStyle(
-                fontFamily: 'SF Pro Display',
-                fontSize: 14.sp,
-                fontWeight:
-                    FontWeight.w500, // Onaylılar biraz daha ince olabilir
-                color: Colors.black87,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            child: Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    user.username,
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Display',
+                      fontSize: 14.sp,
+                      fontWeight: isCreator ? FontWeight.w600 : FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                // 2. DÜZENLEME: Creator Badge ekle
+                if (isCreator) ...[
+                  SizedBox(width: 8.w),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 6.w,
+                      vertical: 2.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4.r),
+                      border: Border.all(
+                        color: AppColors.primaryColor,
+                        width: 0.5,
+                      ),
+                    ),
+                    child: Text(
+                      'buluşma sahibi',
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        color: AppColors.primaryColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-          if (widget.event.creator.userID != user.userId) ...[
+
+          // Creator ise silme butonu gözükmesin
+          if (!isCreator) ...[
             GestureDetector(
               onTap: () => _removeParticipant(user.userId),
               child: Container(
@@ -415,7 +456,6 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
                   color: AppColors.primaryColor.withOpacity(0.3),
                   shape: BoxShape.circle,
                 ),
-                // Icon olarak 'remove' (tire) kullanıyoruz
                 child: Icon(
                   Icons.remove,
                   size: 14.sp,
