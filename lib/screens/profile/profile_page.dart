@@ -463,9 +463,88 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   // --- 2. ETKİNLİK VARSA (SEÇİM POPUP) ---
-  void _showShareSelectionDialog(BuildContext context, List<dynamic> events) {
+  void _showShareSelectionDialog(
+    BuildContext context,
+    List<EventEntity> events,
+  ) async {
     var selectedIndex = 0;
 
+    final EventRepository eventRepository = getIt<EventRepository>();
+
+    // 1. Asenkron filtreleme burada yapılır
+    List<EventEntity> validEvents = [];
+    for (EventEntity e in events) {
+      final hasSent = await eventRepository.hasSentInvitation(
+        e,
+        widget.profileUserID,
+      );
+      if (!hasSent) {
+        validEvents.add(e);
+      }
+    }
+
+    if (validEvents.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24.r),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(24.w),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.event_busy, size: 48.r, color: Colors.grey),
+                SizedBox(height: 16.h),
+                Text(
+                  'Paylaşılacak Buluşma Bulunamadı',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16.sp,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                if (events.isEmpty)
+                  Text(
+                    'Henüz aktif bir buluşman bulunmuyor. Önce bir buluşma oluşturmalısın.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                if (events.isNotEmpty)
+                  Text(
+                    'Tüm aktif buluşmalarına zaten davet gönderdin. Yeni davetler gönderebilmek için yeni buluşmalar kurabilir veya mevcut buluşmalarına yeni katılımcılar ekleyebilirsin.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                SizedBox(height: 24.h),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30.r),
+                      ),
+                    ),
+                    child: Text('tamam', style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      return; // Fonksiyonun geri kalanını çalıştırma
+    }
     showDialog(
       context: context,
       builder: (context) {
@@ -479,7 +558,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 borderRadius: BorderRadius.circular(24.r),
               ),
               child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 16.w),
+                padding: EdgeInsets.symmetric(
+                  vertical: 24.h,
+                  horizontal: 16.w,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -500,7 +582,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     SizedBox(
                       height: 100.h,
                       child: PageView.builder(
-                        itemCount: events.length,
+                        itemCount: validEvents.length,
                         onPageChanged: (index) {
                           setState(() => selectedIndex = index);
                         },
@@ -550,7 +632,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     SizedBox(height: 12.h),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(events.length, (index) {
+                      children: List.generate(validEvents.length, (index) {
                         return Container(
                           width: 5.w,
                           height: 5.w,

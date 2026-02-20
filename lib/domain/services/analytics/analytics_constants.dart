@@ -31,6 +31,7 @@ class AnalyticsEvents {
   static const String forceStartEvent = 'force_start_event';
   static const String forceStopEvent = 'force_stop_event';
   static const String updateEventName = 'update_event_name';
+  static const String updateEventLocation = 'update_event_location';
   static const String updateEventStartTime = 'update_event_start_time';
   static const String updateEventVisibility = 'update_event_visibility';
   static const String updateEventLockedStatus = 'update_event_locked_status';
