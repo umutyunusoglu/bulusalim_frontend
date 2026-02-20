@@ -6,6 +6,7 @@ import 'package:outnest/components/event_card.dart';
 import 'package:outnest/components/post_card.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/utils/types/enums/feed_type.dart';
+import 'package:outnest/core/utils/types/enums/screen_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/feed/feed_entity.dart';
 import 'package:outnest/domain/entities/feed/post/post_entity.dart';
@@ -204,6 +205,7 @@ class _LiveEventItemState extends State<_LiveEventItem> {
         return EventCard(
           event: liveData,
           participants: liveData.participants,
+          screen: ScreenEnum.home,
         );
       },
     );

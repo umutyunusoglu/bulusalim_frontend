@@ -6,6 +6,8 @@ import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/core/utils/types/enums/feed_type.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/services/analytics/analytics_service.dart';
+import 'package:outnest/domain/services/analytics/event_configs/select_feed_analytics_config.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/remote_config_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
@@ -313,6 +315,17 @@ class _HomePageState extends State<HomePage> {
                     currentIndex: _currentPage,
                     tabs: _tabs,
                     onTabSelected: (index) {
+                      final previousFeedType = FeedType.values[_currentPage];
+                      final newFeedType = FeedType.values[index];
+                      getIt<AnalyticsService>().logSelectFeed(
+                        SelectFeedAnalyticsConfig(
+                          value: newFeedType,
+                          previousValue: previousFeedType,
+                        ),
+                      );
+
+                      setState(() => _currentPage = index);
+
                       setState(() => _currentPage = index);
                       _pageController.animateToPage(
                         index,
@@ -327,6 +340,15 @@ class _HomePageState extends State<HomePage> {
                   child: PageView(
                     controller: _pageController,
                     onPageChanged: (index) {
+                      final previousFeedType = FeedType.values[_currentPage];
+                      final newFeedType = FeedType.values[index];
+                      getIt<AnalyticsService>().logSelectFeed(
+                        SelectFeedAnalyticsConfig(
+                          value: newFeedType,
+                          previousValue: previousFeedType,
+                        ),
+                      );
+
                       setState(() => _currentPage = index);
                     },
                     children: const [

@@ -51,13 +51,25 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
 
   // --- SAAT SEÇİCİ (CUPERTINO WHEEL) ---
   void _pickTime() {
+    final now = DateTime.now();
+
+    // 1. Mantıksal kontrol: Seçilen gün bugün mü?
+    final isSelectingToday = _isSameDay(_selectedDate, now);
+
+    // 2. Başlangıç zamanı ayarı
     final initialDateTime = DateTime(
-      DateTime.now().year,
-      DateTime.now().month,
-      DateTime.now().day,
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
       _selectedTime.hour,
       _selectedTime.minute,
     );
+
+    // 3. Minimum tarih ayarı:
+    // Bugün ise "şu an", gelecek gün ise o günün başlangıcı (00:00:00)
+    final minDate = isSelectingToday
+        ? now
+        : DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
 
     showCupertinoModalPopup<void>(
       context: context,
@@ -71,9 +83,11 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
             children: [
               Expanded(
                 child: CupertinoDatePicker(
-                  initialDateTime: initialDateTime,
+                  initialDateTime: initialDateTime.isBefore(minDate)
+                      ? minDate
+                      : initialDateTime,
                   mode: CupertinoDatePickerMode.time,
-                  minimumDate: DateTime.now(),
+                  minimumDate: minDate, // Dinamik minimum tarih
                   use24hFormat: true,
                   onDateTimeChanged: (DateTime newDate) {
                     setState(() {

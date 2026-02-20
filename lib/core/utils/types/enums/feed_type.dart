@@ -1,7 +1,7 @@
 enum FeedType {
-  university._('university'),
+  all._('all'),
   friendsOnly._('friendsOnly'),
-  all._('all');
+  university._('university');
 
   const FeedType._(this.value);
   final String value;

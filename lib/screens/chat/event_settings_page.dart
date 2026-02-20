@@ -10,11 +10,20 @@ import 'package:outnest/components/stacked_avatars.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/enums/visibility_enum.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
+import 'package:outnest/domain/services/analytics/analytics_service.dart';
+import 'package:outnest/domain/services/analytics/event_configs/cancel_event_analytics_config.dart';
+import 'package:outnest/domain/services/analytics/event_configs/leave_event_analytics_config.dart';
+import 'package:outnest/domain/services/analytics/event_configs/update_event_location_analytics_config.dart';
+import 'package:outnest/domain/services/analytics/event_configs/update_event_locked_status_analytics_config.dart';
+import 'package:outnest/domain/services/analytics/event_configs/update_event_name_analytics_config.dart';
+import 'package:outnest/domain/services/analytics/event_configs/update_event_start_time_analytics_config.dart';
+import 'package:outnest/domain/services/analytics/event_configs/update_event_visibility_analytics_config.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/screens/chat/event_avatar_badge.dart';
@@ -51,6 +60,8 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
   late String _currentLocation;
   DateTime? _currentDate;
   String _categoryIcon = '🎉'; // varsayılan ikon
+  late String _currentChatTitle;
+  late VisibilityEnum _currentVisibility;
 
   final LoggingService _logger = getIt<LoggingService>();
   final SessionService sessionService = getIt<SessionService>();
@@ -60,6 +71,8 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
   void initState() {
     super.initState();
     _currentLocation = widget.location;
+    _currentChatTitle = widget.chatTitle;
+    _currentVisibility = widget.event.visibility;
     _fetchCurrentEventData();
   }
 
@@ -99,6 +112,8 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
       final newAddress = result['address'] as String;
       final newLocation = result['location'] as Geolocation;
 
+      final oldAdress = _currentLocation;
+
       if (!mounted) return;
       setState(() {
         _currentLocation = newDisplayAddress;
@@ -122,8 +137,26 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
           },
         );
         _logger.debug('Konum güncellendi: $newDisplayAddress');
+        getIt<AnalyticsService>().logUpdateEventLocation(
+          UpdateEventLocationAnalyticsConfig(
+            eventID: widget.eventID,
+            value: newDisplayAddress,
+            previousValue: oldAdress,
+          ),
+        );
       } catch (e) {
         _logger.error('Konum güncelleme hatası: $e');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Buluşma konumunu güncellerken bir sorun oluştu. Lütfen tekrar deneyin.',
+            ),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 3),
+          ),
+        );
         if (mounted) {
           setState(() {
             _currentLocation = widget.location;
@@ -150,6 +183,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
         newTime?.minute ?? 0,
       );
 
+      final previousStartTime = _currentDate;
       if (!mounted) return;
       setState(() {
         _currentDate = newStartTime;
@@ -163,10 +197,69 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
             'endTime': newStartTime.add(const Duration(hours: 2)),
           },
         );
+
         _logger.debug('Zaman güncellendi: $newStartTime');
+
+        getIt<AnalyticsService>().logUpdateEventStartTime(
+          UpdateEventStartTimeAnalyticsConfig(
+            eventID: widget.eventID,
+            value: newStartTime,
+            previousValue: previousStartTime ?? newStartTime,
+          ),
+        );
       } catch (e) {
         _logger.error('Zaman güncelleme hatası: $e');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Buluşma zamanını güncellerken bir sorun oluştu. Lütfen tekrar deneyin.',
+            ),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 3),
+          ),
+        );
       }
+    }
+  }
+
+  void _onToggleEventLock(bool value) async {
+    setState(() => isLocked = value);
+
+    try {
+      await eventRepository.updateEvent(
+        widget.eventID,
+        {
+          'isLocked': value,
+        },
+      );
+
+      if (value) {
+        _logger.info('Buluşma kilitlendi: ${widget.eventID}');
+      } else {
+        _logger.info('Buluşma kilidi açıldı: ${widget.eventID}');
+      }
+
+      getIt<AnalyticsService>().logUpdateEventLockedStatus(
+        UpdateEventLockedStatusAnalyticsConfig(
+          eventID: widget.eventID,
+          value: value,
+        ),
+      );
+    } catch (e) {
+      _logger.error('Buluşma kilit durumunu güncellerken hata oluştu: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Buluşma kilit durumunu güncellerken bir sorun oluştu. Lütfen tekrar deneyin.',
+          ),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      setState(() => isLocked = !value);
     }
   }
 
@@ -189,17 +282,36 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
 
   void _performLeaveLogic() {
     final currentUser = sessionService.currentUser;
-    if (currentUser != null) {
-      final compactUser = CompactUserEntity(
-        userID: currentUser.userID,
-        username: currentUser.username,
-        profileImageUrl: currentUser.profileImageUrl,
-        university: currentUser.university,
-        nameSurname: null,
-        isPrivate: null,
-        bio: null,
+
+    try {
+      if (currentUser != null) {
+        final compactUser = CompactUserEntity(
+          userID: currentUser.userID,
+          username: currentUser.username,
+          profileImageUrl: currentUser.profileImageUrl,
+          university: currentUser.university,
+          nameSurname: null,
+          isPrivate: null,
+          bio: null,
+        );
+        eventRepository.removeParticipant(widget.eventID, compactUser);
+
+        getIt<AnalyticsService>().logLeaveEvent(
+          LeaveEventAnalyticsConfig(eventID: widget.eventID),
+        );
+      }
+    } catch (e) {
+      _logger.error('Buluşmadan ayrılırken hata oluştu: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Buluşmadan ayrılırken bir sorun oluştu. Lütfen tekrar deneyin.',
+          ),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating, // Daha modern bir görünüm için
+          duration: Duration(seconds: 3),
+        ),
       );
-      eventRepository.removeParticipant(widget.eventID, compactUser);
     }
     context
       ..pop()
@@ -209,18 +321,353 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
   void _onCancelEventTap() {
     showDialog<void>(
       context: context,
-      builder: (context) => Popup(
+      builder: (dialogContext) => Popup(
         title:
             '"${widget.chatTitle}" buluşmasını iptal etmek istediğinize emin misiniz?',
         description:
             'Buluşmayı iptal etmeniz durumunda katılımcılara bildirim gönderilecektir.',
-        confirmButtonText: 'iptal et',
+        confirmButtonText: 'İptal Et',
         confirmButtonColor: const Color(0xFF1F415B),
         onConfirm: () async {
-          if (mounted) context.pop();
+          if (mounted) Navigator.of(dialogContext).pop();
 
-          await eventRepository.deleteEvent(widget.eventID);
+          try {
+            await eventRepository.deleteEvent(widget.eventID);
+
+            getIt<AnalyticsService>().logCancelEvent(
+              CancelEventAnalyticsConfig(eventID: widget.eventID),
+            );
+
+            if (mounted) {
+              context.pop();
+            }
+          } catch (e) {
+            _logger.error('Buluşmayı iptal ederken hata oluştu: $e');
+
+            // Hata durumunda context hala geçerli mi kontrol et
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Buluşmayı iptal ederken bir sorun oluştu. Lütfen tekrar deneyin.',
+                  ),
+                  backgroundColor: Colors.redAccent,
+                  behavior: SnackBarBehavior.floating,
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            }
+          }
         },
+      ),
+    );
+  }
+
+  Future<void> _onEditTitleTap() async {
+    final TextEditingController titleController = TextEditingController(
+      text: _currentChatTitle,
+    );
+
+    final newTitle = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+          title: Text(
+            'Buluşma Adını Düzenle',
+            style: TextStyle(
+              fontFamily: 'SF Pro Display',
+              fontWeight: FontWeight.w700,
+              fontSize: 18.sp,
+            ),
+          ),
+          content: TextField(
+            controller: titleController,
+            autofocus: true,
+            decoration: InputDecoration(
+              hintText: 'Yeni etkinlik adı',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.r),
+                borderSide: const BorderSide(
+                  color: AppColors.primaryColor,
+                  width: 2,
+                ),
+              ),
+            ),
+            maxLength: 50,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'İptal',
+                style: TextStyle(
+                  color: Colors.black54,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, titleController.text.trim());
+              },
+              child: const Text(
+                'Kaydet',
+                style: TextStyle(
+                  color: AppColors.primaryColor,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (newTitle != null &&
+        newTitle.isNotEmpty &&
+        newTitle != _currentChatTitle) {
+      final oldTitle = _currentChatTitle;
+
+      setState(() {
+        _currentChatTitle = newTitle;
+      });
+
+      try {
+        await eventRepository.updateEvent(
+          widget.eventID,
+          {
+            'name': newTitle,
+          },
+        );
+        _logger.debug('Buluşma adı güncellendi: $newTitle');
+
+        getIt<AnalyticsService>().logUpdateEventName(
+          UpdateEventNameAnalyticsConfig(
+            eventID: widget.eventID,
+            value: newTitle,
+            previousValue: oldTitle,
+          ),
+        );
+      } catch (e) {
+        _logger.error('Buluşma adı güncelleme hatası: $e');
+
+        setState(() {
+          _currentChatTitle = oldTitle; // Hata durumunda eski isme geri dön
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Buluşma adını güncellerken bir sorun oluştu. Lütfen tekrar deneyin.',
+              ),
+              backgroundColor: Colors.redAccent,
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _updateVisibility(VisibilityEnum newValue) async {
+    final oldValue = _currentVisibility;
+    setState(() {
+      _currentVisibility = newValue;
+    });
+
+    try {
+      await eventRepository.updateEvent(
+        widget.eventID,
+        {
+          'visibility': newValue.value,
+        },
+      );
+      _logger.info('Görünürlük güncellendi: ${newValue.value}');
+
+      getIt<AnalyticsService>().logUpdateEventVisibility(
+        UpdateEventVisibilityAnalyticsConfig(
+          eventID: widget.eventID,
+          value: newValue,
+          previousValue: oldValue,
+        ),
+      );
+    } catch (e) {
+      _logger.error('Görünürlük güncelleme hatası: $e');
+      setState(() {
+        _currentVisibility = oldValue; // Hata durumunda UI'ı geri al
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Görünürlük ayarını güncellerken bir sorun oluştu. Lütfen tekrar deneyin.',
+            ),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  void _showVisibilityBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 16.w),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40.w,
+                    height: 4.h,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2.r),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                Text(
+                  'Görünürlük Seçenekleri',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Display',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18.sp,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  'Buluşmanın kimlerin karşısına çıkacağını belirle.',
+                  style: _subLabelStyle,
+                ),
+                SizedBox(height: 24.h),
+
+                // Artık enum veriyoruz
+                _buildVisibilityOption(
+                  title: 'Herkese Açık',
+                  subtitle: 'Uygulamadaki herkes buluşmayı görebilir.',
+                  value: VisibilityEnum.everyone,
+                  icon: Icons.public,
+                ),
+                SizedBox(height: 12.h),
+                _buildVisibilityOption(
+                  title: 'Sadece Kendi Üniversitem',
+                  subtitle:
+                      'Sadece seninle aynı üniversitede olanlar görebilir.',
+                  value: VisibilityEnum.university,
+                  icon: Icons.school_outlined,
+                ),
+                SizedBox(height: 12.h),
+                _buildVisibilityOption(
+                  title: 'Sadece Takipçiler / Arkadaşlar',
+                  subtitle:
+                      'Sadece seni takip eden veya arkadaş olduğun kişiler görebilir.',
+                  value: VisibilityEnum.onlyFriends,
+                  icon: Icons.people_outline,
+                ),
+                SizedBox(height: 10.h),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Parametre tipini String'den VisibilityEnum'a çektik
+  Widget _buildVisibilityOption({
+    required String title,
+    required String subtitle,
+    required VisibilityEnum value,
+    required IconData icon,
+  }) {
+    final isSelected =
+        _currentVisibility == value; // Direkt enum karşılaştırması
+
+    return InkWell(
+      onTap: () {
+        Navigator.pop(context);
+        if (_currentVisibility != value) {
+          _updateVisibility(value);
+        }
+      },
+      borderRadius: BorderRadius.circular(12.r),
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primaryColor.withOpacity(0.08)
+              : Colors.transparent,
+          border: Border.all(
+            color: isSelected ? AppColors.primaryColor : Colors.grey.shade200,
+            width: 1,
+          ),
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(10.w),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.primaryColor
+                    : Colors.grey.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: isSelected ? Colors.white : Colors.black54,
+                size: 22.sp,
+              ),
+            ),
+            SizedBox(width: 16.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: _labelStyle.copyWith(
+                      color: isSelected
+                          ? AppColors.primaryColor
+                          : Colors.black87,
+                    ),
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    subtitle,
+                    style: _subLabelStyle,
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              Icon(
+                Icons.check_circle,
+                color: AppColors.primaryColor,
+                size: 24.sp,
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -349,7 +796,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                         SizedBox(width: 12.w),
                         Expanded(
                           child: Text(
-                            widget.chatTitle,
+                            _currentChatTitle, // widget.chatTitle yerine state değişkenimizi kullanıyoruz
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -364,9 +811,8 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                           Padding(
                             padding: EdgeInsets.only(left: 8.w),
                             child: InkWell(
-                              onTap: () {
-                                // edit action
-                              },
+                              onTap:
+                                  _onEditTitleTap, // Fonksiyonumuzu buraya bağlıyoruz
                               borderRadius: BorderRadius.circular(8.r),
                               child: Container(
                                 padding: EdgeInsets.all(6.w),
@@ -410,14 +856,14 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                         'Buluşmayı Kilitle',
                         'Buluşman artık kullanıcıların karşısına çıkmaz.',
                         isLocked,
-                        (val) {
-                          setState(() => isLocked = val);
-                        },
+                        _onToggleEventLock,
                       ),
                       _thinDivider(),
                       _buildExpandableRow(
                         'Görünürlük Seçenekleri',
                         'Buluşmanın hangi kullanıcıların karşısına çıkacağını düzenlersin.',
+                        onTap:
+                            _showVisibilityBottomSheet, // Fonksiyonu buraya bağlıyoruz
                       ),
                       _thinDivider(),
                     ] else
@@ -548,11 +994,13 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     );
   }
 
-  Widget _buildExpandableRow(String title, String subtitle) {
+  Widget _buildExpandableRow(
+    String title,
+    String subtitle, {
+    VoidCallback? onTap, // Dinamik onTap eklendi
+  }) {
     return InkWell(
-      onTap: () {
-        // expand / navigate
-      },
+      onTap: onTap,
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: 12.h),
         child: Row(
@@ -567,7 +1015,11 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                 ],
               ),
             ),
-            Icon(Icons.keyboard_arrow_down, color: Colors.black54, size: 22.sp),
+            Icon(
+              Icons.keyboard_arrow_right,
+              color: Colors.black54,
+              size: 22.sp,
+            ), // Aşağı bakan oku sağa bakan ok ile değiştirdim, Bottom Sheet açılacağı için daha doğru bir yönlendirme oluyor
           ],
         ),
       ),

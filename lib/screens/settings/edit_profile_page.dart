@@ -7,6 +7,9 @@ import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/gender_enum.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
+import 'package:outnest/domain/services/analytics/analytics_service.dart';
+import 'package:outnest/domain/services/analytics/event_configs/click_hide_saved_events_analytics_config.dart';
+import 'package:outnest/domain/services/analytics/event_configs/select_gender_analytics_config.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/usecases/upload_profile_picture_usecase.dart';
 import 'package:outnest/screens/settings/profile_input_row.dart';
@@ -624,45 +627,78 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _saveProfileChanges() async {
-    debugPrint('Profil değişiklikleri kaydediliyor...');
-    final updatedData = <String, dynamic>{};
+    try {
+      debugPrint('Profil değişiklikleri kaydediliyor...');
+      final updatedData = <String, dynamic>{};
 
-    if (_profileImageChanged) {
-      try {
-        final newURL = await getIt<UploadProfilePicture>().call(
-          userID: getIt<SessionService>().currentUser!.userID,
-          filePath: _profileImageUrl,
-        );
-        updatedData['profileImageUrl'] = newURL;
-      } catch (e) {
-        debugPrint('Profil resmi yüklenirken hata oluştu: $e');
-        updatedData['profileImageUrl'] = '';
+      if (_profileImageChanged) {
+        try {
+          final newURL = await getIt<UploadProfilePicture>().call(
+            userID: getIt<SessionService>().currentUser!.userID,
+            filePath: _profileImageUrl,
+          );
+          updatedData['profileImageUrl'] = newURL;
+        } catch (e) {
+          debugPrint('Profil resmi yüklenirken hata oluştu: $e');
+          updatedData['profileImageUrl'] = '';
+        }
       }
-    }
-    if (_nameController.text != _previousName) {
-      updatedData['nameSurname'] = _nameController.text.toLowerCase();
-    }
-    if (_bioController.text != _previousBio) {
-      updatedData['bio'] = _bioController.text;
-    }
-    if (_genderController.text != _previousGender) {
-      getIt<LoggingService>().info('Yeni cinsiyet seçildi: $_selectedGender');
-      updatedData['gender'] = _selectedGender.toString().toLowerCase();
-    }
-    if (_dobController.text != _previousDob) {
-      updatedData['birthDate'] = _selectedDob;
-    }
-    if (_hideSavedEvents != _previousHideSavedEvents) {
-      updatedData['hideSavedEvents'] = _hideSavedEvents;
-    }
 
-    if (updatedData.isNotEmpty) {
-      await getIt<UserRepository>().updateUser(
-        getIt<SessionService>().currentUser!.userID,
-        updatedData,
+      final analytics = getIt<AnalyticsService>();
+      if (_nameController.text != _previousName) {
+        updatedData['nameSurname'] = _nameController.text.toLowerCase();
+      }
+      if (_bioController.text != _previousBio) {
+        updatedData['bio'] = _bioController.text;
+      }
+      if (_genderController.text != _previousGender) {
+        getIt<LoggingService>().info('Yeni cinsiyet seçildi: $_selectedGender');
+
+        final previousGenderEnum = GenderEnum.values.firstWhere(
+          (g) => g.toString() == _previousGender,
+          orElse: () => GenderEnum.preferNotToSay,
+        );
+        analytics.logSelectGender(
+          SelectGenderAnalyticsConfig(
+            value: _selectedGender,
+            previousValue: previousGenderEnum,
+          ),
+        );
+
+        updatedData['gender'] = _selectedGender.toString().toLowerCase();
+      }
+      if (_dobController.text != _previousDob) {
+        updatedData['birthDate'] = _selectedDob;
+      }
+      if (_hideSavedEvents != _previousHideSavedEvents) {
+        updatedData['hideSavedEvents'] = _hideSavedEvents;
+      }
+
+      if (updatedData.isNotEmpty) {
+        await getIt<UserRepository>().updateUser(
+          getIt<SessionService>().currentUser!.userID,
+          updatedData,
+        );
+      }
+
+      debugPrint('Profil değişiklikleri kaydedildi.');
+
+      if (updatedData.containsKey('hideSavedEvents')) {
+        getIt<AnalyticsService>().logClickHideSavedEvents(
+          ClickHideSavedEventsAnalyticsConfig(value: _hideSavedEvents),
+        );
+      }
+    } catch (e) {
+      debugPrint('Profil değişiklikleri kaydedilirken hata oluştu: $e');
+      // Hata durumunda kullanıcıya bildirim göstermek isteyebilirsiniz
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Profil değişiklikleri kaydedilirken hata oluştu. Lütfen tekrar deneyin.',
+          ),
+          backgroundColor: Colors.redAccent,
+        ),
       );
     }
-
-    debugPrint('Profil değişiklikleri kaydedildi.');
   }
 }

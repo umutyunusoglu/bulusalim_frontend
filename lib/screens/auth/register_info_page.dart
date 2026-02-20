@@ -24,6 +24,9 @@ import 'package:outnest/core/utils/types/enums/gender_enum.dart';
 import 'package:outnest/domain/datasources/university_datasource.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
+import 'package:outnest/domain/services/analytics/analytics_service.dart';
+import 'package:outnest/domain/services/analytics/event_configs/select_gender_analytics_config.dart';
+import 'package:outnest/domain/services/analytics/event_configs/select_hobbies_analytics_config.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/usecases/upload_profile_picture_usecase.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -127,6 +130,58 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
   }
 
   void _nextPage() {
+    final currentStep = RegisterStep.values[_currentIndex];
+    final analytics = getIt<AnalyticsService>();
+
+    switch (currentStep) {
+      case RegisterStep.username:
+        // Burada username kontrolü yapılacak
+        break;
+      case RegisterStep.name:
+        // Ad soyad validasyonu yapılacak
+        break;
+      case RegisterStep.dob:
+        // Doğum tarihi validasyonu yapılacak
+        break;
+      case RegisterStep.universityEmail:
+        // Üniversite maili validasyonu yapılacak
+        break;
+      case RegisterStep.universityOtp:
+        // OTP validasyonu yapılacak
+        break;
+      case RegisterStep.gender:
+        final chosenGenderText = _genderDisplayController.text.trim();
+        GenderEnum? chosenGender;
+        if (chosenGenderText.isEmpty) {
+          // Hata mesajı göster
+          chosenGender = null;
+        } else {
+          chosenGender = GenderEnum.fromString(chosenGenderText);
+        }
+
+        analytics.logSelectGender(
+          SelectGenderAnalyticsConfig(value: chosenGender, previousValue: null),
+        );
+        break;
+      case RegisterStep.profilePhoto:
+        // Fotoğraf seçimi validasyonu yapılacak
+        break;
+      case RegisterStep.interests:
+        final selectedCategories = _selectedInterests;
+
+        analytics.logSelectHobbies(
+          SelectHobbiesAnalyticsConfig(
+            value: _selectedInterests,
+            previousValue: [],
+          ),
+        );
+
+        break;
+      case RegisterStep.permissions:
+        // İzinler ile ilgili bilgilendirme yapılacak
+        break;
+    }
+
     _pageController.nextPage(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,

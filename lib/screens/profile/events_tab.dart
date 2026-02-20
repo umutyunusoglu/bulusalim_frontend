@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/event_card.dart';
+import 'package:outnest/core/utils/types/enums/screen_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/services/session_service.dart';
 
@@ -55,6 +56,7 @@ class ProfileEventsTab extends StatelessWidget {
               (event) => EventCard(
                 event: event,
                 participants: event.participants,
+                screen: ScreenEnum.profile,
               ),
             ),
 
@@ -88,6 +90,7 @@ class ProfileEventsTab extends StatelessWidget {
               (event) => EventCard(
                 event: event,
                 participants: event.participants,
+                screen: ScreenEnum.profile,
               ),
             ),
 

@@ -17,7 +17,7 @@ class EventNameStep extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback onClose;
   final String category;
-  final Function(String eventName) onNext;
+  final Function(String eventName, bool isSuggestionUsed) onNext;
 
   @override
   State<EventNameStep> createState() => _EventNameStepState();
@@ -28,6 +28,7 @@ class _EventNameStepState extends State<EventNameStep> {
 
   // Örnek öneriler (Dinamik halde kullanılabilir)
   List<String> _suggestions = [];
+  bool _isNameSuggestionUsed = false;
 
   @override
   void initState() {
@@ -135,6 +136,9 @@ class _EventNameStepState extends State<EventNameStep> {
           child: TextField(
             controller: _controller,
             textAlign: TextAlign.center,
+            onChanged: (value) => setState(() {
+              _isNameSuggestionUsed = false;
+            }),
             style: TextStyle(
               fontSize: 14.sp,
               color: Colors.black87,
@@ -185,6 +189,9 @@ class _EventNameStepState extends State<EventNameStep> {
                   _controller.selection = TextSelection.fromPosition(
                     TextPosition(offset: _controller.text.length),
                   );
+                  setState(() {
+                    _isNameSuggestionUsed = true;
+                  });
                 },
                 child: Padding(
                   padding: EdgeInsets.symmetric(vertical: 8.h),
@@ -216,7 +223,7 @@ class _EventNameStepState extends State<EventNameStep> {
         PopupNextButton(
           onPressed: () {
             // Boş kontrolü yapılabilir
-            widget.onNext(_controller.text);
+            widget.onNext(_controller.text, _isNameSuggestionUsed);
           },
         ),
       ],

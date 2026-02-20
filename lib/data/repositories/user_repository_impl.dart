@@ -21,6 +21,8 @@ import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:outnest/domain/services/analytics/analytics_service.dart';
+import 'package:outnest/domain/services/analytics/event_configs/university_verification_analytics_config.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 
@@ -1156,7 +1158,21 @@ class UserRepositoryImpl implements UserRepository {
       'otp': code,
     });
 
-    return response.data['success'] as bool;
+    final success = response.data['success'] as bool;
+
+    final AnalyticsService analytics = getIt<AnalyticsService>();
+    final config = UniversityVerificationAnalyticsConfig(
+      universityName: universityName,
+      success: success,
+    );
+    if (success) {
+      _logger.info('Email verification successful for email: $email');
+    } else {
+      _logger.warn('Email verification failed for email: $email');
+    }
+    analytics.logUniversityVerified(config);
+
+    return success;
   }
 
   @override
