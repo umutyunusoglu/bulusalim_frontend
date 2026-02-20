@@ -850,4 +850,25 @@ class EventRepositoryImpl implements EventRepository {
           throw e as Exception;
         });
   }
+
+  @override
+  Future<bool> hasSentInvitation(EventEntity event, Identifier user) async {
+    try {
+      // 1. Yol: 'users' -> {Kullanıcı ID} -> 'notifications'
+      // user parametresinin kullanıcının gerçek ID'sini içerdiğinden emin olun.
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(user) // Etkinlik ID değil, hedef kullanıcı ID olmalı
+          .collection('notifications')
+          .where('type', isEqualTo: 'invite')
+          .where('eventID', isEqualTo: event.eventID)
+          .limit(1) // Performans için: İlk eşleşmede dur
+          .get();
+
+      return snapshot.docs.isNotEmpty;
+    } catch (e) {
+      _logger.error('Davet kontrolü başarısız: $e');
+      return false;
+    }
+  }
 }
