@@ -1394,7 +1394,7 @@ class _MapPageState extends State<MapPage> {
         visibility: _tempVisibility ?? VisibilityEnum.everyone,
         showOnMap: _tempShowOnMap ?? true,
       );
-      await eventRepository.createEvent(event);
+      eventRepository.createEvent(event);
 
       final analytics = getIt<AnalyticsService>()
         ..logCreateEvent(
@@ -1408,10 +1408,15 @@ class _MapPageState extends State<MapPage> {
           ),
         );
 
-      () => _closeWizard(CreateEventStepEnum.summary, completed: true);
+      _closeWizard(CreateEventStepEnum.summary, completed: true);
     } catch (e) {
       _logger.error('Etkinlik oluşturulurken hata: $e');
-      // Hata durumunda kullanıcıya bildirim göstermek isteyebilirsiniz
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Etkinlik oluşturulurken bir hata oluştu.'),
+        ),
+      );
     }
   }
 }
