@@ -86,7 +86,7 @@ Future<void> main() async {
       AppConfig.host,
       9199,
       automaticHostMapping: false,
-    );
+    );.
     FirebaseFunctions.instance.useFunctionsEmulator(AppConfig.host, 5001);
     FirebaseFirestore.instance.useFirestoreEmulator(AppConfig.host, 8080);
 

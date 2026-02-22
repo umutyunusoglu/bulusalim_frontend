@@ -54,7 +54,6 @@ class MapRepositoryImpl implements MapRepository {
   // Daha önce başarıyla çekilmiş region'lar
   final Set<String> _fetchedRegions = {};
 
-  // FIX: Concurrency Bug - Aynı anda aynı bölgeye istek atılmasını önleyen kilit
   final Set<String> _fetchLock = {};
 
   final InMemoryCache<EventEntity> _eventCache = InMemoryCache<EventEntity>(
@@ -357,7 +356,11 @@ class MapRepositoryImpl implements MapRepository {
   }
 
   @override
-  Future<List<Place>> searchPlaces(String query, String sessionToken) async {
+  Future<List<Place>> searchPlaces(
+    String query,
+    String sessionToken,
+    Geolocation? proximity,
+  ) async {
     final accessToken = AppConfig.mapBoxAccessTokenKey;
     // Access token veya query boş ise direkt boş dön
     if (accessToken.isEmpty || query.isEmpty) return [];
@@ -373,8 +376,9 @@ class MapRepositoryImpl implements MapRepository {
           'language': 'tr',
           'limit': '5',
           'country': 'tr',
-          'types':
-              'country,region,postcode,district,place,city,locality,neighborhood,street,address,poi',
+          'types': 'poi,category,place',
+          if (proximity != null)
+            'proximity': '${proximity.longitude},${proximity.latitude}',
         },
       );
 
@@ -386,29 +390,77 @@ class MapRepositoryImpl implements MapRepository {
 
         if (suggestions == null) return [];
 
-        final places = suggestions.map((suggestion) {
+        final places = suggestions.map((suggestion) async {
           // suggestion dynamic olabilir, Map'e cast ediyoruz
           final map = suggestion as Map<String, dynamic>;
           _logger.info('Processing suggestion: $map');
 
           final id = map['mapbox_id'] as String? ?? '';
 
-          // 3. DÜZELTME: Try-catch yerine Null check (??) kullanımı
+          // TODO: UI'da name ve full adress ayrı gösterilebilir.
           final placeName = map['name'] as String? ?? '';
           final adress = map['full_address'] as String? ?? '';
 
-          var fullAdress = '$placeName, $adress';
-          if (fullAdress.startsWith(', ')) {
+          String fullAdress;
+          if (placeName.isEmpty) {
             fullAdress = adress;
-          } else if (fullAdress.endsWith(', ')) {
+          } else if (adress.isEmpty) {
             fullAdress = placeName;
+          } else {
+            fullAdress = '$placeName, $adress';
           }
 
           //TODO: Burada context içinden şehir ve ilçe bilgilerini almak daha doğru olabilir
-          final city = map['region'] as String? ?? '';
-          final district = map['place'] as String? ?? '';
+          final context = map['context'] as Map<String, dynamic>? ?? {};
+          String city, district;
+          if (context.isEmpty) {
+            _logger.warn('Suggestion context is empty for place: $placeName');
+            city = map['region'] as String? ?? '';
+            district = map['place'] as String? ?? '';
+          } else {
+            city = context['region']?['name'] as String? ?? '';
+            district = context['place']?['name'] as String? ?? '';
+          }
+
+          if (city.isEmpty) {
+            final cityResponse = await dio.get(
+              'https://api.mapbox.com/search/searchbox/v1/suggest',
+              queryParameters: {
+                'q': district,
+                'access_token': accessToken,
+                'session_token': sessionToken,
+                'language': 'tr',
+                'limit': '5',
+                'country': 'tr',
+                'types': 'place',
+                if (proximity != null)
+                  'proximity': '${proximity.longitude},${proximity.latitude}',
+              },
+            );
+
+            final cityData = cityResponse.data as Map<String, dynamic>;
+            final citySuggestions = cityData['suggestions'] as List?;
+            if (citySuggestions != null && citySuggestions.isNotEmpty) {
+              // İlk öneriyi al
+              final firstSuggestion =
+                  citySuggestions[0] as Map<String, dynamic>;
+
+              // Önerinin içindeki context'e git
+              final contextObj =
+                  firstSuggestion['context'] as Map<String, dynamic>? ?? {};
+
+              // Şehri (region) oradan çek
+              city = contextObj['region']?['name'] as String? ?? '';
+
+              // EĞER context boşsa, bazen suggestion'ın kendisi de bir 'region' tipinde olabilir
+              if (city.isEmpty) {
+                city = firstSuggestion['name'] as String? ?? '';
+              }
+            }
+          }
 
           var displayAdress = city.isNotEmpty ? '$district, $city' : district;
+
           if (displayAdress.isEmpty) {
             displayAdress = placeName;
           }
@@ -422,7 +474,7 @@ class MapRepositoryImpl implements MapRepository {
         }).toList();
 
         // 4. DÜZELTME: Listeyi return ediyoruz
-        return places;
+        return Future.wait(places);
       } else {
         _logger.warn(
           'Mapbox API Error: ${response.statusCode} - ${response.data}',
@@ -462,32 +514,18 @@ class MapRepositoryImpl implements MapRepository {
         final data = response.data as Map<String, dynamic>;
 
         final features = data['features'] as List<dynamic>?;
-
+        final properties = features?[0]['properties'] as Map<String, dynamic>?;
         // Features listesi boşsa null dön
-        if (features == null || features.isEmpty) return null;
+        if (properties == null || properties.isEmpty) return null;
 
-        final firstFeature = features[0] as Map<String, dynamic>;
-        final properties =
-            firstFeature['properties'] as Map<String, dynamic>? ?? {};
-        final context = properties['context'] as Map<String, dynamic>? ?? {};
+        final city = properties['context']?['region']?['name'] as String? ?? '';
+
+        final district =
+            properties['context']?['place']?['name'] as String? ?? '';
+
+        final displayAddress = city.isNotEmpty ? '$district, $city' : district;
 
         final fullAddress = properties['full_address'] as String? ?? '';
-
-        // DÜZELTME 1: district null ise hata vermemesi için ? eklendi
-        final district = context['place']?['name'] as String? ?? '';
-
-        _logger.info('Place context: $context');
-
-        // DÜZELTME 2: place null ise hata vermemesi için ? eklendi
-        final city =
-            context['region']?['name'] as String? ??
-            context['place']?['name'] as String? ?? // Buradaki ? çok önemli
-            '';
-
-        // Görünecek adres formatı
-        final displayAddress = (district.isNotEmpty && city.isNotEmpty)
-            ? '$district, $city'
-            : (district.isNotEmpty ? district : city);
 
         _logger.info('Geocoded place: $displayAddress, $fullAddress');
         return Place(

@@ -49,7 +49,11 @@ List<AvatarInfo> _mapToAvatarInfo(List<dynamic> rawList) {
 final router = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/welcome',
-
+  errorBuilder: (context, state) {
+    debugPrint('GoRouter Hatası: ${state.error}');
+    // Kullanıcıyı güvenli bir limana (Home) yönlendir
+    return const HomePage();
+  },
   redirect: (context, state) async {
     final goingTo = state.uri.toString();
     final isAuthRoute = [

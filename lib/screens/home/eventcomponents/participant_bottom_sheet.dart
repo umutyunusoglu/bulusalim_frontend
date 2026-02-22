@@ -20,12 +20,31 @@ class ParticipantsBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Creator hariç diğer katılımcılar
-    final otherParticipants = participants
-        .where((p) => p.userID != creator.userID)
-        .toList();
+    final displayParticipants = <CompactUserEntity>[];
 
-    final totalCount = 1 + otherParticipants.length;
+    if (participants.isNotEmpty) {
+      // 1. Önce creator'ı canlı katılımcı listesi (participants) içinden bul ve ekle
+      final creatorParticipant = participants
+          .where((u) => u.userID == creator.userID)
+          .firstOrNull;
 
+      if (creatorParticipant != null) {
+        displayParticipants.add(creatorParticipant);
+      } else {
+        // Güvenlik: Canlı listede henüz yoksa dışarıdan gelen parametreyi ekle
+        displayParticipants.add(creator);
+      }
+
+      // 2. Creator dışındakileri listeye ekle
+      displayParticipants.addAll(
+        participants.where((u) => u.userID != creator.userID),
+      );
+    } else {
+      // Hiç katılımcı yoksa bile creator görünmeli
+      displayParticipants.add(creator);
+    }
+
+    final totalCount = displayParticipants.length;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -71,13 +90,14 @@ class ParticipantsBottomSheet extends StatelessWidget {
               padding: EdgeInsets.only(bottom: 36.h),
               itemCount: totalCount,
               itemBuilder: (context, index) {
+                final user = displayParticipants[index];
+
+                // Kurduğumuz mantığa göre 0. indeks HER ZAMAN creator'dır.
                 final isCreatorItem = index == 0;
 
-                final user = isCreatorItem
-                    ? creator
-                    : otherParticipants[index - 1];
-
                 return _ParticipantTile(
+                  // Flutter'ın fotoğrafları karıştırmaması için ValueKey ŞART
+                  key: ValueKey('${user.userID}_$index'),
                   user: user,
                   isCreator: isCreatorItem,
                 );
@@ -94,6 +114,7 @@ class _ParticipantTile extends StatelessWidget {
   const _ParticipantTile({
     required this.user,
     required this.isCreator,
+    super.key,
   });
 
   final CompactUserEntity user;
@@ -122,6 +143,7 @@ class _ParticipantTile extends StatelessWidget {
           children: [
             // Avatar
             CircleAvatar(
+              key: ValueKey('${user.userID}_$safeImageUrl'),
               radius: 24.r,
               backgroundColor: Colors.grey.shade200,
               // Koşullu gösterim: URL varsa CachedNetworkImageProvider, yoksa AssetImage
