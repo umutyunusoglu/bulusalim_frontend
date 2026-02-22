@@ -98,7 +98,11 @@ class PostRepositoryImpl implements PostRepository {
   Future<void> pinPost(Identifier postId, Identifier userId) async {
     final postRef = _firestore.collection('posts').doc(postId);
     try {
-      await postRef.update({'isPinned': true});
+      await postRef.update({
+        'isPinned': true,
+        'expiresAt': FieldValue.delete(),
+        'pinnedAt': FieldValue.serverTimestamp(),
+      });
     } catch (e) {
       _logger.error('Failed to pin post: $e');
       rethrow;
@@ -133,7 +137,10 @@ class PostRepositoryImpl implements PostRepository {
     final postRef = _firestore.collection('posts').doc(postId);
 
     try {
-      await postRef.update({'isPinned': false});
+      await postRef.update({
+        'isPinned': false,
+        'expiresAt': userPostEntity.createdAt.add(const Duration(days: 1)),
+      });
     } catch (e) {
       _logger.error('Failed to unpin post: $e');
       rethrow;

@@ -539,7 +539,12 @@ class _MapPageState extends State<MapPage> {
         pitchEnabled: false,
       ),
     );
-
+    await mapboxMap.location.updateSettings(
+      LocationComponentSettings(
+        enabled: true,
+        puckBearingEnabled: true, // İkonun cihazın yönüne göre dönmesini sağlar
+      ),
+    );
     try {
       await mapboxMap.style.setStyleLayerProperty(
         'poi-label',
@@ -1036,7 +1041,7 @@ class _MapPageState extends State<MapPage> {
                       // A. Bilinen son konumu anında göster (Gecikme 0ms)
                       final lastKnown = await Geolocator.getLastKnownPosition();
                       if (lastKnown != null) {
-                        mapboxMap.flyTo(
+                        await mapboxMap.flyTo(
                           CameraOptions(
                             center: Point(
                               coordinates: Position(
@@ -1044,7 +1049,7 @@ class _MapPageState extends State<MapPage> {
                                 lastKnown.latitude,
                               ),
                             ),
-                            zoom: 15.0,
+                            zoom: 17,
                           ),
                           MapAnimationOptions(duration: 1000),
                         );

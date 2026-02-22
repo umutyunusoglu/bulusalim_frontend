@@ -34,9 +34,7 @@ class _HomeContentPageState extends State<HomeContentPage> {
   @override
   void initState() {
     super.initState();
-    _feedRepository
-      ..switchFeedType(widget.feedType)
-      ..refresh();
+    _feedRepository.switchFeedType(widget.feedType);
 
     _initFeed();
 
@@ -110,31 +108,45 @@ class _HomeContentPageState extends State<HomeContentPage> {
         child: StreamBuilder<List<FeedEntity>>(
           stream: _feedRepository.feedStream,
           builder: (context, snapshot) {
-            if (_isInitialLoading) {
-              return _buildInitialLoading();
+            // 1. Manuel kontrol veya Stream'in ilk bekleme anı
+            if (_isInitialLoading ||
+                snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: CircularProgressIndicator(),
+                ),
+              );
             }
 
-            // 1. Yükleniyor veya Veri Yok Durumu
-            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            // 3. Veri Yok veya Boş Liste Durumu
+            final items = snapshot.data;
+            if (items == null || items.isEmpty) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
+              // Sadece gerçekten "bekleme" bitmiş ve hala veri yoksa empty state göster
               return _buildEmptyState();
             }
-
-            final items = snapshot.data!;
-
+            // 4. Veri Geldiğinde Liste Görünümü
             return ListView.builder(
               controller: _scrollController,
-              physics: const SlowFeedPhysics(),
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: SlowFeedPhysics(),
+              ), // RefreshIndicator için AlwaysScrollable önemli
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final item = items[index];
 
                 if (item is PostEntity) {
-                  return PostCard(post: item, user: item.creator);
+                  return PostCard(
+                    key: ValueKey('post_${item.postID}'),
+                    post: item,
+                    user: item.creator,
+                  );
                 } else if (item is EventEntity) {
                   return _LiveEventItem(
+                    key: ValueKey('event_${item.eventID}'),
                     initialEvent: item,
                     repository: _feedRepository,
                   );
@@ -175,6 +187,7 @@ class _LiveEventItem extends StatefulWidget {
   const _LiveEventItem({
     required this.initialEvent,
     required this.repository,
+    super.key,
   });
   final EventEntity initialEvent;
   final FeedRepository repository;

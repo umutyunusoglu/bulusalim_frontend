@@ -7,7 +7,11 @@ abstract class MapRepository {
     required int precision,
   });
 
-  Future<List<Place>> searchPlaces(String query, String sessionToken);
+  Future<List<Place>> searchPlaces(
+    String query,
+    String sessionToken,
+    Geolocation? proximity,
+  );
   Future<Geolocation?> getPlaceLocation(String placeId, String sessionToken);
   Future<Place?> geocodeLocation(Geolocation location);
 

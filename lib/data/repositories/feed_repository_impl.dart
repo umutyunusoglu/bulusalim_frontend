@@ -80,12 +80,16 @@ class FeedRepositoryImpl implements FeedRepository {
   @override
   Future<void> refresh() async {
     if (_isLoading) return;
-    _resetState();
-    await loadMore();
+
+    // Burada UI'ı temizlemiyoruz (clearUI: false),
+    // Sadece imleçleri (cursor) sıfırlıyoruz.
+    _resetState(clearUI: false);
+
+    await loadMore(isRefresh: true);
   }
 
   @override
-  Future<void> loadMore() async {
+  Future<void> loadMore({bool isRefresh = false}) async {
     if (_isLoading) return;
     _isLoading = true;
 
@@ -133,9 +137,14 @@ class FeedRepositoryImpl implements FeedRepository {
       );
 
       // 4. Listeye Ekle ve Cache'le
-      final currentList = _feedController.value;
-      _feedController.add([...currentList, ...newBatch]);
-
+      if (isRefresh) {
+        // Refresh ise eski listeyi at, sadece yeni gelenleri koy
+        _feedController.add(newBatch);
+      } else {
+        // Normal pagination ise üzerine ekle
+        final currentList = _feedController.value;
+        _feedController.add([...currentList, ...newBatch]);
+      }
       for (final item in newBatch) {
         _cache.cacheEntity(item);
       }
@@ -460,12 +469,17 @@ class FeedRepositoryImpl implements FeedRepository {
     );
   }
 
-  void _resetState() {
+  void _resetState({bool clearUI = false}) {
     _lastPostDoc = null;
     _lastEventDoc = null;
     _patternIndex = 0;
-    _feedController.add([]);
     _isLoading = false;
+
+    if (clearUI) {
+      _feedController.add(
+        [],
+      ); // Sadece ilk yüklemede veya hata durumunda bunu kullanacağız
+    }
   }
 
   // --- OTHER OVERRIDES ---
