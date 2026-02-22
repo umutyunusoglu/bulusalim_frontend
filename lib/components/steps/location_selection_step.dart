@@ -2,12 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/popup_next_button.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/domain/repositories/map_repository.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
 
 class LocationSelectionStep extends StatefulWidget {
@@ -119,7 +121,27 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
     _debounce = Timer(const Duration(milliseconds: 500), () async {
       setState(() => _isLoading = true);
       try {
-        final results = await _mapRepository.searchPlaces(query, _sessionToken);
+        //userın konumuna göre daha alakalı sonuçlar getirmek için proximity eklenebilir
+
+        var results = <Place>[];
+        if (await Permission.locationWhenInUse.isGranted) {
+          final position = await Geolocator.getCurrentPosition();
+          final userLocation = Geolocation(
+            latitude: position.latitude,
+            longitude: position.longitude,
+          );
+          results = await _mapRepository.searchPlaces(
+            query,
+            _sessionToken,
+            userLocation,
+          );
+        } else {
+          results = await _mapRepository.searchPlaces(
+            query,
+            _sessionToken,
+            null,
+          );
+        }
 
         if (mounted) {
           setState(() {
