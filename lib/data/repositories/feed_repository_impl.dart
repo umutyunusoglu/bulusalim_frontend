@@ -153,6 +153,10 @@ class FeedRepositoryImpl implements FeedRepository {
   Query _buildBaseQuery(CollectionReference collection, UserEntity user) {
     var query = collection.orderBy('createdAt', descending: true);
 
+    if (collection.id == 'events') {
+      query = query.where('status', whereIn: ['upcoming', 'ongoing']);
+    }
+
     if (_currentFeedType == FeedType.university) {
       // Buradaki null kontrolünü kaldırdık, çünkü yukarıda (fetch metodunda) engelleyeceğiz.
       // Artık buraya geldiğinde user.university'nin dolu olduğundan eminiz.
@@ -237,6 +241,10 @@ class FeedRepositoryImpl implements FeedRepository {
       var query = collection
           .where('creator.userID', whereIn: chunk)
           .orderBy('createdAt', descending: true);
+
+      if (collection.id == 'events') {
+        query = query.where('status', whereIn: ['upcoming', 'ongoing']);
+      }
 
       if (lastDate != null) {
         query = query.startAfter([Timestamp.fromDate(lastDate)]);

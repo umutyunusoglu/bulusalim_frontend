@@ -1100,7 +1100,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                   ),
                 ),
                 SizedBox(width: 6.w),
-                // DEĞİŞİKLİK: İzin verildiyse sağdaki oku gizle
+
                 if (!value)
                   Icon(
                     Icons.chevron_right,
