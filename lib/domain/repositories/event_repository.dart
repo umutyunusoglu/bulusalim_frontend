@@ -59,6 +59,11 @@ abstract class EventRepository {
     Identifier user,
   );
 
+  Future<bool> hasSentInvitation(
+    EventEntity event,
+    Identifier user,
+  );
+
   Future<List<EventEntity>> getAllEvents();
   Future<List<EventEntity>> searchEventsByTitle(String title);
 
