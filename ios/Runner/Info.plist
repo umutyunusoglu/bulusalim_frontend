@@ -52,6 +52,8 @@
 	<string>Profil fotoğrafınızı çekebilmek ve buluşmalerde fotoğraf paylaşabilmek için kameraya erişim izni gerekiyor.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Size en yakın buluşmaleri ve toplulukları gösterebilmek için konum izni gerekiyor.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Etkinlik konumlarını size gösterebilmek için konum iznine ihtiyacımız var.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Profil fotoğrafı seçebilmek ve galeriye fotoğraf kaydedebilmek için erişim izni gerekiyor.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
@@ -59,6 +61,7 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
+		<string>location</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
