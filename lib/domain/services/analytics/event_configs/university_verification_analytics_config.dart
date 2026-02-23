@@ -9,6 +9,7 @@ class UniversityVerificationAnalyticsConfig {
   final String universityName;
   final bool success;
 
+  //TODO: add screen
   Map<String, Object> toMap() {
     return {
       AnalyticsParams.universityName: universityName,
