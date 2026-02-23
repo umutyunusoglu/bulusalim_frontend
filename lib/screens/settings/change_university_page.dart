@@ -5,6 +5,7 @@ import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:pinput/pinput.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ChangeUniversityPage extends StatefulWidget {
   const ChangeUniversityPage({super.key});
@@ -192,6 +193,9 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
                   : _handleSendCode,
             ),
 
+            SizedBox(height: 8.h),
+            _buildReportButton(),
+
             SizedBox(height: 60.h),
             Text(
               'Doğrulama Kodu',
@@ -359,6 +363,28 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
                   color: Colors.white,
                 ),
               ),
+      ),
+    );
+  }
+
+  Widget _buildReportButton() {
+    return TextButton(
+      onPressed: () async {
+        final Uri url = Uri.parse('https://forms.gle/AJXYJXhBPQaeka6u9');
+
+        launchUrl(url, mode: LaunchMode.inAppWebView);
+      },
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.textGrey, // Temanızdaki gri renk
+        padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 16.w),
+      ),
+      child: Text(
+        'Üniversitenizi bulamıyor musunuz? Bize bildirin.',
+        style: TextStyle(
+          fontFamily: 'SF Pro Display',
+          fontSize: 12.sp,
+          decoration: TextDecoration.underline,
+        ),
       ),
     );
   }
