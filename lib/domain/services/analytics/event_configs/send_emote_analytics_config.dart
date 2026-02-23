@@ -19,6 +19,8 @@ class SendEmoteAnalyticsConfig {
     return {
       AnalyticsParams.value: value,
       AnalyticsParams.postID: postID,
+      AnalyticsParams.isFollower: isFollower,
+      AnalyticsParams.isFollowee: isFollowee,
     };
   }
 }

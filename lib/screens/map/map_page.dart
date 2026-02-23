@@ -147,19 +147,18 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> _initializeLocation() async {
-    // 1. İzin Kontrolü
-    var status = await Permission.locationWhenInUse.status;
-    if (status.isDenied) {
-      status = await Permission.locationWhenInUse.request();
+    LocationPermission permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
     }
 
-    if (status.isGranted) {
-      // 2. Konumu Al (geolocator paketini kullandığını varsayıyorum)
+    if (permission == LocationPermission.whileInUse ||
+        permission == LocationPermission.always) {
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      // 3. State'i güncelle
       if (mounted) {
         setState(() {
           _userLocation = Geolocation(

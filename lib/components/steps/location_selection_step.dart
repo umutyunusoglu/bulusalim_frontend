@@ -124,7 +124,9 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
         //userın konumuna göre daha alakalı sonuçlar getirmek için proximity eklenebilir
 
         var results = <Place>[];
-        if (await Permission.locationWhenInUse.isGranted) {
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.always ||
+            permission == LocationPermission.whileInUse) {
           final position = await Geolocator.getCurrentPosition();
           final userLocation = Geolocation(
             latitude: position.latitude,
