@@ -23,6 +23,7 @@ class RegisterStepView extends StatelessWidget {
     this.onTapInput,
     this.validator,
     this.onChanged,
+    this.footerWidget,
   });
 
   final String title;
@@ -40,6 +41,7 @@ class RegisterStepView extends StatelessWidget {
   final List<TextInputFormatter>? inputFormatters;
   final String? Function()? validator;
   final Function(String)? onChanged; // Bunu ekle
+  final Widget? footerWidget;
 
   void _handleNext(BuildContext context) {
     if (validator != null) {
@@ -183,7 +185,7 @@ class RegisterStepView extends StatelessWidget {
               ),
             ),
           ],
-
+          if (footerWidget != null) footerWidget!,
           SizedBox(height: 60.h),
         ],
       ),
