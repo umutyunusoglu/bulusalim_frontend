@@ -30,6 +30,7 @@ import 'package:outnest/domain/services/analytics/event_configs/select_hobbies_a
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/usecases/upload_profile_picture_usecase.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RegisterInfoPage extends StatefulWidget {
   const RegisterInfoPage({super.key});
@@ -641,6 +642,27 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
               onSkip: !_isSendingEmail
                   ? () => _pageController.jumpToPage(RegisterStep.gender.index)
                   : null,
+
+              footerWidget: TextButton(
+                onPressed: () async {
+                  final Uri url = Uri.parse(
+                    'https://forms.gle/KfpyB3Y2SeiX28R47',
+                  );
+                  launchUrl(url, mode: LaunchMode.inAppWebView);
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.grey.shade600, // Silik, tatlı bir gri
+                ),
+                child: Text(
+                  'Üniversitenizi bulamıyor musunuz? Bize bildirin.',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Display',
+                    fontSize: 12.sp,
+                    decoration:
+                        TextDecoration.underline, // Tıklanabilir hissi verir
+                  ),
+                ),
+              ),
             ),
 
             RegisterStepView(
