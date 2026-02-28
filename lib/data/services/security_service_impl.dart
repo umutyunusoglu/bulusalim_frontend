@@ -34,14 +34,14 @@ class SecurityServiceImpl implements SecurityService {
   // --- MEVCUT KODLARINIZ AYNI KALIYOR ---
   @override
   Future<void> blockUser(ReportData reportData) async {
-    // ... (Eski kodunuz aynı)
     final currentUserID = reportData.requestOwnerId;
     final reportedUserID = reportData.reportedUserId;
 
     if (currentUserID == null || reportedUserID == null) return;
 
     final userRepository = getIt<UserRepository>();
-    final blockedUser = await userRepository.getCurrentUser(reportedUserID);
+
+    final blockedUser = await userRepository.getUserPublicData(reportedUserID);
     if (blockedUser == null) return;
 
     await _firestore
@@ -60,7 +60,6 @@ class SecurityServiceImpl implements SecurityService {
 
   @override
   Future<void> sendReport(ReportData reportData) async {
-    // ... (Eski kodunuz aynı)
     try {
       await blockUser(reportData);
       final callable = _functions.httpsCallable('reportUser');
