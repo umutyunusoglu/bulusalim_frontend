@@ -28,6 +28,7 @@ import 'package:outnest/domain/services/analytics/analytics_service.dart';
 import 'package:outnest/domain/services/analytics/event_configs/select_gender_analytics_config.dart';
 import 'package:outnest/domain/services/analytics/event_configs/select_hobbies_analytics_config.dart';
 import 'package:outnest/domain/services/auth_service.dart';
+import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/usecases/upload_profile_picture_usecase.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -276,7 +277,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
       );
 
       if (!mounted) return; // Eklemen gereken satır
-      context.go('/home');
+      context.go('/splash', extra: UniqueKey());
     } catch (e, stackTrace) {
       // Konsola detaylı bas ki hatayı görebilelim
       debugPrint('HATA OLUŞTU: $e');

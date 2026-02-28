@@ -63,6 +63,13 @@ class SessionServiceImpl implements SessionService {
     );
   }
 
+  Future<void> refreshSession() async {
+    final userId = _authService.getCurrentUserID();
+    if (userId != null) {
+      await _onAuthStateChanged(userId);
+    }
+  }
+
   // --- LOGIC ---
   Future<void> _onAuthStateChanged(String? userId) async {
     // 1. Önceki tüm dinleyicileri kapat

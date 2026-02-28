@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/stacked_avatars.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
@@ -9,6 +10,7 @@ import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/push_notifications_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/init_screen.dart';
 import 'package:outnest/scaffold_with_navbar.dart';
 import 'package:outnest/screens/auth/login_page.dart';
 import 'package:outnest/screens/auth/otp_verification_page.dart';
@@ -30,7 +32,6 @@ import 'package:outnest/screens/settings/edit_profile_page.dart';
 import 'package:outnest/screens/settings/settings.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
-bool _isAppInitialized = false;
 
 List<AvatarInfo> _mapToAvatarInfo(List<dynamic> rawList) {
   return rawList.map((e) {
@@ -48,14 +49,15 @@ List<AvatarInfo> _mapToAvatarInfo(List<dynamic> rawList) {
 
 final router = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: '/welcome',
+  initialLocation: '/splash',
   errorBuilder: (context, state) {
     debugPrint('GoRouter Hatası: ${state.error}');
     // Kullanıcıyı güvenli bir limana (Home) yönlendir
     return const HomePage();
   },
-  redirect: (context, state) async {
+  redirect: (context, state) {
     final goingTo = state.uri.toString();
+
     final isAuthRoute = [
       '/welcome',
       '/login',
@@ -64,78 +66,19 @@ final router = GoRouter(
       '/login-verification',
     ].contains(goingTo);
 
-    if (!isAuthRoute) {
-      // Auth route değilse ve kullanıcı giriş yapmamışsa aşağıda yakalanır,
-      // şimdilik null döndürüp akışa bırakıyoruz, aşağıda kontrol edilecek.
-      return null;
-    }
-
-    final authService = getIt<AuthService>();
-    final userRepository = getIt<UserRepository>();
-
-    // AuthService genelde hafiftir (cache'den okur), her seferinde çağrılmasında sakınca yoktur.
-    final isLoggedIn = await authService.isUserLoggedIn();
-
-    final isRegisterInfo = goingTo == '/register-info';
-    final isDebugRoute = goingTo == '/debug';
-
-    // 1. Giriş yapmamış kullanıcı
-    if (!isLoggedIn) {
-      // ÖNEMLİ: Kullanıcı çıkış yaptıysa flag'i sıfırla ki tekrar girdiğinde init çalışsın.
-      _isAppInitialized = false;
-
-      if (isAuthRoute || isRegisterInfo || isDebugRoute) return null;
-      return '/welcome';
-    }
-
-    // 2. Giriş yapmış kullanıcı
-    if (isLoggedIn) {
-      // --- DEĞİŞİKLİK BURADA BAŞLIYOR ---
-
-      // Eğer uygulama henüz initialize edilmediyse kontrolleri yap
-      if (!_isAppInitialized) {
-        final isUserRegistered = await userRepository.isUserRegistered(
-          authService.getCurrentUserID(),
-        );
-
-        if (isUserRegistered) {
-          // Kullanıcı kayıtlı, servisleri BİR KERE başlat.
-          final pushService = getIt<PushNotificationsService>();
-          final sessionService = getIt<SessionService>();
-
-          pushService.initialize();
-          await sessionService.init();
-
-          // Her şey başarılı, flag'i true yap. Artık sayfa geçişlerinde buraya girmeyecek.
-          _isAppInitialized = true;
-
-          // Eğer login/welcome sayfalarındaysa home'a at
-          if (isAuthRoute || isRegisterInfo) {
-            return '/home';
-          }
-          return null; // Gitmek istediği yere izin ver
-        } else {
-          // Kayıtlı değilse register-info'ya zorla
-          if (!isRegisterInfo) return '/register-info';
-          return null;
-        }
-      }
-      // --- UYGULAMA ZATEN INITIALIZE EDİLMİŞSE ---
-      else {
-        // Kullanıcı zaten içeride ve init olmuş.
-        // Sadece yanlışlıkla auth sayfalarına dönmesini engelle.
-        if (isAuthRoute || isRegisterInfo) {
-          return '/home';
-        }
-
-        // Diğer tüm durumlar (chat, profil vs.) için geçişe izin ver.
-        return null;
-      }
-    }
+    // Not: Artık ağır 'await' işlemlerini burada yapmıyoruz.
+    // Yalnızca senkron (hızlı) kontroller yapabilirsiniz.
+    // Eğer anlık oturum durumunu tutan senkron bir değişkeniniz varsa
+    // güvenlik amaçlı basit kontrolleri burada bırakabilirsiniz.
 
     return null;
   },
+
   routes: [
+    GoRoute(
+      path: '/splash',
+      builder: (context, state) => const InitScreen(),
+    ),
     GoRoute(
       path: '/welcome',
       builder: (context, state) => const WelcomePage(),
