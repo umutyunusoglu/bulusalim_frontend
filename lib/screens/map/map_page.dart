@@ -34,6 +34,7 @@ import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
+import 'package:outnest/domain/repositories/group_repository.dart';
 import 'package:outnest/domain/repositories/map_repository.dart';
 import 'package:outnest/domain/services/analytics/analytics_service.dart';
 import 'package:outnest/domain/services/analytics/event_configs/create_event_analytics_config.dart';
@@ -97,6 +98,7 @@ class _MapPageState extends State<MapPage> {
   TimeOfDay? _tempTime;
   String? _tempEventName;
   VisibilityEnum? _tempVisibility;
+  String? _tempVisibilityGroupID;
   PointAnnotation? _pickingMarker;
   String? _currentUserImageUrl;
   bool? _tempShowOnMap;
@@ -623,7 +625,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   // B) SADECE FİLTRELEME (Filtre butonlarına basınca çalışır - İSTEK ATMAZ)
-  void _applyLocalFilters() {
+  void _applyLocalFilters() async {
     if (_isDisposed || !mounted) return;
 
     final sessionService = getIt<SessionService>();
@@ -633,9 +635,12 @@ class _MapPageState extends State<MapPage> {
     //TODO: Move to server side later
 
     // Hafızadaki (_cachedEvents) veriyi süzüyoruz
-    final filteredEvents = _cachedEvents.where((e) {
+    final List<EventEntity> filteredEvents = [];
+
+    for (final e in _cachedEvents) {
       if (currentUser.userID == e.creator.userID) {
-        return true;
+        filteredEvents.add(e);
+        continue;
       }
 
       // 1) Kategori filtresi
@@ -670,17 +675,24 @@ class _MapPageState extends State<MapPage> {
           }
 
         case VisibilityEnum.custom:
-          // Örnek: Özel küme bazlı filtreleme mantığını buraya ek
-          byPeople = true; // Varsayılan olarak true, kendi logic'inizi ekleyin
+          if (e.visibilityGroupID == null) {
+            byPeople = false;
+          } else {
+            final groupID = e.visibilityGroupID!;
+            byPeople = await getIt<GroupRepository>().isGroupMember(
+              currentUser.userID,
+              groupID,
+            );
+          }
       }
 
-      // Not: 'herkes', 'okul', 'kümeler' mantığını buraya kendi business logic'inize göre ekleyebilirsiniz.
-
-      return byCategory && byTime && byPeople;
-    }).toList();
+      if (byCategory && byTime && byPeople) {
+        filteredEvents.add(e);
+      }
+    }
 
     // Süzülmüş listeyi markerlara gönder
-    _updateMarkers(filteredEvents);
+    await _updateMarkers(filteredEvents);
   }
 
   bool _isBoundsSimilar(CoordinateBounds? a, CoordinateBounds? b) {
@@ -1396,6 +1408,9 @@ class _MapPageState extends State<MapPage> {
         isLocked: false,
         geohash: geohash,
         visibility: _tempVisibility ?? VisibilityEnum.everyone,
+        visibilityGroupID: _tempVisibility == VisibilityEnum.custom
+            ? _tempVisibilityGroupID
+            : null,
         showOnMap: _tempShowOnMap ?? true,
       );
       eventRepository.createEvent(event);
