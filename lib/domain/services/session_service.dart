@@ -25,6 +25,7 @@ abstract class SessionService {
 
   /// Servisi başlatır ve Auth/User dinleyicilerini kurar.
   Future<void> init();
+  Future<void> refreshSession();
 
   /// Servisi ve streamleri kapatır.
   void dispose();

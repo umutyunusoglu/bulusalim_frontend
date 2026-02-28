@@ -68,16 +68,8 @@ class AuthServiceImpl implements AuthService {
       await _firebaseAuth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
         forceResendingToken: resendToken,
-        verificationCompleted: (credential) async {
-          _logger.info('resendSMS: verificationCompleted');
-          final _ = await _firebaseAuth.signInWithCredential(credential);
-
-          completer.complete(
-            PhoneAuthResult(
-              verificationId: credential.verificationId,
-              isVerified: true,
-            ),
-          );
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          _logger.info('sendSMS verificationCompleted');
         },
         verificationFailed: (e) {
           _logger.error('resendSMS verificationFailed: ${e.message}');
