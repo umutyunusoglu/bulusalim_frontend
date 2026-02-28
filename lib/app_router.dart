@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:http/http.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/stacked_avatars.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
-import 'package:outnest/domain/repositories/user_repository.dart';
-import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/services/file_service.dart';
-import 'package:outnest/domain/services/push_notifications_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/init_screen.dart';
 import 'package:outnest/scaffold_with_navbar.dart';
@@ -56,21 +52,6 @@ final router = GoRouter(
     return const HomePage();
   },
   redirect: (context, state) {
-    final goingTo = state.uri.toString();
-
-    final isAuthRoute = [
-      '/welcome',
-      '/login',
-      '/register',
-      '/verification-code-field',
-      '/login-verification',
-    ].contains(goingTo);
-
-    // Not: Artık ağır 'await' işlemlerini burada yapmıyoruz.
-    // Yalnızca senkron (hızlı) kontroller yapabilirsiniz.
-    // Eğer anlık oturum durumunu tutan senkron bir değişkeniniz varsa
-    // güvenlik amaçlı basit kontrolleri burada bırakabilirsiniz.
-
     return null;
   },
 
@@ -117,7 +98,7 @@ final router = GoRouter(
     GoRoute(
       path: '/debug',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => NsfwDebugScreen(),
+      builder: (context, state) => const NsfwDebugScreen(),
     ),
 
     StatefulShellRoute.indexedStack(

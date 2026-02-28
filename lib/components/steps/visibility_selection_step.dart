@@ -15,7 +15,7 @@ class VisibilitySelectionStep extends StatefulWidget {
   final VoidCallback? onClose;
   final void Function(
     String visibility,
-    List<String> selectedGroups,
+    String selectedGroup,
     bool isMapHidden,
   )
   onNext;
@@ -37,7 +37,7 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
   ];
 
   // Seçilen grupları tutan liste
-  final Set<String> _selectedGroups = {};
+  final String? _selectedGroup = null;
 
   final List<String> _options = [
     'herkes',
@@ -119,7 +119,7 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
                   _selectedVisibility = option;
                   // "arkadaşlar" seçilmediyse alt seçimleri temizle
                   if (option != 'arkadaşlar') {
-                    _selectedGroups.clear();
+                    _selectedGroup.clear();
                   }
                 });
               },
@@ -274,7 +274,7 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
           onPressed: () {
             widget.onNext(
               _selectedVisibility,
-              _selectedGroups.toList(),
+              _selectedGroup,
               _isMapHidden,
             );
           },
