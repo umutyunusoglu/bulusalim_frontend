@@ -15,8 +15,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 
-// NOT: Firestore importu kaldırıldı çünkü UI katmanında işi yok.
-
 class ChatPage extends StatefulWidget {
   const ChatPage({
     required this.eventID,

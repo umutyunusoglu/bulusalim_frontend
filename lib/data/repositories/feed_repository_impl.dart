@@ -12,8 +12,8 @@ import 'package:outnest/domain/entities/feed/feed_entity.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/feed_repository.dart';
+import 'package:outnest/domain/repositories/group_repository.dart';
 import 'package:outnest/domain/services/global_content_cache.dart';
-import 'package:outnest/domain/services/remote_config_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -44,6 +44,7 @@ class FeedRepositoryImpl implements FeedRepository {
   DocumentSnapshot? _lastEventDoc;
   bool _isPatternEnabled = AppConfig.isFeedPatternEnabled;
   // Karıştırma paterni (P: Post, E: Event)
+
   int _patternIndex = 0;
   static const List<String> _flatPattern = [
     'P',
@@ -418,7 +419,7 @@ class FeedRepositoryImpl implements FeedRepository {
     final model = EventModel.fromFirestore(data);
     final entity = model.toEntity();
 
-    if (_canUserSeeEvent(entity, user, followeeIds)) {
+    if (await _canUserSeeEvent(entity, user, followeeIds)) {
       final enriched = await _eventRepository.enrichEventWithDetails(entity);
       result.add(enriched);
       return true;
@@ -427,11 +428,11 @@ class FeedRepositoryImpl implements FeedRepository {
     return false;
   }
 
-  bool _canUserSeeEvent(
+  Future<bool> _canUserSeeEvent(
     EventEntity event,
     UserEntity currentUser,
     List<String> followeeIds,
-  ) {
+  ) async {
     // Kendi etkinliği ise her zaman gör
     if (event.creator.userID == currentUser.userID) return true;
 
@@ -451,13 +452,19 @@ class FeedRepositoryImpl implements FeedRepository {
       case VisibilityEnum.onlyFriends:
         return followeeIds.contains(event.creator.userID);
       case VisibilityEnum.custom:
-        return true; // Özel mantık eklenebilir
+        final groupId = event.visibilityGroupID;
+        if (groupId == null)
+          return false; // Güvenlik için, grup ID'si yoksa gösterme
+
+        return await getIt<GroupRepository>().isGroupMember(
+          groupId,
+          currentUser.userID,
+        );
+
       default:
         return true;
     }
   }
-
-  // --- UTILS & HELPERS ---
 
   List<List<T>> _chunkList<T>(List<T> list, int chunkSize) {
     return List.generate(

@@ -219,8 +219,6 @@ class UserRepositoryImpl implements UserRepository {
       'Creating user: ${user.userID} with username: ${user.username}',
     );
 
-    // Sorgulama yapabilmek için username'in küçük harf versiyonu şart
-
     return _firestore.runTransaction((transaction) async {
       // 1. ADIM: Username daha önce alınmış mı kontrol et
       final usernameQuery = doesUsernameExist(
