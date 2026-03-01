@@ -19,7 +19,7 @@ import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/entities/user/friend_entity.dart';
 import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
-import 'package:outnest/domain/entities/user/session_state.dart';
+import 'package:outnest/domain/session_state.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/analytics/analytics_service.dart';

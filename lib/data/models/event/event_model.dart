@@ -34,6 +34,7 @@ class EventModel extends Model<EventEntity> {
     required this.geohash,
     required this.visibility,
     required this.showOnMap,
+    this.visibilityGroupID,
   });
 
   @override
@@ -60,6 +61,7 @@ class EventModel extends Model<EventEntity> {
       isLocked: entity.isLocked,
       geohash: entity.geohash,
       visibility: entity.visibility,
+      visibilityGroupID: entity.visibilityGroupID,
       showOnMap: entity.showOnMap,
     );
   }
@@ -150,6 +152,7 @@ class EventModel extends Model<EventEntity> {
       isLocked: (doc['isLocked'] as bool?) ?? false,
       geohash: geohash ?? '',
       visibility: visibility,
+      visibilityGroupID: doc['visibilityGroupID'] as String?,
       showOnMap: (doc['showOnMap'] as bool?) ?? false,
     );
   }
@@ -184,6 +187,7 @@ class EventModel extends Model<EventEntity> {
       'geohash': geohash,
       'feedType': 'event',
       'visibility': visibility.toString(),
+      'visibilityGroupID': visibilityGroupID,
       'showOnMap': showOnMap,
     };
   }
@@ -221,6 +225,7 @@ class EventModel extends Model<EventEntity> {
       isLocked: isLocked,
       geohash: geohash,
       visibility: visibility,
+      visibilityGroupID: visibilityGroupID,
       showOnMap: showOnMap,
     );
   }
@@ -271,6 +276,7 @@ class EventModel extends Model<EventEntity> {
   final DateTime updatedAt;
   final bool isLocked;
   final VisibilityEnum visibility;
+  final String? visibilityGroupID;
   final String geohash;
   final bool showOnMap;
 }

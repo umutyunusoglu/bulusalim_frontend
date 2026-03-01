@@ -1,7 +1,9 @@
+import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/popup_next_button.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:outnest/domain/repositories/group_repository.dart';
 
 class VisibilitySelectionStep extends StatefulWidget {
   const VisibilitySelectionStep({
@@ -13,9 +15,10 @@ class VisibilitySelectionStep extends StatefulWidget {
 
   final VoidCallback onBack;
   final VoidCallback? onClose;
+  // DÜZELTME 1: Grup seçilmediği durumlar için String yerine String? (nullable) yapıldı.
   final void Function(
     String visibility,
-    List<String> selectedGroups,
+    String? selectedGroup,
     bool isMapHidden,
   )
   onNext;
@@ -36,15 +39,23 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
     'grup3',
   ];
 
-  // Seçilen grupları tutan liste
-  final Set<String> _selectedGroups = {};
+  // Seçilen grubu tutan değişken (Liste yerine tek bir String)
+  String? _selectedGroup;
 
-  final List<String> _options = [
-    'herkes',
-    'takipçiler',
-    'okul',
-    //  'arkadaşlar',
-  ];
+  late List<String> _options;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOptions();
+  }
+
+  Future<void> _loadOptions() async {
+    final options = await getIt<GroupRepository>().getMyGroups();
+    setState(() {
+      _options = options;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -117,9 +128,8 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
               onTap: () {
                 setState(() {
                   _selectedVisibility = option;
-                  // "arkadaşlar" seçilmediyse alt seçimleri temizle
-                  if (option != 'arkadaşlar') {
-                    _selectedGroups.clear();
+                  if (option != 'gruplar') {
+                    _selectedGroup = null;
                   }
                 });
               },
@@ -135,8 +145,7 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
                       : const Color(0xFFF5F5F5),
                   borderRadius: BorderRadius.circular(12.r),
                   border: isSelected ? Border.all(color: activeColor) : null,
-                  // Sadece 'arkadaşlar' seçiliyken gölge efekti
-                  boxShadow: (isSelected && option == 'arkadaşlar')
+                  boxShadow: (isSelected && option == 'gruplar')
                       ? [
                           BoxShadow(
                             color: activeColor.withOpacity(0.2),
@@ -161,24 +170,25 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
           );
         }),
 
-        // 3. ALT GRUPLAR (Sadece 'arkadaşlar' seçiliyse görünür)
-        if (_selectedVisibility == 'arkadaşlar') ...[
+        if (_selectedVisibility == 'gruplar') ...[
           SizedBox(height: 8.h),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // GRUP LİSTESİ
                 ..._myGroups.map((group) {
-                  final isGroupSelected = _selectedGroups.contains(group);
+                  // DÜZELTME 2: Liste mantığı yerine tekli seçim mantığı eklendi
+                  final isGroupSelected = _selectedGroup == group;
+
                   return GestureDetector(
                     onTap: () {
                       setState(() {
+                        // DÜZELTME 3: Eğer zaten seçiliyse seçimi kaldır, değilse o grubu seç
                         if (isGroupSelected) {
-                          _selectedGroups.remove(group);
+                          _selectedGroup = null;
                         } else {
-                          _selectedGroups.add(group);
+                          _selectedGroup = group;
                         }
                       });
                     },
@@ -274,7 +284,7 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
           onPressed: () {
             widget.onNext(
               _selectedVisibility,
-              _selectedGroups.toList(),
+              _selectedGroup,
               _isMapHidden,
             );
           },
