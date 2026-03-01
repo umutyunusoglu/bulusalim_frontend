@@ -31,7 +31,6 @@ class SecurityServiceImpl implements SecurityService {
   // ONNX Oturumu için değişken
   OrtSession? _session;
 
-  // --- MEVCUT KODLARINIZ AYNI KALIYOR ---
   @override
   Future<void> blockUser(ReportData reportData) async {
     final currentUserID = reportData.requestOwnerId;

@@ -30,11 +30,14 @@ class EventChatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // STREAMBUILDER: Kartın içindeki verileri canlı tutar
+
+    //TODO: Repository'den dinle düzelt anla
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
           .collection('events')
           .doc(event.eventID)
           .snapshots(),
+
       builder: (context, snapshot) {
         // 1. Başlangıç Değerleri (Eğer internet yavaşsa veya stream henüz gelmediyse mevcut veriyi göster)
         var displayName = event.name;

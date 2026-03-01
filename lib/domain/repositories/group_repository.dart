@@ -34,7 +34,7 @@ abstract class GroupRepository {
   /// Grup ID'si, grup oluşturulurken kullanılan benzersiz ID formatına göre sağlanmalıdır.
   /// Fonksiyon herkes tarafından çağrılabilir, grup üyesi olup olmama durumunu kontrol etmek için kullanılabilir.
   Future<bool> isGroupMember(
-    String groupName,
+    String groupID,
     Identifier userIDToCheck,
   );
 }
