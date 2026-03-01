@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -78,7 +80,7 @@ class _EventCardState extends State<EventCard> {
   void _updateFollowingStatus() {
     if (!mounted) return;
 
-    final myFollowees = sessionService.stateListenable.value?.followees ?? [];
+    final myFollowees = sessionService.stateListenable.value.followees;
     final isFollowing = myFollowees.any(
       (u) => u.userID == widget.event.creator.userID,
     );
@@ -137,11 +139,13 @@ class _EventCardState extends State<EventCard> {
     final userRepository = getIt<UserRepository>();
     setState(() => isSaved = !isSaved);
     try {
-      getIt<AnalyticsService>().logClickSaveEvent(
-        ClickSaveEventAnalyticsConfig(
-          eventID: widget.event.eventID,
-          value: isSaved,
-          screen: widget.screen,
+      unawaited(
+        getIt<AnalyticsService>().logClickSaveEvent(
+          ClickSaveEventAnalyticsConfig(
+            eventID: widget.event.eventID,
+            value: isSaved,
+            screen: widget.screen,
+          ),
         ),
       );
 
@@ -237,7 +241,6 @@ class _EventCardState extends State<EventCard> {
               isDestructive: true,
               onTap: () async {
                 sheetContext.pop();
-                // TODO: İptal etme servisini çağır
                 _onCancelEventTap();
                 if (mounted) setState(() => isVisible = false);
               },
@@ -257,7 +260,7 @@ class _EventCardState extends State<EventCard> {
             if (_amIFollowingCreator)
               BottomSheetOption(
                 icon: Icons.person_remove_outlined,
-                text: "Takibi Bırak",
+                text: 'Takibi Bırak',
                 onTap: () {
                   sheetContext.pop(); // Önce bottom sheet'i kapatıyoruz
 
@@ -405,8 +408,6 @@ class _EventCardState extends State<EventCard> {
   }
 
   void _showParticipantsBottomSheet() {
-    print('🔥 DEBUG: Bottom sheet açılıyor...'); // Debug için
-
     final creator = CompactUserEntity(
       userID: widget.event.creator.userID,
       username: widget.event.creator.username,
@@ -423,7 +424,7 @@ class _EventCardState extends State<EventCard> {
       ),
     );
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -473,9 +474,7 @@ class _EventCardState extends State<EventCard> {
         ),
       );
 
-      final participants = widget.event.participants
-          .map((p) => p.userID)
-          .toList(growable: true);
+      widget.event.participants.map((p) => p.userID).toList(growable: true);
 
       final sameUniversityAsCreator =
           sessionService.currentUser?.university != null &&
@@ -484,11 +483,9 @@ class _EventCardState extends State<EventCard> {
 
       final numberOfFollowerParticipants = widget.event.participants
           .where(
-            (p) =>
-                sessionService.stateListenable.value?.followers.any(
-                  (u) => u.userID == p.userID,
-                ) ??
-                false,
+            (p) => sessionService.stateListenable.value.followers.any(
+              (u) => u.userID == p.userID,
+            ),
           )
           .length;
 
@@ -497,11 +494,9 @@ class _EventCardState extends State<EventCard> {
 
       final numberOfFolloweeParticipants = widget.event.participants
           .where(
-            (p) =>
-                sessionService.stateListenable.value?.followees.any(
-                  (u) => u.userID == p.userID,
-                ) ??
-                false,
+            (p) => sessionService.stateListenable.value.followees.any(
+              (u) => u.userID == p.userID,
+            ),
           )
           .length;
 
@@ -512,28 +507,30 @@ class _EventCardState extends State<EventCard> {
           .where((p) => p.university == sessionService.currentUser?.university)
           .length;
 
-      getIt<AnalyticsService>().logSendJoinRequestToEvent(
-        SendJoinRequestToEventAnalyticsConfig(
-          eventID: widget.event.id,
-          numberOfParticipants: widget.event.participantCount,
-          numberOfFollowerParticipants: numberOfFollowerParticipants,
-          numberOfNonFollowerParticipants: numberOfNonFollowerParticipants,
-          numberOfFolloweeParticipants: numberOfFolloweeParticipants,
-          numberOfNonFolloweeParticipants: numberOfNonFolloweeParticipants,
-          sameUniversityAsCreator: sameUniversityAsCreator,
-          numberOfSameUniversityParticipants:
-              numberOfSameUniversityParticipants,
+      unawaited(
+        getIt<AnalyticsService>().logSendJoinRequestToEvent(
+          SendJoinRequestToEventAnalyticsConfig(
+            eventID: widget.event.id,
+            numberOfParticipants: widget.event.participantCount,
+            numberOfFollowerParticipants: numberOfFollowerParticipants,
+            numberOfNonFollowerParticipants: numberOfNonFollowerParticipants,
+            numberOfFolloweeParticipants: numberOfFolloweeParticipants,
+            numberOfNonFolloweeParticipants: numberOfNonFolloweeParticipants,
+            sameUniversityAsCreator: sameUniversityAsCreator,
+            numberOfSameUniversityParticipants:
+                numberOfSameUniversityParticipants,
 
-          showOnMap: widget.event.showOnMap,
-          remainingTimeToStart: widget.event.startTime.difference(
-            DateTime.now(),
+            showOnMap: widget.event.showOnMap,
+            remainingTimeToStart: widget.event.startTime.difference(
+              DateTime.now(),
+            ),
+            eventStartTime: widget.event.startTime,
+            eventVisibility: widget.event.visibility.toString(),
+            category: widget.event.hobbies.isNotEmpty
+                ? widget.event.hobbies[0]
+                : 'null',
+            screen: widget.screen,
           ),
-          eventStartTime: widget.event.startTime,
-          eventVisibility: widget.event.visibility.toString(),
-          category: widget.event.hobbies.isNotEmpty
-              ? widget.event.hobbies[0]
-              : 'null',
-          screen: widget.screen,
         ),
       );
     } catch (e) {

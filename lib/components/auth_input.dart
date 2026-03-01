@@ -24,13 +24,13 @@ class AuthInput extends StatelessWidget {
   final bool isPassword;
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
-  final Function(String)? onSubmitted;
+  final void Function(String)? onSubmitted;
   final TextAlign textAlign;
   final String? prefixText;
   final bool enabled;
   final List<TextInputFormatter>? inputFormatters;
   final Widget? prefixIcon;
-  final Function(String)? onChanged;
+  final void Function(String)? onChanged;
 
   @override
   Widget build(BuildContext context) {

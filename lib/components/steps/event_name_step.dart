@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/popup_next_button.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/domain/services/remote_config_service.dart';
 
 class EventNameStep extends StatefulWidget {
@@ -17,7 +18,7 @@ class EventNameStep extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback onClose;
   final String category;
-  final Function(String eventName, bool isSuggestionUsed) onNext;
+  final void Function(String eventName, bool isSuggestionUsed) onNext;
 
   @override
   State<EventNameStep> createState() => _EventNameStepState();
@@ -38,6 +39,8 @@ class _EventNameStepState extends State<EventNameStep> {
 
   Future<void> _loadSuggestions() async {
     final remoteConfig = getIt<RemoteConfigService>();
+
+    // ignore: strict_raw_type
     final allSuggestions = await remoteConfig.getValue<Map>('category_names');
 
     // widget.category değerinin (Örn: "Kahve") Map içinde olup olmadığını kontrol edin
@@ -54,8 +57,8 @@ class _EventNameStepState extends State<EventNameStep> {
         _suggestions = suggestions;
       });
     } else {
-      print(
-        "Hata: ${widget.category} kategorisi Firebase'deki Map içinde bulunamadı.",
+      getIt<LoggingService>().warn(
+        'Remote configda ${widget.category} kategorisi için öneri bulunamadı.',
       );
     }
   }

@@ -171,7 +171,7 @@ class SecurityServiceImpl implements SecurityService {
 
       // 2. Resmi decode et
       final imageBytes = await imageFile.readAsBytes();
-      final img.Image? originalImage = img.decodeImage(imageBytes);
+      final originalImage = img.decodeImage(imageBytes);
 
       if (originalImage == null) {
         _logger.error("Resim dosyası okunamadı.");
@@ -192,13 +192,13 @@ class SecurityServiceImpl implements SecurityService {
       const std = [0.229, 0.224, 0.225];
 
       // Input Shape: [1, 3, 224, 224] -> Batch, Channels, Height, Width
-      final Float32List inputFloats = Float32List(1 * 3 * 224 * 224);
+      final inputFloats = Float32List(1 * 3 * 224 * 224);
 
-      int pixelIndex = 0;
+      var pixelIndex = 0;
       // Kanal bazlı döngü (Önce tüm R'ler, sonra G'ler, sonra B'ler)
-      for (int c = 0; c < 3; c++) {
-        for (int y = 0; y < 224; y++) {
-          for (int x = 0; x < 224; x++) {
+      for (var c = 0; c < 3; c++) {
+        for (var y = 0; y < 224; y++) {
+          for (var x = 0; x < 224; x++) {
             final pixel = resizedImage.getPixel(x, y);
 
             double channelValue;
@@ -268,7 +268,7 @@ class SecurityServiceImpl implements SecurityService {
       // --- isImageSafe içindeki görüntü işleme kodlarının aynısı buraya ---
       // (Kod tekrarını önlemek için görüntü işlemeyi ayrı bir private fonksiyona alabilirsiniz)
       final imageBytes = await imageFile.readAsBytes();
-      final img.Image? originalImage = img.decodeImage(imageBytes);
+      final originalImage = img.decodeImage(imageBytes);
       if (originalImage == null) return {'normal': 0.0, 'nsfw': 0.0};
 
       final resizedImage = img.copyResize(
@@ -278,11 +278,11 @@ class SecurityServiceImpl implements SecurityService {
       );
       const mean = [0.485, 0.456, 0.406];
       const std = [0.229, 0.224, 0.225];
-      final Float32List inputFloats = Float32List(1 * 3 * 224 * 224);
-      int pixelIndex = 0;
-      for (int c = 0; c < 3; c++) {
-        for (int y = 0; y < 224; y++) {
-          for (int x = 0; x < 224; x++) {
+      final inputFloats = Float32List(1 * 3 * 224 * 224);
+      var pixelIndex = 0;
+      for (var c = 0; c < 3; c++) {
+        for (var y = 0; y < 224; y++) {
+          for (var x = 0; x < 224; x++) {
             final pixel = resizedImage.getPixel(x, y);
             double channelValue;
             if (c == 0)
@@ -314,9 +314,9 @@ class SecurityServiceImpl implements SecurityService {
 
       // SOFTMAX UYGULAMA (Logits -> Olasılık %)
       // Formül: e^x / sum(e^x)
-      double normalExp = exp(rawScores[0]);
-      double nsfwExp = exp(rawScores[1]);
-      double sumExp = normalExp + nsfwExp;
+      final normalExp = exp(rawScores[0]);
+      final nsfwExp = exp(rawScores[1]);
+      final sumExp = normalExp + nsfwExp;
 
       return {
         'normal': normalExp / sumExp, // Örn: 0.10

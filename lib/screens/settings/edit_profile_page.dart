@@ -50,7 +50,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   bool _hasChanges = false;
 
   // Carousel dönerken seçilen geçici tarih
-  DateTime _tempSelectedDate = DateTime(2002, 1);
+  DateTime _tempSelectedDate = DateTime(2002);
 
   @override
   void initState() {
@@ -77,7 +77,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _profileImageUrl = user?.profileImageUrl ?? '';
     _hideSavedEvents = user?.hideSavedEvents ?? false;
     _selectedGender = user?.gender ?? GenderEnum.preferNotToSay;
-    _selectedDob = user?.birthDate ?? DateTime(2002, 1);
+    _selectedDob = user?.birthDate ?? DateTime(2002);
 
     // Önceki değerleri sakla
     _previousName = user?.nameSurname ?? '';
@@ -312,7 +312,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   // --- CAROUSEL TARİH SEÇİMİ (YENİLENMİŞ) ---
   void _showCarouselDatePicker() {
-    _tempSelectedDate = DateTime(2002, 1); // Varsayılan veya mevcut değer
+    _tempSelectedDate = DateTime(2002); // Varsayılan veya mevcut değer
 
     showModalBottomSheet(
       context: context,

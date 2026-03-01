@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/datasources/university_datasource.dart';
@@ -370,9 +372,9 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
   Widget _buildReportButton() {
     return TextButton(
       onPressed: () async {
-        final Uri url = Uri.parse('https://forms.gle/AJXYJXhBPQaeka6u9');
+        final url = Uri.parse('https://forms.gle/AJXYJXhBPQaeka6u9');
 
-        launchUrl(url, mode: LaunchMode.inAppWebView);
+        unawaited(launchUrl(url, mode: LaunchMode.inAppWebView));
       },
       style: TextButton.styleFrom(
         foregroundColor: AppColors.textGrey, // Temanızdaki gri renk

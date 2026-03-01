@@ -30,22 +30,22 @@ class StackedAvatars extends StatelessWidget {
 
     // 1. Dinamik Boyut Ayarları
     // ScreenUtil (.w) kullanarak ölçekleme yapıyoruz
-    final double avatarSize = size.w;
+    final avatarSize = size.w;
 
     // Üst üste binme miktarı (Yarı yarıya binmesi için boyurun yarısı)
-    final double overlap = (size * 0.5).w;
+    final overlap = (size * 0.5).w;
 
     // Her bir avatarın ne kadar sağa kayacağı (Görünen kısım)
-    final double shiftAmount = avatarSize - overlap;
+    final shiftAmount = avatarSize - overlap;
 
     // Sadece ilk 3 kişiyi alıyoruz
     final items = avatarDataList.take(3).toList();
-    final int count = items.length;
+    final count = items.length;
 
     // 2. Toplam Genişlik Hesabı
     // Formül: (İlk Avatarın Tam Boyu) + ((Kişi Sayısı - 1) * Kayma Miktarı)
     // Örnek (3 kişi, 60 boyut): 60 + (2 * 30) = 120 genişlik
-    double totalWidth = avatarSize;
+    var totalWidth = avatarSize;
     if (count > 1) {
       totalWidth += (count - 1) * shiftAmount;
     }
@@ -59,10 +59,10 @@ class StackedAvatars extends StatelessWidget {
           final currentUser = items[index];
 
           // Pozisyon hesaplama: index * 30 (0, 30, 60...)
-          final double leftPos = index * shiftAmount;
+          final leftPos = index * shiftAmount;
 
-          final String profileImageUrl = currentUser.imageUrl;
-          final String defaultAsset = FileService.defaultProfileImageUrl();
+          final profileImageUrl = currentUser.imageUrl;
+          final defaultAsset = FileService.defaultProfileImageUrl();
 
           return Positioned(
             left: leftPos,

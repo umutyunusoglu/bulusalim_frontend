@@ -15,7 +15,7 @@ class FollowNotificationEntity {
     required this.profileImageUrl,
     required this.createdAt,
   }) {
-    final SessionService sessionService = getIt<SessionService>();
+    final sessionService = getIt<SessionService>();
 
     final isItFollowingMe =
         sessionService.currentState!.followers.contains(userID) ?? false;

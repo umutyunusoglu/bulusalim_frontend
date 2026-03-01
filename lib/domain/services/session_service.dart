@@ -2,8 +2,8 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
-import 'package:outnest/domain/session_state.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
+import 'package:outnest/domain/session_state.dart';
 
 abstract class SessionService {
   // --- STATE ACCESS (READ) ---

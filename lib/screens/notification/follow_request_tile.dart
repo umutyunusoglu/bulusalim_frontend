@@ -1,11 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart'; // context.pop() için
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
-import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/domain/entities/notification/follow_notification_entity.dart';
 import 'package:outnest/domain/entities/user/friend_entity.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
@@ -26,7 +24,6 @@ class FollowRequestTile extends StatefulWidget {
 }
 
 class _FollowRequestTileState extends State<FollowRequestTile> {
-  final LoggingService _logger = getIt<LoggingService>();
   final SessionService _sessionService = getIt<SessionService>();
   final UserRepository _userRepository = getIt<UserRepository>();
 
@@ -199,7 +196,7 @@ class _FollowRequestTileState extends State<FollowRequestTile> {
 
   // --- YARDIMCI: HATA YÖNETİMİ ---
   void _handleError(Object error, FollowStatus? previousStatus) {
-    debugPrint("İşlem başarısız: $error");
+    debugPrint('İşlem başarısız: $error');
     if (mounted) {
       // Durumu geri al (Rollback)
       setState(() => _currentStatus = previousStatus);
@@ -230,7 +227,7 @@ class _FollowRequestTileState extends State<FollowRequestTile> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Vazgeç", style: TextStyle(color: Colors.grey)),
+            child: const Text('Vazgeç', style: TextStyle(color: Colors.grey)),
           ),
           TextButton(
             style: TextButton.styleFrom(
@@ -241,7 +238,7 @@ class _FollowRequestTileState extends State<FollowRequestTile> {
               Navigator.pop(context); // Dialogu kapat
               _performUnfollow(); // Silme işlemini başlat
             },
-            child: const Text("Takibi Bırak"),
+            child: const Text('Takibi Bırak'),
           ),
         ],
       ),

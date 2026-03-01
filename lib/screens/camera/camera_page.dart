@@ -72,8 +72,9 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   Future<void> _takePhoto() async {
     if (_controller == null ||
         !_controller!.value.isInitialized ||
-        _takenPhotos.length >= 3)
+        _takenPhotos.length >= 3) {
       return;
+    }
 
     try {
       final photo = await _controller!.takePicture();
@@ -124,11 +125,11 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     const primaryColor = AppColors.primaryColor;
     const sfPro = 'SF Pro Display';
 
-    final double sidePadding = 16.w;
-    final double topPadding = 110.h;
-    final double bottomBlackAreaHeight = 261.h; // Alt siyah panel yüksekliği
-    final double screenWidth = MediaQuery.of(context).size.width;
-    final double focusSize = screenWidth - (sidePadding * 2);
+    final sidePadding = 16.w;
+    final topPadding = 110.h;
+    final bottomBlackAreaHeight = 261.h; // Alt siyah panel yüksekliği
+    final screenWidth = MediaQuery.of(context).size.width;
+    final focusSize = screenWidth - (sidePadding * 2);
 
     return Scaffold(
       backgroundColor: Colors.black,

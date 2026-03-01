@@ -10,7 +10,6 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
-import 'package:outnest/components/auth_input.dart';
 import 'package:outnest/components/bottomsheetoption.dart';
 import 'package:outnest/components/map_filter_chip.dart';
 import 'package:outnest/components/otp_row.dart';
@@ -28,7 +27,6 @@ import 'package:outnest/domain/services/analytics/analytics_service.dart';
 import 'package:outnest/domain/services/analytics/event_configs/select_gender_analytics_config.dart';
 import 'package:outnest/domain/services/analytics/event_configs/select_hobbies_analytics_config.dart';
 import 'package:outnest/domain/services/auth_service.dart';
-import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/usecases/upload_profile_picture_usecase.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -76,12 +74,11 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
   final _friendSearchController = TextEditingController();
   // --- İZİN STATE'LERİ (Varsayılan Kapalı) ---
   bool _permNotifications = false;
-  bool _permBluetooth = false;
   bool _permLocation = false;
   bool _permCamera = false;
   bool _permPhotos = false;
 
-  final _logger = getIt<LoggingService>();
+  final LoggingService _logger = getIt<LoggingService>();
 
   final List<TextEditingController> _eduOtpControllers = List.generate(
     6,
@@ -136,21 +133,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
     final analytics = getIt<AnalyticsService>();
 
     switch (currentStep) {
-      case RegisterStep.username:
-        // Burada username kontrolü yapılacak
-        break;
-      case RegisterStep.name:
-        // Ad soyad validasyonu yapılacak
-        break;
-      case RegisterStep.dob:
-        // Doğum tarihi validasyonu yapılacak
-        break;
-      case RegisterStep.universityEmail:
-        // Üniversite maili validasyonu yapılacak
-        break;
-      case RegisterStep.universityOtp:
-        // OTP validasyonu yapılacak
-        break;
       case RegisterStep.gender:
         final chosenGenderText = _genderDisplayController.text.trim();
         GenderEnum? chosenGender;
@@ -164,12 +146,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
         analytics.logSelectGender(
           SelectGenderAnalyticsConfig(value: chosenGender, previousValue: null),
         );
-        break;
-      case RegisterStep.profilePhoto:
-        // Fotoğraf seçimi validasyonu yapılacak
-        break;
-      case RegisterStep.interests:
-        final selectedCategories = _selectedInterests;
 
         analytics.logSelectHobbies(
           SelectHobbiesAnalyticsConfig(
@@ -178,9 +154,9 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
           ),
         );
 
-        break;
-      case RegisterStep.permissions:
-        // İzinler ile ilgili bilgilendirme yapılacak
+      /// Not necessary to log every single step, but you can add more cases here if you want to track other steps as well.
+      // ignore: no_default_cases
+      default:
         break;
     }
 
@@ -230,7 +206,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
       gender = GenderEnum.fromString(_genderDisplayController.text);
 
       final interests = _selectedInterests;
-      final File? profilePhoto; // Fotoğraf seçme işlemi eklenmeli.
       final uploadUseCase = getIt<UploadProfilePicture>();
       var profileImageUrl = '';
       if (_selectedImage != null) {
@@ -312,7 +287,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
     final maxDate = DateTime.now();
     final minDate = DateTime(1920);
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(
@@ -383,7 +358,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
   }
 
   void _showGenderPicker() {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -418,7 +393,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
   }
 
   void _showPhotoPicker() {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -474,10 +449,11 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                   username,
                 );
 
-                final logger = getIt<LoggingService>()..warn(exists.toString());
+                getIt<LoggingService>().warn(exists.toString());
 
                 if (exists) {
                   // Hata mesajını göster (SnackBar veya bir state değişkeni ile)
+                  if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Bu kullanıcı adı zaten alınmış!'),
@@ -485,7 +461,9 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                   );
                 } else {
                   // 3. Her şey yolundaysa genel _nextPage fonksiyonunu çağır
-                  _nextPage();
+                  if (mounted) {
+                    _nextPage();
+                  }
                 }
               },
               description:
@@ -620,22 +598,22 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                   if (!mounted) return;
                   _nextPage(); // Başarılıysa OTP sayfasına geç
                 } on FirebaseFunctionsException catch (error) {
-                  if (mounted) {
-                    if (error.code == 'resource-exhausted') {
+                  if (error.code == 'resource-exhausted') {
+                    if (mounted) {
                       _showError(
                         'Çok fazla mail yollama isteği gönderdiniz. Lütfen 1 dakika sonra tekrar deneyin!',
                       );
-
-                      _logger.error(
-                        'FirebaseAuthException: ${error.code} - ${error.message}',
-                      );
-                    } else {
-                      _logger.error(
-                        'Bir hata oluştu: ${error.code} - ${error.message}',
-                      );
                     }
-                    _logger.error('Verification email gönderilemedi: $error');
+
+                    _logger.error(
+                      'FirebaseAuthException: ${error.code} - ${error.message}',
+                    );
+                  } else {
+                    _logger.error(
+                      'Bir hata oluştu: ${error.code} - ${error.message}',
+                    );
                   }
+                  _logger.error('Verification email gönderilemedi: $error');
                 } finally {
                   if (mounted) setState(() => _isSendingEmail = false);
                 }
@@ -649,7 +627,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                   final Uri url = Uri.parse(
                     'https://forms.gle/KfpyB3Y2SeiX28R47',
                   );
-                  launchUrl(url, mode: LaunchMode.inAppWebView);
+                  unawaited(launchUrl(url, mode: LaunchMode.inAppWebView));
                 },
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.grey.shade600, // Silik, tatlı bir gri
@@ -680,7 +658,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                 final otpCode = _eduOtpControllers.map((c) => c.text).join();
                 try {
                   // Debug ekranındaki verifyEmail logic'i:
-                  print('otpCode: $otpCode');
                   await getIt<UserRepository>().verifyEmail(
                     _universityController.text.trim(),
                     _detectedUniversity!,
@@ -917,30 +894,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
     );
   }
 
-  Widget _buildActionRow(IconData icon, String text) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 12.h),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.black, size: 24.sp),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontFamily: 'SF Pro Display',
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w500,
-                color: Colors.black,
-              ),
-            ),
-          ),
-          Icon(Icons.chevron_right, color: Colors.black, size: 24.sp),
-        ],
-      ),
-    );
-  }
-
   Timer? _debounce;
 
   void _onUniversityEmailChanged(String email) {
@@ -1005,7 +958,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
 
   Future<void> _syncAllPermissions() async {
     final notification = await Permission.notification.status;
-    final bluetooth = await Permission.bluetooth.status;
     final location = await Permission.locationWhenInUse.status;
     final camera = await Permission.camera.status;
     final photos = await Permission.photos.status;
@@ -1014,7 +966,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
 
     setState(() {
       _permNotifications = notification.isGranted;
-      _permBluetooth = bluetooth.isGranted;
       _permLocation = location.isGranted;
       _permCamera = camera.isGranted;
       _permPhotos = photos.isGranted || photos.isLimited;
@@ -1139,7 +1090,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
   }
 
   void _showSettingsDialog() {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(

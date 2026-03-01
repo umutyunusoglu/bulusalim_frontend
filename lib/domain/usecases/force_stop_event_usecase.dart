@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/data/models/user/pinned_post_model.dart';
@@ -69,10 +71,14 @@ class ForceStopEvent {
         'Event ${currentEvent.eventID} and all participant logs updated to completed.',
       );
 
-      getIt<AnalyticsService>().logForceStopEvent(
-        ForceStopEventAnalyticsConfig(
-          eventID: enrichedEvent.eventID,
-          timeToEventToStop: DateTime.now().difference(enrichedEvent.startTime),
+      unawaited(
+        getIt<AnalyticsService>().logForceStopEvent(
+          ForceStopEventAnalyticsConfig(
+            eventID: enrichedEvent.eventID,
+            timeToEventToStop: DateTime.now().difference(
+              enrichedEvent.startTime,
+            ),
+          ),
         ),
       );
     } catch (e) {

@@ -4,8 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/apple_toast_popup.dart';
-import 'package:outnest/core/constants/configs/app_config.dart';
-import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/services/draft_post_service.dart';
 import 'package:outnest/domain/usecases/upload_post_usecase.dart';

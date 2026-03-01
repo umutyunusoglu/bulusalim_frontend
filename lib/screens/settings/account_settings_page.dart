@@ -133,14 +133,14 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
       label: 'Üniversite',
       value: _university,
       trailing: _buildChangeButton(() async {
-        final result = await Navigator.push(
+        final result = await Navigator.push<String>(
           context,
-          MaterialPageRoute(
+          MaterialPageRoute<String>(
             builder: (context) => const ChangeUniversityPage(),
           ),
         );
 
-        if (result != null && result is String) {
+        if (result != null) {
           setState(() {
             _university = result;
           });
@@ -156,14 +156,14 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
       value: _phoneNumber,
       showArrow: true,
       onTap: () async {
-        final result = await Navigator.push(
+        final result = await Navigator.push<String>(
           context,
-          MaterialPageRoute(
+          MaterialPageRoute<String>(
             builder: (context) => const ChangePhoneNumberPage(),
           ),
         );
 
-        if (result != null && result is String) {
+        if (result != null) {
           setState(() {
             _phoneNumber = result;
           });
@@ -179,15 +179,15 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
       value: _socialMedia,
       showArrow: true,
       onTap: () async {
-        final result = await Navigator.push(
+        final result = await Navigator.push<String>(
           context,
-          MaterialPageRoute(
+          MaterialPageRoute<String>(
             builder: (context) => const ConnectSocialMediaPage(),
           ),
         );
 
         // Eğer sosyal medya sayfasından bir seçim dönerse güncelle
-        if (result != null && result is String) {
+        if (result != null) {
           setState(() {
             _socialMedia = result;
           });
@@ -239,16 +239,16 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
       showArrow: true,
       valueColor: AppColors.textGrey,
       onTap: () async {
-        final result = await Navigator.push(
+        final result = await Navigator.push<String>(
           context,
-          MaterialPageRoute(
+          MaterialPageRoute<String>(
             builder: (context) => ChangeAccountTypePage(
               currentType: _accountType.value,
             ),
           ),
         );
 
-        if (result != null && result is String) {
+        if (result != null) {
           setState(() {
             _accountType = AccountType.fromString(result);
           });
@@ -275,9 +275,9 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
         const Spacer(),
         GestureDetector(
           onTap: () {
-            Navigator.push(
+            Navigator.push<void>(
               context,
-              MaterialPageRoute(
+              MaterialPageRoute<void>(
                 builder: (context) => const ChangePasswordPage(),
               ),
             );

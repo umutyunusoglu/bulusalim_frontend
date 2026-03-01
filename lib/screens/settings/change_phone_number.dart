@@ -1,10 +1,10 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/auth_service.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:pinput/pinput.dart';
 
 class ChangePhoneNumberPage extends StatefulWidget {
@@ -23,7 +23,6 @@ class _ChangePhoneNumberPageState extends State<ChangePhoneNumberPage> {
   final UserRepository _userRepository = getIt<UserRepository>();
 
   String? _verificationId;
-  int? _resendToken;
   @override
   void initState() {
     super.initState();
@@ -119,7 +118,7 @@ class _ChangePhoneNumberPageState extends State<ChangePhoneNumberPage> {
             _buildButton(
               text: 'gönder',
               onPressed: () async {
-                var fullPhone = _phoneController.text.replaceAll(
+                final fullPhone = _phoneController.text.replaceAll(
                   ' ',
                   '',
                 ); // +905XXXXXXXXX
@@ -134,7 +133,6 @@ class _ChangePhoneNumberPageState extends State<ChangePhoneNumberPage> {
                 } else {
                   setState(() {
                     _verificationId = result.verificationId;
-                    _resendToken = result.resendToken;
                   });
                   // OTP alanına odaklan
                   _pinFocusNode.requestFocus();
@@ -185,7 +183,7 @@ class _ChangePhoneNumberPageState extends State<ChangePhoneNumberPage> {
               onPressed: () async {
                 if (_verificationId == null) return;
 
-                var code = _pinController.text;
+                final code = _pinController.text;
                 try {
                   // Yeni eklediğimiz metodu çağırıyoruz
                   await _authService.verifyAndChangePhoneNumber(

@@ -18,8 +18,6 @@ import 'package:outnest/domain/services/global_content_cache.dart';
 import 'package:outnest/domain/services/in_memory_cache.dart';
 import 'package:outnest/domain/services/session_service.dart';
 
-// FIX: Magic Numbers Lookup Table'a taşındı.
-// Her precision seviyesi için yaklaşık derece (lat, lon) boyutları.
 const Map<int, ({double lat, double lon})> _geohashDimensions = {
   3: (lat: 1.40625, lon: 1.40625),
   4: (lat: 0.1757, lon: 0.3515),

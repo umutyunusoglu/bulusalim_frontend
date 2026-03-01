@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
@@ -891,7 +893,7 @@ class UserRepositoryImpl implements UserRepository {
     _logger.info(
       'Follow request sent from user: $fromUserID to user: $toUserID',
     );
-    _firestore
+    await _firestore
         .collection('users')
         .doc(toUserID)
         .collection('followRequests')
@@ -907,7 +909,7 @@ class UserRepositoryImpl implements UserRepository {
       'Follow request sent from user: $fromUserID to user: $toUserID',
     );
     if (fromNotification) {
-      _firestore
+      await _firestore
           .collection('users')
           .doc(fromUserID)
           .collection('followNotifications')
@@ -1156,9 +1158,10 @@ class UserRepositoryImpl implements UserRepository {
       'otp': code,
     });
 
-    final success = response.data['success'] as bool;
+    final data = response.data as Map<String, dynamic>;
+    final success = data['success'] as bool;
 
-    final AnalyticsService analytics = getIt<AnalyticsService>();
+    final analytics = getIt<AnalyticsService>();
     final config = UniversityVerificationAnalyticsConfig(
       universityName: universityName,
       success: success,
@@ -1168,7 +1171,7 @@ class UserRepositoryImpl implements UserRepository {
     } else {
       _logger.warn('Email verification failed for email: $email');
     }
-    analytics.logUniversityVerified(config);
+    unawaited(analytics.logUniversityVerified(config));
 
     return success;
   }

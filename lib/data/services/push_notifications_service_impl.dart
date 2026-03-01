@@ -8,7 +8,6 @@ import 'package:outnest/domain/services/session_service.dart';
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // NOT: Bu fonksiyon izole bir alanda çalıştığı için logger veya sınıf değişkenlerine erişemez.
   // Eğer burada bir işlem yapacaksan Firebase'i tekrar init etmen gerekebilir.
-  print('Handling a background message: ${message.messageId}');
 }
 
 class PushNotificationsServiceImpl implements PushNotificationsService {

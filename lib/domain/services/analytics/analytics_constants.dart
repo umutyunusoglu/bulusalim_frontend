@@ -1,12 +1,3 @@
-import 'package:outnest/core/utils/types/enums/create_event_step_enum.dart';
-import 'package:outnest/core/utils/types/enums/emote_enum.dart';
-import 'package:outnest/core/utils/types/enums/feed_type.dart';
-import 'package:outnest/core/utils/types/enums/gender_enum.dart';
-import 'package:outnest/core/utils/types/enums/profile_segment_enum.dart';
-import 'package:outnest/core/utils/types/enums/screen_enum.dart';
-import 'package:outnest/core/utils/types/enums/visibility_enum.dart';
-import 'package:outnest/core/utils/types/types.dart';
-
 class AnalyticsEvents {
   static const String universityVerified = 'university_verified';
   static const String selectGender = 'select_gender';

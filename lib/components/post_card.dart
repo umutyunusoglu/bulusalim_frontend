@@ -1,4 +1,9 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/bottomsheetoption.dart';
 import 'package:outnest/components/countdown_timer.dart';
@@ -19,9 +24,6 @@ import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/screens/home/post%20components/content_tag_chip.dart';
 import 'package:outnest/screens/home/post%20components/emoji_chip.dart';
 import 'package:outnest/screens/home/post%20components/small_stacked_avatars.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 
 class PostCard extends StatefulWidget {
   const PostCard({
@@ -63,7 +65,6 @@ class _PostCardState extends State<PostCard> {
   bool _isEggedByMe = false;
 
   bool _amIFollowingPostCreator = false;
-  bool _isPostMine = false;
 
   // Pin durumunu yerel state'te tutuyoruz
   bool _isPinned = false;
@@ -89,7 +90,6 @@ class _PostCardState extends State<PostCard> {
     _updateFollowingStatus();
     _sessionService.stateListenable.addListener(_updateFollowingStatus);
     _isPinned = widget.post.isPinned;
-    _isPostMine = widget.post.creator.userID == _myUserId;
 
     _checkExistingEmotes();
   }
@@ -97,7 +97,7 @@ class _PostCardState extends State<PostCard> {
   void _updateFollowingStatus() {
     if (!mounted) return;
 
-    final myFollowees = _sessionService.stateListenable.value?.followees ?? [];
+    final myFollowees = _sessionService.stateListenable.value.followees;
     final isFollowing = myFollowees.any(
       (u) => u.userID == widget.post.creator.userID,
     );
@@ -207,11 +207,13 @@ class _PostCardState extends State<PostCard> {
       final analytics = getIt<AnalyticsService>();
 
       final amIFollowingPostCreator = _amIFollowingPostCreator;
-      final amIFolloweeOfPostCreator =
-          _sessionService.stateListenable.value?.followees.any(
+      final amIFolloweeOfPostCreator = _sessionService
+          .stateListenable
+          .value
+          .followees
+          .any(
             (u) => u.userID == widget.post.creator.userID,
-          ) ??
-          false;
+          );
       if (isSelectedCurrent) {
         await _postRepository.removeEmoteFromPost(
           widget.post.id,
@@ -219,22 +221,26 @@ class _PostCardState extends State<PostCard> {
           emote,
         );
 
-        analytics.logRemoveEmote(
-          RemoveEmoteAnalyticsConfig(
-            postID: widget.post.id,
-            value: emote,
-            isFollower: amIFollowingPostCreator,
-            isFollowee: amIFolloweeOfPostCreator,
+        unawaited(
+          analytics.logRemoveEmote(
+            RemoveEmoteAnalyticsConfig(
+              postID: widget.post.id,
+              value: emote,
+              isFollower: amIFollowingPostCreator,
+              isFollowee: amIFolloweeOfPostCreator,
+            ),
           ),
         );
       } else {
         await _postRepository.addEmoteToPost(widget.post.id, _myUserId, emote);
-        analytics.logSendEmote(
-          SendEmoteAnalyticsConfig(
-            postID: widget.post.id,
-            value: emote,
-            isFollower: amIFollowingPostCreator,
-            isFollowee: amIFolloweeOfPostCreator,
+        unawaited(
+          analytics.logSendEmote(
+            SendEmoteAnalyticsConfig(
+              postID: widget.post.id,
+              value: emote,
+              isFollower: amIFollowingPostCreator,
+              isFollowee: amIFolloweeOfPostCreator,
+            ),
           ),
         );
       }
@@ -367,11 +373,15 @@ class _PostCardState extends State<PostCard> {
 
       if (newStatus) {
         await _postRepository.pinPost(widget.post.id, _myUserId);
-        analytics.logPinPost(PinPostAnalyticsConfig(postID: widget.post.id));
+        unawaited(
+          analytics.logPinPost(PinPostAnalyticsConfig(postID: widget.post.id)),
+        );
       } else {
         await _postRepository.unpinPost(widget.post.id, _myUserId);
-        analytics.logUnpinPost(
-          UnpinPostAnalyticsConfig(postID: widget.post.id),
+        unawaited(
+          analytics.logUnpinPost(
+            UnpinPostAnalyticsConfig(postID: widget.post.id),
+          ),
         );
       }
     } catch (e) {
@@ -392,7 +402,7 @@ class _PostCardState extends State<PostCard> {
   }
 
   void _showOtherUserPostOptions(BuildContext context) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(

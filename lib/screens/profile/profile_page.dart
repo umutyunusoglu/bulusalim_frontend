@@ -19,7 +19,6 @@ import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/entities/user/friend_entity.dart';
 import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
-import 'package:outnest/domain/session_state.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/analytics/analytics_service.dart';
@@ -27,6 +26,7 @@ import 'package:outnest/domain/services/analytics/event_configs/select_profile_s
 import 'package:outnest/domain/services/analytics/event_configs/send_event_invitation_analytics_config.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/domain/session_state.dart';
 import 'package:outnest/domain/usecases/send_event_invitation_usecase.dart';
 import 'package:outnest/screens/home/post%20components/small_stacked_avatars.dart';
 import 'package:outnest/screens/profile/dump_tab.dart';
@@ -106,10 +106,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
             // 1. Pinli ve Aktif ayrımını yap
             final pinned = allPosts.where((p) => p.isPinned).toList();
-            final active = allPosts.where((p) => !p.isPinned).toList();
-
-            // 2. Aktifleri tarihe göre sırala (Yeniden eskiye)
-            active.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+            final active = allPosts.where((p) => !p.isPinned).toList()
+              // 2. Aktifleri tarihe göre sırala (Yeniden eskiye)
+              ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
             // 3. UI'ı güncelle
             setState(() {
@@ -162,8 +161,9 @@ class _ProfilePageState extends State<ProfilePage> {
         _pinnedPosts.insert(0, updatedPost);
       } else {
         // Aktifler listesine ekle ve tarihe göre yeniden sırala
-        _activePosts.add(updatedPost);
-        _activePosts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        _activePosts
+          ..add(updatedPost)
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
       }
     });
   }
@@ -179,7 +179,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (widget.profileUserID == getIt<SessionService>().currentUser?.userID) {
         user = getIt<SessionService>().currentUser;
       } else {
-        getIt<LoggingService>().debug("Others profi");
+        getIt<LoggingService>().debug('Others profile');
         user = await userRepository.getUserPublicData(widget.profileUserID);
       }
 
@@ -282,13 +282,13 @@ class _ProfilePageState extends State<ProfilePage> {
         _hasSentFollowRequest = hasSentFollowRequest == true;
 
         // Sayısal verilerde hata almamak için 0'a yuvarlıyoruz
-        numberOfFollowers = followerCount ?? 0;
-        numberOfFollowing = followeeCount ?? 0;
-        numberOfEvents = completedEventCount ?? 0;
+        numberOfFollowers = followerCount;
+        numberOfFollowing = followeeCount;
+        numberOfEvents = completedEventCount;
 
-        _commonFollowers = commonFollows ?? [];
-        _currentEvents = enrolledEvents ?? [];
-        _consideredEvents = savedEvents ?? [];
+        _commonFollowers = commonFollows;
+        _currentEvents = enrolledEvents;
+        _consideredEvents = savedEvents;
 
         _isLoadingEvents = false;
       });
@@ -380,7 +380,7 @@ class _ProfilePageState extends State<ProfilePage> {
       }
     } catch (e) {
       // 2. Hata olursa durumu eski haline döndür
-      debugPrint("Takip işlemi başarısız: $e");
+      debugPrint('Takip işlemi başarısız: $e');
       if (mounted) {
         setState(() {
           _isFollowing = previousState;
@@ -400,7 +400,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   // --- TAKİBİ BIRAKMA DIALOGU ---
   void _showUnfollowDialog(BuildContext context) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => Popup(
         title:
@@ -419,7 +419,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   // --- 1. ETKİNLİK YOKSA (HATA POPUP) ---
   void _showNoShareableEventDialog(BuildContext context) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => Dialog(
         backgroundColor: Colors.white,
@@ -484,7 +484,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     if (validEvents.isEmpty) {
-      showDialog(
+      showDialog<void>(
         context: context,
         builder: (context) => Dialog(
           shape: RoundedRectangleBorder(
@@ -545,7 +545,7 @@ class _ProfilePageState extends State<ProfilePage> {
       );
       return; // Fonksiyonun geri kalanını çalıştırma
     }
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) {
         return StatefulBuilder(
@@ -587,8 +587,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           setState(() => selectedIndex = index);
                         },
                         itemBuilder: (context, index) {
-                          final event = events[index] as EventEntity;
-                          (event.name ?? 'Buluşma ${index + 1}');
+                          final event = events[index];
 
                           // 1. URL'nin tipini kontrol et (Network mü Asset mi?)
                           final imageUrl = event.creator.profileImageUrl;
@@ -613,7 +612,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               ),
                               SizedBox(height: 8.h),
                               Text(
-                                event.name ?? 'Buluşma ${index + 1}',
+                                event.name,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontFamily: 'SF Pro Display',
@@ -679,18 +678,16 @@ class _ProfilePageState extends State<ProfilePage> {
                         Expanded(
                           child: TextButton(
                             onPressed: () async {
-                              final event =
-                                  events[selectedIndex] as EventEntity;
+                              final event = events[selectedIndex];
 
                               // 1. Kullanıcıya işlemin başladığını hissettir (Opsiyonel: Dialog'u kapatmadan önce loading gösterilebilir)
                               // Şimdilik pop yapıp ana ekranda Snackbar gösterelim.
                               final scaffoldMessenger = ScaffoldMessenger.of(
                                 context,
                               );
-                              final navigator = Navigator.of(context);
-
-                              navigator
-                                  .pop(); // Önce BottomSheet veya Dialog'u kapatıyoruz
+                              Navigator.of(
+                                context,
+                              ).pop(); // Önce BottomSheet veya Dialog'u kapatıyoruz
 
                               try {
                                 // 2. Fonksiyonu await ile bekle
@@ -700,7 +697,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                       toUsername: _username,
                                       toprofileImageUrl: _profileImageUrl,
                                       eventID: event.eventID,
-                                      eventName: event.name ?? '',
+                                      eventName: event.name,
                                     );
 
                                 // 3. Başarılı durum bildirimi
@@ -714,13 +711,15 @@ class _ProfilePageState extends State<ProfilePage> {
                                   ),
                                 );
 
-                                getIt<AnalyticsService>()
-                                    .logSendEventInvitation(
-                                      SendEventInvitationAnalyticsConfig(
-                                        eventID: event.eventID,
-                                        toUserID: widget.profileUserID,
+                                unawaited(
+                                  getIt<AnalyticsService>()
+                                      .logSendEventInvitation(
+                                        SendEventInvitationAnalyticsConfig(
+                                          eventID: event.eventID,
+                                          toUserID: widget.profileUserID,
+                                        ),
                                       ),
-                                    );
+                                );
 
                                 debugPrint(
                                   'Buluşma paylaşıldı: ${event.name}',

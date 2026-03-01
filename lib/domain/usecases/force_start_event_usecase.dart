@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -30,10 +31,14 @@ class ForceStartEvent {
       if (response.statusCode == 200) {
         _logger.info('Event started by server.');
 
-        getIt<AnalyticsService>().logForceStartEvent(
-          ForceStartEventAnalyticsConfig(
-            eventID: currentEvent.eventID,
-            timeToEventStart: currentEvent.startTime.difference(DateTime.now()),
+        unawaited(
+          getIt<AnalyticsService>().logForceStartEvent(
+            ForceStartEventAnalyticsConfig(
+              eventID: currentEvent.eventID,
+              timeToEventStart: currentEvent.startTime.difference(
+                DateTime.now(),
+              ),
+            ),
           ),
         );
       }

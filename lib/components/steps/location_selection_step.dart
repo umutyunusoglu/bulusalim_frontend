@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart';
@@ -9,7 +8,6 @@ import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/domain/repositories/map_repository.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
 
 class LocationSelectionStep extends StatefulWidget {
@@ -28,7 +26,7 @@ class LocationSelectionStep extends StatefulWidget {
   });
 
   final VoidCallback onBack;
-  final Function(String, String, Geolocation, bool) onNext;
+  final void Function(String, String, Geolocation, bool) onNext;
   final Geolocation? initialLocation;
   final String? initialAddress;
   final String? initialDisplayAddress;
@@ -124,7 +122,7 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
         //userın konumuna göre daha alakalı sonuçlar getirmek için proximity eklenebilir
 
         var results = <Place>[];
-        LocationPermission permission = await Geolocator.checkPermission();
+        final permission = await Geolocator.checkPermission();
         if (permission == LocationPermission.always ||
             permission == LocationPermission.whileInUse) {
           final position = await Geolocator.getCurrentPosition();
@@ -248,7 +246,7 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
                             horizontal: 12.w,
                           ),
                           itemCount: _places.length,
-                          separatorBuilder: (_, __) => Padding(
+                          separatorBuilder: (_, _) => Padding(
                             padding: EdgeInsets.symmetric(vertical: 8.h),
                             child: Divider(
                               height: 1,
@@ -358,10 +356,9 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
                     final display =
                         _selectedDisplayAddress ?? _selectedAddress!;
 
-                    final logger = getIt<LoggingService>()
-                      ..debug(
-                        'Seçilen konum: $_selectedAddress, Lokasyon: $_selectedLocation',
-                      );
+                    getIt<LoggingService>().debug(
+                      'Seçilen konum: $_selectedAddress, Lokasyon: $_selectedLocation',
+                    );
                     widget.onNext(
                       _selectedAddress!,
                       display,

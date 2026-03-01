@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_geohash/dart_geohash.dart';
 import 'package:flutter/material.dart';
@@ -200,11 +202,13 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
 
         _logger.debug('Zaman güncellendi: $newStartTime');
 
-        getIt<AnalyticsService>().logUpdateEventStartTime(
-          UpdateEventStartTimeAnalyticsConfig(
-            eventID: widget.eventID,
-            value: newStartTime,
-            previousValue: previousStartTime ?? newStartTime,
+        unawaited(
+          getIt<AnalyticsService>().logUpdateEventStartTime(
+            UpdateEventStartTimeAnalyticsConfig(
+              eventID: widget.eventID,
+              value: newStartTime,
+              previousValue: previousStartTime ?? newStartTime,
+            ),
           ),
         );
       } catch (e) {
