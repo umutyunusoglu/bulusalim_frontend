@@ -2,37 +2,40 @@ import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 
 abstract class GroupRepository {
-  /// Yeni bir grup oluşturur ve başlangıç üyelerini ekler.
-  /// Grup ID'si, grup oluşturulurken kullanılan benzersiz ID formatına göre sağlanmalıdır.
+  /// Creates a new group and adds the initial members.
+  /// The group ID must be provided according to the unique ID format used when creating the group.
   Future<void> createGroup(
     String groupName,
     List<CompactUserEntity> initialMembers,
   );
 
-  /// Var olan bir gruba yeni bir üye ekler.
-  /// Fonkiyon grup sahibi tarafından çağrılmalıdır.
-  Future<void> addGroupMember(
+  /// Adds a new member to an existing group.
+  /// The function must be called by the group owner.
+  Future<void> addGroupMemberToMyGroup(
     String groupName,
     CompactUserEntity newMember,
   );
 
-  /// Var olan bir gruptan bir üyeyi çıkarır.
-  /// Fonkiyon grup sahibi tarafından çağrılmalıdır.
-  Future<void> removeGroupMember(
+  /// Removes a member from an existing group.
+  /// The function must be called by the group owner.
+  Future<void> removeGroupMemberToMyGroup(
     String groupName,
     Identifier memberID,
   );
 
-  /// Bir grubu ve içindeki tüm üyeleri siler.
+  /// Deletes a group and all the members inside it.
   Future<void> deleteGroup(String groupName);
 
-  /// Belirtilen grubun tüm üyelerini getirir.
-  /// Fonkiyon grup sahibi tarafından çağrılmalıdır.
-  Future<List<CompactUserEntity>> getGroupMembers(String groupName);
+  /// Gets all the groups belonging to the current user.
+  Future<List<String>> getMyGroups();
 
-  /// Belirli bir kullanıcının bu grupta olup olmadığını O(1) maliyetle kontrol eder.
-  /// Grup ID'si, grup oluşturulurken kullanılan benzersiz ID formatına göre sağlanmalıdır.
-  /// Fonksiyon herkes tarafından çağrılabilir, grup üyesi olup olmama durumunu kontrol etmek için kullanılabilir.
+  /// Gets all members of the specified group.
+  /// The function must be called by the group owner.
+  Future<List<CompactUserEntity>> getMembersOfMyGroup(String groupName);
+
+  /// Checks whether a specific user is in this group with an O(1) cost.
+  /// The group ID must be provided according to the unique ID format used when creating the group.
+  /// The function can be called by everyone, it can be used to check the status of whether someone is a group member or not.
   Future<bool> isGroupMember(
     String groupID,
     Identifier userIDToCheck,

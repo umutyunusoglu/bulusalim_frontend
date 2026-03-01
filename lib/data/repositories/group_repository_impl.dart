@@ -57,7 +57,7 @@ class GroupRepositoryImpl implements GroupRepository {
   }
 
   @override
-  Future<void> addGroupMember(
+  Future<void> addGroupMemberToMyGroup(
     String groupName,
     CompactUserEntity newMember,
   ) async {
@@ -73,7 +73,7 @@ class GroupRepositoryImpl implements GroupRepository {
   }
 
   @override
-  Future<void> removeGroupMember(
+  Future<void> removeGroupMemberToMyGroup(
     String groupName,
     Identifier memberID,
   ) async {
@@ -109,7 +109,20 @@ class GroupRepositoryImpl implements GroupRepository {
   }
 
   @override
-  Future<List<CompactUserEntity>> getGroupMembers(String groupName) async {
+  Future<List<String>> getMyGroups() async {
+    final sessionService = getIt<SessionService>();
+    final userID = sessionService.currentUser?.userID;
+
+    final groupsSnapshot = await _firestore
+        .collection('groups')
+        .where('ownerID', isEqualTo: userID)
+        .get();
+
+    return groupsSnapshot.docs.map((doc) => doc['name'] as String).toList();
+  }
+
+  @override
+  Future<List<CompactUserEntity>> getMembersOfMyGroup(String groupName) async {
     final groupIdStr = _generateGroupId(groupName);
 
     final snapshot = await _firestore
