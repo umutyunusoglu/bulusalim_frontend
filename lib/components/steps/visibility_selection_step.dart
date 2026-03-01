@@ -1,7 +1,9 @@
+import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/components/popup_next_button.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:outnest/domain/repositories/group_repository.dart';
 
 class VisibilitySelectionStep extends StatefulWidget {
   const VisibilitySelectionStep({
@@ -40,12 +42,20 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
   // Seçilen grubu tutan değişken (Liste yerine tek bir String)
   String? _selectedGroup;
 
-  final List<String> _options = [
-    'herkes',
-    'takipçiler',
-    'okul',
-    'gruplar',
-  ];
+  late List<String> _options;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOptions();
+  }
+
+  Future<void> _loadOptions() async {
+    final options = await getIt<GroupRepository>().getMyGroups();
+    setState(() {
+      _options = options;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
