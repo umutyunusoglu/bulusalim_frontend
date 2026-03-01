@@ -14,6 +14,7 @@ abstract class EventRepository {
   Future<List<EventEntity>> getEventsByIds(
     List<Identifier> eventIds,
   );
+
   Future<EventEntity> enrichEventWithDetails(EventEntity event);
 
   Stream<List<EventEntity>> getEnrichedEventsOfUserStream(Identifier userId);

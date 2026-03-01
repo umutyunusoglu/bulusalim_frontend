@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 import 'package:geolocator/geolocator.dart' hide Position;
-import 'package:intl/intl.dart';
 import 'package:dart_geohash/dart_geohash.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,7 +20,6 @@ import 'package:outnest/components/steps/location_selection_step.dart';
 import 'package:outnest/components/steps/time_selection_step.dart';
 import 'package:outnest/components/steps/visibility_selection_step.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
-import 'package:outnest/core/constants/theme/app_theme.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
@@ -45,7 +43,6 @@ import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/screens/map/map_people_filter.dart';
 import 'package:outnest/screens/map/map_time_filter.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({

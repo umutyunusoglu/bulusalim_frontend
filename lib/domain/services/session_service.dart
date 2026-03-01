@@ -2,7 +2,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
-import 'package:outnest/domain/entities/user/session_state.dart';
+import 'package:outnest/domain/session_state.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
 
 abstract class SessionService {

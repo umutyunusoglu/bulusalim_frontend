@@ -37,13 +37,13 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
   ];
 
   // Seçilen grupları tutan liste
-  final String? _selectedGroup = null;
+  String? _selectedGroup = null;
 
   final List<String> _options = [
     'herkes',
     'takipçiler',
     'okul',
-    //  'arkadaşlar',
+    'gruplar',
   ];
 
   @override
@@ -117,9 +117,8 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
               onTap: () {
                 setState(() {
                   _selectedVisibility = option;
-                  // "arkadaşlar" seçilmediyse alt seçimleri temizle
-                  if (option != 'arkadaşlar') {
-                    _selectedGroup.clear();
+                  if (option != 'gruplar') {
+                    _selectedGroup = null;
                   }
                 });
               },
@@ -135,8 +134,7 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
                       : const Color(0xFFF5F5F5),
                   borderRadius: BorderRadius.circular(12.r),
                   border: isSelected ? Border.all(color: activeColor) : null,
-                  // Sadece 'arkadaşlar' seçiliyken gölge efekti
-                  boxShadow: (isSelected && option == 'arkadaşlar')
+                  boxShadow: (isSelected && option == 'gruplar')
                       ? [
                           BoxShadow(
                             color: activeColor.withOpacity(0.2),
@@ -161,15 +159,13 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
           );
         }),
 
-        // 3. ALT GRUPLAR (Sadece 'arkadaşlar' seçiliyse görünür)
-        if (_selectedVisibility == 'arkadaşlar') ...[
+        if (_selectedVisibility == 'gruplar') ...[
           SizedBox(height: 8.h),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // GRUP LİSTESİ
                 ..._myGroups.map((group) {
                   final isGroupSelected = _selectedGroups.contains(group);
                   return GestureDetector(
