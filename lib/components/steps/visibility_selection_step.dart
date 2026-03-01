@@ -13,9 +13,10 @@ class VisibilitySelectionStep extends StatefulWidget {
 
   final VoidCallback onBack;
   final VoidCallback? onClose;
+  // DÜZELTME 1: Grup seçilmediği durumlar için String yerine String? (nullable) yapıldı.
   final void Function(
     String visibility,
-    String selectedGroup,
+    String? selectedGroup,
     bool isMapHidden,
   )
   onNext;
@@ -36,8 +37,8 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
     'grup3',
   ];
 
-  // Seçilen grupları tutan liste
-  String? _selectedGroup = null;
+  // Seçilen grubu tutan değişken (Liste yerine tek bir String)
+  String? _selectedGroup;
 
   final List<String> _options = [
     'herkes',
@@ -167,14 +168,17 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ..._myGroups.map((group) {
-                  final isGroupSelected = _selectedGroups.contains(group);
+                  // DÜZELTME 2: Liste mantığı yerine tekli seçim mantığı eklendi
+                  final isGroupSelected = _selectedGroup == group;
+
                   return GestureDetector(
                     onTap: () {
                       setState(() {
+                        // DÜZELTME 3: Eğer zaten seçiliyse seçimi kaldır, değilse o grubu seç
                         if (isGroupSelected) {
-                          _selectedGroups.remove(group);
+                          _selectedGroup = null;
                         } else {
-                          _selectedGroups.add(group);
+                          _selectedGroup = group;
                         }
                       });
                     },
