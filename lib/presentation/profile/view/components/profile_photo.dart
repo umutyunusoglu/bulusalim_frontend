@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -24,8 +25,7 @@ class ProfilePhoto extends StatelessWidget {
     // Secondary (Mavi): Pasif rozetlerin rengi için
     final inactiveBadgeColor = theme.colorScheme.secondary;
 
-    final photoSize = 61.w;
-    final spreadSize = 4.5.w;
+    final photoSize = 65.w;
     final badgeSize = 23.w;
 
     final isNetwork =
@@ -35,39 +35,31 @@ class ProfilePhoto extends StatelessWidget {
       children: [
         // 1. GLOW EFEKTLİ FOTOĞRAF
         Container(
-          width: photoSize,
-          height: photoSize,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: glowColor,
-                blurRadius: 12,
-                spreadRadius: spreadSize,
-              ),
-            ],
-          ),
-          child: ClipOval(
-            child: isNetwork
-                ? CachedNetworkImage(
-                    imageUrl: fixEmulatorUrl(profileImageUrl),
-                    fadeInDuration: Duration.zero,
-                    fit: BoxFit.cover,
-                    width: photoSize,
-                    height: photoSize,
-                    // İnternet varken yükleme hatası olursa asset'i bas
-                    errorWidget: (context, url, error) => Image.asset(
+          child: SizedBox(
+            width: photoSize,
+            height: photoSize,
+
+            child: ClipOval(
+              child: isNetwork
+                  ? CachedNetworkImage(
+                      imageUrl: fixEmulatorUrl(profileImageUrl),
+                      fadeInDuration: Duration.zero,
+                      fit: BoxFit.cover,
+                      width: photoSize,
+                      height: photoSize,
+                      // İnternet varken yükleme hatası olursa asset'i bas
+                      errorWidget: (context, url, error) => Image.asset(
+                        FileService.defaultProfileImageUrl(),
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : Image.asset(
                       FileService.defaultProfileImageUrl(),
                       fit: BoxFit.cover,
+                      width: photoSize,
+                      height: photoSize,
                     ),
-                  )
-                : Image.asset(
-                    FileService.defaultProfileImageUrl(),
-                    fit: BoxFit.cover,
-                    width: photoSize,
-                    height: photoSize,
-                  ),
+            ),
           ),
         ),
         SizedBox(height: 16.h),

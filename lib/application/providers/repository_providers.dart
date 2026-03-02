@@ -4,6 +4,7 @@ import 'package:get_it/get_it.dart';
 import 'package:outnest/data/repositories/chat_repository_impl.dart';
 import 'package:outnest/data/repositories/event_repository_impl.dart';
 import 'package:outnest/data/repositories/feed_repository_impl.dart';
+import 'package:outnest/data/repositories/group_repository_impl.dart';
 import 'package:outnest/data/repositories/map_repository_impl.dart';
 import 'package:outnest/data/repositories/post_repository_impl.dart';
 import 'package:outnest/data/repositories/user_repository_impl.dart';
@@ -11,6 +12,7 @@ import 'package:outnest/data/services/draft_post_service_impl.dart';
 import 'package:outnest/domain/repositories/chat_repository.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/feed_repository.dart';
+import 'package:outnest/domain/repositories/group_repository.dart';
 import 'package:outnest/domain/repositories/map_repository.dart';
 import 'package:outnest/domain/repositories/post_repository.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
@@ -63,6 +65,9 @@ extension RepositoryModule on GetIt {
       )
       ..registerLazySingleton<DraftPostService>(
         () => DraftPostServiceImpl(),
+      )
+      ..registerLazySingleton<GroupRepository>(
+        () => GroupRepositoryImpl(),
       );
   }
 }

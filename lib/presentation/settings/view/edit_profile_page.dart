@@ -1,6 +1,10 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart'; // Carousel DatePicker için gerekli
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
@@ -13,10 +17,10 @@ import 'package:outnest/domain/services/analytics/event_configs/select_gender_an
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/usecases/upload_profile_picture_usecase.dart';
 import 'package:outnest/presentation/settings/view/components/profile_input_row.dart';
-import 'package:flutter/cupertino.dart'; // Carousel DatePicker için gerekli
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:outnest/presentation/shared/form/formatters/name_surname_formatter.dart';
+import 'package:outnest/presentation/shared/form/validators/validate_bio.dart';
+import 'package:outnest/presentation/shared/form/validators/validate_date_of_birth.dart';
+import 'package:outnest/presentation/shared/form/validators/validate_name_surname.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -47,10 +51,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late String _previousDob;
   late bool _previousHideSavedEvents;
 
+  final _formKey = GlobalKey<FormState>();
+
   bool _hasChanges = false;
 
   // Carousel dönerken seçilen geçici tarih
-  DateTime _tempSelectedDate = DateTime(2002, 1);
+  DateTime _tempSelectedDate =
+      getIt<SessionService>().currentUser?.birthDate ?? DateTime(2000, 1);
 
   @override
   void initState() {
@@ -383,7 +390,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               Expanded(
                 child: CupertinoDatePicker(
                   mode: CupertinoDatePickerMode.date,
-                  initialDateTime: _tempSelectedDate,
+                  initialDateTime: _selectedDob,
                   minimumDate: DateTime(1900),
                   maximumDate: DateTime.now(),
                   onDateTimeChanged: (DateTime newDate) {
@@ -442,8 +449,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
         actions: [
           TextButton(
             onPressed: () async {
-              await _saveProfileChanges();
-              if (context.mounted) Navigator.pop(context, true);
+              if (_formKey.currentState?.validate() ?? false) {
+                await _saveProfileChanges();
+                if (context.mounted) Navigator.pop(context, true);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Lütfen hatalı alanları düzeltin.'),
+                  ),
+                );
+              }
             },
             child: Text(
               'Bitti',
@@ -458,79 +473,91 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ],
       ),
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: Column(
-            children: [
-              SizedBox(height: 10.h),
-
-              // 1. Profil Fotonuz
-              _buildProfilePhotoSection(),
-              SizedBox(height: 32.h),
-
-              // 2. Form Alanları
-              ProfileInputRow(
-                label: 'İsim',
-                controller: _nameController,
-                onChanged: _onFieldChanged,
-              ),
-
-              ProfileInputRow(
-                label: 'Hakkında',
-                controller: _bioController,
-                maxLines: 3,
-                maxLength: 40,
-                onChanged: _onFieldChanged,
-              ),
-
-              ProfileInputRow(
-                label: 'Cinsiyet',
-                controller: _genderController,
-                readOnly: true, // Sadece inputa basılınca açılır
-                onTap: _showGenderSelector,
-              ),
-
-              ProfileInputRow(
-                label: 'Doğum Tarihi',
-                controller: _dobController,
-                readOnly: true, // Sadece inputa basılınca açılır
-                onTap: _showCarouselDatePicker, // Carousel açılır
-              ),
-
-              // 3. Ayırıcı Çizgi ve Switch
-              Divider(color: Colors.grey.shade200, thickness: 1),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    'Kaydedilen Buluşmaları Gizle',
-                    style: TextStyle(
-                      fontFamily: 'SF Pro Display',
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
+                  SizedBox(height: 10.h),
+
+                  // 1. Profil Fotonuz
+                  _buildProfilePhotoSection(),
+                  SizedBox(height: 32.h),
+
+                  // 2. Form Alanları
+                  ProfileInputRow(
+                    label: 'İsim',
+                    controller: _nameController,
+                    onChanged: _onFieldChanged,
+                    formatters: [NameSurnameFormatter()],
+                    validator: (value) =>
+                        validateNameSurname(_nameController.text),
                   ),
-                  Transform.scale(
-                    scale: 0.8,
-                    child: Switch.adaptive(
-                      value: _hideSavedEvents,
-                      activeColor: Colors.white,
-                      activeTrackColor: AppColors.primaryColor,
-                      inactiveThumbColor: Colors.white,
-                      inactiveTrackColor: Colors.grey.shade300,
-                      onChanged: (val) {
-                        setState(() {
-                          _hideSavedEvents = val;
-                          _hasChanges = true;
-                        });
-                      },
-                    ),
+
+                  ProfileInputRow(
+                    label: 'Hakkında',
+                    controller: _bioController,
+                    maxLines: 3,
+                    maxLength: 40,
+                    onChanged: _onFieldChanged,
+                    validator: (value) => validateBio(_bioController.text),
+                  ),
+
+                  ProfileInputRow(
+                    label: 'Cinsiyet',
+                    controller: _genderController,
+                    readOnly: true, // Sadece inputa basılınca açılır
+                    canChange: true,
+                    onTap: _showGenderSelector,
+                  ),
+
+                  ProfileInputRow(
+                    label: 'Doğum Tarihi',
+                    controller: _dobController,
+                    readOnly: true, // Sadece inputa basılınca açılır
+                    canChange: false,
+                    onTap: null,
+                    validator: (value) => validateDateOfBirth(_selectedDob),
+                  ),
+
+                  // 3. Ayırıcı Çizgi ve Switch
+                  Divider(color: Colors.grey.shade200, thickness: 1),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Kaydedilen Buluşmaları Gizle',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Display',
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black,
+                        ),
+                      ),
+                      Transform.scale(
+                        scale: 0.8,
+                        child: Switch.adaptive(
+                          value: _hideSavedEvents,
+                          activeColor: Colors.white,
+                          activeTrackColor: AppColors.primaryColor,
+                          inactiveThumbColor: Colors.white,
+                          inactiveTrackColor: Colors.grey.shade300,
+                          onChanged: (val) {
+                            setState(() {
+                              _hideSavedEvents = val;
+                              _hasChanges = true;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const Spacer(),
-            ],
+            ),
           ),
         ),
       ),
@@ -646,7 +673,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       final analytics = getIt<AnalyticsService>();
       if (_nameController.text != _previousName) {
-        updatedData['nameSurname'] = _nameController.text.toLowerCase();
+        updatedData['nameSurname'] = _nameController.text;
       }
       if (_bioController.text != _previousBio) {
         updatedData['bio'] = _bioController.text;
@@ -680,8 +707,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           updatedData,
         );
       }
-
-      debugPrint('Profil değişiklikleri kaydedildi.');
+      await getIt<SessionService>().refreshSession();
 
       if (updatedData.containsKey('hideSavedEvents')) {
         getIt<AnalyticsService>().logClickHideSavedEvents(

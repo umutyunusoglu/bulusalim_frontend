@@ -63,6 +63,7 @@ class SessionServiceImpl implements SessionService {
     );
   }
 
+  @override
   Future<void> refreshSession() async {
     final userId = _authService.getCurrentUserID();
     if (userId != null) {

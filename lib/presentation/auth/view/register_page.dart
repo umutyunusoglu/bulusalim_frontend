@@ -86,11 +86,13 @@ class _RegisterPageState extends State<RegisterPage> {
           _showErrorSnackBar('Hata: ${result.error}');
         } else {
           final verificationID = result.verificationId;
-
+          final resendToken = result.resendToken;
           await context.push(
             '/verification-code-field',
             extra: {
               'verificationID': verificationID,
+              'phoneNumber': '+90$rawNumber',
+              'resendToken': resendToken,
             },
           );
         }
@@ -123,7 +125,7 @@ class _RegisterPageState extends State<RegisterPage> {
               size: 24.sp,
             ),
             // Yükleme varsa geri tuşunu devre dışı bırak
-            onPressed: isAnyLoading ? null : () => context.pop(),
+            onPressed: isAnyLoading ? null : () => context.go('/welcome'),
           ),
         ),
         body: SingleChildScrollView(
