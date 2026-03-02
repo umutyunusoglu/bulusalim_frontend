@@ -1,9 +1,9 @@
-import 'package:outnest/application/providers/get_it_init.dart';
-import 'package:outnest/presentation/map/view/components/popup_next_button.dart';
-import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/repositories/group_repository.dart';
+import 'package:outnest/presentation/map/view/components/popup_next_button.dart';
 
 class VisibilitySelectionStep extends StatefulWidget {
   const VisibilitySelectionStep({
@@ -32,17 +32,17 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
   String _selectedVisibility = 'herkes';
   bool _isMapHidden = false;
 
-  // Mock Gruplar Datası
-  final List<String> _myGroups = [
-    'bizimkiler ❤️',
-    'sporcular',
-    'grup3',
-  ];
+  List<String>? _myGroups;
 
   // Seçilen grubu tutan değişken (Liste yerine tek bir String)
   String? _selectedGroup;
 
-  late List<String> _options;
+  final List<String> _options = [
+    'herkes',
+    'takipçiler',
+    'okul',
+    'gruplar',
+  ];
 
   @override
   void initState() {
@@ -51,9 +51,9 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
   }
 
   Future<void> _loadOptions() async {
-    final options = await getIt<GroupRepository>().getMyGroups();
+    final groups = await getIt<GroupRepository>().getMyGroups();
     setState(() {
-      _options = options;
+      _myGroups = groups;
     });
   }
 
@@ -172,69 +172,72 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
 
         if (_selectedVisibility == 'gruplar') ...[
           SizedBox(height: 8.h),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ..._myGroups.map((group) {
-                  // DÜZELTME 2: Liste mantığı yerine tekli seçim mantığı eklendi
-                  final isGroupSelected = _selectedGroup == group;
+          if (_myGroups == null)
+            const CircularProgressIndicator()
+          else
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ..._myGroups!.map((group) {
+                    // DÜZELTME 2: Liste mantığı yerine tekli seçim mantığı eklendi
+                    final isGroupSelected = _selectedGroup == group;
 
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        // DÜZELTME 3: Eğer zaten seçiliyse seçimi kaldır, değilse o grubu seç
-                        if (isGroupSelected) {
-                          _selectedGroup = null;
-                        } else {
-                          _selectedGroup = group;
-                        }
-                      });
-                    },
-                    child: Container(
-                      margin: EdgeInsets.symmetric(horizontal: 4.w),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12.w,
-                        vertical: 6.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isGroupSelected
-                            ? activeColor // Seçiliyse Mavi
-                            : const Color(0xFFF5F5F5), // Değilse Gri
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                      child: Text(
-                        group,
-                        style: TextStyle(
-                          fontSize: 12.sp,
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          // DÜZELTME 3: Eğer zaten seçiliyse seçimi kaldır, değilse o grubu seç
+                          if (isGroupSelected) {
+                            _selectedGroup = null;
+                          } else {
+                            _selectedGroup = group;
+                          }
+                        });
+                      },
+                      child: Container(
+                        margin: EdgeInsets.symmetric(horizontal: 4.w),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 6.h,
+                        ),
+                        decoration: BoxDecoration(
                           color: isGroupSelected
-                              ? Colors.white
-                              : Colors.black87,
-                          fontWeight: FontWeight.w400,
+                              ? activeColor // Seçiliyse Mavi
+                              : const Color(0xFFF5F5F5), // Değilse Gri
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Text(
+                          group,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: isGroupSelected
+                                ? Colors.white
+                                : Colors.black87,
+                            fontWeight: FontWeight.w400,
+                          ),
                         ),
                       ),
+                    );
+                  }),
+
+                  SizedBox(width: 4.w),
+
+                  // ARTI (+) BUTONU
+                  GestureDetector(
+                    onTap: () {
+                      // TODO: Yeni grup oluşturma dialogu
+                      debugPrint('Yeni grup ekle');
+                    },
+                    child: Icon(
+                      Icons.add,
+                      size: 20.sp,
+                      color: activeColor,
                     ),
-                  );
-                }),
-
-                SizedBox(width: 4.w),
-
-                // ARTI (+) BUTONU
-                GestureDetector(
-                  onTap: () {
-                    // TODO: Yeni grup oluşturma dialogu
-                    debugPrint('Yeni grup ekle');
-                  },
-                  child: Icon(
-                    Icons.add,
-                    size: 20.sp,
-                    color: activeColor,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
         ],
 
         const Spacer(),

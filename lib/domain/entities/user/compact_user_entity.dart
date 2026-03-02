@@ -18,11 +18,13 @@ class CompactUserEntity extends Equatable {
     if (map.containsKey('bio') == false) {
       map['bio'] = null;
     }
-    if (map.containsKey('nameSurname') == false) {
-      map['nameSurname'] = null;
-    }
+
     if (map.containsKey('isPrivate') == false) {
       map['isPrivate'] = null;
+    }
+    final nameSurname = map['nameSurname'] ?? map['fullname'];
+    if (nameSurname != null) {
+      map['nameSurname'] = nameSurname;
     }
 
     return CompactUserEntity(

@@ -84,7 +84,7 @@ class FeedRepositoryImpl implements FeedRepository {
 
     // Burada UI'ı temizlemiyoruz (clearUI: false),
     // Sadece imleçleri (cursor) sıfırlıyoruz.
-    _resetState(clearUI: false);
+    _resetState();
 
     await loadMore(isRefresh: true);
   }
@@ -168,8 +168,6 @@ class FeedRepositoryImpl implements FeedRepository {
     }
 
     if (_currentFeedType == FeedType.university) {
-      // Buradaki null kontrolünü kaldırdık, çünkü yukarıda (fetch metodunda) engelleyeceğiz.
-      // Artık buraya geldiğinde user.university'nin dolu olduğundan eminiz.
       query = query.where('creator.university', isEqualTo: user.university);
     }
 
@@ -207,7 +205,6 @@ class FeedRepositoryImpl implements FeedRepository {
     UserEntity user,
     List<String> followeeIds,
   ) async {
-    // DÜZELTME: Aynı kontrolü burada da yapıyoruz.
     if (_currentFeedType == FeedType.university && user.university == null) {
       return [];
     }
@@ -453,16 +450,14 @@ class FeedRepositoryImpl implements FeedRepository {
         return followeeIds.contains(event.creator.userID);
       case VisibilityEnum.custom:
         final groupId = event.visibilityGroupID;
-        if (groupId == null)
+        if (groupId == null) {
           return false; // Güvenlik için, grup ID'si yoksa gösterme
+        }
 
         return await getIt<GroupRepository>().isGroupMember(
           groupId,
           currentUser.userID,
         );
-
-      default:
-        return true;
     }
   }
 

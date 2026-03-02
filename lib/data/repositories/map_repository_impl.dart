@@ -93,6 +93,7 @@ class MapRepositoryImpl implements MapRepository {
           _firestore
               .collection('events')
               .where('showOnMap', isEqualTo: true)
+              .where('status', whereIn: ['upcoming', 'ongoing'])
               .orderBy('geohash')
               .startAt([parentHash])
               .endAt([endHash])

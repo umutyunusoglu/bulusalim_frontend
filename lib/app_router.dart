@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
-import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
-import 'package:outnest/presentation/init_screen.dart';
-import 'package:outnest/scaffold_with_navbar.dart';
 import 'package:outnest/presentation/auth/view/login_page.dart';
 import 'package:outnest/presentation/auth/view/otp_verification_page.dart';
 import 'package:outnest/presentation/auth/view/register_info_page.dart';
@@ -19,6 +16,7 @@ import 'package:outnest/presentation/chat/view/event_settings_page.dart';
 import 'package:outnest/presentation/chat/view/my_events_page.dart';
 import 'package:outnest/presentation/debug/debug_nsfw_screen.dart';
 import 'package:outnest/presentation/home/view/home_page.dart';
+import 'package:outnest/presentation/init_screen.dart';
 import 'package:outnest/presentation/map/view/map_page.dart';
 import 'package:outnest/presentation/notification/view/follow_request_page.dart';
 import 'package:outnest/presentation/notification/view/notification_page.dart';
@@ -26,6 +24,8 @@ import 'package:outnest/presentation/profile/view/profile_page.dart';
 import 'package:outnest/presentation/search/view/search_page.dart';
 import 'package:outnest/presentation/settings/view/edit_profile_page.dart';
 import 'package:outnest/presentation/settings/view/settings_page.dart';
+import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
+import 'package:outnest/scaffold_with_navbar.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -75,6 +75,8 @@ final router = GoRouter(
         return OtpVerificationPage(
           isLogin: true,
           verificationID: extra?['verificationID'] as String?,
+          resendToken: extra?['resendToken'] as int?,
+          phoneNumber: extra?['phoneNumber'] as String?,
         );
       },
     ),
@@ -88,6 +90,8 @@ final router = GoRouter(
         final extra = state.extra as Map<String, dynamic>?;
         return OtpVerificationPage(
           verificationID: extra?['verificationID'] as String?,
+          phoneNumber: extra?['phoneNumber'] as String?,
+          resendToken: extra?['resendToken'] as int?,
         );
       },
     ),
@@ -109,22 +113,6 @@ final router = GoRouter(
         StatefulShellBranch(
           routes: [
             GoRoute(
-              path: '/map',
-              builder: (context, state) => const MapPage(),
-            ),
-          ],
-        ),
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/search',
-              builder: (context, state) => const SearchPage(),
-            ),
-          ],
-        ),
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
               path: '/home',
               builder: (context, state) => const HomePage(),
               routes: [
@@ -138,6 +126,23 @@ final router = GoRouter(
                   },
                 ),
               ],
+            ),
+          ],
+        ),
+
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/search',
+              builder: (context, state) => const SearchPage(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/map',
+              builder: (context, state) => const MapPage(),
             ),
           ],
         ),

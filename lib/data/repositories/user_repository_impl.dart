@@ -119,10 +119,7 @@ class UserRepositoryImpl implements UserRepository {
   Future<CompactUserEntity?> getUserPublicData(Identifier userID) async {
     try {
       // await kullanarak verinin gelmesini bekliyoruz
-      final doc = await _firestore
-          .collection('public_users')
-          .doc(userID.toString())
-          .get();
+      final doc = await _firestore.collection('public_users').doc(userID).get();
 
       if (!doc.exists) {
         _logger.info('Public user not found: $userID');
