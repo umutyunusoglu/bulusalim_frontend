@@ -27,7 +27,6 @@ class _HomeContentPageState extends State<HomeContentPage> {
   final FeedRepository _feedRepository = getIt<FeedRepository>();
 
   // Fetch eşiği
-  final int _nextPageThreshold = AppConfig.feedFetchThreshold;
 
   bool _isInitialLoading = false;
 
@@ -113,7 +112,7 @@ class _HomeContentPageState extends State<HomeContentPage> {
                 snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
                 child: Padding(
-                  padding: EdgeInsets.all(20.0),
+                  padding: EdgeInsets.all(20),
                   child: CircularProgressIndicator(),
                 ),
               );
@@ -159,10 +158,6 @@ class _HomeContentPageState extends State<HomeContentPage> {
         ),
       ),
     );
-  }
-
-  Widget _buildInitialLoading() {
-    return const Center(child: CircularProgressIndicator());
   }
 
   Widget _buildEmptyState() {

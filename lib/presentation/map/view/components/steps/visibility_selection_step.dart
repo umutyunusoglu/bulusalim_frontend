@@ -37,11 +37,11 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
   // Seçilen grubu tutan değişken (Liste yerine tek bir String)
   String? _selectedGroup;
 
-  List<String> _options = [
-    "herkes",
-    "takipçiler",
-    "okul",
-    "gruplar",
+  final List<String> _options = [
+    'herkes',
+    'takipçiler',
+    'okul',
+    'gruplar',
   ];
 
   @override

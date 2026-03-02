@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ProfileInputRow extends StatelessWidget {
@@ -11,6 +12,9 @@ class ProfileInputRow extends StatelessWidget {
     this.readOnly = false,
     this.onTap,
     this.onChanged,
+    this.validator,
+    this.formatters,
+    this.canChange = true,
   });
 
   final String label;
@@ -18,25 +22,33 @@ class ProfileInputRow extends StatelessWidget {
   final int maxLines;
   final int? maxLength;
   final bool readOnly;
+  final bool canChange;
   final VoidCallback? onTap;
   final Function(String)? onChanged;
+  final String? Function(String?)? validator;
+  final List<TextInputFormatter>? formatters;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4.h),
+      padding: EdgeInsets.symmetric(vertical: 8.h),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // --- SOL TARAF: ETİKET (TIKLANAMAZ) ---
           SizedBox(
             width: 110.w,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'SF Pro Display',
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w500,
-                color: Colors.black,
+
+            child: Padding(
+              padding: EdgeInsets.only(top: 8.h),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'SF Pro Display',
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
               ),
             ),
           ),
@@ -48,8 +60,12 @@ class ProfileInputRow extends StatelessWidget {
               overlayColor: WidgetStateProperty.all(Colors.transparent),
               child: IgnorePointer(
                 ignoring: readOnly,
-                child: TextField(
+                child: TextFormField(
+                  enabled: !readOnly,
                   controller: controller,
+                  validator: validator,
+                  inputFormatters: formatters,
+
                   minLines: 1,
                   maxLines: maxLines,
                   maxLength: maxLength,
@@ -62,20 +78,28 @@ class ProfileInputRow extends StatelessWidget {
                     fontFamily: 'SF Pro Display',
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w400,
-                    color: Colors.black87,
+                    color: !canChange ? Colors.grey : Colors.black87,
                   ),
                   decoration: InputDecoration(
                     filled: false,
                     fillColor: Colors.transparent,
                     isDense: true,
-                    contentPadding: EdgeInsets.symmetric(vertical: 10.h),
+                    errorStyle: TextStyle(
+                      fontSize: 12.sp,
+                      height:
+                          1.2, // Satır yüksekliğini artırır. 1.0 - 1.5 arası bir değer deneyebilirsin.
+                      fontFamily: 'SF Pro Display',
+                    ),
+                    errorMaxLines: 2,
+
+                    contentPadding: EdgeInsets.symmetric(vertical: 8.h),
                     border: InputBorder.none,
                     focusedBorder: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     errorBorder: InputBorder.none,
                     disabledBorder: InputBorder.none,
 
-                    counterText: maxLength != null ? null : '',
+                    counterText: "",
                     hintText: '$label giriniz',
                     hintStyle: TextStyle(
                       fontFamily: 'SF Pro Display',
@@ -92,18 +116,9 @@ class ProfileInputRow extends StatelessWidget {
                         maxLength,
                       }) {
                         if (maxLength == null) return null;
-                        return Container(
-                          alignment: Alignment.centerRight,
-                          margin: EdgeInsets.only(top: 2.h),
-                          child: Text(
-                            '$currentLength/$maxLength',
-                            style: TextStyle(
-                              fontFamily: 'SF Pro Display',
-                              fontSize: 10.sp,
-                              color: Colors.grey,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
+                        return Text(
+                          '$currentLength/$maxLength',
+                          style: TextStyle(fontSize: 10.sp, color: Colors.grey),
                         );
                       },
                 ),

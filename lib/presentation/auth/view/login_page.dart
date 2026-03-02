@@ -79,11 +79,13 @@ class _LoginPageState extends State<LoginPage> {
           _showErrorSnackBar('Hata: ${result.error}');
         } else {
           final verificationID = result.verificationId;
-
+          final resendToken = result.resendToken;
           await context.push(
             '/login-verification',
             extra: {
               'verificationID': verificationID,
+              'phoneNumber': '+90$rawNumber',
+              'resendToken': resendToken,
             },
           );
         }
@@ -116,7 +118,7 @@ class _LoginPageState extends State<LoginPage> {
               size: 20.sp,
             ),
             //Todo:bug
-            onPressed: isAnyLoading ? null : () => context.pop(),
+            onPressed: isAnyLoading ? null : () => context.go('/welcome'),
           ),
         ),
         body: SingleChildScrollView(

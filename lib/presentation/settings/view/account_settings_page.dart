@@ -82,10 +82,12 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
           children: [
             _buildUniversitySection(),
             SizedBox(height: 28.h),
+            /*
             _buildPhoneSection(),
             SizedBox(height: 28.h),
             _buildSocialMediaSection(),
             SizedBox(height: 28.h),
+            */
             _buildDivider(),
             SizedBox(height: 24.h),
             _buildPrivacySection(),

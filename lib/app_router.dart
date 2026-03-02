@@ -75,6 +75,8 @@ final router = GoRouter(
         return OtpVerificationPage(
           isLogin: true,
           verificationID: extra?['verificationID'] as String?,
+          resendToken: extra?['resendToken'] as int?,
+          phoneNumber: extra?['phoneNumber'] as String?,
         );
       },
     ),
@@ -88,6 +90,8 @@ final router = GoRouter(
         final extra = state.extra as Map<String, dynamic>?;
         return OtpVerificationPage(
           verificationID: extra?['verificationID'] as String?,
+          phoneNumber: extra?['phoneNumber'] as String?,
+          resendToken: extra?['resendToken'] as int?,
         );
       },
     ),

@@ -473,11 +473,11 @@ class _ProfilePageState extends State<ProfilePage> {
   ) async {
     var selectedIndex = 0;
 
-    final EventRepository eventRepository = getIt<EventRepository>();
+    final eventRepository = getIt<EventRepository>();
 
     // 1. Asenkron filtreleme burada yapılır
-    List<EventEntity> validEvents = [];
-    for (EventEntity e in events) {
+    var validEvents = <EventEntity>[];
+    for (var e in events) {
       final hasSent = await eventRepository.hasSentInvitation(
         e,
         widget.profileUserID,
@@ -809,15 +809,29 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   // HEADER ALANI
-  Widget _buildProfileHeader(BuildContext context) {
+  Widget _buildProfileHeader(BuildContext context, SessionState state) {
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
     final secondaryColor = theme.colorScheme.secondary;
     final onSurface = theme.colorScheme.onSurface;
 
-    final sessionUser = getIt<SessionService>().currentUser;
-    // Kullanıcının kendi profili mi kontrolü
+    final sessionUser = state.user;
+
     final isCurrentUser = widget.profileUserID == sessionUser?.userID;
+
+    final currentUsername = isCurrentUser
+        ? (sessionUser?.username ?? '')
+        : _username;
+    final currentFullName = isCurrentUser
+        ? (sessionUser?.nameSurname ?? '')
+        : _fullName;
+    final currentBio = isCurrentUser ? (sessionUser?.bio ?? '') : _bio;
+    final currentSchool = isCurrentUser
+        ? (sessionUser?.university ?? 'Üniversite Doğrulanmadı')
+        : _school;
+    final currentProfileImageUrl = isCurrentUser
+        ? (sessionUser?.profileImageUrl ?? '')
+        : _profileImageUrl;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -858,9 +872,8 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               Padding(
                 padding: EdgeInsets.only(top: 12.h),
-
                 child: ProfilePhoto(
-                  profileImageUrl: _profileImageUrl,
+                  profileImageUrl: currentProfileImageUrl, // <-- GÜNCELLENDİ
                   badgeUrls: _badges,
                 ),
               ),
@@ -880,7 +893,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               children: [
                                 Flexible(
                                   child: Text(
-                                    _fullName,
+                                    currentFullName, // <-- GÜNCELLENDİ
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontFamily: 'SF Pro Display',
@@ -897,7 +910,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   child: Row(
                                     children: [
                                       Text(
-                                        _username,
+                                        currentUsername, // <-- GÜNCELLENDİ
                                         style: TextStyle(
                                           fontFamily: 'SF Pro Display',
                                           fontWeight: FontWeight.w400,
@@ -906,12 +919,6 @@ class _ProfilePageState extends State<ProfilePage> {
                                         ),
                                       ),
                                       SizedBox(width: 4.w),
-                                      /*
-                                      Image.asset(
-                                        'assets/instagram.png',
-                                        width: 20.w,
-                                        height: 20.h,
-                                      ),*/
                                     ],
                                   ),
                                 ),
@@ -962,7 +969,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                     // BIO
                     Text(
-                      _bio,
+                      currentBio, // <-- GÜNCELLENDİ
                       style: TextStyle(
                         fontFamily: 'SF Pro Display',
                         fontSize: 12.sp,
@@ -983,7 +990,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         SizedBox(width: 4.w),
                         Expanded(
                           child: Text(
-                            _school,
+                            currentSchool, // <-- GÜNCELLENDİ
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontFamily: 'SF Pro Display',
@@ -1000,7 +1007,6 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ],
           ),
-
           // --- 3. TAKİP ET BUTONLARI (Sadece başkasının profilinde) ---
           if (!isCurrentUser) ...[
             SizedBox(height: 12.h),
@@ -1138,7 +1144,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final theme = Theme.of(context);
     final sessionService = getIt<SessionService>();
 
-    return ValueListenableBuilder<SessionState?>(
+    return ValueListenableBuilder<SessionState>(
       valueListenable: sessionService.stateListenable,
       builder: (context, state, child) {
         return SafeArea(
@@ -1148,7 +1154,7 @@ class _ProfilePageState extends State<ProfilePage> {
               headerSliverBuilder: (context, innerBoxIsScrolled) {
                 return [
                   SliverToBoxAdapter(
-                    child: _buildProfileHeader(context),
+                    child: _buildProfileHeader(context, state),
                   ),
                   SliverPersistentHeader(
                     delegate: SectionHeaderDelegate(

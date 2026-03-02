@@ -68,9 +68,7 @@ class AuthServiceImpl implements AuthService {
       await _firebaseAuth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
         forceResendingToken: resendToken,
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          _logger.info('sendSMS verificationCompleted');
-        },
+        verificationCompleted: (PhoneAuthCredential credential) async {},
         verificationFailed: (e) {
           _logger.error('resendSMS verificationFailed: ${e.message}');
           completer.complete(
@@ -126,9 +124,7 @@ class AuthServiceImpl implements AuthService {
         phoneNumber: phoneNumber,
         timeout: const Duration(seconds: 90),
 
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          _logger.info('sendSMS verificationCompleted');
-        },
+        verificationCompleted: (PhoneAuthCredential credential) async {},
 
         verificationFailed: (FirebaseAuthException e) {
           _logger.error('sendSMS verificationFailed: ${e.message}');
