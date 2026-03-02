@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart'; // context.pop() için
+// context.pop() için
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
@@ -50,29 +50,29 @@ class _FollowRequestTileState extends State<FollowRequestTile> {
     final amIFollowing = myFollowees.any((f) => f.userID == item.userID);
     final isMyFollower = myFollowers.any((f) => f.userID == item.userID);
 
+    // Senin gönderdiğin bir istek var mı?
     final isMyRequestSent = await _userRepository.isFollowRequestPending(
       _sessionService.currentUser!.userID,
       item.userID,
     );
 
-    FollowStatus status = FollowStatus.pending;
+    FollowStatus status;
 
-    /**
-     * 
-     * 
-     * 
-     * 
-     *      
-     * */
-
-    if (amIFollowing) {
+    // 1. KURAL: İsteğim kabul edildiyse ve o da beni takip ediyorsa -> Takip Ediliyor
+    if (amIFollowing && isMyFollower) {
       status = FollowStatus.following;
-    } else if (isMyRequestSent) {
+    }
+    // 2. KURAL: İstek yolladıysam ama henüz kabul edilmediysem -> İstek Yollandı
+    else if (isMyRequestSent && !amIFollowing) {
       status = FollowStatus.sent;
-    } else if (isMyFollower && !amIFollowing) {
+    }
+    // 3. KURAL: Adam beni takip ediyorsa ama ben onu etmiyorsam (ve istek de yollamamışsam) -> Takip Et (İstek Yolla)
+    else if (isMyFollower && !amIFollowing && !isMyRequestSent) {
       status = FollowStatus.none;
-    } else {
-      status = FollowStatus.none;
+    }
+    // 4. KURAL: Eğer adam beni takip etmiyorsa (Bildirim listesinde olduğuna göre bu bir "istek"tir) -> İsteği Kabul Et
+    else {
+      status = FollowStatus.pending;
     }
 
     if (mounted) {

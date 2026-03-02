@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -10,15 +11,9 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
-import 'package:outnest/presentation/auth/view/components/auth_input.dart';
-import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
-import 'package:outnest/presentation/shared/category_filter_chip.dart';
-import 'package:outnest/presentation/auth/view/components/otp_row.dart';
-import 'package:outnest/presentation/auth/view/components/register_step_view.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
-import 'package:outnest/core/utils/title_case_formatter.dart';
 import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
 import 'package:outnest/core/utils/types/enums/gender_enum.dart';
 import 'package:outnest/domain/datasources/university_datasource.dart';
@@ -28,12 +23,17 @@ import 'package:outnest/domain/services/analytics/analytics_service.dart';
 import 'package:outnest/domain/services/analytics/event_configs/select_gender_analytics_config.dart';
 import 'package:outnest/domain/services/analytics/event_configs/select_hobbies_analytics_config.dart';
 import 'package:outnest/domain/services/auth_service.dart';
-import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/usecases/upload_profile_picture_usecase.dart';
-import 'package:outnest/presentation/shared/validators/validate_date_of_birth.dart';
-import 'package:outnest/presentation/shared/validators/validate_name_surname.dart';
-import 'package:outnest/presentation/shared/validators/validate_university_mail.dart';
-import 'package:outnest/presentation/shared/validators/validate_username.dart';
+import 'package:outnest/presentation/auth/view/components/otp_row.dart';
+import 'package:outnest/presentation/auth/view/components/register_step_view.dart';
+import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
+import 'package:outnest/presentation/shared/category_filter_chip.dart';
+import 'package:outnest/presentation/shared/form/formatters/name_surname_formatter.dart';
+import 'package:outnest/presentation/shared/form/formatters/username_formatter.dart';
+import 'package:outnest/presentation/shared/form/validators/validate_date_of_birth.dart';
+import 'package:outnest/presentation/shared/form/validators/validate_name_surname.dart';
+import 'package:outnest/presentation/shared/form/validators/validate_university_mail.dart';
+import 'package:outnest/presentation/shared/form/validators/validate_username.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -495,15 +495,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
               description:
                   'Uygulama içerisinde insanlar sizi bu isimle görecek.',
               hintText: '@kullaniciadi',
-              inputFormatters: [
-                // 1. Sadece küçük harf, rakam, nokta ve alt tire yazılmasına izin ver
-                FilteringTextInputFormatter.allow(RegExp('[a-zA-Z0-9._]')),
-
-                // 2. Yazılan her şeyi anında küçük harfe çevir
-                TextInputFormatter.withFunction((oldValue, newValue) {
-                  return newValue.copyWith(text: newValue.text.toLowerCase());
-                }),
-              ],
+              inputFormatters: [UsernameFormatter()],
               validator: () =>
                   validateUsername(_usernameController.text.trim()),
             ),
@@ -516,12 +508,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
               hintText: 'Adınız ve Soyadınız',
               description:
                   'Gerçek adınızı kullanmanızı öneririz, böylece arkadaşlarınız sizi daha kolay bulabilir.',
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(
-                  RegExp(r"[a-zA-ZğüşöçıİĞÜŞÖÇ\s'-]"),
-                ),
-                TitleCaseFormatter(),
-              ],
+              inputFormatters: [NameSurnameFormatter()],
               validator: () => validateNameSurname(_nameController.text.trim()),
             ),
 
