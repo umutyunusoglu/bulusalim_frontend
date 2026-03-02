@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
@@ -368,11 +370,15 @@ class _PostCardState extends State<PostCard> {
 
       if (newStatus) {
         await _postRepository.pinPost(widget.post.id, _myUserId);
-        analytics.logPinPost(PinPostAnalyticsConfig(postID: widget.post.id));
+        unawaited(
+          analytics.logPinPost(PinPostAnalyticsConfig(postID: widget.post.id)),
+        );
       } else {
         await _postRepository.unpinPost(widget.post.id, _myUserId);
-        analytics.logUnpinPost(
-          UnpinPostAnalyticsConfig(postID: widget.post.id),
+        unawaited(
+          analytics.logUnpinPost(
+            UnpinPostAnalyticsConfig(postID: widget.post.id),
+          ),
         );
       }
     } catch (e) {
@@ -393,7 +399,7 @@ class _PostCardState extends State<PostCard> {
   }
 
   void _showOtherUserPostOptions(BuildContext context) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(
@@ -787,56 +793,76 @@ class _PostCardState extends State<PostCard> {
       color: _kTextGreyColor,
     );
 
+    // Etiket listesini bir widget listesi olarak hazırlayalım
+    final tagWidgets = tags
+        .take(3)
+        .map(
+          (tagLabel) => Padding(
+            padding: EdgeInsets.only(right: 8.w),
+            child: ContentTagChip(
+              label: tagLabel,
+              icon: Icons.tag,
+            ),
+          ),
+        )
+        .toList();
+
     return Padding(
       padding: EdgeInsets.fromLTRB(0, 4.h, 0, 12.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12.w),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    caption,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'SF Pro Display',
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                SizedBox(width: 16.w),
-                CountdownTimer(
-                  targetTime: widget.post.createdAt ?? DateTime.now(),
-                  isEvent: false,
-                  style: timeStyle,
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12.w),
-            child: Row(
-              children: tags
-                  .take(3)
-                  .map(
-                    (tagLabel) => Padding(
-                      padding: EdgeInsets.only(right: 8.w),
-                      child: ContentTagChip(
-                        label: tagLabel,
-                        icon: Icons.tag,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 12.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (caption.isNotEmpty) ...[
+              // Caption Varsa: Üstte Caption ve Saat, Altta Tagler
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      caption,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'SF Pro Display',
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  )
-                  .toList(),
-            ),
-          ),
-        ],
+                  ),
+                  SizedBox(width: 16.w),
+                  CountdownTimer(
+                    targetTime: widget.post.createdAt ?? DateTime.now(),
+                    isEvent: false,
+                    style: timeStyle,
+                  ),
+                ],
+              ),
+              SizedBox(height: 8.h),
+              Row(children: tagWidgets),
+            ] else ...[
+              // Caption Yoksa: Saat ve Tagler Yan Yana
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(children: tagWidgets),
+                    ),
+                  ),
+                  SizedBox(width: 8.w),
+                  CountdownTimer(
+                    targetTime: widget.post.createdAt ?? DateTime.now(),
+                    isEvent: false,
+                    style: timeStyle,
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

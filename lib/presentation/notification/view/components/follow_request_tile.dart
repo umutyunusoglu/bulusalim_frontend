@@ -50,21 +50,29 @@ class _FollowRequestTileState extends State<FollowRequestTile> {
     final amIFollowing = myFollowees.any((f) => f.userID == item.userID);
     final isMyFollower = myFollowers.any((f) => f.userID == item.userID);
 
-    final isRequestSent = await _userRepository.isFollowRequestPending(
+    final isMyRequestSent = await _userRepository.isFollowRequestPending(
       _sessionService.currentUser!.userID,
       item.userID,
     );
 
     FollowStatus status = FollowStatus.pending;
 
+    /**
+     * 
+     * 
+     * 
+     * 
+     *      
+     * */
+
     if (amIFollowing) {
       status = FollowStatus.following;
-    } else if (isRequestSent) {
+    } else if (isMyRequestSent) {
       status = FollowStatus.sent;
     } else if (isMyFollower && !amIFollowing) {
-      status = FollowStatus.none; // Geri takip et (Takip et butonu çıkar)
+      status = FollowStatus.none;
     } else {
-      status = FollowStatus.none; // Takip et
+      status = FollowStatus.none;
     }
 
     if (mounted) {

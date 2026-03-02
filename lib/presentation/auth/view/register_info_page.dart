@@ -30,6 +30,10 @@ import 'package:outnest/domain/services/analytics/event_configs/select_hobbies_a
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/usecases/upload_profile_picture_usecase.dart';
+import 'package:outnest/presentation/shared/validators/validate_date_of_birth.dart';
+import 'package:outnest/presentation/shared/validators/validate_name_surname.dart';
+import 'package:outnest/presentation/shared/validators/validate_university_mail.dart';
+import 'package:outnest/presentation/shared/validators/validate_username.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -474,7 +478,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                   username,
                 );
 
-                final logger = getIt<LoggingService>()..warn(exists.toString());
+                getIt<LoggingService>().warn(exists.toString());
 
                 if (exists) {
                   // Hata mesajını göster (SnackBar veya bir state değişkeni ile)
@@ -500,25 +504,8 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                   return newValue.copyWith(text: newValue.text.toLowerCase());
                 }),
               ],
-              validator: () {
-                final text = _usernameController.text.trim();
-
-                // 1. Boşluk kontrolü
-                if (text.isEmpty) return 'Kullanıcı adı boş olamaz';
-
-                // 2. Uzunluk kontrolü
-                if (text.length < 3) return 'En az 3 karakter olmalı';
-                if (text.length > 30) return 'En fazla 30 karakter olmalı';
-                // 3. Karakter kontrolü (Küçük harf, rakam, nokta ve alt tire)
-                // ^ : Başlangıç, $ : Bitiş, [a-z0-0._] : İzin verilenler, + : En az bir tane
-                final usernameRegExp = RegExp(r'^[a-z0-9._]+$');
-
-                if (!usernameRegExp.hasMatch(text)) {
-                  return 'Sadece küçük harf, rakam, "." ve "_" kullanabilirsiniz';
-                }
-
-                return null; // Her şey yolunda
-              },
+              validator: () =>
+                  validateUsername(_usernameController.text.trim()),
             ),
 
             // 2. AD SOYAD
@@ -535,23 +522,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                 ),
                 TitleCaseFormatter(),
               ],
-              validator: () {
-                final text = _nameController.text.trim();
-                if (text.isEmpty) return 'Ad - Soyad boş olamaz';
-
-                final words = text
-                    .split(' ')
-                    .where((w) => w.isNotEmpty)
-                    .toList();
-                if (words.length < 2) {
-                  return 'Lütfen adınızı ve soyadınızı tam giriniz';
-                }
-
-                if (text.length < 2) return 'En az 2 karakter olmalı';
-                if (text.length > 50) return 'En fazla 50 karakter olmalı';
-
-                return null;
-              },
+              validator: () => validateNameSurname(_nameController.text.trim()),
             ),
 
             // 3. DOĞUM TARİHİ
@@ -564,27 +535,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                   'Outnest topluluğuna katılabilmek için 18 yaşını doldurmuş olman gerekmektedir.',
               readOnly: true,
               onTapInput: _showDatePicker,
-              validator: () {
-                if (_selectedDate == null) {
-                  return 'Lütfen doğum tarihinizi seçin';
-                }
-                // Bugünün tarihi
-                final now = DateTime.now();
-                //TODO: 28 şubat
-                // 18 yıl önceki aynı günün tarihi
-                final eighteenYearsAgo = DateTime(
-                  now.year - 18,
-                  now.month,
-                  now.day,
-                );
-
-                // Eğer seçilen tarih, 18 yıl önceki tarihten sonra ise (yani daha gençse)
-                if (_selectedDate!.isAfter(eighteenYearsAgo)) {
-                  return "Outnest'e katılmak için 18 yaşını doldurmuş olmalısın";
-                }
-
-                return null; // Her şey yolunda
-              },
+              validator: () => validateDateOfBirth(_selectedDate),
             ),
 
             // 4. ÜNİVERSİTE MAİL
@@ -600,14 +551,10 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                   ? 'Tespit Edilen: $_detectedUniversity'
                   : "Üniversiteni doğruladığında, üniversite bilgin profilinde otomatik olarak görünür. Yalnızca Türkiye'deki üniversiteler desteklenmektedir.",
 
-              validator: () {
-                final email = _universityController.text.trim();
-                if (email.isEmpty) return 'Mail adresi boş olamaz';
-                if (_detectedUniversity == null) {
-                  return 'Tanınan bir üniversite maili giriniz';
-                }
-                return null;
-              },
+              validator: () => validateUniversityMail(
+                _universityController.text.trim(),
+                _detectedUniversity,
+              ),
 
               onNext: () async {
                 if (_isSendingEmail) return;
