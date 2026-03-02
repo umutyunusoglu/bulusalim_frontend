@@ -176,6 +176,7 @@ class _ProfilePageState extends State<ProfilePage> {
       final eventRepository = getIt<EventRepository>();
 
       var user;
+
       if (widget.profileUserID == getIt<SessionService>().currentUser?.userID) {
         user = getIt<SessionService>().currentUser;
       } else {
@@ -267,6 +268,9 @@ class _ProfilePageState extends State<ProfilePage> {
       final isPrivate = user.isPrivate;
 
       if (!mounted) return;
+
+      getIt<LoggingService>().debug("Profile data fetched: $user");
+
       setState(() {
         // dynamic olduğu için [] operatörü veya nokta operatörü kullanılabilir
         // null check (?.) ve null-coalescing (??) ile güvenliğe alıyoruz
@@ -853,7 +857,8 @@ class _ProfilePageState extends State<ProfilePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: EdgeInsets.only(top: 15.h),
+                padding: EdgeInsets.only(top: 12.h),
+
                 child: ProfilePhoto(
                   profileImageUrl: _profileImageUrl,
                   badgeUrls: _badges,
@@ -901,11 +906,12 @@ class _ProfilePageState extends State<ProfilePage> {
                                         ),
                                       ),
                                       SizedBox(width: 4.w),
+                                      /*
                                       Image.asset(
                                         'assets/instagram.png',
                                         width: 20.w,
                                         height: 20.h,
-                                      ),
+                                      ),*/
                                     ],
                                   ),
                                 ),
@@ -1045,7 +1051,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ),
           ],
-          SizedBox(height: 12.h),
+          if (_commonFollowers.isNotEmpty) SizedBox(height: 12.h),
           _buildFollowedBySection(context),
         ],
       ),
