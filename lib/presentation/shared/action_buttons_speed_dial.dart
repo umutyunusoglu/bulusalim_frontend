@@ -41,7 +41,6 @@ class ActionButtonsSpeedDial extends StatelessWidget {
           childMargin: const EdgeInsets.symmetric(
             vertical: 5,
           ), // çocuklar arasındaki boşluk
-
           // Küçültme animasyonu
           children: _buildChildren(),
         );
