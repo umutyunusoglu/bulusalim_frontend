@@ -1,5 +1,4 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/presentation/home/view/components/custom_tab_bar.dart';
 import 'package:outnest/presentation/home/view/components/header.dart';
