@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/domain/repositories/group_repository.dart';
 import 'package:outnest/presentation/groups/view/group_detail_page.dart';
 import 'package:outnest/presentation/groups/view/new_group_page.dart';
 
@@ -24,28 +26,95 @@ class GroupsPage extends StatefulWidget {
 }
 
 class _GroupsPageState extends State<GroupsPage> {
-  final List<GroupModel> _groups = [];
+  List<GroupModel> _groups = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchGroups();
+  }
+
+  Future<void> _fetchGroups() async {
+    setState(() => _isLoading = true);
+    final groupRepo = GetIt.I<GroupRepository>();
+    try {
+      final groupNames = await groupRepo.getMyGroups();
+
+      var fetchedGroups = <GroupModel>[];
+      for (final name in groupNames) {
+        final members = await groupRepo.getMembersOfMyGroup(name);
+        fetchedGroups.add(
+          GroupModel(
+            id: name,
+            name: name,
+            memberCount: members.length,
+            members: members
+                .map(
+                  (m) => SelectableUser(
+                    id: m.userID,
+                    username: m.username,
+                    avatarUrl: m.profileImageUrl ?? '',
+                    isAdded: true,
+                  ),
+                )
+                .toList(),
+          ),
+        );
+      }
+
+      if (mounted) {
+        setState(() {
+          _groups = fetchedGroups;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Grupları çekerken hata: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _deleteGroup(String name) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Kümeyi Sil'),
+        content: Text(
+          '$name kümesini silmek istediğine emin misin? Bu işlem geri alınamaz.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('İptal', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              'Sil',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await GetIt.I<GroupRepository>().deleteGroup(name);
+        _fetchGroups(); // Silme sonrası listeyi yenile
+      } catch (e) {
+        debugPrint('Silme hatası: $e');
+      }
+    }
+  }
 
   Future<void> _handleNewGroup() async {
-    final result = await Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const NewGroupPage()),
     );
-
-    // Veri geldiğinde listeyi güncelle
-    if (result != null && result is Map) {
-      setState(() {
-        _groups.insert(
-          0, // Yeni kümeyi listenin en başına ekle
-          GroupModel(
-            id: DateTime.now().toString(),
-            name: result['name'] as String,
-            memberCount: result['count'] as int,
-            members: result['members'] as List<SelectableUser>,
-          ),
-        );
-      });
-    }
+    _fetchGroups();
   }
 
   @override
@@ -55,9 +124,7 @@ class _GroupsPageState extends State<GroupsPage> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Kümeler',
@@ -73,20 +140,21 @@ class _GroupsPageState extends State<GroupsPage> {
       ),
       body: Column(
         children: [
+          // Yeni Küme Oluştur Butonu
           Padding(
             padding: const EdgeInsets.only(left: 16, right: 16, top: 4),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                TextButton(
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
+                TextButton.icon(
                   onPressed: _handleNewGroup,
-                  child: const Text(
-                    '+ Yeni Küme Oluştur',
+                  icon: const Icon(
+                    Icons.add,
+                    size: 14,
+                    color: AppColors.tertiaryColor,
+                  ),
+                  label: const Text(
+                    'Yeni Küme Oluştur',
                     style: TextStyle(
                       color: AppColors.tertiaryColor,
                       fontWeight: FontWeight.w500,
@@ -97,94 +165,81 @@ class _GroupsPageState extends State<GroupsPage> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           Expanded(
-            child: _groups.isEmpty
+            child: _isLoading
                 ? const Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.bubble_chart_outlined,
-                          size: 64,
-                          color: Colors.black26,
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          'Henüz bir küme bulunmuyor.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey, fontSize: 14),
-                        ),
-                      ],
+                    child: CircularProgressIndicator(
+                      color: AppColors.tertiaryColor,
                     ),
                   )
-                : ListView.builder(
-                    itemCount: _groups.length,
-                    itemBuilder: (context, index) {
-                      final group = _groups[index];
-                      return InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => GroupDetailPage(group: group),
-                            ),
-                          ).then((_) {
-                            setState(() {});
-                          });
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(color: Colors.grey.shade300),
+                : _groups.isEmpty
+                ? const Center(
+                    child: Text(
+                      'Henüz bir küme bulunmuyor.',
+                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                    ),
+                  )
+                : RefreshIndicator(
+                    onRefresh: _fetchGroups,
+                    child: ListView.builder(
+                      itemCount: _groups.length,
+                      itemBuilder: (context, index) {
+                        final group = _groups[index];
+                        return ListTile(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => GroupDetailPage(group: group),
+                              ),
+                            ).then(
+                              (_) => _fetchGroups(),
+                            ); // Detaydan dönünce güncelliği kontrol et
+                          },
+                          onLongPress: () =>
+                              _deleteGroup(group.name), // Uzun basınca silme
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          leading: const Icon(
+                            Icons.bubble_chart_outlined,
+                            color: Colors.blue,
+                            size: 26,
+                          ),
+                          title: Text(
+                            group.name,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.bubble_chart_outlined,
-                                  color: Colors.blue,
-                                  size: 26,
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                group.memberCount.toString(),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF8E8E93),
                                 ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    group.name,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                Row(
-                                  children: [
-                                    Text(
-                                      group.memberCount.toString(),
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        color: Color(0xFF8E8E93),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    const Icon(
-                                      Icons.chevron_right,
-                                      color: Colors.black,
-                                      size: 28,
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Icon(
+                                Icons.chevron_right,
+                                color: Colors.black,
+                                size: 24,
+                              ),
+                            ],
                           ),
-                        ),
-                      );
-                    },
+                          shape: Border(
+                            bottom: BorderSide(color: Colors.grey.shade300),
+                          ),
+                        );
+                      },
+                    ),
                   ),
           ),
         ],
