@@ -142,7 +142,13 @@ final router = GoRouter(
           routes: [
             GoRoute(
               path: '/map',
-              builder: (context, state) => const MapPage(),
+              builder: (context, state) {
+                final openCreate = state.extra as bool? ?? false;
+
+                return MapPage(
+                  openCreateOnLoad: openCreate,
+                );
+              },
             ),
           ],
         ),
