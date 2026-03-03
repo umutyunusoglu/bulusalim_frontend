@@ -8,6 +8,7 @@ import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/presentation/groups/view/groups_page.dart';
 import 'package:outnest/presentation/settings/view/account_settings_page.dart';
 import 'package:outnest/presentation/settings/view/blocked_users_page.dart';
 import 'package:outnest/presentation/settings/view/delete_account_page.dart';
@@ -214,6 +215,15 @@ class _SettingsPageState extends State<SettingsPage>
                   MaterialPageRoute(
                     builder: (_) => const AccountSettingsPage(),
                   ),
+                );
+              },
+            ),
+            SettingsTile(
+              title: 'Kümeler',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const GroupsPage()),
                 );
               },
             ),
