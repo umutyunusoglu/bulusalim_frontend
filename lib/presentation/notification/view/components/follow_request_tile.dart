@@ -26,7 +26,6 @@ class FollowRequestTile extends StatefulWidget {
 }
 
 class _FollowRequestTileState extends State<FollowRequestTile> {
-  final LoggingService _logger = getIt<LoggingService>();
   final SessionService _sessionService = getIt<SessionService>();
   final UserRepository _userRepository = getIt<UserRepository>();
 
@@ -65,13 +64,9 @@ class _FollowRequestTileState extends State<FollowRequestTile> {
     // 2. KURAL: İstek yolladıysam ama henüz kabul edilmediysem -> İstek Yollandı
     else if (isMyRequestSent && !amIFollowing) {
       status = FollowStatus.sent;
-    }
-    // 3. KURAL: Adam beni takip ediyorsa ama ben onu etmiyorsam (ve istek de yollamamışsam) -> Takip Et (İstek Yolla)
-    else if (isMyFollower && !amIFollowing && !isMyRequestSent) {
+    } else if (isMyFollower && !amIFollowing && !isMyRequestSent) {
       status = FollowStatus.none;
-    }
-    // 4. KURAL: Eğer adam beni takip etmiyorsa (Bildirim listesinde olduğuna göre bu bir "istek"tir) -> İsteği Kabul Et
-    else {
+    } else {
       status = FollowStatus.pending;
     }
 
@@ -83,17 +78,14 @@ class _FollowRequestTileState extends State<FollowRequestTile> {
     }
   }
 
-  // --- ANA BUTON TIKLAMA MANTIĞI (ONPRESS) ---
   Future<void> _onMainButtonTap() async {
     final targetUserID = widget.item.userID;
 
-    // 1. Zaten takip ediyorsak -> Dialog aç ve silmeyi sor
     if (_currentStatus == FollowStatus.following) {
       _showUnfollowDialog(context);
       return;
     }
 
-    // 2. İstek zaten gönderilmişse -> İsteği geri çek
     if (_currentStatus == FollowStatus.sent) {
       await _cancelFollowRequest();
       return;
