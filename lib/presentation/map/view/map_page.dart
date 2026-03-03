@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/presentation/map/view/components/create_event_popup.dart';
+import 'package:outnest/presentation/shared/action_buttons_speed_dial.dart';
 import 'package:outnest/presentation/shared/event_card/event_card.dart';
 import 'package:outnest/presentation/map/view/components/map_create_button.dart';
 import 'package:outnest/presentation/shared/category_filter_chip.dart';
@@ -43,15 +44,19 @@ import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/presentation/map/view/components/map_people_filter.dart';
 import 'package:outnest/presentation/map/view/components/map_time_filter.dart';
+import 'package:outnest/presentation/shared/navigation/navigate_to_camera.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({
     super.key,
     this.isLocationPicker = false,
     this.isTimePicker = false,
+    this.openCreateOnLoad = false,
   });
+
   final bool isLocationPicker;
   final bool isTimePicker;
+  final bool openCreateOnLoad;
 
   @override
   State<MapPage> createState() => _MapPageState();
@@ -64,7 +69,7 @@ class _MapPageState extends State<MapPage> {
   final MapRepository _mapRepository = getIt<MapRepository>();
 
   Geolocation? _userLocation = null;
-
+  final ValueNotifier<bool> _isDialOpen = ValueNotifier(false);
   // --- STATE ---
   final Map<String, String> _categories = AppConfig.categories;
   String? _selectedCategory;
@@ -122,6 +127,9 @@ class _MapPageState extends State<MapPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.openCreateOnLoad) {
+      _isCreatePopupVisible = true;
+    }
 
     final imageURL = getIt<SessionService>().currentUser?.profileImageUrl;
     // Modlara göre başlangıç adımını ayarla
@@ -143,6 +151,17 @@ class _MapPageState extends State<MapPage> {
     }
 
     _initializeLocation();
+  }
+
+  @override
+  void didUpdateWidget(covariant MapPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.openCreateOnLoad && !oldWidget.openCreateOnLoad) {
+      setState(() {
+        _isCreatePopupVisible = true;
+      });
+    }
   }
 
   Future<void> _initializeLocation() async {
@@ -202,6 +221,7 @@ class _MapPageState extends State<MapPage> {
     _pageController.dispose();
     _markerImageCache.clear();
     _filterDebounce?.cancel();
+    _isDialOpen.dispose();
     if (pointAnnotationManager != null) {
       try {
         pointAnnotationManager!.deleteAll();
@@ -1130,8 +1150,14 @@ class _MapPageState extends State<MapPage> {
                 bottom: 40.h,
                 right: 16.w,
                 child: SafeArea(
-                  child: MapCreateButton(
-                    onTap: () => setState(() => _isCreatePopupVisible = true),
+                  child: ActionButtonsSpeedDial(
+                    isDialOpen: _isDialOpen,
+                    onCameraTap: () => navigateToCamera(context),
+                    onLocationTap: () {
+                      setState(() {
+                        _isCreatePopupVisible = true;
+                      });
+                    },
                   ),
                 ),
               ),
