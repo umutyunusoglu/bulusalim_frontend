@@ -28,7 +28,7 @@ class TimeSelectionStep extends StatefulWidget {
 class _TimeSelectionStepState extends State<TimeSelectionStep> {
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
-  bool _isTimeUndefined = false;
+  //bool _isTimeUndefined = false;
 
   late DateTime _currentMonth;
   late DateTime _now;
@@ -92,7 +92,7 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
                   onDateTimeChanged: (DateTime newDate) {
                     setState(() {
                       _selectedTime = TimeOfDay.fromDateTime(newDate);
-                      _isTimeUndefined = false;
+                      //_isTimeUndefined = false;
                     });
                   },
                 ),
@@ -321,6 +321,7 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            /*
             if (_isTimeUndefined)
               GestureDetector(
                 onTap: _pickTime,
@@ -338,40 +339,41 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
                   ),
                 ),
               )
-            else
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: _pickTime,
-                    child: Container(
-                      width: 112.w,
-                      height: 40.h,
-                      decoration: BoxDecoration(
-                        color: AppColors.inputFillColor,
-                        borderRadius: BorderRadius.circular(24.r),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.access_time,
-                            size: 24.sp,
+            else*/
+            Row(
+              children: [
+                GestureDetector(
+                  onTap: _pickTime,
+                  child: Container(
+                    width: 112.w,
+                    height: 40.h,
+                    decoration: BoxDecoration(
+                      color: AppColors.inputFillColor,
+                      borderRadius: BorderRadius.circular(24.r),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.access_time,
+                          size: 24.sp,
+                          color: AppColors.onBackgroundColor,
+                        ),
+                        SizedBox(width: 8.w),
+                        Text(
+                          "${_selectedTime.hour.toString().padLeft(2, '0')} : ${_selectedTime.minute.toString().padLeft(2, '0')}",
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w600,
                             color: AppColors.onBackgroundColor,
+                            fontFamily: 'SF Pro Display',
                           ),
-                          SizedBox(width: 8.w),
-                          Text(
-                            "${_selectedTime.hour.toString().padLeft(2, '0')} : ${_selectedTime.minute.toString().padLeft(2, '0')}",
-                            style: TextStyle(
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.onBackgroundColor,
-                              fontFamily: 'SF Pro Display',
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
+                ),
+                /*
                   SizedBox(width: 8.w),
                   GestureDetector(
                     onTap: () => setState(() => _isTimeUndefined = true),
@@ -383,9 +385,9 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
                         size: 20.sp,
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ),*/
+              ],
+            ),
           ],
         ),
 
@@ -394,11 +396,7 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
 
         PopupNextButton(
           onPressed: () {
-            widget.onNext(
-              _selectedDate,
-              _isTimeUndefined ? null : _selectedTime,
-              _isTimeUndefined,
-            );
+            widget.onNext(_selectedDate, _selectedTime, false);
           },
         ),
       ],
