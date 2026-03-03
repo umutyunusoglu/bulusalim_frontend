@@ -41,8 +41,10 @@ enum VisibilityEnum {
       case 'herkes':
         return VisibilityEnum.everyone;
       case 'takipçiler':
-      case 'arkadaşlar': // Mapping both to onlyFriends based on your list
         return VisibilityEnum.onlyFriends;
+
+      case 'arkadaşlar': // Mapping both to onlyFriends based on your list
+        return VisibilityEnum.custom;
       case 'okul':
         return VisibilityEnum.university;
       default:

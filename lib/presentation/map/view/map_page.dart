@@ -78,12 +78,6 @@ class _MapPageState extends State<MapPage> {
   DateTimeRange? _filterTimeRange;
 
   VisibilityEnum _filterPeople = VisibilityEnum.everyone;
-  final List<String> _peopleOptions = [
-    'herkes',
-    'takipçiler',
-    'okul',
-    // 'kümeler',
-  ];
   // --- WIZARD STATE ---
   int _createEventStep = 0;
   // 0:Kategori, 1:Konum, 2:Zaman, 3:Görünürlük, 4:İsim
@@ -1258,12 +1252,16 @@ class _MapPageState extends State<MapPage> {
         return VisibilitySelectionStep(
           onBack: () => setState(() => _createEventStep = 2),
           onClose: () => _closeWizard(CreateEventStepEnum.visibility),
-          onNext: (v, g, h) => {
-            _tempVisibility = VisibilityEnum.fromTurkishUI(v),
-            _tempShowOnMap = !h,
+          onNext: (v, g, h) {
+            _tempVisibility = VisibilityEnum.fromTurkishUI(v);
+            if (_tempVisibility == VisibilityEnum.custom) {
+              final currentUserID = getIt<SessionService>().currentUser!.userID;
+              _tempVisibilityGroupID = '$currentUserID-$g';
+            }
+            _tempShowOnMap = !h;
             setState(
               () => _createEventStep = 4,
-            ),
+            );
           },
         );
       case 4: // İsim
