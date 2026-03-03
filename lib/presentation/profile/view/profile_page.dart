@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/presentation/profile/view/components/announcement_button.dart';
+import 'package:outnest/presentation/profile/view/follows_page.dart';
 import 'package:outnest/presentation/shared/login_button.dart';
 import 'package:outnest/presentation/shared/popup.dart';
 import 'package:outnest/presentation/profile/view/components/private_account_view.dart';
@@ -89,6 +90,21 @@ class _ProfilePageState extends State<ProfilePage> {
     super.initState();
     _initPostStream();
     _fetchProfileData();
+  }
+
+  void _navigateToFollows(BuildContext context, int initialTab) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FollowsPage(
+          profileUserID: widget.profileUserID,
+          username: _username,
+          initialTabIndex: 0,
+          followerCount: numberOfFollowers,
+          followingCount: numberOfFollowing,
+        ),
+      ),
+    );
   }
 
   void _initPostStream() {
@@ -342,13 +358,14 @@ class _ProfilePageState extends State<ProfilePage> {
     final currentUser = sessionService.currentUser;
     if (currentUser == null) return;
 
-    // 1. Durumu hemen değiştir (Optimistic Update)
-    final previousState = _isFollowing;
-    setState(() => _isFollowing = !_isFollowing);
+    // SessionState üzerinden anlık duruma bakıyoruz
+    final isCurrentlyFollowing = sessionService.currentState.followees.any(
+      (f) => f.userID == widget.profileUserID,
+    );
 
     try {
-      if (_isFollowing) {
-        // Takip Etme İşlemi
+      if (!isCurrentlyFollowing) {
+        // TAKİP ETME İŞLEMİ
         final me = Follower(
           userID: currentUser.userID,
           username: currentUser.username,
@@ -362,14 +379,10 @@ class _ProfilePageState extends State<ProfilePage> {
           createdAt: DateTime.now(),
         );
 
-        // Bekleyerek yapalım ki hata varsa catch'e düşsün
         await userRepository.addFollowee(currentUser.userID, target);
         await userRepository.addFollower(widget.profileUserID, me);
-
-        // Takipçi sayısını manuel artır (UI anlık güncellensin)
-        setState(() => numberOfFollowers++);
       } else {
-        // Takibi Bırakma İşlemi
+        // TAKİBİ BIRAKMA İŞLEMİ
         await userRepository.removeFollowee(
           currentUser.userID,
           widget.profileUserID,
@@ -378,21 +391,13 @@ class _ProfilePageState extends State<ProfilePage> {
           widget.profileUserID,
           currentUser.userID,
         );
-
-        // Takipçi sayısını manuel azalt
-        setState(() => numberOfFollowers--);
       }
+
+      // BU KOD BÜTÜN UYGULAMAYI ANINDA GÜNCELLER (Profil sayfası dahil)
+      await sessionService.refreshSession();
     } catch (e) {
-      // 2. Hata olursa durumu eski haline döndür
       debugPrint("Takip işlemi başarısız: $e");
       if (mounted) {
-        setState(() {
-          _isFollowing = previousState;
-          // Sayacı da eski haline döndür
-          _isFollowing ? numberOfFollowers++ : numberOfFollowers--;
-        });
-
-        // Kullanıcıya hata bildirimi
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('İşlem başarısız oldu, lütfen tekrar deneyin.'),
@@ -809,6 +814,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   // HEADER ALANI
+  // HEADER ALANI
   Widget _buildProfileHeader(BuildContext context, SessionState state) {
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
@@ -816,8 +822,31 @@ class _ProfilePageState extends State<ProfilePage> {
     final onSurface = theme.colorScheme.onSurface;
 
     final sessionUser = state.user;
-
     final isCurrentUser = widget.profileUserID == sessionUser?.userID;
+
+    // --- 1. ANLIK TAKİP DURUMUNU YAKALA (Global State'den) ---
+    // Eğer kendi listemizde (başka bir sayfada) takipten çıkarsak, bu değer ANINDA false olur!
+    final isCurrentlyFollowing = isCurrentUser
+        ? true
+        : state.followees.any((f) => f.userID == widget.profileUserID);
+
+    // --- 2. DİNAMİK TAKİPÇİ SAYISI ---
+    int displayFollowerCount = isCurrentUser
+        ? state.followers.length
+        : numberOfFollowers;
+    int displayFollowingCount = isCurrentUser
+        ? state.followees.length
+        : numberOfFollowing;
+
+    if (!isCurrentUser) {
+      if (_isFollowing && !isCurrentlyFollowing) {
+        displayFollowerCount = (numberOfFollowers - 1) < 0
+            ? 0
+            : (numberOfFollowers - 1);
+      } else if (!_isFollowing && isCurrentlyFollowing) {
+        displayFollowerCount = numberOfFollowers + 1;
+      }
+    }
 
     final currentUsername = isCurrentUser
         ? (sessionUser?.username ?? '')
@@ -837,43 +866,20 @@ class _ProfilePageState extends State<ProfilePage> {
       padding: EdgeInsets.only(
         left: 16.w,
         right: 16.w,
-        top: isCurrentUser ? 30.h : 10.h,
+        top: isCurrentUser ? 30.h : 0.h,
         bottom: 20.h,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- 1. GERİ BUTONU (SADECE BAŞKASININ PROFİLİNDE GÖRÜNÜR) ---
-          if (!isCurrentUser)
-            Padding(
-              padding: EdgeInsets.only(bottom: 12.h),
-              child: GestureDetector(
-                onTap: () => context.pop(),
-                child: Container(
-                  color: Colors.transparent,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.arrow_back_ios_new,
-                        size: 22.sp,
-                        color: onSurface,
-                      ),
-                      SizedBox(width: 4.w),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-          //  2. PROFİL FOTO VE İSİM ALANI
+          //  1. PROFİL FOTO VE İSİM ALANI
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
                 padding: EdgeInsets.only(top: 12.h),
                 child: ProfilePhoto(
-                  profileImageUrl: currentProfileImageUrl, // <-- GÜNCELLENDİ
+                  profileImageUrl: currentProfileImageUrl,
                   badgeUrls: _badges,
                 ),
               ),
@@ -954,13 +960,49 @@ class _ProfilePageState extends State<ProfilePage> {
                             count: '$numberOfEvents',
                             label: 'Buluşma',
                           ),
-                          ProfileStatItem(
-                            count: '$numberOfFollowers',
-                            label: 'Takipçi',
+
+                          // --- TAKİPÇİ SAYISINA TIKLANDIĞINDA ---
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => FollowsPage(
+                                    profileUserID: widget.profileUserID,
+                                    username: _username,
+                                    followerCount: displayFollowerCount,
+                                    followingCount: displayFollowingCount,
+                                    initialTabIndex: 0,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: ProfileStatItem(
+                              count: '$displayFollowerCount',
+                              label: 'Takipçi',
+                            ),
                           ),
-                          ProfileStatItem(
-                            count: '$numberOfFollowing',
-                            label: 'Takip',
+
+                          // --- TAKİP (TAKİP EDİLEN) SAYISINA TIKLANDIĞINDA ---
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => FollowsPage(
+                                    profileUserID: widget.profileUserID,
+                                    username: _username,
+                                    followerCount: displayFollowerCount,
+                                    followingCount: displayFollowingCount,
+                                    initialTabIndex: 1,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: ProfileStatItem(
+                              count: '$displayFollowingCount',
+                              label: 'Takip',
+                            ),
                           ),
                         ],
                       ),
@@ -969,7 +1011,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                     // BIO
                     Text(
-                      currentBio, // <-- GÜNCELLENDİ
+                      currentBio,
                       style: TextStyle(
                         fontFamily: 'SF Pro Display',
                         fontSize: 12.sp,
@@ -990,7 +1032,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         SizedBox(width: 4.w),
                         Expanded(
                           child: Text(
-                            currentSchool, // <-- GÜNCELLENDİ
+                            currentSchool,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontFamily: 'SF Pro Display',
@@ -1013,15 +1055,16 @@ class _ProfilePageState extends State<ProfilePage> {
             Row(
               children: [
                 Expanded(
-                  //TODO: Buton niye login button
                   child: LoginButton(
-                    label: _isFollowing
+                    // _isFollowing yerine isCurrentlyFollowing kullanıyoruz
+                    label: isCurrentlyFollowing
                         ? 'takibi bırak'
                         : (_isPrivateAccount && _hasSentFollowRequest)
                         ? 'istek gönderildi'
                         : 'takip et',
                     onPress: () {
-                      if (_isFollowing) {
+                      if (isCurrentlyFollowing) {
+                        // <-- BURASI DEĞİŞTİ
                         _showUnfollowDialog(context);
                       } else if (_isPrivateAccount) {
                         _sendFollowRequest();
@@ -1032,7 +1075,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     height: 32.h,
                     width: 361,
                     borderRadius: 20.r,
-                    backgroundColor: _isFollowing
+                    // _isFollowing yerine isCurrentlyFollowing kullanıyoruz
+                    backgroundColor: isCurrentlyFollowing
                         ? const Color(0xFF5D6B82)
                         : ((_isPrivateAccount && _hasSentFollowRequest)
                               ? const Color(0xFFF2F2F7)
@@ -1040,7 +1084,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     textColor:
                         (_isPrivateAccount &&
                             _hasSentFollowRequest &&
-                            !_isFollowing)
+                            !isCurrentlyFollowing)
                         ? const Color(0xFF5D6B82)
                         : Colors.white,
                     borderColor: Colors.transparent,
@@ -1147,9 +1191,44 @@ class _ProfilePageState extends State<ProfilePage> {
     return ValueListenableBuilder<SessionState>(
       valueListenable: sessionService.stateListenable,
       builder: (context, state, child) {
+        // Bu sayfa benim profilim mi kontrolü
+        final isCurrentUser = widget.profileUserID == state.user?.userID;
+
         return SafeArea(
           child: Scaffold(
             backgroundColor: theme.colorScheme.surface,
+            // --- YENİ EKLENEN APPBAR (Sadece başkasının profilinde görünür) ---
+            appBar: isCurrentUser
+                ? null // Kendi profilimde AppBar yok, içerik yukarıdan başlar
+                : AppBar(
+                    backgroundColor: theme.colorScheme.surface,
+                    surfaceTintColor: Colors.transparent,
+                    elevation: 0,
+                    leading: IconButton(
+                      icon: Icon(
+                        Icons.arrow_back_ios_new,
+                        color: theme.colorScheme.onSurface,
+                        size: 20.sp,
+                      ),
+                      onPressed: () => context.pop(),
+                    ),
+                    title: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _username, // Üstte kullanıcı adını göstermek şık durur
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Display',
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                    centerTitle: true,
+                  ),
+            // ----------------------------------------------------------------
             body: NestedScrollView(
               headerSliverBuilder: (context, innerBoxIsScrolled) {
                 return [
