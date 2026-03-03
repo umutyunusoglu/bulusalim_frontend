@@ -6,9 +6,16 @@ class UserSelectionTile extends StatelessWidget {
     super.key,
     required this.user,
     required this.onToggle,
+    this.buttonText = 'ekle',
+    this.buttonColor = const Color(0xFFF0F4F8),
+    this.textColor = const Color(0xFF1E3A8A),
   });
+
   final SelectableUser user;
   final VoidCallback onToggle;
+  final String buttonText;
+  final Color buttonColor;
+  final Color textColor;
 
   @override
   Widget build(BuildContext context) {
@@ -41,17 +48,17 @@ class UserSelectionTile extends StatelessWidget {
             onTap: onToggle,
             borderRadius: BorderRadius.circular(20),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFFF0F4F8),
+                color: buttonColor,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Text(
-                'ekle',
+              child: Text(
+                buttonText,
                 style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF1E3A8A),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
                 ),
               ),
             ),

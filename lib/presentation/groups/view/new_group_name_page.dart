@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
+import 'package:outnest/domain/repositories/group_repository.dart';
 import 'package:outnest/presentation/groups/view/new_group_page.dart';
 
 class NewGroupNamePage extends StatefulWidget {
@@ -19,22 +22,57 @@ class _NewGroupNamePageState extends State<NewGroupNamePage> {
     super.dispose();
   }
 
-  void _createGroup() {
+  bool _isProcessing = false;
+
+  void _createGroup() async {
     final groupName = _groupNameController.text.trim();
+
+    // 1. Validasyon
     if (groupName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen bir küme ismi girin.')),
+        const SnackBar(content: Text('Lütfen kümenize bir isim verin.')),
       );
       return;
     }
 
-    final result = {
-      'name': groupName,
-      'count': widget.selectedUsers.length,
-      'members': List<SelectableUser>.from(widget.selectedUsers),
-    };
+    if (_isProcessing) return; // Çift tıklamayı engelle
 
-    Navigator.pop(context, result);
+    setState(() => _isProcessing = true);
+
+    try {
+      final groupRepo = GetIt.I<GroupRepository>();
+
+      // 2. Mapping: SelectableUser -> CompactUserEntity
+      final List<CompactUserEntity> initialMembers = widget.selectedUsers.map((
+        u,
+      ) {
+        return CompactUserEntity(
+          userID: u.id,
+          username: u.username,
+          profileImageUrl: u.avatarUrl,
+          university: '',
+          nameSurname: '',
+          isPrivate: false,
+          bio: '',
+        );
+      }).toList();
+
+      // 3. Repository Call
+      await groupRepo.createGroup(groupName, initialMembers);
+
+      if (mounted) {
+        // Başarılı! En başa (GroupsPage) dön.
+        // popUntil kullanarak aradaki NewGroupPage'i de temizliyoruz.
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hata oluştu: ${e.toString()}')),
+        );
+      }
+    }
   }
 
   void _handleBack() {
@@ -73,14 +111,25 @@ class _NewGroupNamePageState extends State<NewGroupNamePage> {
             Padding(
               padding: const EdgeInsets.only(right: 16.0),
               child: GestureDetector(
-                onTap: _createGroup,
+                onTap: _isProcessing
+                    ? null
+                    : _createGroup, // İşlem varken tıklanmasın
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: const BoxDecoration(
                     color: Color(0xFF218B3C),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.check, color: Colors.white, size: 16),
+                  child: _isProcessing
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Icon(Icons.check, color: Colors.white, size: 16),
                 ),
               ),
             ),
