@@ -9,9 +9,9 @@ import 'package:outnest/presentation/profile/view/components/user_list_item.dart
 
 class FollowsPage extends StatefulWidget {
   const FollowsPage({
-    super.key,
     required this.profileUserID,
     required this.username,
+    super.key,
     this.initialTabIndex = 0,
     this.followerCount = 0,
     this.followingCount = 0,
@@ -32,13 +32,17 @@ class _FollowsPageState extends State<FollowsPage>
   late TabController _tabController;
   late bool isMe;
 
-  // Başkasının profili ise API isteklerini burada tutacağız
-  Future<List<CompactUserEntity>>? _followersFuture;
-  Future<List<CompactUserEntity>>? _followeesFuture;
+  late List<CompactUserEntity> _followers = [];
+  late List<CompactUserEntity> _followees = [];
+  bool _isLoadingFollowers = false;
+  bool _isLoadingFollowees = false;
+  String? _followersError;
+  String? _followeesError;
 
   @override
   void initState() {
     super.initState();
+
     isMe = widget.profileUserID == getIt<SessionService>().currentUser?.userID;
 
     _tabController = TabController(
@@ -47,42 +51,83 @@ class _FollowsPageState extends State<FollowsPage>
       initialIndex: widget.initialTabIndex,
     );
 
-    // EĞER KENDİ PROFİLİMİZ DEĞİLSE API'DEN ÇEKİP ÇEVİRİYORUZ
     if (!isMe) {
-      // 1. Takipçiler (Followers) listesini çek ve çevir
-      _followersFuture = getIt<UserRepository>()
-          .getFollowers(widget.profileUserID)
-          .then((friendList) {
-            return friendList.map((friend) {
-              return CompactUserEntity(
-                userID: friend.userID,
-                username: friend.username,
-                profileImageUrl: friend.profileImageUrl,
-                nameSurname: friend
-                    .username, // FriendEntity'de isim soyisim olmadığı için username atıyoruz
-                university: null,
-                isPrivate: null,
-                bio: null,
-              );
-            }).toList();
-          });
+      _loadFollowers();
+      _loadFollowees();
+    }
+  }
 
-      // 2. Takip Edilenler (Followees) listesini çek ve çevir
-      _followeesFuture = getIt<UserRepository>()
-          .getFollowees(widget.profileUserID)
-          .then((friendList) {
-            return friendList.map((friend) {
-              return CompactUserEntity(
-                userID: friend.userID,
-                username: friend.username,
-                profileImageUrl: friend.profileImageUrl,
-                nameSurname: friend.username,
-                university: null,
-                isPrivate: null,
-                bio: null,
-              );
-            }).toList();
-          });
+  Future<void> _loadFollowers() async {
+    setState(() {
+      _isLoadingFollowers = true;
+      _followersError = null;
+    });
+
+    try {
+      final friendList = await getIt<UserRepository>().getFollowers(
+        widget.profileUserID,
+      );
+
+      final mapped = friendList.map((friend) {
+        return CompactUserEntity(
+          userID: friend.userID,
+          username: friend.username,
+          profileImageUrl: friend.profileImageUrl,
+          nameSurname: friend.username,
+          university: null,
+          isPrivate: null,
+          bio: null,
+        );
+      }).toList();
+
+      setState(() {
+        _followers = mapped;
+      });
+    } catch (e) {
+      setState(() {
+        _followersError = e.toString();
+      });
+    } finally {
+      setState(() {
+        _isLoadingFollowers = false;
+      });
+    }
+  }
+
+  Future<void> _loadFollowees() async {
+    setState(() {
+      _isLoadingFollowees = true;
+      _followeesError = null;
+    });
+
+    try {
+      final friendList = await getIt<UserRepository>().getFollowees(
+        widget.profileUserID,
+      );
+
+      final mapped = friendList.map((friend) {
+        return CompactUserEntity(
+          userID: friend.userID,
+          username: friend.username,
+          profileImageUrl: friend.profileImageUrl,
+          nameSurname: friend.username,
+          university: null,
+          isPrivate: null,
+          bio: null,
+        );
+      }).toList();
+
+      setState(() {
+        _followees = mapped;
+      });
+    } catch (e) {
+      setState(() {
+        _followeesError = e.toString();
+      });
+    } finally {
+      setState(() {
+        _isLoadingFollowees = false;
+      });
     }
   }
 
@@ -140,17 +185,34 @@ class _FollowsPageState extends State<FollowsPage>
                 ),
               ],
             ),
-            child: isMe
-                ? ValueListenableBuilder<SessionState>(
-                    valueListenable: getIt<SessionService>().stateListenable,
-                    builder: (context, state, child) {
-                      return _buildTabBar(
-                        state.followers.length,
-                        state.followees.length,
-                      );
-                    },
-                  )
-                : _buildTabBar(widget.followerCount, widget.followingCount),
+            child: ValueListenableBuilder<SessionState>(
+              valueListenable: getIt<SessionService>().stateListenable,
+              builder: (context, session, child) {
+                if (isMe) {
+                  return _buildTabBar(
+                    session.followers.length,
+                    session.followees.length,
+                  );
+                } else {
+                  final filteredFollowers = _applySessionRules(
+                    _followers,
+                    session,
+                    true,
+                  );
+
+                  final filteredFollowees = _applySessionRules(
+                    _followees,
+                    session,
+                    false,
+                  );
+
+                  return _buildTabBar(
+                    filteredFollowers.length,
+                    filteredFollowees.length,
+                  );
+                }
+              },
+            ),
           ),
         ),
       ),
@@ -177,22 +239,29 @@ class _FollowsPageState extends State<FollowsPage>
       );
     } else {
       // Başkasının profiliyse initState'de oluşturduğumuz Future'ı kullan
-      return FutureBuilder<List<CompactUserEntity>>(
-        future: isFollowerList ? _followersFuture : _followeesFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+      return ValueListenableBuilder<SessionState>(
+        valueListenable: getIt<SessionService>().stateListenable,
+        builder: (context, session, _) {
+          final isLoading = isFollowerList
+              ? _isLoadingFollowers
+              : _isLoadingFollowees;
+
+          final error = isFollowerList ? _followersError : _followeesError;
+
+          final originalList = isFollowerList ? _followers : _followees;
+
+          if (isLoading) {
             return const Center(
               child: CircularProgressIndicator(color: Colors.black),
             );
           }
 
-          // EĞER API'DEN YADA ÇEVİRİMDEN HATA GELİRSE EKRANDA GÖSTERECEK KISIM:
-          if (snapshot.hasError) {
+          if (error != null) {
             return Center(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w),
                 child: Text(
-                  "Veriler yüklenirken bir hata oluştu.\n${snapshot.error}",
+                  "Veriler yüklenirken bir hata oluştu.\n$error",
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.red, fontSize: 13.sp),
                 ),
@@ -200,10 +269,46 @@ class _FollowsPageState extends State<FollowsPage>
             );
           }
 
-          return _buildUserList(snapshot.data ?? []);
+          final filteredList = _applySessionRules(
+            originalList,
+            session,
+            isFollowerList,
+          );
+
+          return _buildUserList(filteredList);
         },
       );
     }
+  }
+
+  List<CompactUserEntity> _applySessionRules(
+    List<CompactUserEntity> list,
+    SessionState session,
+    bool isFollowerList,
+  ) {
+    final myUserId = session.user?.userID;
+
+    return list.where((user) {
+      if (user.userID == myUserId) {
+        if (isFollowerList) {
+          // Followers sekmesi → Me → X ilişkisi
+          final iFollowProfileOwner = session.followees.any(
+            (f) => f.userID == widget.profileUserID,
+          );
+
+          return iFollowProfileOwner;
+        } else {
+          // Followees sekmesi → X → Me ilişkisi
+          final profileOwnerFollowsMe = session.followers.any(
+            (f) => f.userID == widget.profileUserID,
+          );
+
+          return profileOwnerFollowsMe;
+        }
+      }
+
+      return true;
+    }).toList();
   }
 
   Widget _buildUserList(List<CompactUserEntity> users) {

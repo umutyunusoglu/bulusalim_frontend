@@ -826,15 +826,15 @@ class _ProfilePageState extends State<ProfilePage> {
 
     // --- 1. ANLIK TAKİP DURUMUNU YAKALA (Global State'den) ---
     // Eğer kendi listemizde (başka bir sayfada) takipten çıkarsak, bu değer ANINDA false olur!
-    final isCurrentlyFollowing = isCurrentUser
-        ? true
-        : state.followees.any((f) => f.userID == widget.profileUserID);
+    final isCurrentlyFollowing =
+        isCurrentUser ||
+        state.followees.any((f) => f.userID == widget.profileUserID);
 
     // --- 2. DİNAMİK TAKİPÇİ SAYISI ---
-    int displayFollowerCount = isCurrentUser
+    var displayFollowerCount = isCurrentUser
         ? state.followers.length
         : numberOfFollowers;
-    int displayFollowingCount = isCurrentUser
+    var displayFollowingCount = isCurrentUser
         ? state.followees.length
         : numberOfFollowing;
 
@@ -845,6 +845,15 @@ class _ProfilePageState extends State<ProfilePage> {
             : (numberOfFollowers - 1);
       } else if (!_isFollowing && isCurrentlyFollowing) {
         displayFollowerCount = numberOfFollowers + 1;
+      }
+
+      if (_isFollowing && !isCurrentlyFollowing) {
+        displayFollowingCount = (numberOfFollowing - 1).clamp(
+          0,
+          numberOfFollowing,
+        );
+      } else if (!_isFollowing && isCurrentlyFollowing) {
+        displayFollowingCount = numberOfFollowing + 1;
       }
     }
 
