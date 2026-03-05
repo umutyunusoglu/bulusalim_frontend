@@ -219,9 +219,11 @@ class _EventCardState extends State<EventCard> {
                     username: currentUser.username,
                     profileImageUrl: currentUser.profileImageUrl,
                     university: currentUser.university,
-                    nameSurname: null,
-                    isPrivate: null,
-                    bio: null,
+                    nameSurname: currentUser.nameSurname,
+                    isPrivate: currentUser.isPrivate,
+                    bio: currentUser.bio,
+                    accountType: currentUser.accountType,
+                    communityData: currentUser.communityData,
                   );
                   eventRepository.removeParticipant(
                     widget.event.eventID,
@@ -277,9 +279,11 @@ class _EventCardState extends State<EventCard> {
                     username: currentUser.username,
                     profileImageUrl: currentUser.profileImageUrl,
                     university: currentUser.university,
-                    nameSurname: null,
-                    isPrivate: null,
-                    bio: null,
+                    nameSurname: currentUser.nameSurname,
+                    isPrivate: currentUser.isPrivate,
+                    bio: currentUser.bio,
+                    accountType: currentUser.accountType,
+                    communityData: currentUser.communityData,
                   );
                   eventRepository.removeParticipant(
                     widget.event.eventID,
@@ -415,6 +419,8 @@ class _EventCardState extends State<EventCard> {
       nameSurname: null,
       isPrivate: null,
       bio: null,
+      accountType: null,
+      communityData: null,
     );
 
     getIt<AnalyticsService>().logClickViewEventParticipants(
@@ -455,9 +461,11 @@ class _EventCardState extends State<EventCard> {
           username: currentUser.username,
           profileImageUrl: currentUser.profileImageUrl,
           university: currentUser.university,
-          nameSurname: null,
-          isPrivate: null,
-          bio: null,
+          nameSurname: currentUser.nameSurname,
+          isPrivate: currentUser.isPrivate,
+          bio: currentUser.bio,
+          accountType: currentUser.accountType,
+          communityData: null,
         ),
       );
 
@@ -467,9 +475,11 @@ class _EventCardState extends State<EventCard> {
           username: currentUser.username,
           profileImageUrl: currentUser.profileImageUrl,
           university: currentUser.university,
-          nameSurname: null,
-          isPrivate: null,
-          bio: null,
+          nameSurname: currentUser.nameSurname,
+          isPrivate: currentUser.isPrivate,
+          bio: currentUser.bio,
+          accountType: currentUser.accountType,
+          communityData: null,
         ),
       );
 

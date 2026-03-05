@@ -77,6 +77,8 @@ class _FollowsPageState extends State<FollowsPage>
           university: null,
           isPrivate: null,
           bio: null,
+          accountType: null,
+          communityData: null,
         );
       }).toList();
 
@@ -114,6 +116,8 @@ class _FollowsPageState extends State<FollowsPage>
           university: null,
           isPrivate: null,
           bio: null,
+          accountType: null,
+          communityData: null,
         );
       }).toList();
 

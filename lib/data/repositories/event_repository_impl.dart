@@ -99,6 +99,8 @@ class EventRepositoryImpl implements EventRepository {
         nameSurname: null,
         isPrivate: null,
         bio: null,
+        accountType: null,
+        communityData: null,
       );
 
       Geolocation? publicLocation;
