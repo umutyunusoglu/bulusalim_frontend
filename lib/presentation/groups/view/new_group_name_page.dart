@@ -55,6 +55,7 @@ class _NewGroupNamePageState extends State<NewGroupNamePage> {
           isPrivate: false,
           bio: '',
           accountType: null,
+          communityData: null,
         );
       }).toList();
 

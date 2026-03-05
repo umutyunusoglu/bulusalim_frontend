@@ -74,6 +74,7 @@ class UploadPost {
       isPrivate: currentUser.isPrivate,
       bio: currentUser.bio,
       accountType: currentUser.accountType,
+      communityData: currentUser.communityData,
     );
 
     final post = PostEntity(

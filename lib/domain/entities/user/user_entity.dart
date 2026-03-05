@@ -86,6 +86,9 @@ class UserEntity extends Equatable {
       isPrivate: isPrivate ?? this.isPrivate,
       universityEmail: universityEmail ?? this.universityEmail,
       isUniversityVerified: isUniversityVerified ?? this.isUniversityVerified,
+      hideSavedEvents: hideSavedEvents ?? this.hideSavedEvents,
+      followerIds: followerIds ?? this.followerIds,
+      followeeIds: followeeIds ?? this.followeeIds,
     );
   }
 
@@ -140,16 +143,16 @@ class CommunityData {
 
   factory CommunityData.fromMap(Map<String, dynamic> data) {
     final communityBio = data['communityBio'] as String? ?? '';
-
     final communityPhotoUrl = data['communityPhotoUrl'] as String? ?? '';
-
     final communityTeamMembers = <CompactUserEntity>[];
 
-    for (final member
-        in data['communityTeamMembers'] as List<Map<String, dynamic>>) {
-      final memberParsed = CompactUserEntity.fromMap(member);
-
-      communityTeamMembers.add(memberParsed);
+    if (data['communityTeamMembers'] != null) {
+      final membersList = data['communityTeamMembers'] as List<dynamic>;
+      for (final member in membersList) {
+        if (member is Map<String, dynamic>) {
+          communityTeamMembers.add(CompactUserEntity.fromMap(member));
+        }
+      }
     }
 
     return CommunityData(
@@ -158,7 +161,6 @@ class CommunityData {
       communityTeamMembers: communityTeamMembers,
     );
   }
-
   final String communityPhotoUrl;
   final String communityBio;
   final List<CompactUserEntity> communityTeamMembers;
