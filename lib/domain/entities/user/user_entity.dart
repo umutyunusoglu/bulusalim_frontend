@@ -139,6 +139,9 @@ class CommunityData {
     required this.communityBio,
     required this.communityPhotoUrl,
     required this.communityTeamMembers,
+    required this.instagramUrl,
+    required this.whatsappUrl,
+    required this.websiteUrl,
   });
 
   factory CommunityData.fromMap(Map<String, dynamic> data) {
@@ -155,13 +158,37 @@ class CommunityData {
       }
     }
 
+    final instagramUrl = data['instagramUrl'] as String? ?? '';
+    final whatsappUrl = data['whatsappUrl'] as String? ?? '';
+    final websiteUrl = data['websiteUrl'] as String? ?? '';
+
     return CommunityData(
       communityBio: communityBio,
       communityPhotoUrl: communityPhotoUrl,
       communityTeamMembers: communityTeamMembers,
+      instagramUrl: instagramUrl,
+      whatsappUrl: whatsappUrl,
+      websiteUrl: websiteUrl,
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'communityBio': communityBio,
+      'communityPhotoUrl': communityPhotoUrl,
+      'communityTeamMembers': communityTeamMembers
+          .map((e) => e.toMap())
+          .toList(),
+      'instagramUrl': instagramUrl,
+      'whatsappUrl': whatsappUrl,
+      'websiteUrl': websiteUrl,
+    };
+  }
+
   final String communityPhotoUrl;
   final String communityBio;
   final List<CompactUserEntity> communityTeamMembers;
+  final String? instagramUrl;
+  final String? whatsappUrl;
+  final String websiteUrl;
 }
