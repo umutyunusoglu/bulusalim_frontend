@@ -131,10 +131,18 @@ class EventParticipantEntity extends Equatable {
   factory EventParticipantEntity.fromMap(Map<String, dynamic> map) {
     return EventParticipantEntity(
       userID: map['userID'] as Identifier,
-      username: map['username'] as String,
-      profileImageUrl: map['profileImageUrl'] as String,
-      role: EventRoleEnum.fromString(map['role'] as String),
-      eventScore: 0,
+      // String alanları null-safe hale getirdik
+      username: map['username'] as String? ?? '',
+      profileImageUrl: map['profileImageUrl'] as String? ?? '',
+
+      // Önce nullable String'e cast edip, null ise fromString'e boş bir değer veya varsayılan bir rol (örn: 'participant') gönderiyoruz.
+      // fromString metodunun içinde boş string'i (veya null'ı) handle eden bir default case'in olduğunu varsayıyorum.
+      role: EventRoleEnum.fromString(map['role'] as String? ?? ''),
+
+      // Eğer score ileride backend'den gelecekse: (map['eventScore'] as num?)?.toDouble() ?? 0.0 kullanabilirsin.
+      // Şimdilik sadece hardcoded 0.0 yaptık (double beklentisini tam karşılaması için)
+      eventScore: 0.0,
+
       university: map['university'] as String?,
     );
   }

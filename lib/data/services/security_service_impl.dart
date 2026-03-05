@@ -113,6 +113,7 @@ class SecurityServiceImpl implements SecurityService {
             nameSurname: null,
             isPrivate: null,
             bio: null,
+            accountType: null,
           ),
         )
         .toList();

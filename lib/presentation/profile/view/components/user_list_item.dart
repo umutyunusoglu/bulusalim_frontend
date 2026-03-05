@@ -6,6 +6,7 @@ import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/entities/user/friend_entity.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
+import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/session_state.dart';
 import 'package:outnest/presentation/profile/view/profile_page.dart';
@@ -303,7 +304,7 @@ class _UserListItemState extends State<UserListItem> {
               backgroundColor: Colors.grey.shade200,
               backgroundImage: widget.user.profileImageUrl.isNotEmpty
                   ? CachedNetworkImageProvider(widget.user.profileImageUrl)
-                  : null,
+                  : AssetImage(FileService.defaultProfileImageUrl()),
             ),
             SizedBox(width: 12.w),
             Expanded(

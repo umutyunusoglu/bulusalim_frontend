@@ -293,6 +293,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
           nameSurname: null,
           isPrivate: null,
           bio: null,
+          accountType: null,
         );
         eventRepository.removeParticipant(widget.eventID, compactUser);
 

@@ -1395,6 +1395,7 @@ class _MapPageState extends State<MapPage> {
         nameSurname: currentUser.nameSurname,
         isPrivate: currentUser.isPrivate,
         bio: currentUser.bio,
+        accountType: currentUser.accountType,
       );
       final geohash = GeoHasher().encode(
         _tempLocation!.longitude,

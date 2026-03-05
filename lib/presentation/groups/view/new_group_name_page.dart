@@ -54,6 +54,7 @@ class _NewGroupNamePageState extends State<NewGroupNamePage> {
           nameSurname: '',
           isPrivate: false,
           bio: '',
+          accountType: null,
         );
       }).toList();
 
