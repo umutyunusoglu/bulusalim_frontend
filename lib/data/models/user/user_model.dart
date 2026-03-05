@@ -32,6 +32,7 @@ class UserModel extends Model<UserEntity> {
     required this.instagram,
     required this.phoneNumber,
     required this.accountType,
+    required this.communityData,
   });
 
   @override
@@ -60,6 +61,7 @@ class UserModel extends Model<UserEntity> {
       instagram: entity.instagram,
       phoneNumber: entity.phoneNumber,
       accountType: entity.accountType,
+      communityData: entity.communityData,
     );
   }
 
@@ -111,6 +113,9 @@ class UserModel extends Model<UserEntity> {
       accountType: AccountType.fromString(
         doc['accountType'] as String? ?? 'personal',
       ),
+      communityData: doc['communityData'] != null
+          ? CommunityData.fromMap(doc['communityData'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -172,6 +177,7 @@ class UserModel extends Model<UserEntity> {
       instagram: instagram,
       phoneNumber: phoneNumber,
       accountType: accountType,
+      communityData: communityData,
     );
   }
 
@@ -198,6 +204,7 @@ class UserModel extends Model<UserEntity> {
   final String? instagram;
   final String? phoneNumber;
   final AccountType accountType;
+  final CommunityData? communityData;
 
   final List<String> hobbies;
 }

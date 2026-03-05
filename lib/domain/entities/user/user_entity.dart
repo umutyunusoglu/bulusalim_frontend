@@ -23,7 +23,7 @@ class UserEntity extends Equatable {
     required this.lastActiveAt,
     required this.followeeCount,
     required this.followerCount,
-
+    required this.communityData,
     required this.accountType,
     required this.phoneNumber,
     required this.instagram,
@@ -50,7 +50,7 @@ class UserEntity extends Equatable {
     String? phoneNumber,
     String? instagram,
     AccountType? accountType,
-
+    CommunityData? communityData,
     List<String>? hobbies,
     int? followeeCount,
     int? followerCount,
@@ -78,6 +78,7 @@ class UserEntity extends Equatable {
       phoneNumber: phoneNumber ?? this.phoneNumber,
       instagram: instagram ?? this.instagram,
       accountType: accountType ?? this.accountType,
+      communityData: communityData ?? this.communityData,
       lastActiveAt: lastActiveAt ?? this.lastActiveAt,
       hobbies: hobbies ?? this.hobbies,
       followeeCount: followeeCount ?? this.followeeCount,

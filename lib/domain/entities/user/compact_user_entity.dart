@@ -14,34 +14,24 @@ class CompactUserEntity extends Equatable {
     required this.accountType,
   });
   factory CompactUserEntity.fromMap(Map<String, dynamic> map) {
-    if (!map.containsKey('university')) {
-      map['university'] = null;
-    }
-    if (!map.containsKey('bio')) {
-      map['bio'] = null;
-    }
-
-    if (!map.containsKey('isPrivate')) {
-      map['isPrivate'] = null;
-    }
-    if(!map.containsKey('accountType')){
-      map['accountType']='personal';
-    }
-
-    final nameSurname = map['nameSurname'] ?? map['fullname'];
-    if (nameSurname != null) {
-      map['nameSurname'] = nameSurname;
-    } 
-
     return CompactUserEntity(
+      // Eğer Identifier tipi de null gelebiliyorsa, buraya da müdahale etmek gerekebilir.
       userID: map['userID'] as Identifier,
-      username: map['username'] as String,
-      profileImageUrl: map['profileImageUrl'] as String,
+
+      // Eğer bu alanlar null gelebiliyorsa, 'as String' patlar.
+      // Güvenli olması için 'as String?' yapıp default bir boş değer atamak en iyisidir.
+      username: map['username'] as String? ?? '',
+      profileImageUrl: map['profileImageUrl'] as String? ?? '',
+
       university: map['university'] as String?,
-      nameSurname: map['nameSurname'] as String?,
+      nameSurname: (map['nameSurname'] ?? map['fullname']) as String?,
       isPrivate: map['isPrivate'] as bool?,
       bio: map['bio'] as String?,
-      accountType: AccountType.fromString(map['accountType'] as String);
+
+      // KRİTİK DÜZELTME: Önce String? (nullable String) olarak cast edip, null ise 'personal' atıyoruz.
+      accountType: AccountType.fromString(
+        map['accountType'] as String? ?? 'personal',
+      ),
     );
   }
 
@@ -63,7 +53,7 @@ class CompactUserEntity extends Equatable {
       nameSurname: nameSurname ?? this.nameSurname,
       isPrivate: isPrivate ?? this.isPrivate,
       bio: bio ?? this.bio,
-      accountType:accountType?? this.accountType,
+      accountType: accountType ?? this.accountType,
     );
   }
 
@@ -95,5 +85,5 @@ class CompactUserEntity extends Equatable {
   //University might not be verified
   final String? university;
 
-  final AccountType accountType;
+  final AccountType? accountType;
 }
