@@ -314,9 +314,11 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
               username: currentUser.username,
               profileImageUrl: currentUser.profileImageUrl,
               university: currentUser.university,
-              nameSurname: null,
-              isPrivate: null,
-              bio: null,
+              nameSurname: currentUser.nameSurname,
+              isPrivate: currentUser.isPrivate,
+              bio: currentUser.bio,
+              accountType: currentUser.accountType,
+              communityData: currentUser.communityData,
             );
             eventRepository.removeParticipant(widget.eventID, compactUser);
           }
@@ -391,6 +393,8 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
       nameSurname: null,
       isPrivate: null,
       bio: null,
+      accountType: null,
+      communityData: null,
     );
 
     showModalBottomSheet(

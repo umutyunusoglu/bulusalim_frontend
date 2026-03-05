@@ -16,7 +16,7 @@ enum EventRoleEnum {
       case 'participant':
         return participant;
       default:
-        throw ArgumentError('Unknown event role: $value');
+        return participant;
     }
   }
 }

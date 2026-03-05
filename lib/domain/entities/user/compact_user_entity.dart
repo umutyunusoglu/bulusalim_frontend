@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
+import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
 import 'package:outnest/core/utils/types/types.dart';
+import 'package:outnest/domain/entities/user/index.dart';
 
 class CompactUserEntity extends Equatable {
   const CompactUserEntity({
@@ -10,31 +12,32 @@ class CompactUserEntity extends Equatable {
     required this.nameSurname,
     required this.isPrivate,
     required this.bio,
+    required this.accountType,
+    required this.communityData,
   });
   factory CompactUserEntity.fromMap(Map<String, dynamic> map) {
-    if (map.containsKey('university') == false) {
-      map['university'] = null;
-    }
-    if (map.containsKey('bio') == false) {
-      map['bio'] = null;
-    }
-
-    if (map.containsKey('isPrivate') == false) {
-      map['isPrivate'] = null;
-    }
-    final nameSurname = map['nameSurname'] ?? map['fullname'];
-    if (nameSurname != null) {
-      map['nameSurname'] = nameSurname;
-    }
-
     return CompactUserEntity(
+      // Eğer Identifier tipi de null gelebiliyorsa, buraya da müdahale etmek gerekebilir.
       userID: map['userID'] as Identifier,
-      username: map['username'] as String,
-      profileImageUrl: map['profileImageUrl'] as String,
+
+      // Eğer bu alanlar null gelebiliyorsa, 'as String' patlar.
+      // Güvenli olması için 'as String?' yapıp default bir boş değer atamak en iyisidir.
+      username: map['username'] as String? ?? '',
+      profileImageUrl: map['profileImageUrl'] as String? ?? '',
+
       university: map['university'] as String?,
-      nameSurname: map['nameSurname'] as String?,
+      nameSurname: (map['nameSurname'] ?? map['fullname']) as String?,
       isPrivate: map['isPrivate'] as bool?,
       bio: map['bio'] as String?,
+
+      accountType: AccountType.fromString(
+        map['accountType'] as String? ?? 'personal',
+      ),
+      communityData: map['communityData'] != null
+          ? CommunityData.fromMap(
+              map['communityData'] as Map<String, dynamic>,
+            )
+          : null,
     );
   }
 
@@ -46,6 +49,8 @@ class CompactUserEntity extends Equatable {
     String? nameSurname,
     bool? isPrivate,
     String? bio,
+    AccountType? accountType,
+    CommunityData? communityData,
   }) {
     return CompactUserEntity(
       userID: userID ?? this.userID,
@@ -55,6 +60,8 @@ class CompactUserEntity extends Equatable {
       nameSurname: nameSurname ?? this.nameSurname,
       isPrivate: isPrivate ?? this.isPrivate,
       bio: bio ?? this.bio,
+      accountType: accountType ?? this.accountType,
+      communityData: communityData ?? this.communityData,
     );
   }
 
@@ -67,6 +74,7 @@ class CompactUserEntity extends Equatable {
       'nameSurname': nameSurname,
       'isPrivate': isPrivate,
       'bio': bio ?? '',
+      'accountType': accountType.toString(),
     };
   }
 
@@ -84,4 +92,7 @@ class CompactUserEntity extends Equatable {
 
   //University might not be verified
   final String? university;
+
+  final AccountType? accountType;
+  final CommunityData? communityData;
 }

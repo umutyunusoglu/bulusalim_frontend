@@ -272,6 +272,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
         hobbies: interests,
         followerCount: 0,
         accountType: AccountType.personal,
+        communityData: null,
         phoneNumber: getIt<AuthService>().getUserPhoneNumber(),
         instagram: '',
       );
