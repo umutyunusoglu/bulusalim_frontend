@@ -20,7 +20,7 @@ import 'package:outnest/presentation/init_screen.dart';
 import 'package:outnest/presentation/map/view/map_page.dart';
 import 'package:outnest/presentation/notification/view/follow_request_page.dart';
 import 'package:outnest/presentation/notification/view/notification_page.dart';
-import 'package:outnest/presentation/profile/view/profile_page.dart';
+import 'package:outnest/presentation/profile/view/profile_dispatcher.dart';
 import 'package:outnest/presentation/search/view/search_page.dart';
 import 'package:outnest/presentation/settings/view/edit_profile_page.dart';
 import 'package:outnest/presentation/settings/view/settings_page.dart';
@@ -48,13 +48,11 @@ final router = GoRouter(
   initialLocation: '/splash',
   errorBuilder: (context, state) {
     debugPrint('GoRouter Hatası: ${state.error}');
-    // Kullanıcıyı güvenli bir limana (Home) yönlendir
     return const HomePage();
   },
   redirect: (context, state) {
     return null;
   },
-
   routes: [
     GoRoute(
       path: '/splash',
@@ -118,11 +116,9 @@ final router = GoRouter(
               routes: [
                 GoRoute(
                   path: 'profile/:userId',
-                  // DİKKAT: Buradan parentNavigatorKey kaldırıldı çünkü branch içinde.
-                  // Eğer tam ekran olmasını istiyorsanız bu rotayı ShellRoute dışına taşımalısınız.
                   builder: (context, state) {
                     final userId = state.pathParameters['userId'] ?? '';
-                    return ProfilePage(profileUserID: userId);
+                    return ProfileDispatcher(profileUserID: userId);
                   },
                 ),
               ],
@@ -144,10 +140,7 @@ final router = GoRouter(
               path: '/map',
               builder: (context, state) {
                 final openCreate = state.extra as bool? ?? false;
-
-                return MapPage(
-                  openCreateOnLoad: openCreate,
-                );
+                return MapPage(openCreateOnLoad: openCreate);
               },
             ),
           ],
@@ -167,7 +160,7 @@ final router = GoRouter(
               builder: (context, state) {
                 final sessionService = getIt<SessionService>();
                 final myUserId = sessionService.currentUser?.userID;
-                return ProfilePage(profileUserID: myUserId ?? '');
+                return ProfileDispatcher(profileUserID: myUserId ?? '');
               },
             ),
           ],
@@ -183,7 +176,6 @@ final router = GoRouter(
       routes: [
         GoRoute(
           path: 'edit-profile',
-          // Child root zaten parent'ının navigator'ını kullanır
           builder: (context, state) => const EditProfilePage(),
         ),
       ],
@@ -240,7 +232,6 @@ final router = GoRouter(
           creatorProfileImage: (extra?['creatorProfileImage'] as String?) ?? '',
         );
       },
-
       routes: [
         GoRoute(
           path: 'settings',
