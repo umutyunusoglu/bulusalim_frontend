@@ -164,4 +164,5 @@ class CommunityData {
   final String communityPhotoUrl;
   final String communityBio;
   final List<CompactUserEntity> communityTeamMembers;
+  final 
 }

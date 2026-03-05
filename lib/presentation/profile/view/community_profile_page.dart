@@ -39,7 +39,12 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
   final PageController _pageController = PageController();
 
   CompactUserEntity? _communityUser;
-  int numberOfEvents = 0;
+  int _numberOfEvents = 0;
+  int _numberOfFollowers = 0;
+
+  bool? _optimisticIsMember;
+  int _followerCountModifier = 0;
+  bool _isTogglingMembership = false;
 
   StreamSubscription<List<UserPostEntity>>? _postsSubscription;
 
@@ -150,7 +155,7 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
         switch (event.status) {
           case UserEventStatusEnum.upcoming:
           case UserEventStatusEnum.ongoing:
-            enrolledEventIds.add(event.eventId.toString());
+            enrolledEventIds.add(event.eventId);
             break;
           case UserEventStatusEnum.completed:
             completedEventCount += 1;
@@ -165,11 +170,16 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
         enrolledEvents = await eventRepository.getEventsByIds(enrolledEventIds);
       }
 
+      //TODO: Optimize
+      final numberOfFollowers = await userRepository.getFollowersCount(
+        user!.userID,
+      );
       if (!mounted) return;
 
       setState(() {
         _communityUser = user;
-        numberOfEvents = completedEventCount;
+        _numberOfEvents = completedEventCount;
+        _numberOfFollowers = numberOfFollowers;
         _currentEvents = enrolledEvents;
         _isLoading = false;
       });
@@ -180,14 +190,24 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
   }
 
   // --- KATIL/ÇIK MANTIĞI ---
+  // --- KATIL/ÇIK MANTIĞI ---
   Future<void> _toggleJoinCommunity(bool isCurrentlyMember) async {
+    if (_isTogglingMembership) return; // Çoklu tıklama spam'ini engelle
+
     final userRepository = getIt<UserRepository>();
     final sessionService = getIt<SessionService>();
     final currentUser = sessionService.currentUser;
     if (currentUser == null) return;
 
+    // 1. OPTIMISTIC UPDATE: Sunucuyu beklemeden arayüzü anında güncelle
+    final newMemberStatus = !isCurrentlyMember;
+    setState(() {
+      _isTogglingMembership = true; // Butonu kilitle (Spam engeli)
+      _optimisticIsMember = newMemberStatus; // Anında 'Katıldın' yazdır
+      _followerCountModifier = newMemberStatus ? 1 : -1;
+    });
     try {
-      if (!isCurrentlyMember) {
+      if (newMemberStatus) {
         // KATIL
         final me = Follower(
           userID: currentUser.userID,
@@ -217,9 +237,28 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
       }
 
       await sessionService.refreshSession();
+
+      // 2. BAŞARILI: Geçici optimistik state'i kalıcılaştır ve temizle
+      if (mounted) {
+        setState(() {
+          _numberOfFollowers +=
+              _followerCountModifier; // Gerçek takipçi sayısını güncelle
+          _optimisticIsMember =
+              null; // null yaparak SessionState'deki asıl değere dönüş yapıyoruz
+          _followerCountModifier = 0;
+          _isTogglingMembership = false;
+        });
+      }
     } catch (e) {
       debugPrint("İşlem başarısız: $e");
       if (mounted) {
+        // 3. ROLLBACK (GERİ ALMA): Hata durumunda arayüzü eski haline döndür
+        setState(() {
+          _optimisticIsMember = null;
+          _followerCountModifier = 0;
+          _isTogglingMembership = false;
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('İşlem başarısız oldu, lütfen tekrar deneyin.'),
@@ -277,9 +316,12 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
     return ValueListenableBuilder<SessionState>(
       valueListenable: sessionService.stateListenable,
       builder: (context, state, child) {
-        final isMember = state.followees.any(
+        final actualIsMember = state.followees.any(
           (f) => f.userID == widget.profileUserID,
         );
+
+        // Arayüze basılacak durum: Optimistic bir işlem varsa onu, yoksa gerçek durumu al
+        final isMember = _optimisticIsMember ?? actualIsMember;
 
         return SafeArea(
           child: Scaffold(
@@ -461,8 +503,11 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildStatItem('$numberOfEvents', ' Etkinlik'),
-                        _buildStatItem('0', ' Üye'),
+                        _buildStatItem('$_numberOfEvents', ' Etkinlik'),
+                        _buildStatItem(
+                          '${_numberOfFollowers + _followerCountModifier}',
+                          ' Üye',
+                        ),
                         _buildStatItem('0', ' Etkileşim'),
                       ],
                     ),
@@ -514,13 +559,15 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
                 flex: 5,
                 child: LoginButton(
                   label: isMember ? 'katıldın' : 'katıl',
-                  onPress: () {
-                    if (isMember) {
-                      _showUnfollowDialog(context);
-                    } else {
-                      _toggleJoinCommunity(false);
-                    }
-                  },
+                  onPress: _isTogglingMembership
+                      ? () {}
+                      : () {
+                          if (isMember) {
+                            _showUnfollowDialog(context);
+                          } else {
+                            _toggleJoinCommunity(false);
+                          }
+                        },
                   height: 32.h,
                   width: double.infinity,
                   borderRadius: 20.r,
