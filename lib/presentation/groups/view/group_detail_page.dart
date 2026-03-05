@@ -43,6 +43,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         isPrivate: false,
         bio: '',
         accountType: null,
+        communityData: null,
       );
 
       await _groupRepository.addGroupMemberToMyGroup(

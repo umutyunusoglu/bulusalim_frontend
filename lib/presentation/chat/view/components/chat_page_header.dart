@@ -318,6 +318,7 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
               isPrivate: currentUser.isPrivate,
               bio: currentUser.bio,
               accountType: currentUser.accountType,
+              communityData: currentUser.communityData,
             );
             eventRepository.removeParticipant(widget.eventID, compactUser);
           }
@@ -393,6 +394,7 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
       isPrivate: null,
       bio: null,
       accountType: null,
+      communityData: null,
     );
 
     showModalBottomSheet(

@@ -78,6 +78,7 @@ class _FollowsPageState extends State<FollowsPage>
           isPrivate: null,
           bio: null,
           accountType: null,
+          communityData: null,
         );
       }).toList();
 
@@ -116,6 +117,7 @@ class _FollowsPageState extends State<FollowsPage>
           isPrivate: null,
           bio: null,
           accountType: null,
+          communityData: null,
         );
       }).toList();
 

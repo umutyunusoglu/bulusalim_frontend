@@ -33,6 +33,7 @@ class EventSummaryOverlay extends StatelessWidget {
       isPrivate: null,
       bio: null,
       accountType: null,
+      communityData: null,
     );
 
     return ColoredBox(

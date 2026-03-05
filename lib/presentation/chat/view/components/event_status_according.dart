@@ -163,6 +163,7 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
       isPrivate: null,
       bio: null,
       accountType: null,
+      communityData: null,
     );
 
     try {
@@ -208,6 +209,7 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
         isPrivate: null,
         bio: null,
         accountType: null,
+        communityData: null,
       );
 
       await _eventRepository.removeParticipant(

@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
 import 'package:outnest/core/utils/types/types.dart';
+import 'package:outnest/domain/entities/user/index.dart';
 
 class CompactUserEntity extends Equatable {
   const CompactUserEntity({
@@ -12,6 +13,7 @@ class CompactUserEntity extends Equatable {
     required this.isPrivate,
     required this.bio,
     required this.accountType,
+    required this.communityData,
   });
   factory CompactUserEntity.fromMap(Map<String, dynamic> map) {
     return CompactUserEntity(
@@ -28,10 +30,14 @@ class CompactUserEntity extends Equatable {
       isPrivate: map['isPrivate'] as bool?,
       bio: map['bio'] as String?,
 
-      // KRİTİK DÜZELTME: Önce String? (nullable String) olarak cast edip, null ise 'personal' atıyoruz.
       accountType: AccountType.fromString(
         map['accountType'] as String? ?? 'personal',
       ),
+      communityData: map['communityData'] != null
+          ? CommunityData.fromMap(
+              map['communityData'] as Map<String, dynamic>,
+            )
+          : null,
     );
   }
 
@@ -44,6 +50,7 @@ class CompactUserEntity extends Equatable {
     bool? isPrivate,
     String? bio,
     AccountType? accountType,
+    CommunityData? communityData,
   }) {
     return CompactUserEntity(
       userID: userID ?? this.userID,
@@ -54,6 +61,7 @@ class CompactUserEntity extends Equatable {
       isPrivate: isPrivate ?? this.isPrivate,
       bio: bio ?? this.bio,
       accountType: accountType ?? this.accountType,
+      communityData: communityData ?? this.communityData,
     );
   }
 
@@ -66,7 +74,7 @@ class CompactUserEntity extends Equatable {
       'nameSurname': nameSurname,
       'isPrivate': isPrivate,
       'bio': bio ?? '',
-      'accountType': accountType,
+      'accountType': accountType.toString(),
     };
   }
 
@@ -86,4 +94,5 @@ class CompactUserEntity extends Equatable {
   final String? university;
 
   final AccountType? accountType;
+  final CommunityData? communityData;
 }
