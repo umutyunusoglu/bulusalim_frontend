@@ -3,6 +3,7 @@ import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
 import 'package:outnest/core/utils/types/enums/gender_enum.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 
 class UserEntity extends Equatable {
   const UserEntity({
@@ -106,6 +107,7 @@ class UserEntity extends Equatable {
   final DateTime lastActiveAt;
   final int followeeCount;
   final int followerCount;
+  final CommunityData? communityData;
   final List<String> hobbies;
   final bool isPrivate;
   final bool hideSavedEvents;
@@ -126,4 +128,37 @@ class UserEntity extends Equatable {
     isPrivate,
     hideSavedEvents,
   ];
+}
+
+class CommunityData {
+  CommunityData({
+    required this.communityBio,
+    required this.communityPhotoUrl,
+    required this.communityTeamMembers,
+  });
+
+  factory CommunityData.fromMap(Map<String, dynamic> data) {
+    final communityBio = data['communityBio'] as String? ?? '';
+
+    final communityPhotoUrl = data['communityPhotoUrl'] as String? ?? '';
+
+    final communityTeamMembers = <CompactUserEntity>[];
+
+    for (final member
+        in data['communityTeamMembers'] as List<Map<String, dynamic>>) {
+      final memberParsed = CompactUserEntity.fromMap(member);
+
+      communityTeamMembers.add(memberParsed);
+    }
+
+    return CommunityData(
+      communityBio: communityBio,
+      communityPhotoUrl: communityPhotoUrl,
+      communityTeamMembers: communityTeamMembers,
+    );
+  }
+
+  final String communityPhotoUrl;
+  final String communityBio;
+  final List<CompactUserEntity> communityTeamMembers;
 }

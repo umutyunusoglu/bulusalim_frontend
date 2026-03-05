@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
 import 'package:outnest/core/utils/types/types.dart';
 
 class CompactUserEntity extends Equatable {
@@ -10,22 +11,27 @@ class CompactUserEntity extends Equatable {
     required this.nameSurname,
     required this.isPrivate,
     required this.bio,
+    required this.accountType,
   });
   factory CompactUserEntity.fromMap(Map<String, dynamic> map) {
-    if (map.containsKey('university') == false) {
+    if (!map.containsKey('university')) {
       map['university'] = null;
     }
-    if (map.containsKey('bio') == false) {
+    if (!map.containsKey('bio')) {
       map['bio'] = null;
     }
 
-    if (map.containsKey('isPrivate') == false) {
+    if (!map.containsKey('isPrivate')) {
       map['isPrivate'] = null;
     }
+    if(!map.containsKey('accountType')){
+      map['accountType']='personal';
+    }
+
     final nameSurname = map['nameSurname'] ?? map['fullname'];
     if (nameSurname != null) {
       map['nameSurname'] = nameSurname;
-    }
+    } 
 
     return CompactUserEntity(
       userID: map['userID'] as Identifier,
@@ -35,6 +41,7 @@ class CompactUserEntity extends Equatable {
       nameSurname: map['nameSurname'] as String?,
       isPrivate: map['isPrivate'] as bool?,
       bio: map['bio'] as String?,
+      accountType: AccountType.fromString(map['accountType'] as String);
     );
   }
 
@@ -46,6 +53,7 @@ class CompactUserEntity extends Equatable {
     String? nameSurname,
     bool? isPrivate,
     String? bio,
+    AccountType? accountType,
   }) {
     return CompactUserEntity(
       userID: userID ?? this.userID,
@@ -55,6 +63,7 @@ class CompactUserEntity extends Equatable {
       nameSurname: nameSurname ?? this.nameSurname,
       isPrivate: isPrivate ?? this.isPrivate,
       bio: bio ?? this.bio,
+      accountType:accountType?? this.accountType,
     );
   }
 
@@ -67,6 +76,7 @@ class CompactUserEntity extends Equatable {
       'nameSurname': nameSurname,
       'isPrivate': isPrivate,
       'bio': bio ?? '',
+      'accountType': accountType,
     };
   }
 
@@ -84,4 +94,6 @@ class CompactUserEntity extends Equatable {
 
   //University might not be verified
   final String? university;
+
+  final AccountType accountType;
 }
