@@ -149,6 +149,7 @@ class UserModel extends Model<UserEntity> {
       'instagram': instagram,
       'phoneNumber': phoneNumber,
       'accountType': accountType.toString(),
+      'communityData': communityData?.toMap(),
     };
   }
 
