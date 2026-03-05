@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart'; // accountType'ı okumak için tam modeli import ediyoruz
 import 'package:outnest/domain/repositories/user_repository.dart';
@@ -18,6 +19,7 @@ class ProfileDispatcher extends StatefulWidget {
 class _ProfileDispatcherState extends State<ProfileDispatcher> {
   bool _isLoading = true;
   AccountType _accountType = AccountType.personal;
+  final LoggingService _logger = getIt<LoggingService>();
 
   @override
   void initState() {
@@ -34,23 +36,21 @@ class _ProfileDispatcherState extends State<ProfileDispatcher> {
       if (widget.profileUserID == sessionService.currentUser?.userID) {
         _accountType =
             sessionService.currentUser?.accountType ?? AccountType.personal;
-        debugPrint('DISPATCHER: Kendi profilim. Tür: $_accountType');
+        _logger.info('DISPATCHER: Kendi profilim. Tür: $_accountType');
       }
       // 2. DURUM: Girdiğimiz profil BAŞKASININ profili mi?
       else {
-        final user = await userRepository.getCurrentUser(widget.profileUserID);
+        final user = await userRepository.getUserPublicData(
+          widget.profileUserID,
+        );
 
-        if (user is UserEntity) {
-          _accountType = user.accountType;
-        } else {
-          _accountType = user?.accountType ?? AccountType.personal;
-        }
+        _accountType = user?.accountType ?? AccountType.personal;
 
-        debugPrint('DISPATCHER: Başkasının profili. Tür: $_accountType');
+        _logger.info('DISPATCHER: Başkasının profili. Tür: $_accountType');
       }
     } catch (e) {
       // Herhangi bir yetki veya çekme hatası olursa uygulamayı çökertmemek için personal'a düşür
-      debugPrint('DISPATCHER HATASI (Hesap türü okunamadı): $e');
+      _logger.error('Profile DISPATCHER HATASI (Hesap türü okunamadı): $e');
       _accountType = AccountType.personal;
     } finally {
       if (mounted) setState(() => _isLoading = false);
