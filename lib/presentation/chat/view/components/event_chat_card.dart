@@ -92,6 +92,7 @@ class EventChatCard extends StatelessWidget {
                           : FileService.defaultProfileImageUrl(),
                       categoryIcon: categoryIcon,
                     ),
+
                     SizedBox(width: 12.w),
 
                     // --- 2. BİLGİ ALANI ---
