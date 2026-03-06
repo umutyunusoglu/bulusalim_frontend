@@ -1053,7 +1053,11 @@ class _MapPageState extends State<MapPage> {
                 child: Center(child: _buildMapSelectionButton()),
               ),
 
-            if (_isLocationPermissionGranted)
+            if (_isLocationPermissionGranted &&
+                !_isCreatePopupVisible &&
+                !_isCardVisible &&
+                !widget.isLocationPicker &&
+                !widget.isTimePicker)
               Positioned(
                 bottom: 40.h,
                 left: 16.w,
