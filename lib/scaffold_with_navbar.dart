@@ -32,8 +32,18 @@ class ScaffoldWithNavbar extends StatelessWidget {
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          border: Border(),
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1), // Gölge rengi
+              blurRadius: 15, // Yayılma yumuşaklığı
+              spreadRadius: 2, // Gölgenin büyüklüğü
+              offset: const Offset(0, -2), // Gölgeyi yukarı doğru (-y) kaydırır
+            ),
+          ],
+
+          border: const Border(),
         ),
         child: BottomNavigationBar(
           currentIndex: navigationShell.currentIndex,
@@ -46,7 +56,7 @@ class ScaffoldWithNavbar extends StatelessWidget {
           ),
           showSelectedLabels: false,
           showUnselectedLabels: false,
-          elevation: 0,
+          elevation: 50,
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.home_outlined, size: 25),

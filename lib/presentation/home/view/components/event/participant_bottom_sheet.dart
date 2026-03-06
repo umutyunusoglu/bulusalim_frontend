@@ -6,6 +6,7 @@ import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/services/file_service.dart';
+import 'package:outnest/presentation/shared/navigation/navigate_to_profile.dart';
 
 class ParticipantsBottomSheet extends StatelessWidget {
   const ParticipantsBottomSheet({
@@ -132,9 +133,8 @@ class _ParticipantTile extends StatelessWidget {
 
     return InkWell(
       onTap: () {
-        context
-          ..pop()
-          ..push('/home/profile/${user.userID}');
+        context.pop();
+        navigateToProfile(context, user.userID);
       },
       child: Container(
         color: isCreator ? const Color(0xFFF9F9F9) : Colors.transparent,
