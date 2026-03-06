@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/presentation/shared/popup.dart';
 import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
@@ -871,7 +872,17 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                     ] else
                       _thinDivider(),
 
-                    _buildSimpleActionRow('Buluşmayı Bildir'),
+                    _buildSimpleActionRow(
+                      'Buluşmayı Bildir',
+                      onTap: () => getIt<SecurityService>().sendReport(
+                        ReportData(
+                          reportedEntityId: widget.event.eventID,
+                          reportedEntityType: "event",
+                          reportedUserId: widget.event.creator.userID,
+                          requestOwnerId: sessionService.currentUser!.userID,
+                        ),
+                      ),
+                    ),
                     _thinDivider(),
 
                     _buildSimpleActionRow(
