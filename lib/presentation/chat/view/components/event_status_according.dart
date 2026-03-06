@@ -494,8 +494,6 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
                 imageUrl: fixEmulatorUrl(url),
                 fadeInDuration: Duration.zero,
                 fit: BoxFit.cover,
-                memCacheHeight: 100,
-                memCacheWidth: 100,
                 placeholder: (c, u) => Container(color: AppColors.lightCloud),
                 errorWidget: (c, u, e) => Image.asset(
                   FileService.defaultProfileImageUrl(), // Fallback resmi
