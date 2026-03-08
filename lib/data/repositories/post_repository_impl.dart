@@ -4,10 +4,8 @@ import 'package:outnest/core/utils/types/geolocation/distance.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/data/models/post/post_model.dart';
-import 'package:outnest/data/models/user/pinned_post_model.dart';
 import 'package:outnest/domain/entities/feed/post/post_entity.dart';
 import 'package:outnest/domain/entities/hobby/hobby_entity.dart';
-import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
 import 'package:outnest/domain/repositories/post_repository.dart';
 import 'package:outnest/domain/services/in_memory_cache.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -31,11 +29,6 @@ class PostRepositoryImpl implements PostRepository {
   Future<void> createPost(PostEntity post, bool isPinned) async {
     try {
       final docRef = _firestore.collection('posts').doc();
-      final userPostRef = _firestore
-          .collection('users')
-          .doc(post.creator.userID)
-          .collection('posts')
-          .doc(docRef.id);
 
       final postWithID = post.copyWith(
         postID: docRef.id,
@@ -43,27 +36,12 @@ class PostRepositoryImpl implements PostRepository {
 
       final postModel = PostModel.fromEntity(postWithID);
 
-      final userPost = UserPostEntity(
-        postID: postWithID.postID,
-        caption: postWithID.caption,
-        location: postWithID.location ?? Geolocation(latitude: 0, longitude: 0),
-        imageUrls: postWithID.imageUrls ?? [],
-        participants: postWithID.participants,
-        emoteCounts: postWithID.emoteCounts.map(
-          (key, value) => MapEntry(key.name, value),
-        ),
-        isPinned: isPinned,
-        createdAt: postWithID.createdAt ?? DateTime.now(),
-      );
-
-      final userPostModel = UserPostModel.fromEntity(userPost);
       final firestoreData = postModel.toFirestore();
       firestoreData['expiresAt'] = postModel.createdAt?.add(
         const Duration(days: 1),
       );
 
       await docRef.set(firestoreData);
-      await userPostRef.set(userPostModel.toFirestore());
     } catch (e) {
       _logger.error('Failed to create post: $e');
       rethrow;
@@ -111,35 +89,28 @@ class PostRepositoryImpl implements PostRepository {
 
   @override
   Future<void> unpinPost(Identifier postId, Identifier userId) async {
-    final userPostRef = _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('posts')
-        .doc(postId);
-
-    final userPostSnapshot = await userPostRef.get();
-    if (!userPostSnapshot.exists) {
+    final postRef = _firestore.collection('posts').doc(postId);
+    final postSnapshot = await postRef.get();
+    if (!postSnapshot.exists) {
       _logger.error('Post not found for unpinning: $postId');
       throw Exception('Post not found for unpinning');
     }
-    final userPostModel = UserPostModel.fromFirestore(
-      userPostSnapshot.data()!,
+    final postModel = PostModel.fromFirestore(
+      postSnapshot.data()!,
     );
-    final userPostEntity = userPostModel.toEntity();
+    final postEntity = postModel.toEntity();
 
-    if (userPostEntity.createdAt.isBefore(
+    if (postEntity.createdAt!.isBefore(
       DateTime.now().subtract(const Duration(days: 1)),
     )) {
       await deletePost(postId);
       return;
     }
 
-    final postRef = _firestore.collection('posts').doc(postId);
-
     try {
       await postRef.update({
         'isPinned': false,
-        'expiresAt': userPostEntity.createdAt.add(const Duration(days: 1)),
+        'expiresAt': postEntity.createdAt!.add(const Duration(days: 1)),
       });
     } catch (e) {
       _logger.error('Failed to unpin post: $e');

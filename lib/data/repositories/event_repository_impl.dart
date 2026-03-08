@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/event_role_enum.dart';
@@ -9,7 +10,6 @@ import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/data/models/event/event_messages_model.dart';
 import 'package:outnest/data/models/event/event_model.dart';
-import 'package:outnest/data/models/user/pinned_post_model.dart';
 import 'package:outnest/data/models/user/user_event_model.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/feed/event/event_messages_entity.dart';

@@ -1,10 +1,10 @@
 import 'package:outnest/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/feed/post/post_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/entities/user/friend_entity.dart';
 import 'package:outnest/domain/entities/user/index.dart';
-import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:outnest/domain/entities/user/user_event_entity.dart';
 import 'package:outnest/domain/entities/user/user_hobby_entity.dart';
@@ -78,7 +78,7 @@ abstract class UserRepository {
 
   Stream<List<UserEventEntity>> watchUserEventLog(Identifier userID);
 
-  Stream<List<UserPostEntity>> getUserPostsStream(String userId);
+  Stream<List<PostEntity>> getUserPostsStream(String userId);
 
   Future<int> getCompletedEventCount(Identifier userID);
 
@@ -88,9 +88,9 @@ abstract class UserRepository {
   );
 
   // === Pinned Posts Subcollection ===
-  Future<List<UserPostEntity>> getPinnedPosts(Identifier userID);
+  Future<List<PostEntity>> getPinnedPosts(Identifier userID);
 
-  Future<List<UserPostEntity>> getUserPosts(Identifier userID);
+  Future<List<PostEntity>> getUserPosts(Identifier userID);
 
   // Hobbies Subcollection
   Future<List<UserHobbyEntity>> getUserHobbies(

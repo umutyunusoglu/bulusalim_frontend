@@ -5,16 +5,16 @@ import 'package:outnest/core/utils/types/enums/event_role_enum.dart';
 import 'package:outnest/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/data/models/event/event_model.dart';
+import 'package:outnest/data/models/post/post_model.dart';
 import 'package:outnest/data/models/user/friend_model.dart';
-import 'package:outnest/data/models/user/pinned_post_model.dart' hide getIt;
 import 'package:outnest/data/models/user/user_event_model.dart';
 import 'package:outnest/data/models/user/user_hobby_model.dart';
 import 'package:outnest/data/models/user/user_model.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/feed/post/post_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/entities/user/friend_entity.dart';
 import 'package:outnest/domain/entities/user/index.dart';
-import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
 import 'package:outnest/domain/entities/user/user_event_entity.dart';
 import 'package:outnest/domain/entities/user/user_hobby_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
@@ -995,7 +995,7 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Future<List<UserPostEntity>> getPinnedPosts(Identifier userID) async {
+  Future<List<PostEntity>> getPinnedPosts(Identifier userID) async {
     _logger.info('Getting pinned posts for user: $userID');
     final snapshot = await _firestore
         .collection('users')
@@ -1006,7 +1006,7 @@ class UserRepositoryImpl implements UserRepository {
 
     final pinnedPosts = snapshot.docs.map(
       (doc) {
-        final model = UserPostModel.fromFirestore(doc.data());
+        final model = PostModel.fromFirestore(doc.data());
         return model.toEntity();
       },
     ).toList();
@@ -1014,7 +1014,7 @@ class UserRepositoryImpl implements UserRepository {
     return pinnedPosts;
   }
 
-  Future<List<UserPostEntity>> getActivePosts(Identifier userID) async {
+  Future<List<PostEntity>> getActivePosts(Identifier userID) async {
     _logger.info('Getting active posts for user: $userID');
 
     //Return posts which are created at most 1 day ago.
@@ -1035,7 +1035,7 @@ class UserRepositoryImpl implements UserRepository {
 
     final activePosts = snapshot.docs.map(
       (doc) {
-        final model = UserPostModel.fromFirestore(doc.data());
+        final model = PostModel.fromFirestore(doc.data());
         return model.toEntity();
       },
     ).toList();
@@ -1043,7 +1043,7 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Future<List<UserPostEntity>> getUserPosts(Identifier userID) async {
+  Future<List<PostEntity>> getUserPosts(Identifier userID) async {
     _logger.info('Getting user posts for user: $userID');
     final snapshot = await _firestore
         .collection('users')
@@ -1053,7 +1053,7 @@ class UserRepositoryImpl implements UserRepository {
 
     final posts = snapshot.docs.map(
       (doc) {
-        final model = UserPostModel.fromFirestore(doc.data());
+        final model = PostModel.fromFirestore(doc.data());
         return model.toEntity();
       },
     ).toList();
@@ -1245,13 +1245,13 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Stream<List<UserPostEntity>> getUserPostsStream(String userId) {
+  Stream<List<PostEntity>> getUserPostsStream(String userId) {
     return _firestore
         .collection('users')
         .doc(userId)
         .collection('posts')
         .orderBy('createdAt', descending: true)
-        .limit(50) // <--- KRİTİK EKLEME: Sadece son 50 postu çek
+        .limit(50)
         .snapshots()
         .map((querySnapshot) {
           return querySnapshot.docs.map((doc) {
@@ -1259,7 +1259,7 @@ class UserRepositoryImpl implements UserRepository {
               final data = doc.data();
               // fromFirestore içinde hata olursa tüm akışın çökmesini engellemek için
               // burada da try-catch blokları kullanabilirsin ama şimdilik temel hali yeterli.
-              final model = UserPostModel.fromFirestore(data);
+              final model = PostModel.fromFirestore(data);
               return model.toEntity();
             } catch (e) {
               // Hatalı bir veri varsa logla ve boş döndür (veya null dönüp filter yap)
