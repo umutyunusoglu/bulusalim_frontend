@@ -472,7 +472,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   // --- 2. ETKİNLİK VARSA (SEÇİM POPUP) ---
-  void _showShareSelectionDialog(
+  Future<void> _showShareSelectionDialog(
     BuildContext context,
     List<EventEntity> events,
   ) async {

@@ -1,25 +1,15 @@
 import 'dart:async';
 import 'dart:ui' as ui;
-import 'package:geolocator/geolocator.dart' hide Position;
+
 import 'package:dart_geohash/dart_geohash.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:geolocator/geolocator.dart' hide Position;
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
-import 'package:outnest/presentation/map/view/components/create_event_popup.dart';
-import 'package:outnest/presentation/shared/action_buttons_speed_dial.dart';
-import 'package:outnest/presentation/shared/event_card/event_card.dart';
-import 'package:outnest/presentation/map/view/components/map_create_button.dart';
-import 'package:outnest/presentation/shared/category_filter_chip.dart';
-import 'package:outnest/presentation/map/view/components/steps/category_selection_step.dart';
-import 'package:outnest/presentation/map/view/components/steps/event_name_step.dart';
-import 'package:outnest/presentation/map/view/components/steps/event_summary_overlay.dart';
-import 'package:outnest/presentation/map/view/components/steps/location_selection_step.dart';
-import 'package:outnest/presentation/map/view/components/steps/time_selection_step.dart';
-import 'package:outnest/presentation/map/view/components/steps/visibility_selection_step.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
@@ -42,8 +32,18 @@ import 'package:outnest/domain/services/analytics/event_configs/filter_map_by_ti
 import 'package:outnest/domain/services/analytics/event_configs/filter_map_by_visibility_analytics_config.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/presentation/map/view/components/create_event_popup.dart';
 import 'package:outnest/presentation/map/view/components/map_people_filter.dart';
 import 'package:outnest/presentation/map/view/components/map_time_filter.dart';
+import 'package:outnest/presentation/map/view/components/steps/category_selection_step.dart';
+import 'package:outnest/presentation/map/view/components/steps/event_name_step.dart';
+import 'package:outnest/presentation/map/view/components/steps/event_summary_overlay.dart';
+import 'package:outnest/presentation/map/view/components/steps/location_selection_step.dart';
+import 'package:outnest/presentation/map/view/components/steps/time_selection_step.dart';
+import 'package:outnest/presentation/map/view/components/steps/visibility_selection_step.dart';
+import 'package:outnest/presentation/shared/action_buttons_speed_dial.dart';
+import 'package:outnest/presentation/shared/category_filter_chip.dart';
+import 'package:outnest/presentation/shared/event_card/event_card.dart';
 import 'package:outnest/presentation/shared/navigation/navigate_to_camera.dart';
 
 class MapPage extends StatefulWidget {
