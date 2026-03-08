@@ -227,7 +227,6 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
                   GestureDetector(
                     onTap: () {
                       // TODO: Yeni grup oluşturma dialogu
-                      debugPrint('Yeni grup ekle');
                     },
                     child: Icon(
                       Icons.add,

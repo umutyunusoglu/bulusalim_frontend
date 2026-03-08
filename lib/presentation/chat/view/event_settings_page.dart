@@ -873,19 +873,6 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                       _thinDivider(),
 
                     _buildSimpleActionRow(
-                      'Buluşmayı Bildir',
-                      onTap: () => getIt<SecurityService>().sendReport(
-                        ReportData(
-                          reportedEntityId: widget.event.eventID,
-                          reportedEntityType: "event",
-                          reportedUserId: widget.event.creator.userID,
-                          requestOwnerId: sessionService.currentUser!.userID,
-                        ),
-                      ),
-                    ),
-                    _thinDivider(),
-
-                    _buildSimpleActionRow(
                       'Buluşmadan Ayrıl',
                       textColor: AppColors.primaryColor,
                       onTap: _onLeaveEventTap,

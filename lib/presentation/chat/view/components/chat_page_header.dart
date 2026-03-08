@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
 import 'package:outnest/presentation/shared/popup.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
@@ -285,7 +286,14 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
               isDestructive: true,
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Şikayet ekranına yönlendirme
+                getIt<SecurityService>().sendReport(
+                  ReportData(
+                    reportedEntityId: widget.event.eventID,
+                    reportedEntityType: "event",
+                    reportedUserId: widget.event.creator.userID,
+                    requestOwnerId: getIt<SessionService>().currentUser!.userID,
+                  ),
+                );
               },
             ),
           ],
