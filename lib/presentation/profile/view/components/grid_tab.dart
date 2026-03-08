@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
-import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
+import 'package:outnest/domain/entities/feed/post/post_entity.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/presentation/profile/view/components/dump_tab.dart';
 import 'package:outnest/presentation/profile/view/components/empty_profile_screen.dart';
@@ -17,8 +17,8 @@ class ProfileGridTab extends StatelessWidget {
     super.key,
   });
 
-  final List<UserPostEntity> pinnedPosts;
-  final List<UserPostEntity> activePosts;
+  final List<PostEntity> pinnedPosts;
+  final List<PostEntity> activePosts;
   final void Function(String postId, bool isPinned)? onPinChanged;
 
   void _openFeedPage(BuildContext context, int index) {
@@ -84,9 +84,9 @@ class ProfileGridTab extends StatelessWidget {
 
           final post = totalPosts[index];
 
-          final isNetwork = post.imageUrls.isNotEmpty;
+          final isNetwork = post.imageUrls?.isNotEmpty ?? false;
           final imageUrl = isNetwork
-              ? post.imageUrls.first
+              ? post.imageUrls?.first
               : FileService.defaultProfileImageUrl(); // Fallback resmimiz (Asset)
 
           return GestureDetector(
@@ -102,8 +102,10 @@ class ProfileGridTab extends StatelessWidget {
                     image: DecorationImage(
                       // URL varsa CachedNetworkImageProvider + Fix, yoksa (asset ise) AssetImage
                       image: isNetwork
-                          ? CachedNetworkImageProvider(fixEmulatorUrl(imageUrl))
-                          : AssetImage(imageUrl) as ImageProvider,
+                          ? CachedNetworkImageProvider(
+                              fixEmulatorUrl(imageUrl!),
+                            )
+                          : AssetImage(imageUrl!) as ImageProvider,
                       fit: BoxFit.cover,
                     ),
                   ),

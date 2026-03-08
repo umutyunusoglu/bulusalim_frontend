@@ -5,11 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
-import 'package:outnest/presentation/profile/view/components/announcement_button.dart';
-import 'package:outnest/presentation/profile/view/follows_page.dart';
-import 'package:outnest/presentation/shared/login_button.dart';
-import 'package:outnest/presentation/shared/popup.dart';
-import 'package:outnest/presentation/profile/view/components/private_account_view.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
@@ -17,10 +12,9 @@ import 'package:outnest/core/utils/types/enums/profile_segment_enum.dart';
 import 'package:outnest/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/feed/post/post_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/entities/user/friend_entity.dart';
-import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
-import 'package:outnest/domain/session_state.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/analytics/analytics_service.dart';
@@ -28,13 +22,19 @@ import 'package:outnest/domain/services/analytics/event_configs/select_profile_s
 import 'package:outnest/domain/services/analytics/event_configs/send_event_invitation_analytics_config.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/domain/session_state.dart';
 import 'package:outnest/domain/usecases/send_event_invitation_usecase.dart';
 import 'package:outnest/presentation/home/view/components/post/small_stacked_avatars.dart';
+import 'package:outnest/presentation/profile/view/components/announcement_button.dart';
 import 'package:outnest/presentation/profile/view/components/dump_tab.dart';
 import 'package:outnest/presentation/profile/view/components/events_tab.dart';
 import 'package:outnest/presentation/profile/view/components/grid_tab.dart';
+import 'package:outnest/presentation/profile/view/components/private_account_view.dart';
 import 'package:outnest/presentation/profile/view/components/profile_photo.dart';
 import 'package:outnest/presentation/profile/view/components/profile_tab_bar.dart';
+import 'package:outnest/presentation/profile/view/follows_page.dart';
+import 'package:outnest/presentation/shared/login_button.dart';
+import 'package:outnest/presentation/shared/popup.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({required this.profileUserID, super.key});
@@ -62,7 +62,7 @@ class _ProfilePageState extends State<ProfilePage> {
   List<EventEntity> _currentEvents = [];
   List<CompactUserEntity> _commonFollowers = [];
 
-  StreamSubscription<List<UserPostEntity>>? _postsSubscription;
+  StreamSubscription<List<PostEntity>>? _postsSubscription;
 
   String _fullName = '';
   bool _isFollowing = false;
@@ -71,8 +71,8 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isPrivateAccount = false;
   final PageController _pageController = PageController();
 
-  List<UserPostEntity> _pinnedPosts = [];
-  List<UserPostEntity> _activePosts = [];
+  List<PostEntity> _pinnedPosts = [];
+  List<PostEntity> _activePosts = [];
 
   String _school = '';
   int _selectedTabIndex = 0;
@@ -144,7 +144,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _handlePinStatusChange(String postId, bool isPinned) {
     setState(() {
-      UserPostEntity? targetPost;
+      PostEntity? targetPost;
 
       // 1. Postu mevcut listesinden bul ve çıkar
       final pinnedIndex = _pinnedPosts.indexWhere((p) => p.postID == postId);
@@ -161,16 +161,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
       // 2. Postun durumunu güncelle (Yeni bir entity kopyası oluşturuyoruz)
       // Not: Entity'nizde copyWith varsa onu kullanın, yoksa manuel oluşturun:
-      final updatedPost = UserPostEntity(
-        postID: targetPost.postID,
-        caption: targetPost.caption,
-        location: targetPost.location,
-        imageUrls: targetPost.imageUrls,
-        participants: targetPost.participants,
-        emoteCounts: targetPost.emoteCounts,
-        isPinned: isPinned, // Yeni durum
-        createdAt: targetPost.createdAt,
-      );
+      final updatedPost = targetPost.copyWith(isPinned: isPinned);
 
       // 3. Postu yeni listesine ekle
       if (isPinned) {
@@ -178,8 +169,9 @@ class _ProfilePageState extends State<ProfilePage> {
         _pinnedPosts.insert(0, updatedPost);
       } else {
         // Aktifler listesine ekle ve tarihe göre yeniden sırala
-        _activePosts.add(updatedPost);
-        _activePosts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        _activePosts
+          ..add(updatedPost)
+          ..sort((a, b) => b!.createdAt.compareTo(a!.createdAt));
       }
     });
   }

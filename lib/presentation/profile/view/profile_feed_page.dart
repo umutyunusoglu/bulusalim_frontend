@@ -5,7 +5,6 @@ import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/domain/entities/feed/post/post_entity.dart';
-import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
 import 'package:outnest/domain/repositories/post_repository.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/presentation/shared/post_card/post_card.dart';
@@ -18,7 +17,7 @@ class ProfilePostFeedPage extends StatefulWidget {
     super.key,
   });
 
-  final List<UserPostEntity> posts;
+  final List<PostEntity> posts;
   final int initialIndex;
   final void Function(String postId, bool isPinned)? onPinChanged;
 
@@ -90,7 +89,7 @@ class _PostLoaderItem extends StatefulWidget {
     super.key, // Key parametresini buraya da ekledik
   });
 
-  final UserPostEntity pinnedPost;
+  final PostEntity pinnedPost;
   final void Function(String, bool)? onPinChanged;
 
   @override

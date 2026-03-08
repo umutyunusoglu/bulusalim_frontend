@@ -21,9 +21,9 @@ class PostEntity extends FeedEntity with EquatableMixin {
     required this.emoteCounts,
     required this.createdAt,
     required this.updatedAt,
+    required this.imageUrls,
     this.location,
     this.displayAddress,
-    this.imageUrls,
     this.isPinned = false,
   }) : super(feedType: FeedEntityTypeEnum.post, id: postID);
 
@@ -76,12 +76,12 @@ class PostEntity extends FeedEntity with EquatableMixin {
   final CompactUserEntity creator;
   final Identifier eventID;
   final String caption;
-  final DateTime? createdAt;
+  final DateTime createdAt;
   final DateTime? updatedAt;
   final Geolocation? location;
   final String? displayAddress;
   final List<HobbyEntity> hobbies;
-  final List<String>? imageUrls;
+  final List<String> imageUrls;
   final bool showParticipants;
   final bool includeInDump;
   final List<CompactUserEntity> participants;
