@@ -206,6 +206,8 @@ class _SettingsPageState extends State<SettingsPage>
             SizedBox(height: 24.h),
 
             // --- GENEL AYARLAR ---
+
+            //TODO: gorouter
             SettingsTile(
               title: 'Hesap Ayarları',
               subtitle: 'Gizlilik, üniversite, iletişim bilgileri',
