@@ -38,10 +38,12 @@ class _ProfileDispatcherState extends State<ProfileDispatcher> {
       }
       // 2. DURUM: Girdiğimiz profil BAŞKASININ profili mi?
       else {
-        final user = await userRepository.getCurrentUser(widget.profileUserID);
+        final user = await userRepository.getUserPublicData(
+          widget.profileUserID,
+        );
 
         if (user is UserEntity) {
-          _accountType = user.accountType;
+          _accountType = user!.accountType!;
         } else {
           _accountType = user?.accountType ?? AccountType.personal;
         }

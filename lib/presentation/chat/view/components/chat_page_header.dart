@@ -53,12 +53,20 @@ class ChatPageHeader extends StatefulWidget {
 class _ChatPageHeaderState extends State<ChatPageHeader> {
   // Optimistic Update için lokal state
   late EventStatusEnum _currentStatus;
+  late EventEntity _event;
+  late String _chatTitle;
+  late String _location;
+  late DateTime _eventDate;
 
   @override
   void initState() {
     super.initState();
     // Başlangıçta gelen event status'u alıyoruz
     _currentStatus = widget.event.status;
+    _event = widget.event;
+    _chatTitle = widget.chatTitle;
+    _location = widget.location;
+    _eventDate = widget.eventDate;
   }
 
   @override
@@ -70,6 +78,39 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
       setState(() {
         _currentStatus = widget.event.status;
       });
+    }
+    if (widget.event != oldWidget.event) {
+      setState(() {
+        _event = widget.event;
+      });
+    }
+    if (widget.chatTitle != oldWidget.chatTitle) {
+      setState(() => _chatTitle = widget.chatTitle);
+    }
+    if (widget.location != oldWidget.location) {
+      setState(() => _location = widget.location);
+    }
+    if (widget.eventDate != oldWidget.eventDate) {
+      setState(() => _eventDate = widget.eventDate);
+    }
+  }
+
+  Future<void> _refreshEventData() async {
+    try {
+      final updatedEvent = await getIt<EventRepository>().getEvent(
+        widget.eventID,
+      );
+      if (updatedEvent != null && mounted) {
+        setState(() {
+          _event = updatedEvent;
+          _currentStatus = updatedEvent.status;
+          _chatTitle = updatedEvent.name;
+          _location = updatedEvent.displayAddress;
+          _eventDate = updatedEvent.startTime;
+        });
+      }
+    } catch (e) {
+      getIt<LoggingService>().error('Event refresh failed: $e');
     }
   }
 
@@ -137,7 +178,7 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
 
                         // 2. Sonra isteği at
                         final forceStartEvent = getIt<ForceStartEvent>();
-                        forceStartEvent(widget.event);
+                        forceStartEvent(_event);
 
                         // 3. Dialog'u kapat
                         context.pop();
@@ -217,7 +258,7 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
 
                         // 2. Sonra isteği at
                         final forceStopEvent = getIt<ForceStopEvent>();
-                        forceStopEvent(widget.event);
+                        forceStopEvent(_event);
 
                         // 3. Dialog'u kapat
                         context.pop();
@@ -288,9 +329,9 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
                 Navigator.pop(context);
                 getIt<SecurityService>().sendReport(
                   ReportData(
-                    reportedEntityId: widget.event.eventID,
+                    reportedEntityId: _event.eventID,
                     reportedEntityType: "event",
-                    reportedUserId: widget.event.creator.userID,
+                    reportedUserId: _event.creator.userID,
                     requestOwnerId: getIt<SessionService>().currentUser!.userID,
                   ),
                 );
@@ -307,7 +348,7 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
       context: context,
       builder: (context) => Popup(
         title:
-            '"${widget.chatTitle}" buluşmasından ayrılmak istediğinize emin misiniz?',
+            '"$_chatTitle" buluşmasından ayrılmak istediğinize emin misiniz?',
         description:
             'Ayrıldığınızda bu sohbetten ve buluşma listesinden çıkarılacaksınız.',
         confirmButtonText: 'ayrıl',
@@ -347,7 +388,7 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
           options: [
             BottomSheetOption(
               icon: Icons.location_on_outlined,
-              text: widget.location,
+              text: _location,
               onTap:
                   () {}, // Sadece bilgi amaçlı olduğu için boş bırakabilirsin
             ),
@@ -370,7 +411,7 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
     final eventTimeText = DateFormat(
       'dd MMMM HH.mm',
       'tr_TR',
-    ).format(widget.eventDate);
+    ).format(_eventDate);
 
     showModalBottomSheet(
       context: context,
@@ -395,9 +436,9 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
   void _showParticipantsBottomSheet() {
     final creatorEntity = CompactUserEntity(
       userID: widget.creatorID,
-      username: widget.event.creator.username,
+      username: _event.creator.username,
       profileImageUrl: widget.creatorProfileImage,
-      university: widget.event.creator.university,
+      university: _event.creator.university,
       nameSurname: null,
       isPrivate: null,
       bio: null,
@@ -413,7 +454,7 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
       builder: (context) {
         return ParticipantsBottomSheet(
           creator: creatorEntity,
-          participants: widget.event.participants,
+          participants: _event.participants,
         );
       },
     );
@@ -428,11 +469,7 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
 
     final topPadding = MediaQuery.of(context).padding.top;
 
-    var participantCount = 0;
-    try {
-      final parts = widget.participantStatus.split('/');
-      participantCount = int.parse(parts[0].trim());
-    } catch (_) {}
+    final participantCount = _event.participantCount;
 
     return Container(
       width: double.infinity,
@@ -481,7 +518,7 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
                         children: [
                           Expanded(
                             child: Text(
-                              widget.chatTitle,
+                              _chatTitle,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -534,27 +571,29 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
 
                               // Settings Button (Always visible)
                               GestureDetector(
-                                onTap: () {
+                                onTap: () async {
                                   if (isCreator) {
                                     final encodedId = Uri.encodeComponent(
                                       widget.eventID,
                                     );
 
-                                    GoRouter.of(context).push(
+                                    await GoRouter.of(context).push(
                                       '/chat/room/$encodedId/settings',
                                       extra: {
-                                        'title': widget.chatTitle,
+                                        'title': _chatTitle,
                                         'avatars': widget.participantAvatars,
-                                        'location': widget.location,
+                                        'location': _location,
                                         'participants':
                                             widget.participantStatus,
-                                        'startTime': widget.eventDate,
+                                        'startTime': _eventDate,
                                         'creatorID': widget.creatorID,
                                         'creatorProfileImage':
                                             widget.creatorProfileImage,
-                                        'event': widget.event,
+                                        'event': _event,
                                       },
                                     );
+                                    // Settings sayfasından dönünce verileri güncelle
+                                    await _refreshEventData();
                                   } else {
                                     _showParticipantSettingsSheet(context);
                                   }
@@ -576,8 +615,8 @@ class _ChatPageHeaderState extends State<ChatPageHeader> {
                         scrollDirection: Axis.horizontal,
                         physics: const BouncingScrollPhysics(),
                         child: ChatEventInfoChip(
-                          location: widget.location,
-                          startTime: widget.eventDate,
+                          location: _location,
+                          startTime: _eventDate,
                           participantCount: participantCount,
                           // Sadece konum kısmına tıklandığında tetiklenecek:
                           onLocationTap: () =>
