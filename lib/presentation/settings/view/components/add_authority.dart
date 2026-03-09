@@ -1,65 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
-
-class AuthorityUserModel {
-  AuthorityUserModel({
-    required this.id,
-    required this.username,
-    required this.imageUrl,
-  });
-  final String id;
-  final String username;
-  final String imageUrl;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is AuthorityUserModel &&
-          runtimeType == other.runtimeType &&
-          id == other.id;
-
-  @override
-  int get hashCode => id.hashCode;
-}
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
+import 'package:outnest/domain/services/session_service.dart';
 
 class AddAuthority extends StatefulWidget {
   const AddAuthority({
     required this.initialSelectedUsers,
     super.key,
   });
-  final List<AuthorityUserModel> initialSelectedUsers;
+  final List<CompactUserEntity> initialSelectedUsers;
 
   @override
   State<AddAuthority> createState() => _AddAuthorityState();
 }
 
 class _AddAuthorityState extends State<AddAuthority> {
-  late List<AuthorityUserModel> _selectedUsers;
+  late List<CompactUserEntity> _selectedUsers;
   String _searchQuery = '';
-
-  final List<AuthorityUserModel> _allBackendUsers = [
-    AuthorityUserModel(
-      id: '1',
-      username: 'can.yildirim',
-      imageUrl: 'https://i.pravatar.cc/150?img=11',
-    ),
-    AuthorityUserModel(
-      id: '2',
-      username: 'elif_dogan',
-      imageUrl: 'https://i.pravatar.cc/150?img=5',
-    ),
-    AuthorityUserModel(
-      id: '3',
-      username: 'mert12345678',
-      imageUrl: 'https://i.pravatar.cc/150?img=13',
-    ),
-    AuthorityUserModel(
-      id: '4',
-      username: 'ayse.yilmaz',
-      imageUrl: 'https://i.pravatar.cc/150?img=9',
-    ),
-  ];
+  final SessionService _sessionService = getIt<SessionService>();
 
   @override
   void initState() {
@@ -69,7 +29,8 @@ class _AddAuthorityState extends State<AddAuthority> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredUsers = _allBackendUsers.where((user) {
+    final members = _sessionService.currentState.followers;
+    final filteredUsers = members.where((user) {
       return user.username.toLowerCase().contains(_searchQuery.toLowerCase());
     }).toList();
 
@@ -203,7 +164,7 @@ class _AddAuthorityState extends State<AddAuthority> {
   }
 
   Widget _buildDialogUserItem({
-    required AuthorityUserModel user,
+    required CompactUserEntity user,
     required bool isAdded,
   }) {
     return Row(
@@ -211,7 +172,7 @@ class _AddAuthorityState extends State<AddAuthority> {
         CircleAvatar(
           radius: 20.r,
           backgroundColor: AppColors.dividerColor,
-          backgroundImage: NetworkImage(user.imageUrl),
+          backgroundImage: NetworkImage(user.profileImageUrl),
           onBackgroundImageError: (_, __) =>
               const Icon(Icons.person, color: AppColors.onPrimaryColor),
         ),

@@ -3,7 +3,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
+import 'package:outnest/domain/entities/user/index.dart';
+import 'package:outnest/domain/repositories/user_repository.dart';
+import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/domain/usecases/upload_community_picture_usecase.dart';
 import 'package:outnest/presentation/settings/view/components/add_authority.dart';
 
 class AboutCommunityPage extends StatefulWidget {
@@ -14,12 +20,32 @@ class AboutCommunityPage extends StatefulWidget {
 }
 
 class _AboutCommunityPageState extends State<AboutCommunityPage> {
-  File? _selectedImage;
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _bioController = TextEditingController();
+  final SessionService _sessionService = getIt<SessionService>();
+  final UploadCommunityPicture _uploadCommunityPicture =
+      getIt<UploadCommunityPicture>();
 
-  final List<AuthorityUserModel> _selectedAuthorities = [];
+  final UserRepository _userRepository = getIt<UserRepository>();
+
+  File? _selectedImage;
   String? _showDeleteOverlayForId;
+  late List<CompactUserEntity> _selectedAuthorities;
+  late String? _imagePath = '';
+
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedAuthorities = List.from(
+      _sessionService.currentUser!.communityData?.communityTeamMembers ?? [],
+    );
+    _imagePath =
+        _sessionService.currentUser!.communityData?.communityPhotoUrl ?? '';
+    _bioController.text =
+        _sessionService.currentUser!.communityData?.communityBio ?? '';
+  }
 
   @override
   void dispose() {
@@ -29,7 +55,7 @@ class _AboutCommunityPageState extends State<AboutCommunityPage> {
 
   Future<void> _pickImage() async {
     try {
-      final XFile? pickedFile = await _picker.pickImage(
+      final pickedFile = await _picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 80,
       );
@@ -45,7 +71,7 @@ class _AboutCommunityPageState extends State<AboutCommunityPage> {
   }
 
   Future<void> _openAddAuthorityDialog() async {
-    final result = await showDialog<List<AuthorityUserModel>>(
+    final result = await showDialog<List<CompactUserEntity>>(
       context: context,
       builder: (context) =>
           AddAuthority(initialSelectedUsers: _selectedAuthorities),
@@ -53,8 +79,10 @@ class _AboutCommunityPageState extends State<AboutCommunityPage> {
 
     if (result != null) {
       setState(() {
-        _selectedAuthorities.clear();
-        _selectedAuthorities.addAll(result);
+        _selectedAuthorities
+          ..clear()
+          ..addAll(result);
+
         _showDeleteOverlayForId = null;
       });
     }
@@ -133,17 +161,14 @@ class _AboutCommunityPageState extends State<AboutCommunityPage> {
                               image: FileImage(_selectedImage!),
                               fit: BoxFit.cover,
                             )
+                          : (_imagePath!
+                                .isNotEmpty) // Eğer yeni resim seçilmediyse ama veritabanında resim varsa onu göster
+                          ? DecorationImage(
+                              image: NetworkImage(_imagePath!),
+                              fit: BoxFit.cover,
+                            )
                           : null,
                     ),
-                    child: _selectedImage == null
-                        ? Center(
-                            child: Icon(
-                              Icons.image_outlined,
-                              size: 80.sp,
-                              color: AppColors.textGrey,
-                            ),
-                          )
-                        : null,
                   ),
                   SizedBox(height: 12.h),
                   Center(
@@ -265,7 +290,7 @@ class _AboutCommunityPageState extends State<AboutCommunityPage> {
             left: 110.w,
             right: 110.w,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () => _updateCommunityData(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
                 foregroundColor: AppColors.onPrimaryColor,
@@ -276,14 +301,23 @@ class _AboutCommunityPageState extends State<AboutCommunityPage> {
                   borderRadius: BorderRadius.circular(30.r),
                 ),
               ),
-              child: Text(
-                'kaydet',
-                style: TextStyle(
-                  fontFamily: 'SF Pro Display',
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              child: _isLoading
+                  ? SizedBox(
+                      height: 20.h,
+                      width: 20.h,
+                      child: const CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Text(
+                      'kaydet',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Display',
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
             ),
           ),
         ],
@@ -291,8 +325,64 @@ class _AboutCommunityPageState extends State<AboutCommunityPage> {
     );
   }
 
-  Widget _buildAuthorityAvatar(AuthorityUserModel user) {
-    final isShowingOverlay = _showDeleteOverlayForId == user.id;
+  Future<void> _updateCommunityData() async {
+    if (_isLoading) return; // Zaten yükleniyorsa ikinci tıklamayı engelle
+
+    setState(() => _isLoading = true); // Yüklemeyi başlat
+
+    try {
+      // Sadece GÜNCEL bir fotoğraf seçildiyse yükleme işlemini yap
+      if (_selectedImage != null) {
+        _imagePath = await _uploadCommunityPicture(
+          userID: _sessionService.currentUser!.userID,
+          filePath: _selectedImage!.path,
+        );
+      }
+
+      final currentCommunityData = _sessionService.currentUser?.communityData;
+
+      final communityData = currentCommunityData != null
+          ? currentCommunityData.copyWith(
+              communityBio: _bioController.text,
+              communityTeamMembers: [..._selectedAuthorities],
+              communityPhotoUrl: _imagePath,
+            )
+          : CommunityData(
+              communityBio: _bioController.text,
+              communityTeamMembers: [..._selectedAuthorities],
+              communityPhotoUrl: _imagePath ?? '',
+              instagramUrl: '',
+              whatsappUrl: '',
+              websiteUrl: '',
+            );
+
+      await _userRepository.updateUser(_sessionService.currentUser!.userID, {
+        'communityData': communityData?.toMap(),
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Topluluk bilgileri güncellendi.')),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Kaydedilirken bir hata oluştu: $e')),
+        );
+      }
+      debugPrint('Update Error: $e');
+    } finally {
+      // Hata olsa da başarılı olsa da yükleme animasyonunu durdur
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Widget _buildAuthorityAvatar(CompactUserEntity user) {
+    final isShowingOverlay = _showDeleteOverlayForId == user.userID;
 
     return GestureDetector(
       onTap: () {
@@ -301,7 +391,7 @@ class _AboutCommunityPageState extends State<AboutCommunityPage> {
             _selectedAuthorities.remove(user);
             _showDeleteOverlayForId = null;
           } else {
-            _showDeleteOverlayForId = user.id;
+            _showDeleteOverlayForId = user.userID;
           }
         });
       },
@@ -314,7 +404,7 @@ class _AboutCommunityPageState extends State<AboutCommunityPage> {
               CircleAvatar(
                 radius: 25.r,
                 backgroundColor: AppColors.dividerColor,
-                backgroundImage: NetworkImage(user.imageUrl),
+                backgroundImage: NetworkImage(user.profileImageUrl),
               ),
               if (isShowingOverlay)
                 Container(

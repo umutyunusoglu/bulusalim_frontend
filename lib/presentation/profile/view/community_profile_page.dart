@@ -36,6 +36,8 @@ class CommunityProfilePage extends StatefulWidget {
 }
 
 class _CommunityProfilePageState extends State<CommunityProfilePage> {
+  final _sessionService = getIt<SessionService>();
+
   bool _isLoading = true;
   int _selectedTabIndex = 0;
   final PageController _pageController = PageController();
@@ -641,44 +643,7 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => CommunityInfoPage(
-                          communityName:
-                              'İTÜ Gastronomi Kulübü', // Gerçek verileri buraya vereceksin
-                          imageUrl:
-                              'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1000', // Örnek kapak
-                          bioText:
-                              'İTÜ Gastronomi Topluluğu, yemeğin kültürünü, bilimini ve yaratıcılığını bir araya getiren etkinlikler düzenler. Atölyeler, tadımlar ve söyleşilerle gastronomiyi keşfetmeyi, birlikte üretmeyi ve paylaşmayı amaçlar. Lezzet meraklısı herkese açık bir topluluktur.',
-                          teamMembers: [
-                            AuthorityUserModel(
-                              id: '1',
-                              username: 'elif_dogan',
-                              imageUrl: 'https://i.pravatar.cc/150?img=5',
-                            ),
-                            AuthorityUserModel(
-                              id: '2',
-                              username: 'mert12345678',
-                              imageUrl: 'https://i.pravatar.cc/150?img=13',
-                            ),
-                            AuthorityUserModel(
-                              id: '3',
-                              username: 'pinarkucuk',
-                              imageUrl: 'https://i.pravatar.cc/150?img=9',
-                            ),
-                            AuthorityUserModel(
-                              id: '4',
-                              username: 'elif_dogan',
-                              imageUrl: 'https://i.pravatar.cc/150?img=5',
-                            ),
-                            AuthorityUserModel(
-                              id: '5',
-                              username: 'mert12345678',
-                              imageUrl: 'https://i.pravatar.cc/150?img=13',
-                            ),
-                            AuthorityUserModel(
-                              id: '6',
-                              username: 'pinarkucuk',
-                              imageUrl: 'https://i.pravatar.cc/150?img=9',
-                            ),
-                          ],
+                          communityData: _communityUser!.communityData,
                         ),
                       ),
                     );

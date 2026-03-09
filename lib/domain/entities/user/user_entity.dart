@@ -131,19 +131,11 @@ class UserEntity extends Equatable {
     university,
     isPrivate,
     hideSavedEvents,
+    communityData,
   ];
 }
 
-class CommunityData {
-  CommunityData({
-    required this.communityBio,
-    required this.communityPhotoUrl,
-    required this.communityTeamMembers,
-    required this.instagramUrl,
-    required this.whatsappUrl,
-    required this.websiteUrl,
-  });
-
+class CommunityData extends Equatable {
   factory CommunityData.fromMap(Map<String, dynamic> data) {
     final communityBio = data['communityBio'] as String? ?? '';
     final communityPhotoUrl = data['communityPhotoUrl'] as String? ?? '';
@@ -152,8 +144,12 @@ class CommunityData {
     if (data['communityTeamMembers'] != null) {
       final membersList = data['communityTeamMembers'] as List<dynamic>;
       for (final member in membersList) {
-        if (member is Map<String, dynamic>) {
-          communityTeamMembers.add(CompactUserEntity.fromMap(member));
+        // Map<String, dynamic> diye kısıtlamak yerine sadece Map mi diye bakıyoruz
+        if (member is Map) {
+          // İçeriye gönderirken zorla String, dynamic formatına çeviriyoruz
+          communityTeamMembers.add(
+            CompactUserEntity.fromMap(Map<String, dynamic>.from(member)),
+          );
         }
       }
     }
@@ -169,6 +165,32 @@ class CommunityData {
       instagramUrl: instagramUrl,
       whatsappUrl: whatsappUrl,
       websiteUrl: websiteUrl,
+    );
+  }
+  CommunityData({
+    required this.communityBio,
+    required this.communityPhotoUrl,
+    required this.communityTeamMembers,
+    required this.instagramUrl,
+    required this.whatsappUrl,
+    required this.websiteUrl,
+  });
+
+  CommunityData copyWith({
+    String? communityBio,
+    String? communityPhotoUrl,
+    List<CompactUserEntity>? communityTeamMembers,
+    String? instagramUrl,
+    String? whatsappUrl,
+    String? websiteUrl,
+  }) {
+    return CommunityData(
+      communityBio: communityBio ?? this.communityBio,
+      communityPhotoUrl: communityPhotoUrl ?? this.communityPhotoUrl,
+      communityTeamMembers: communityTeamMembers ?? this.communityTeamMembers,
+      instagramUrl: instagramUrl ?? this.instagramUrl,
+      whatsappUrl: whatsappUrl ?? this.whatsappUrl,
+      websiteUrl: websiteUrl ?? this.websiteUrl,
     );
   }
 
@@ -191,4 +213,14 @@ class CommunityData {
   final String? instagramUrl;
   final String? whatsappUrl;
   final String websiteUrl;
+
+  @override
+  List<Object?> get props => [
+    communityBio,
+    communityPhotoUrl,
+    communityTeamMembers,
+    instagramUrl,
+    whatsappUrl,
+    websiteUrl,
+  ];
 }
