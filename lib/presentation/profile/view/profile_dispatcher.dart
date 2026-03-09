@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
-import 'package:outnest/domain/entities/user/user_entity.dart'; // accountType'ı okumak için tam modeli import ediyoruz
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/presentation/profile/view/community_profile_page.dart';
