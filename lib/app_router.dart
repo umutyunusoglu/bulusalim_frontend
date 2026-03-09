@@ -15,6 +15,7 @@ import 'package:outnest/presentation/chat/view/chat_page.dart';
 import 'package:outnest/presentation/chat/view/event_settings_page.dart';
 import 'package:outnest/presentation/chat/view/my_events_page.dart';
 import 'package:outnest/presentation/debug/debug_nsfw_screen.dart';
+import 'package:outnest/presentation/groups/view/groups_page.dart';
 import 'package:outnest/presentation/home/view/home_page.dart';
 import 'package:outnest/presentation/init_screen.dart';
 import 'package:outnest/presentation/map/view/map_page.dart';
@@ -179,6 +180,12 @@ final router = GoRouter(
           builder: (context, state) => const EditProfilePage(),
         ),
       ],
+    ),
+    GoRoute(
+      path: '/groups',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const GroupsPage(),
+      routes: [],
     ),
     GoRoute(
       path: '/notifications',

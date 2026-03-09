@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get_it/get_it.dart'; // Import GetIt
+import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/emote_enum.dart';
 import 'package:outnest/core/utils/types/enums/feed_entity_type_enum.dart';
@@ -9,8 +10,6 @@ import 'package:outnest/data/models/model.dart';
 import 'package:outnest/domain/entities/feed/post/post_entity.dart';
 import 'package:outnest/domain/entities/hobby/hobby_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
-
-final GetIt getIt = GetIt.instance;
 
 class PostModel extends Model<PostEntity> {
   PostModel({
@@ -25,9 +24,9 @@ class PostModel extends Model<PostEntity> {
     required this.updatedAt,
     required this.showParticipants,
     required this.includeInDump,
+    required this.imageUrls,
     this.location,
     this.address,
-    this.imageUrls,
   });
 
   factory PostModel.fromEntity(PostEntity entity) {
@@ -243,14 +242,14 @@ class PostModel extends Model<PostEntity> {
   final CompactUserEntity creator;
   final Identifier eventID;
   final String caption;
-  final DateTime? createdAt;
+  final DateTime createdAt;
   final DateTime? updatedAt;
   final Geolocation? location;
   final String? address;
   final bool showParticipants;
   final bool includeInDump;
   final List<HobbyEntity> hobbies;
-  final List<String>? imageUrls;
+  final List<String> imageUrls;
   final List<CompactUserEntity> participants;
   final Map<EmoteEnum, int> emoteCounts;
   final FeedEntityTypeEnum feedType = FeedEntityTypeEnum.post;

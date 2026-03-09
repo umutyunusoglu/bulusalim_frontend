@@ -8,9 +8,9 @@ import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/utils/types/enums/profile_segment_enum.dart';
 import 'package:outnest/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/feed/post/post_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/entities/user/friend_entity.dart';
-import 'package:outnest/domain/entities/user/pinned_post_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/analytics/analytics_service.dart';
@@ -48,11 +48,11 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
   int _followerCountModifier = 0;
   bool _isTogglingMembership = false;
 
-  StreamSubscription<List<UserPostEntity>>? _postsSubscription;
+  StreamSubscription<List<PostEntity>>? _postsSubscription;
 
   // Listeler
-  List<UserPostEntity> _pinnedPosts = [];
-  List<UserPostEntity> _activePosts = [];
+  List<PostEntity> _pinnedPosts = [];
+  List<PostEntity> _activePosts = [];
   List<EventEntity> _currentEvents = [];
   final List<EventEntity> _consideredEvents = [];
   final List<CompactUserEntity> _commonMembers = [];
@@ -87,7 +87,7 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
             if (!mounted) return;
             final pinned = allPosts.where((p) => p.isPinned).toList();
             final active = allPosts.where((p) => !p.isPinned).toList()
-              ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+              ..sort((a, b) => b.createdAt!.compareTo(a.createdAt));
 
             setState(() {
               _pinnedPosts = pinned;
@@ -102,7 +102,7 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
 
   void _handlePinStatusChange(String postId, bool isPinned) {
     setState(() {
-      UserPostEntity? targetPost;
+      PostEntity? targetPost;
       final pinnedIndex = _pinnedPosts.indexWhere((p) => p.postID == postId);
       if (pinnedIndex != -1) {
         targetPost = _pinnedPosts.removeAt(pinnedIndex);
@@ -115,7 +115,7 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
 
       if (targetPost == null) return;
 
-      final updatedPost = UserPostEntity(
+      final updatedPost = PostEntity(
         postID: targetPost.postID,
         caption: targetPost.caption,
         location: targetPost.location,
@@ -124,6 +124,12 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
         emoteCounts: targetPost.emoteCounts,
         isPinned: isPinned,
         createdAt: targetPost.createdAt,
+        creator: targetPost.creator,
+        eventID: targetPost.eventID,
+        hobbies: targetPost.hobbies,
+        showParticipants: targetPost.showParticipants,
+        includeInDump: targetPost.includeInDump,
+        updatedAt: targetPost.updatedAt,
       );
 
       if (isPinned) {
@@ -131,7 +137,7 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
       } else {
         _activePosts
           ..add(updatedPost)
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          ..sort((a, b) => b.createdAt!.compareTo(a.createdAt));
       }
     });
   }

@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/domain/services/auth_service.dart';
+import 'package:outnest/presentation/shared/form/formatters/phone_input_formatter.dart';
 
 // Yükleme durumlarını ayırt etmek için enum
 enum AuthStatus { none, phone, google, apple }
@@ -154,7 +155,7 @@ class _LoginPageState extends State<LoginPage> {
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
                   LengthLimitingTextInputFormatter(14),
-                  _PhoneInputFormatter(),
+                  PhoneInputFormatter(),
                 ],
               ),
               SizedBox(height: 24.h),
@@ -305,33 +306,6 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _PhoneInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final text = newValue.text.replaceAll(' ', '');
-    if (text.isEmpty) return newValue;
-
-    final truncatedText = text.length > 10 ? text.substring(0, 10) : text;
-
-    final buffer = StringBuffer();
-    for (var i = 0; i < truncatedText.length; i++) {
-      buffer.write(truncatedText[i]);
-      if (i == 2 || i == 5 || i == 7) {
-        if (i != truncatedText.length - 1) buffer.write(' ');
-      }
-    }
-
-    final string = buffer.toString();
-    return newValue.copyWith(
-      text: string,
-      selection: TextSelection.collapsed(offset: string.length),
     );
   }
 }
