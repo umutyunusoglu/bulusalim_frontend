@@ -2,6 +2,7 @@ import 'dart:async'; // Timer için gerekli
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/presentation/profile/view/profile_page.dart';
@@ -163,15 +164,9 @@ class _SearchPageState extends State<SearchPage> {
                         onTap: () {
                           // Klavye açıksa kapat
                           FocusScope.of(context).unfocus();
-
+                          final userId = doc.id;
                           // ProfilePage sayfasına yönlendir
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ProfilePage(profileUserID: doc.id),
-                            ),
-                          );
+                          context.push('/home/profile/$userId');
                         },
                       );
                     }),

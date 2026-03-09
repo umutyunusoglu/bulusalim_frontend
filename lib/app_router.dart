@@ -132,6 +132,16 @@ final router = GoRouter(
             GoRoute(
               path: '/search',
               builder: (context, state) => const SearchPage(),
+              routes: [
+                GoRoute(
+                  path: 'profile/:userId',
+                  builder: (context, state) {
+                    final userId = state.pathParameters['userId'] ?? '';
+
+                    return ProfileDispatcher(profileUserID: userId);
+                  },
+                ),
+              ],
             ),
           ],
         ),

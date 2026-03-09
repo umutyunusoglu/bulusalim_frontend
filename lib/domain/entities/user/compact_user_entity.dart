@@ -79,7 +79,17 @@ class CompactUserEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [userID];
+  List<Object?> get props => [
+    userID,
+    username,
+    profileImageUrl,
+    university,
+    nameSurname,
+    isPrivate,
+    bio,
+    accountType,
+    communityData,
+  ];
 
   final Identifier userID;
   final String username;
