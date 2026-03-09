@@ -38,9 +38,8 @@ class _AboutCommunityPageState extends State<AboutCommunityPage> {
   @override
   void initState() {
     super.initState();
-    _selectedAuthorities = List.from(
-      _sessionService.currentUser!.communityData?.communityTeamMembers ?? [],
-    );
+    _selectedAuthorities =
+        _sessionService.currentUser!.communityData?.communityTeamMembers ?? [];
     _imagePath =
         _sessionService.currentUser!.communityData?.communityPhotoUrl ?? '';
     _bioController.text =
@@ -344,12 +343,12 @@ class _AboutCommunityPageState extends State<AboutCommunityPage> {
       final communityData = currentCommunityData != null
           ? currentCommunityData.copyWith(
               communityBio: _bioController.text,
-              communityTeamMembers: [..._selectedAuthorities],
+              communityTeamMembers: List.from(_selectedAuthorities),
               communityPhotoUrl: _imagePath,
             )
           : CommunityData(
               communityBio: _bioController.text,
-              communityTeamMembers: [..._selectedAuthorities],
+              communityTeamMembers: List.from(_selectedAuthorities),
               communityPhotoUrl: _imagePath ?? '',
               instagramUrl: '',
               whatsappUrl: '',
