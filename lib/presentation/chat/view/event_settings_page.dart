@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/presentation/shared/popup.dart';
 import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
@@ -225,7 +226,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     }
   }
 
-  void _onToggleEventLock(bool value) async {
+  Future<void> _onToggleEventLock(bool value) async {
     setState(() => isLocked = value);
 
     try {
@@ -711,6 +712,43 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
           : dateString;
     }
 
+    // Determine widget properties based on event status
+    final status = widget.event.status;
+
+    final locationOnTap =
+        isCreator &&
+            (status == EventStatusEnum.upcoming ||
+                status == EventStatusEnum.ongoing)
+        ? _onLocationUpdateTap
+        : null;
+
+    final String timeValue;
+    final VoidCallback? timeOnTap;
+    final bool timeShowTrailing;
+
+    switch (status) {
+      case EventStatusEnum.upcoming:
+        timeValue = dateString;
+        timeOnTap = isCreator ? _onTimeUpdateTap : null;
+        timeShowTrailing = true;
+        break;
+      case EventStatusEnum.ongoing:
+        timeValue = 'Devam Ediyor';
+        timeOnTap = null;
+        timeShowTrailing = false;
+        break;
+      case EventStatusEnum.completed:
+        timeValue = 'Tamamlandı';
+        timeOnTap = null;
+        timeShowTrailing = false;
+        break;
+      case EventStatusEnum.cancelled:
+        timeValue = 'İptal Edildi';
+        timeOnTap = null;
+        timeShowTrailing = false;
+        break;
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF3F5F6),
       body: SafeArea(
@@ -831,25 +869,21 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                     ),
 
                     SizedBox(height: 22.h),
-
-                    // Location row
                     _buildPillRow(
                       title: 'Buluşma Konumu',
                       value: _currentLocation.isNotEmpty
                           ? _currentLocation
                           : 'Konum seçilmedi',
                       icon: Icons.location_on_outlined,
-                      onTap: isCreator ? _onLocationUpdateTap : null,
+                      onTap: locationOnTap,
                     ),
                     _thinDivider(),
-
-                    // Time row
                     _buildPillRow(
                       title: 'Buluşma Zamanı',
-                      value: dateString,
+                      value: timeValue,
                       icon: Icons.access_time,
-                      onTap: isCreator ? _onTimeUpdateTap : null,
-                      showTrailing: true,
+                      onTap: timeOnTap,
+                      showTrailing: timeShowTrailing,
                     ),
 
                     SizedBox(height: 8.h),
