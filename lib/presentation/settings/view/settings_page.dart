@@ -1,22 +1,24 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:outnest/app_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
-import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
+import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
 import 'package:outnest/domain/services/auth_service.dart';
-import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/presentation/groups/view/groups_page.dart';
+import 'package:outnest/presentation/settings/view/about_community_page.dart';
 import 'package:outnest/presentation/settings/view/account_settings_page.dart';
 import 'package:outnest/presentation/settings/view/blocked_users_page.dart';
-import 'package:outnest/presentation/settings/view/delete_account_page.dart';
-import 'package:outnest/presentation/settings/view/device_permissons_page.dart';
-import 'package:outnest/presentation/settings/view/edit_profile_page.dart';
+import 'package:outnest/presentation/settings/view/components/avatar_settings_tile.dart';
 import 'package:outnest/presentation/settings/view/components/settings_section_header.dart';
 import 'package:outnest/presentation/settings/view/components/settings_tile.dart';
 import 'package:outnest/presentation/settings/view/components/static_info_widget.dart';
+import 'package:outnest/presentation/settings/view/delete_account_page.dart';
+import 'package:outnest/presentation/settings/view/device_permissons_page.dart';
+import 'package:outnest/presentation/settings/view/edit_profile_page.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -30,7 +32,6 @@ class _SettingsPageState extends State<SettingsPage>
     with WidgetsBindingObserver {
   // --- İZİN DURUMLARI ---
   bool _isNotifGranted = false;
-  bool _isBluetoothGranted = false;
   bool _isLocationGranted = false;
   bool _isCameraGranted = false;
   bool _isPhotosGranted = false;
@@ -39,7 +40,7 @@ class _SettingsPageState extends State<SettingsPage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _checkAllPermissions(); // Sayfa açıldığında izinleri kontrol et
+    _checkAllPermissions();
   }
 
   @override
@@ -48,7 +49,6 @@ class _SettingsPageState extends State<SettingsPage>
     super.dispose();
   }
 
-  // Kullanıcı telefon ayarlarına gidip geri döndüğünde tetiklenir
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
@@ -56,10 +56,8 @@ class _SettingsPageState extends State<SettingsPage>
     }
   }
 
-  // --- TÜM İZİNLERİ KONTROL EDEN MERKEZİ FONKSİYON ---
   Future<void> _checkAllPermissions() async {
     final notif = await Permission.notification.status;
-    final blue = await Permission.bluetooth.status;
     final loc = await Permission.location.status;
     final cam = await Permission.camera.status;
     final photo = await Permission.photos.status;
@@ -67,7 +65,6 @@ class _SettingsPageState extends State<SettingsPage>
     if (mounted) {
       setState(() {
         _isNotifGranted = notif.isGranted || notif.isLimited;
-        _isBluetoothGranted = blue.isGranted || blue.isLimited;
         _isLocationGranted = loc.isGranted || loc.isLimited;
         _isCameraGranted = cam.isGranted || cam.isLimited;
         _isPhotosGranted = photo.isGranted || photo.isLimited;
@@ -90,11 +87,12 @@ class _SettingsPageState extends State<SettingsPage>
         ),
       ),
     );
-    // Sayfadan geri dönüldüğünde stateleri güncelle
     await _checkAllPermissions();
   }
 
-  // --- POPUP FONKSİYONU ---
+  String _getStatusText(bool isGranted) =>
+      isGranted ? 'izin verildi' : 'izin verilmedi';
+
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -128,7 +126,7 @@ class _SettingsPageState extends State<SettingsPage>
                   child: ElevatedButton(
                     onPressed: () async {
                       Navigator.pop(context);
-                      getIt<AuthService>().signOut();
+                      unawaited(getIt<AuthService>().signOut());
                       if (context.mounted) {
                         router.go('/welcome');
                       }
@@ -165,9 +163,8 @@ class _SettingsPageState extends State<SettingsPage>
     final currentUser = getIt<SessionService>().currentUser;
     final profileImageUrl = currentUser?.profileImageUrl ?? '';
 
-    // Metinleri statelere göre dinamik belirlemek için yardımcı
-    String getStatusText(bool isGranted) =>
-        isGranted ? 'izin verildi' : 'izin verilmedi';
+    // --- HESAP TÜRÜ KONTROLÜ ---
+    final isCommunity = currentUser?.accountType == AccountType.community;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
@@ -184,7 +181,7 @@ class _SettingsPageState extends State<SettingsPage>
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Ayarlar',
+          isCommunity ? 'Topluluk Ayarları' : 'Ayarlar',
           style: TextStyle(
             fontFamily: 'SF Pro Display',
             fontSize: 16.sp,
@@ -197,249 +194,240 @@ class _SettingsPageState extends State<SettingsPage>
         padding: EdgeInsets.symmetric(horizontal: 16.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- PROFİLİ DÜZENLE ---
-            _buildProfileEditSection(context, profileImageUrl),
-
-            SizedBox(height: 24.h),
-            const Divider(height: 1, color: AppColors.dividerColor),
-            SizedBox(height: 24.h),
-
-            // --- GENEL AYARLAR ---
-            SettingsTile(
-              title: 'Hesap Ayarları',
-              subtitle: 'Gizlilik, üniversite, iletişim bilgileri',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const AccountSettingsPage(),
-                  ),
-                );
-              },
-            ),
-            SettingsTile(
-              title: 'Kümeler',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const GroupsPage()),
-                );
-              },
-            ),
-
-            SettingsTile(
-              title: 'Engellenen Kullanıcılar',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const BlockedUsersPage()),
-                );
-              },
-            ),
-
-            SizedBox(height: 24.h),
-            const Divider(height: 1, color: AppColors.dividerColor),
-            SizedBox(height: 24.h),
-
-            // --- CİHAZ İZİNLERİ ---
-            const SettingsSectionHeader(title: 'Cihaz İzinleri'),
-
-            SettingsTile(
-              title: 'Bildirimler',
-              trailingText: getStatusText(_isNotifGranted), // DİNAMİK
-              onTap: () => _navigateToPermissionDetail(
-                title: 'Bildirimler',
-                description:
-                    'Outnest uygulamasına bu cihaza güncellemeler ve önemli bildirimler göndermesine izin verilir.',
-                permission: Permission.notification,
-              ),
-            ),
-            /*
-            SettingsTile(
-              title: 'Bluetooth',
-              trailingText: getStatusText(_isBluetoothGranted), // DİNAMİK
-              onTap: () => _navigateToPermissionDetail(
-                title: 'Bluetooth',
-                description:
-                    "Outnest uygulamasına yakındaki cihazlarla bağlantı kurmak için Bluetooth'u kullanmasına izin verilir.",
-                permission: Permission.bluetooth,
-              ),
-            ),*/
-            SettingsTile(
-              title: 'Konum Servisleri',
-              trailingText: getStatusText(_isLocationGranted), // DİNAMİK
-              onTap: () => _navigateToPermissionDetail(
-                title: 'Konum Servisleri',
-                description:
-                    'Outnest uygulamasına bulunduğun konuma göre içerik ve öneriler sunmak için konum bilgine erişmesine izin verilir.',
-                permission: Permission.location,
-              ),
-            ),
-            SettingsTile(
-              title: 'Kamera',
-              trailingText: getStatusText(_isCameraGranted), // DİNAMİK
-              onTap: () => _navigateToPermissionDetail(
-                title: 'Kamera',
-                description:
-                    'Outnest uygulamasında fotoğraf çekmek ve paylaşmak için kameranıza erişim izni verilir.',
-                permission: Permission.camera,
-              ),
-            ),
-            SettingsTile(
-              title: 'Fotoğraflar',
-              trailingText: getStatusText(_isPhotosGranted), // DİNAMİK
-              onTap: () => _navigateToPermissionDetail(
-                title: 'Fotoğraflar',
-                description:
-                    'Outnest uygulamasının galerinizdeki fotoğrafları seçip yükleyebilmesi için erişim izni verilir.',
-                permission: Permission.photos,
-              ),
-            ),
-
-            SizedBox(height: 12.h),
-            const Divider(height: 1, color: AppColors.dividerColor),
-            SizedBox(height: 24.h),
-
-            // --- YASAL VE DESTEK ---
-            SettingsTile(
-              title: 'Gizlilik Politikası',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const StaticInfoWidget(
-                      title: 'Gizlilik Politikası',
-                      content:
-                          'Outnest’te verilerinin nasıl toplandığını, kullanıldığını ve korunduğunu buradan öğrenebilirsin.',
-                      linkText:
-                          'Gizlilik ve veri kullanımı hakkında daha fazla bilgi al',
-                      linkUrl: 'https://outnest.app/yasal/gizlilik-politikasi',
-                    ),
-                  ),
-                );
-              },
-            ),
-            SettingsTile(
-              title: 'Hizmet Şartları',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const StaticInfoWidget(
-                      title: 'Hizmet Şartları',
-                      content:
-                          'Outnest’i kullanırken geçerli olan kurallar ve sorumluluklar hakkında buradan bilgi edinebilirsin.',
-                      linkText:
-                          'Hizmet şartları ve kullanım koşulları hakkında daha fazla bilgi al',
-                      linkUrl: 'https://outnest.app/yasal/hizmet-kosullari',
-                    ),
-                  ),
-                );
-              },
-            ),
-            SettingsTile(
-              title: 'Destek ve Yardım',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const StaticInfoWidget(
-                      title: 'Destek ve Yardım',
-                      content:
-                          'Outnest ile ilgili soruların mı var? Yardım almak ve destek talep etmek için buraya göz atabilirsin.',
-                      linkText: 'Destek ve yardım sayfasına git',
-                      linkUrl: 'https://outnest.app/',
-                    ),
-                  ),
-                );
-              },
-            ),
-
-            SizedBox(height: 12.h),
-            const Divider(height: 1, color: AppColors.dividerColor),
-            SizedBox(height: 24.h),
-
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const DeleteAccountPage()),
-                );
-              },
-              behavior: HitTestBehavior.opaque,
-              child: const SettingsTile(
-                title: 'Hesabı Sil',
-                titleColor: AppColors.primaryColor,
-                showArrow: false,
-              ),
-            ),
-
-            // --- ÇIKIŞ YAP  ---
-            GestureDetector(
-              onTap: () => _showLogoutDialog(context),
-              behavior: HitTestBehavior.opaque,
-              child: const SettingsTile(
-                title: 'Çıkış Yap',
-                titleColor: AppColors.primaryColor,
-                showArrow: false,
-              ),
-            ),
-
-            SizedBox(height: 40.h),
-          ],
+          children: _buildSettingsContent(isCommunity, profileImageUrl),
         ),
       ),
     );
   }
 
-  Widget _buildProfileEditSection(
-    BuildContext context,
-    String profileImageUrl,
-  ) {
-    final hasUrl =
-        profileImageUrl.isNotEmpty && profileImageUrl.startsWith('http');
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 10),
-      child: GestureDetector(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const EditProfilePage()),
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 24.r,
-              backgroundColor: AppColors.dividerColor,
-              backgroundImage: hasUrl
-                  ? CachedNetworkImageProvider(
-                      fixEmulatorUrl(profileImageUrl),
-                    )
-                  : AssetImage(FileService.defaultProfileImageUrl())
-                        as ImageProvider,
-              onBackgroundImageError: (_, __) =>
-                  debugPrint('Avatar Load Error'),
-            ),
-            SizedBox(width: 12.w),
-            Text(
-              'Profili Düzenle',
-              style: TextStyle(
-                fontFamily: 'SF Pro Display',
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w500,
-                color: AppColors.onBackgroundColor,
-              ),
-            ),
-            const Spacer(),
-            Icon(
-              Icons.chevron_right,
-              color: AppColors.iconColor,
-              size: 24.sp,
-            ),
-          ],
-        ),
+  // --- DİNAMİK LİSTE ÜRETİCİSİ ---
+  List<Widget> _buildSettingsContent(bool isCommunity, String profileImageUrl) {
+    final content = <Widget>[
+      SizedBox(height: 8.h),
+      // 1. ÜST KISIM: PROFİLİ DÜZENLE
+      AvatarSettingsTile(
+        title: 'Profili Düzenle',
+        imageUrl: profileImageUrl,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const EditProfilePage()),
+          );
+        },
       ),
-    );
+    ];
+
+    // 2. SADECE TOPLULUK İSE: TOPLULUK HAKKINDA (Aynı Component Kullanıldı)
+    if (isCommunity) {
+      content.add(
+        AvatarSettingsTile(
+          title: 'Topluluk Hakkında',
+          icon: Icons.info_outline_rounded,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AboutCommunityPage()),
+            );
+          },
+        ),
+      );
+    }
+    content
+      ..add(SizedBox(height: 16.h))
+      ..add(const Divider(height: 1, color: AppColors.dividerColor))
+      ..add(SizedBox(height: 16.h))
+      // 3. ORTA KISIM (Hesap Ayarları, Kümeler, Rozetler, Engellenenler)
+      ..add(
+        SettingsTile(
+          title: isCommunity ? 'Topluluk Hesap Ayarları' : 'Hesap Ayarları',
+          subtitle:
+              'Gizlilik, üniversite, şifre, iletişim bilgileri, hesap türü',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AccountSettingsPage()),
+            );
+          },
+        ),
+      )
+      ..add(
+        SettingsTile(
+          title: 'Kümeler',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const GroupsPage()),
+            );
+          },
+        ),
+      )
+      ..add(
+        SettingsTile(
+          title: 'Rozetler',
+          onTap: () {
+            // TODO: Rozetler sayfasına yönlendir
+          },
+        ),
+      )
+      ..add(
+        SettingsTile(
+          title: 'Engellenen Kullanıcılar',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BlockedUsersPage()),
+            );
+          },
+        ),
+      )
+      ..add(SizedBox(height: 24.h))
+      ..add(const Divider(height: 1, color: AppColors.dividerColor))
+      ..add(SizedBox(height: 24.h))
+      // 4. ALT KISIM: CİHAZ İZİNLERİ
+      ..add(const SettingsSectionHeader(title: 'Cihaz İzinleri'))
+      ..add(
+        SettingsTile(
+          title: 'Bildirimler',
+          trailingText: _getStatusText(_isNotifGranted),
+          onTap: () => _navigateToPermissionDetail(
+            title: 'Bildirimler',
+            description:
+                'Outnest uygulamasına bu cihaza güncellemeler ve önemli bildirimler göndermesine izin verilir.',
+            permission: Permission.notification,
+          ),
+        ),
+      )
+      ..add(
+        SettingsTile(
+          title: 'Konum Servisleri',
+          trailingText: _getStatusText(_isLocationGranted),
+          onTap: () => _navigateToPermissionDetail(
+            title: 'Konum Servisleri',
+            description:
+                'Outnest uygulamasına bulunduğun konuma göre içerik ve öneriler sunmak için konum bilgine erişmesine izin verilir.',
+            permission: Permission.location,
+          ),
+        ),
+      )
+      ..add(
+        SettingsTile(
+          title: 'Kamera',
+          trailingText: _getStatusText(_isCameraGranted),
+          onTap: () => _navigateToPermissionDetail(
+            title: 'Kamera',
+            description:
+                'Outnest uygulamasında fotoğraf çekmek ve paylaşmak için kameranıza erişim izni verilir.',
+            permission: Permission.camera,
+          ),
+        ),
+      )
+      ..add(
+        SettingsTile(
+          title: 'Fotoğraflar',
+          trailingText: _getStatusText(_isPhotosGranted),
+          onTap: () => _navigateToPermissionDetail(
+            title: 'Fotoğraflar',
+            description:
+                'Outnest uygulamasının galerinizdeki fotoğrafları seçip yükleyebilmesi için erişim izni verilir.',
+            permission: Permission.photos,
+          ),
+        ),
+      )
+      ..add(SizedBox(height: 12.h))
+      ..add(const Divider(height: 1, color: AppColors.dividerColor))
+      ..add(SizedBox(height: 24.h))
+      // 5. EN ALT: YASAL, SİLME VE ÇIKIŞ YAP
+      ..add(
+        SettingsTile(
+          title: 'Gizlilik Politikası',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const StaticInfoWidget(
+                  title: 'Gizlilik Politikası',
+                  content:
+                      'Outnest’te verilerinin nasıl toplandığını, kullanıldığını ve korunduğunu buradan öğrenebilirsin.',
+                  linkText:
+                      'Gizlilik ve veri kullanımı hakkında daha fazla bilgi al',
+                  linkUrl: 'https://outnest.app/yasal/gizlilik-politikasi',
+                ),
+              ),
+            );
+          },
+        ),
+      )
+      ..add(
+        SettingsTile(
+          title: 'Hizmet Şartları',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const StaticInfoWidget(
+                  title: 'Hizmet Şartları',
+                  content:
+                      'Outnest’i kullanırken geçerli olan kurallar ve sorumluluklar hakkında buradan bilgi edinebilirsin.',
+                  linkText:
+                      'Hizmet şartları ve kullanım koşulları hakkında daha fazla bilgi al',
+                  linkUrl: 'https://outnest.app/yasal/hizmet-kosullari',
+                ),
+              ),
+            );
+          },
+        ),
+      )
+      ..add(
+        SettingsTile(
+          title: 'Destek ve Yardım',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const StaticInfoWidget(
+                  title: 'Destek ve Yardım',
+                  content:
+                      'Outnest ile ilgili soruların mı var? Yardım almak ve destek talep etmek için buraya göz atabilirsin.',
+                  linkText: 'Destek ve yardım sayfasına git',
+                  linkUrl: 'https://outnest.app/',
+                ),
+              ),
+            );
+          },
+        ),
+      )
+      ..add(SizedBox(height: 12.h))
+      ..add(const Divider(height: 1, color: AppColors.dividerColor))
+      ..add(SizedBox(height: 24.h))
+      ..add(
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const DeleteAccountPage()),
+            );
+          },
+          behavior: HitTestBehavior.opaque,
+          child: const SettingsTile(
+            title: 'Hesabı Sil',
+            titleColor: AppColors.primaryColor,
+            showArrow: false,
+          ),
+        ),
+      )
+      ..add(
+        GestureDetector(
+          onTap: () => _showLogoutDialog(context),
+          behavior: HitTestBehavior.opaque,
+          child: const SettingsTile(
+            title: 'Çıkış Yap',
+            titleColor: AppColors.primaryColor,
+            showArrow: false,
+          ),
+        ),
+      )
+      ..add(SizedBox(height: 40.h));
+
+    return content;
   }
 }
