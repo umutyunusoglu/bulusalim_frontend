@@ -4,20 +4,11 @@
             "android": {
                 "default": {
                     "projectId": "bulusalim-e8e7c",
-                    "appId": "1:802871659996:android:efc9c632ef59e1f9c11319",
+                    "appId": "1:802871659996:android:34c66160e6cebb96c11319",
                     "fileOutput": "android/app/google-services.json"
-                }
-            },
-            "dart": {
-                "lib/firebase_options.dart": {
-                    "projectId": "bulusalim-e8e7c",
-                    "configurations": {
-                        "android": "1:802871659996:android:efc9c632ef59e1f9c11319",
-                        "ios": "1:802871659996:ios:8cb30a7e27d760f7c11319",
-                        "web": "1:802871659996:web:5ca7ea63a2a68322c11319"
                     }
-                }
-            }
-        }
-    }
-}
+                },
+                "dart": {
+                    "lib/firebase_options.dart": {
+                        "projectId": "bulusalim-e8e7c",
+                        "configurations":{"android":"1:802871659996:android:34c66160e6cebb96c11319","ios":"1:802871659996:ios:4944ee3f77885e1fc11319"}}},"ios":{"default":{"projectId":"bulusalim-e8e7c","appId":"1:802871659996:ios:4944ee3f77885e1fc11319","uploadDebugSymbols":true,"fileOutput":"ios/Runner/GoogleService-Info.plist"}}}}}
