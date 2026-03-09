@@ -18,10 +18,12 @@ import 'package:outnest/domain/services/analytics/event_configs/select_profile_s
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/session_state.dart';
 import 'package:outnest/presentation/home/view/components/post/small_stacked_avatars.dart';
+import 'package:outnest/presentation/profile/view/community_info_page.dart';
 import 'package:outnest/presentation/profile/view/components/dump_tab.dart';
 import 'package:outnest/presentation/profile/view/components/events_tab.dart';
 import 'package:outnest/presentation/profile/view/components/grid_tab.dart';
 import 'package:outnest/presentation/profile/view/components/profile_tab_bar.dart';
+import 'package:outnest/presentation/settings/view/components/add_authority.dart';
 import 'package:outnest/presentation/shared/login_button.dart';
 import 'package:outnest/presentation/shared/popup.dart';
 
@@ -629,15 +631,49 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
                     size: 20.sp,
                   ),
                   onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => Popup(
-                        title: 'Topluluk Bilgisi',
-                        description: bio.isNotEmpty
-                            ? bio
-                            : 'Bu topluluk hakkında henüz detaylı bilgi bulunmuyor.',
-                        confirmButtonText: 'tamam',
-                        onConfirm: () => context.pop(),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CommunityInfoPage(
+                          communityName:
+                              'İTÜ Gastronomi Kulübü', // Gerçek verileri buraya vereceksin
+                          imageUrl:
+                              'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1000', // Örnek kapak
+                          bioText:
+                              'İTÜ Gastronomi Topluluğu, yemeğin kültürünü, bilimini ve yaratıcılığını bir araya getiren etkinlikler düzenler. Atölyeler, tadımlar ve söyleşilerle gastronomiyi keşfetmeyi, birlikte üretmeyi ve paylaşmayı amaçlar. Lezzet meraklısı herkese açık bir topluluktur.',
+                          teamMembers: [
+                            AuthorityUserModel(
+                              id: '1',
+                              username: 'elif_dogan',
+                              imageUrl: 'https://i.pravatar.cc/150?img=5',
+                            ),
+                            AuthorityUserModel(
+                              id: '2',
+                              username: 'mert12345678',
+                              imageUrl: 'https://i.pravatar.cc/150?img=13',
+                            ),
+                            AuthorityUserModel(
+                              id: '3',
+                              username: 'pinarkucuk',
+                              imageUrl: 'https://i.pravatar.cc/150?img=9',
+                            ),
+                            AuthorityUserModel(
+                              id: '4',
+                              username: 'elif_dogan',
+                              imageUrl: 'https://i.pravatar.cc/150?img=5',
+                            ),
+                            AuthorityUserModel(
+                              id: '5',
+                              username: 'mert12345678',
+                              imageUrl: 'https://i.pravatar.cc/150?img=13',
+                            ),
+                            AuthorityUserModel(
+                              id: '6',
+                              username: 'pinarkucuk',
+                              imageUrl: 'https://i.pravatar.cc/150?img=9',
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
