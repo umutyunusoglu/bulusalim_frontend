@@ -164,7 +164,9 @@ class FeedRepositoryImpl implements FeedRepository {
     var query = collection.orderBy('createdAt', descending: true);
 
     if (collection.id == 'events') {
-      query = query.where('status', whereIn: ['upcoming', 'ongoing']);
+      query = query
+          .where('status', whereIn: ['upcoming', 'ongoing'])
+          .where('isLocked', isEqualTo: false);
     }
 
     if (_currentFeedType == FeedType.university) {

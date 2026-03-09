@@ -161,6 +161,10 @@ class _EventCardState extends State<EventCard> {
 
   // --- ACTION SHEET ---
   void _showActionBottomSheet(bool isEventMine) {
+    final myEvents = sessionService.activeEvents;
+    final myEventIds = myEvents.map((e) => e.eventID);
+
+    final amIaParticipant = myEventIds.contains(widget.event.eventID);
     showModalBottomSheet<void>(
       context: context,
       useRootNavigator: true,
@@ -206,44 +210,46 @@ class _EventCardState extends State<EventCard> {
               },
             ),*/
             // 3. Ayrıl
-            BottomSheetOption(
-              icon: Icons.exit_to_app_outlined,
-              text: 'Buluşmadan Ayrıl',
-              isDestructive: true,
-              onTap: () {
-                sheetContext.pop();
-                final currentUser = sessionService.currentUser;
-                if (currentUser != null) {
-                  final compactUser = CompactUserEntity(
-                    userID: currentUser.userID,
-                    username: currentUser.username,
-                    profileImageUrl: currentUser.profileImageUrl,
-                    university: currentUser.university,
-                    nameSurname: currentUser.nameSurname,
-                    isPrivate: currentUser.isPrivate,
-                    bio: currentUser.bio,
-                    accountType: currentUser.accountType,
-                    communityData: currentUser.communityData,
-                  );
-                  eventRepository.removeParticipant(
-                    widget.event.eventID,
-                    compactUser,
-                  );
-                }
-              },
-            ),
+            if (amIaParticipant)
+              BottomSheetOption(
+                icon: Icons.exit_to_app_outlined,
+                text: 'Buluşmadan Ayrıl',
+                isDestructive: true,
+                onTap: () {
+                  sheetContext.pop();
+                  final currentUser = sessionService.currentUser;
+                  if (currentUser != null) {
+                    final compactUser = CompactUserEntity(
+                      userID: currentUser.userID,
+                      username: currentUser.username,
+                      profileImageUrl: currentUser.profileImageUrl,
+                      university: currentUser.university,
+                      nameSurname: currentUser.nameSurname,
+                      isPrivate: currentUser.isPrivate,
+                      bio: currentUser.bio,
+                      accountType: currentUser.accountType,
+                      communityData: currentUser.communityData,
+                    );
+                    eventRepository.removeParticipant(
+                      widget.event.eventID,
+                      compactUser,
+                    );
+                  }
+                },
+              ),
             // 4. İptal Et
-            BottomSheetOption(
-              icon: Icons.highlight_off_rounded,
-              text: 'Buluşmayı İptal Et',
-              isDestructive: true,
-              onTap: () async {
-                sheetContext.pop();
-                // TODO: İptal etme servisini çağır
-                _onCancelEventTap();
-                if (mounted) setState(() => isVisible = false);
-              },
-            ),
+            if (amIaParticipant)
+              BottomSheetOption(
+                icon: Icons.highlight_off_rounded,
+                text: 'Buluşmayı İptal Et',
+                isDestructive: true,
+                onTap: () async {
+                  sheetContext.pop();
+                  // TODO: İptal etme servisini çağır
+                  _onCancelEventTap();
+                  if (mounted) setState(() => isVisible = false);
+                },
+              ),
           ]
           // BAŞKASININ ETKİNLİĞİ İSE
           else ...[
@@ -266,32 +272,33 @@ class _EventCardState extends State<EventCard> {
                   _handleUnfollowUser();
                 },
               ),
-            BottomSheetOption(
-              icon: Icons.exit_to_app_outlined,
-              text: 'Buluşmadan Ayrıl',
-              isDestructive: true,
-              onTap: () {
-                sheetContext.pop();
-                final currentUser = sessionService.currentUser;
-                if (currentUser != null) {
-                  final compactUser = CompactUserEntity(
-                    userID: currentUser.userID,
-                    username: currentUser.username,
-                    profileImageUrl: currentUser.profileImageUrl,
-                    university: currentUser.university,
-                    nameSurname: currentUser.nameSurname,
-                    isPrivate: currentUser.isPrivate,
-                    bio: currentUser.bio,
-                    accountType: currentUser.accountType,
-                    communityData: currentUser.communityData,
-                  );
-                  eventRepository.removeParticipant(
-                    widget.event.eventID,
-                    compactUser,
-                  );
-                }
-              },
-            ),
+            if (amIaParticipant)
+              BottomSheetOption(
+                icon: Icons.exit_to_app_outlined,
+                text: 'Buluşmadan Ayrıl',
+                isDestructive: true,
+                onTap: () {
+                  sheetContext.pop();
+                  final currentUser = sessionService.currentUser;
+                  if (currentUser != null) {
+                    final compactUser = CompactUserEntity(
+                      userID: currentUser.userID,
+                      username: currentUser.username,
+                      profileImageUrl: currentUser.profileImageUrl,
+                      university: currentUser.university,
+                      nameSurname: currentUser.nameSurname,
+                      isPrivate: currentUser.isPrivate,
+                      bio: currentUser.bio,
+                      accountType: currentUser.accountType,
+                      communityData: currentUser.communityData,
+                    );
+                    eventRepository.removeParticipant(
+                      widget.event.eventID,
+                      compactUser,
+                    );
+                  }
+                },
+              ),
 
             // 2. Engelle
             BottomSheetOption(

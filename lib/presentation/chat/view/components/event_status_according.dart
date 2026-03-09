@@ -11,6 +11,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:outnest/domain/services/file_service.dart';
+import 'package:outnest/presentation/shared/navigation/navigate_to_profile.dart';
 
 // --- UI VERİ MODELİ ---
 class ParticipantItem {
@@ -396,79 +397,85 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
   Widget _buildApprovedRow(ParticipantItem user) {
     final bool isCreator = widget.event.creator.userID == user.userId;
 
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-      child: Row(
-        children: [
-          _buildAvatar(user.imageUrl),
-          SizedBox(width: 12.w),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => navigateToProfile(context, user.userId),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+        child: Row(
+          children: [
+            _buildAvatar(user.imageUrl),
+            SizedBox(width: 12.w),
 
-          Expanded(
-            child: Row(
-              children: [
-                Flexible(
-                  child: Text(
-                    user.username,
-                    style: TextStyle(
-                      fontFamily: 'SF Pro Display',
-                      fontSize: 14.sp,
-                      fontWeight: isCreator ? FontWeight.w600 : FontWeight.w500,
-                      color: Colors.black87,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                // 2. DÜZENLEME: Creator Badge ekle
-                if (isCreator) ...[
-                  SizedBox(width: 8.w),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 6.w,
-                      vertical: 2.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4.r),
-                      border: Border.all(
-                        color: AppColors.primaryColor,
-                        width: 0.5,
-                      ),
-                    ),
+            Expanded(
+              child: Row(
+                children: [
+                  Flexible(
                     child: Text(
-                      'buluşma sahibi',
+                      user.username,
                       style: TextStyle(
-                        fontSize: 10.sp,
-                        color: AppColors.primaryColor,
-                        fontWeight: FontWeight.w500,
+                        fontFamily: 'SF Pro Display',
+                        fontSize: 14.sp,
+                        fontWeight: isCreator
+                            ? FontWeight.w600
+                            : FontWeight.w500,
+                        color: Colors.black87,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  // 2. DÜZENLEME: Creator Badge ekle
+                  if (isCreator) ...[
+                    SizedBox(width: 8.w),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 6.w,
+                        vertical: 2.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4.r),
+                        border: Border.all(
+                          color: AppColors.primaryColor,
+                          width: 0.5,
+                        ),
+                      ),
+                      child: Text(
+                        'buluşma sahibi',
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          color: AppColors.primaryColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
-              ],
-            ),
-          ),
-
-          // Creator ise silme butonu gözükmesin
-          if (!isCreator) ...[
-            GestureDetector(
-              onTap: () => _removeParticipant(user.userId),
-              child: Container(
-                width: 24.w,
-                height: 24.w,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.3),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.remove,
-                  size: 14.sp,
-                  color: AppColors.primaryColor,
-                ),
               ),
             ),
+
+            // Creator ise silme butonu gözükmesin
+            if (!isCreator) ...[
+              GestureDetector(
+                onTap: () => _removeParticipant(user.userId),
+                child: Container(
+                  width: 24.w,
+                  height: 24.w,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryColor.withOpacity(0.3),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.remove,
+                    size: 14.sp,
+                    color: AppColors.primaryColor,
+                  ),
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -487,8 +494,6 @@ class _EventStatusAccordionState extends State<EventStatusAccordion> {
                 imageUrl: fixEmulatorUrl(url),
                 fadeInDuration: Duration.zero,
                 fit: BoxFit.cover,
-                memCacheHeight: 100,
-                memCacheWidth: 100,
                 placeholder: (c, u) => Container(color: AppColors.lightCloud),
                 errorWidget: (c, u, e) => Image.asset(
                   FileService.defaultProfileImageUrl(), // Fallback resmi

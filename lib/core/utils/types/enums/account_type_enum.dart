@@ -16,7 +16,7 @@ enum AccountType {
       case 'community':
         return community;
       default:
-        throw Exception('Unknown emote: $value');
+        return personal;
     }
   }
 }

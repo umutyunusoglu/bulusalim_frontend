@@ -21,9 +21,9 @@ class FollowNotificationEntity {
         sessionService.currentState!.followers.contains(userID) ?? false;
 
     if (isItFollowingMe) {
-      message = "seni takip etmeye başladı.";
+      message = 'seni takip etmeye başladı.';
     } else {
-      message = "seni takip etmek istiyor.";
+      message = 'seni takip etmek istiyor.';
     }
   }
 
