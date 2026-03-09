@@ -4,23 +4,25 @@ import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
+import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/presentation/profile/view/components/empty_profile_screen.dart';
 
 class CommunityInfoPage extends StatelessWidget {
   CommunityInfoPage({
-    required this.communityData,
     super.key,
   });
 
-  final CommunityData? communityData;
   final SessionService _sessionService = getIt<SessionService>();
+  final UserRepository _userRepository = getIt<UserRepository>();
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
       valueListenable: _sessionService.stateListenable,
       builder: (context, state, child) {
         final currentUser = _sessionService.currentUser;
+        final communityData = currentUser?.communityData;
 
         if (currentUser == null || communityData == null) {
           return const Scaffold(
