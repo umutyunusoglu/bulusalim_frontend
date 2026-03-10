@@ -64,7 +64,9 @@ extension RepositoryModule on GetIt {
         ),
       )
       ..registerLazySingleton<DraftPostService>(
-        () => DraftPostServiceImpl(),
+        () => DraftPostServiceImpl(
+          persistanceService: this(),
+        ),
       )
       ..registerLazySingleton<GroupRepository>(
         () => GroupRepositoryImpl(),

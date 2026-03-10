@@ -1,0 +1,21 @@
+import 'package:flutter/material.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
+
+PreferredSizeWidget buildAppBar({bool showBack = true}) {
+  return AppBar(
+    backgroundColor: Colors.transparent,
+    elevation: 0,
+    leading: showBack
+        ? IconButton(
+            icon: const Icon(Icons.reply, color: AppColors.darkSlate),
+            onPressed: () {},
+          )
+        : null,
+    actions: [
+      IconButton(
+        icon: const Icon(Icons.close, color: AppColors.darkSlate),
+        onPressed: () {},
+      ),
+    ],
+  );
+}
