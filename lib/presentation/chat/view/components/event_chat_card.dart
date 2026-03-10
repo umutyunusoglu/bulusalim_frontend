@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
@@ -29,9 +30,6 @@ class EventChatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // STREAMBUILDER: Kartın içindeki verileri canlı tutar
-
-    //TODO: Repository'den dinle düzelt anla
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
           .collection('events')
@@ -39,14 +37,12 @@ class EventChatCard extends StatelessWidget {
           .snapshots(),
 
       builder: (context, snapshot) {
-        // 1. Başlangıç Değerleri (Eğer internet yavaşsa veya stream henüz gelmediyse mevcut veriyi göster)
         var displayName = event.name;
         var displayLocation = event.displayAddress.isNotEmpty
             ? event.displayAddress
             : 'Konum Yok';
         var displayDate = event.startTime;
 
-        // 2. Canlı Veri Geldiyse Değerleri Güncelle
         if (snapshot.hasData &&
             snapshot.data != null &&
             snapshot.data!.exists) {
@@ -76,31 +72,25 @@ class EventChatCard extends StatelessWidget {
           margin: EdgeInsets.zero,
           child: Column(
             children: [
-              // Tıklanabilir Alan (Sohbet İkonu Hariç)
               GestureDetector(
-                onTap:
-                    onTapChat, // Karta tıklayınca da detaya/sohbete gitmesi için
+                onTap: onTapChat,
                 behavior: HitTestBehavior.translucent,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // --- 1. AVATAR ---
                     EventAvatarBadge(
-                      // profileImageUrl boşsa default asset yolunu gönder
                       imageUrl: event.creator.profileImageUrl.isNotEmpty
                           ? event.creator.profileImageUrl
                           : FileService.defaultProfileImageUrl(),
                       categoryIcon: categoryIcon,
                     ),
 
-                    SizedBox(width: 12.w),
+                    SizedBox(width: 10.w),
 
-                    // --- 2. BİLGİ ALANI ---
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Başlık (Canlı)
                           Text(
                             displayName,
                             maxLines: 1,
@@ -114,17 +104,21 @@ class EventChatCard extends StatelessWidget {
                           ),
                           SizedBox(height: 4.h),
 
-                          // Bilgi Çipi (Canlı Tarih ve Konum)
-                          ChatEventInfoChip(
-                            location: displayLocation,
-                            startTime: displayDate,
-                            participantCount: event.participants.length,
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: ChatEventInfoChip(
+                              location: displayLocation,
+                              startTime: displayDate,
+                              participantCount: event.participants.length,
+                            ),
                           ),
                         ],
                       ),
                     ),
 
-                    // --- 3. SAĞ AKSİYON İKONU (Sohbet/Bekleme) ---
+                    _buildQrIcon(context),
+
                     if (isCreator)
                       _buildChatIcon()
                     else if (participantStatus == 'pending')
@@ -135,7 +129,6 @@ class EventChatCard extends StatelessWidget {
                 ),
               ),
 
-              // --- 4. ACCORDION (Sadece Kurucuysa ve Bekleyen İstek Varsa) ---
               if (isCreator)
                 EventStatusAccordion(
                   event: event,
@@ -148,32 +141,55 @@ class EventChatCard extends StatelessWidget {
     );
   }
 
+  Widget _buildQrIcon(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        context.push('/my-qr');
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: EdgeInsets.only(left: 4.w, bottom: 8.h),
+        child: SizedBox(
+          width: 30.w,
+          height: 30.w,
+          child: Icon(
+            Icons.qr_code_2,
+            color: AppColors.successGreen, // Orijinal tema rengine çekildi
+            size: 22.sp,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildChatIcon() {
     return GestureDetector(
       onTap: onTapChat,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: EdgeInsets.only(left: 8.w, bottom: 8.h),
+        padding: EdgeInsets.only(left: 4.w, bottom: 8.h),
         child: SizedBox(
-          width: 32.w,
-          height: 32.w,
+          width: 30.w,
+          height: 30.w,
           child: Stack(
             clipBehavior: Clip.none,
             alignment: Alignment.center,
             children: [
               Icon(
                 Icons.chat_bubble_outline_rounded,
-                color: AppColors.primaryColor,
-                size: 24.sp,
+                color: AppColors
+                    .primaryColor, // Kendi orijinal rengine geri alındı
+                size: 22.sp,
               ),
               if (chatNotificationCount > 0)
                 Positioned(
-                  right: -2,
-                  top: -2,
+                  right: -4,
+                  top: -4,
                   child: Container(
                     padding: EdgeInsets.all(4.w),
                     decoration: BoxDecoration(
-                      color: AppColors.salmonPink,
+                      color: AppColors
+                          .salmonPink, // Sadece bildirim balonu salmonPink bırakıldı (orijinal kodundaki gibi)
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 1.5),
                     ),
@@ -198,14 +214,14 @@ class EventChatCard extends StatelessWidget {
 
   Widget _buildPendingIcon() {
     return Padding(
-      padding: EdgeInsets.only(left: 8.w, bottom: 8.h),
+      padding: EdgeInsets.only(left: 4.w, bottom: 8.h),
       child: SizedBox(
-        width: 32.w,
-        height: 32.w,
+        width: 30.w,
+        height: 30.w,
         child: Icon(
           Icons.hourglass_empty_rounded,
           color: AppColors.textGrey.withOpacity(0.5),
-          size: 24.sp,
+          size: 22.sp,
         ),
       ),
     );

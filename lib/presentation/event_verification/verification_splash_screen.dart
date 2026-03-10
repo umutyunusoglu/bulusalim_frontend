@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 
-class ProximityScreen extends StatelessWidget {
+class VerificationSplashScreen extends StatelessWidget {
+  const VerificationSplashScreen(this.event, {super.key});
+  final EventEntity event;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21,12 +25,13 @@ class ProximityScreen extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            icon: Icon(
+            icon: const Icon(
               Icons.close,
               color: AppColors.tertiaryColor,
             ), // Lacivert kapat X'i
             onPressed: () {
               // Uygulamayı kapatma veya ana ekrana dönme logiği
+              Navigator.pop(context);
             },
           ),
         ],
@@ -86,7 +91,11 @@ class ProximityScreen extends StatelessWidget {
               ),
               child: ElevatedButton(
                 onPressed: () {
-                  // QR okuma sayfasına yönlendirme logiği
+                  final eventID = event.eventID;
+                  context.push(
+                    '/home/event_verification/qr_scanner',
+                    extra: event,
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.tertiaryColor, // Lacivert buton

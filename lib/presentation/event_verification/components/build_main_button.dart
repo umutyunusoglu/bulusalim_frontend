@@ -21,7 +21,7 @@ Widget buildMainButton(String text, VoidCallback onPressed) {
     child: ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.darkSlate,
+        backgroundColor: AppColors.tertiaryColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
         elevation: 0,
       ),
