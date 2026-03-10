@@ -4,6 +4,7 @@ import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/presentation/shared/dialogs/show_multiple_events_selection_dialog.dart';
 import 'package:outnest/presentation/shared/dialogs/show_no_events_dialog.dart';
+import 'package:outnest/presentation/shared/navigation/dispatch_photo_intent.dart';
 
 void navigateToCamera(BuildContext context) {
   // A) Kullanıcı verisini al
@@ -13,7 +14,7 @@ void navigateToCamera(BuildContext context) {
   if (ongoingEvents.isEmpty) {
     showNoEventsDialog(context);
   } else if (ongoingEvents.length == 1) {
-    context.push('/camera', extra: {'event': ongoingEvents.first});
+    dispatchPhotoIntent(context, ongoingEvents[0]);
   } else {
     showMultipleEventsSelectionDialog(context, ongoingEvents);
   }

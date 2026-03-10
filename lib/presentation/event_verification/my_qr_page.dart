@@ -1,8 +1,93 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
+import 'package:outnest/domain/services/event_verification_service.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:outnest/presentation/event_verification/components/build_app_bar.dart';
 import 'package:outnest/presentation/event_verification/components/build_main_button.dart';
 
-class MyQrPage extends StatelessWidget {
+class MyQrPage extends StatefulWidget {
+  const MyQrPage({super.key});
+
+  @override
+  State<MyQrPage> createState() => _MyQrPageState();
+}
+
+class _MyQrPageState extends State<MyQrPage> {
+  final _verificationService = getIt<EventVerificationService>();
+
+  // Future'ı bir değişkende tutmak, widget rebuild olduğunda
+  // konumun tekrar tekrar istenmesini engeller.
+  late Future<String?> _qrDataFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _qrDataFuture = _generateUniqueData();
+  }
+
+  Future<String?> _generateUniqueData() async {
+    final currentLocation = await _getCurrentLocation();
+
+    if (currentLocation == null) return null;
+
+    final secret = _verificationService.createEventVerificationSecret(
+      Geolocation(
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+      ),
+    );
+
+    return secret;
+  }
+
+  Future<Position?> _getCurrentLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    try {
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        _showErrorSnackBar('Lütfen cihazınızın konum servislerini açın.');
+        return null;
+      }
+
+      permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          _showErrorSnackBar('Konum izni reddedildi.');
+          return null;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        _showErrorSnackBar('Konum izni kalıcı olarak reddedilmiş.');
+        return null;
+      }
+
+      return await Geolocator.getCurrentPosition(
+        timeLimit: const Duration(seconds: 10),
+        desiredAccuracy: LocationAccuracy.high,
+      );
+    } catch (e) {
+      _showErrorSnackBar('Konum alınamadı. GPS sinyalini kontrol edin.');
+      return null;
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -13,7 +98,7 @@ class MyQrPage extends StatelessWidget {
         child: Column(
           children: [
             const Text(
-              'Arkadaşının telefonundan QR kodunu okutsun ve buluşmada olduğunu onaylasın!',
+              'Arkadaşın QR kodunu okutsun ve buluşmada olduğunu onaylasın!',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 18,
@@ -22,30 +107,67 @@ class MyQrPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 40),
-            // QR Kod Çerçevesi
+
+            // QR Kod Çerçevesi ve Yükleme Durumu
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: const AspectRatio(
-                aspectRatio: 1,
-                child: Center(
-                  child: Text(
-                    'QR',
-                    style: TextStyle(
-                      fontSize: 100,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.black,
-                    ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
+                ],
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: FutureBuilder<String?>(
+                  future: _qrDataFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF004B73),
+                        ),
+                      );
+                    }
+
+                    if (snapshot.hasError || snapshot.data == null) {
+                      return const Center(
+                        child: Text(
+                          'QR Kod üretilemedi.\nLütfen konumu kontrol edip tekrar deneyin.',
+                          textAlign: TextAlign.center,
+                        ),
+                      );
+                    }
+
+                    return QrImageView(
+                      data: snapshot.data!,
+                      padding: EdgeInsets.zero,
+                      version: QrVersions.auto,
+                      eyeStyle: const QrEyeStyle(
+                        eyeShape: QrEyeShape.square,
+                        color: Color(0xFF004B73),
+                      ),
+                      dataModuleStyle: const QrDataModuleStyle(
+                        dataModuleShape: QrDataModuleShape.square,
+                        color: Color(0xFF004B73),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
+
             const Spacer(),
-            buildMainButton('Buluşmaya Dön', () {}),
+
+            buildMainButton('Buluşmaya Dön', () {
+              Navigator.of(context).pop();
+            }),
             const SizedBox(height: 40),
           ],
         ),
