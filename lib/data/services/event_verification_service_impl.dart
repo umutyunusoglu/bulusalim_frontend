@@ -212,8 +212,10 @@ class EventVerificationServiceImpl implements EventVerificationService {
   }
 
   Future<void> _saveVerifiedEvent(EventEntity event) async {
+    //TODO: Migrate to secure storage
     try {
       final data = await _persistanceService.getJson(_verifiedEventsKey);
+
       List<String> verifiedIds = (data != null && data.containsKey('ids'))
           ? List<String>.from(data['ids'] as List)
           : [];
