@@ -12,10 +12,8 @@ import 'package:outnest/presentation/settings/view/edit_social_media_link_page.d
 
 class CommunityAccountSettingsPage extends StatefulWidget {
   const CommunityAccountSettingsPage({
-    required this.currentUser,
     super.key,
   });
-  final UserEntity currentUser;
 
   @override
   State<CommunityAccountSettingsPage> createState() =>

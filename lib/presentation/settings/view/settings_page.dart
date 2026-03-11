@@ -180,7 +180,13 @@ class _SettingsPageState extends State<SettingsPage>
             color: AppColors.iconColor,
             size: 24,
           ),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            try {
+              context.pop();
+            } catch (e) {
+              context.go('/home');
+            }
+          },
         ),
         title: Text(
           isCommunity ? 'Topluluk Ayarları' : 'Ayarlar',
@@ -248,21 +254,7 @@ class _SettingsPageState extends State<SettingsPage>
           subtitle:
               'Gizlilik, üniversite, şifre, iletişim bilgileri, hesap türü',
           onTap: () {
-            if (isCommunity && currentUser != null) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CommunityAccountSettingsPage(
-                    currentUser: currentUser,
-                  ),
-                ),
-              );
-            } else {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AccountSettingsPage()),
-              );
-            }
+            context.push('/settings/edit-account');
           },
         ),
       )
