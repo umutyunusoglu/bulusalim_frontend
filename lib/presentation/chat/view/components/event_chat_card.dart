@@ -117,8 +117,6 @@ class EventChatCard extends StatelessWidget {
                       ),
                     ),
 
-                    _buildQrIcon(context),
-
                     if (isCreator)
                       _buildChatIcon()
                     else if (participantStatus == 'pending')
@@ -138,27 +136,6 @@ class EventChatCard extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildQrIcon(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        context.push('/my-qr');
-      },
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: EdgeInsets.only(left: 4.w, bottom: 8.h),
-        child: SizedBox(
-          width: 30.w,
-          height: 30.w,
-          child: Icon(
-            Icons.qr_code_2,
-            color: AppColors.successGreen, // Orijinal tema rengine çekildi
-            size: 22.sp,
-          ),
-        ),
-      ),
     );
   }
 
