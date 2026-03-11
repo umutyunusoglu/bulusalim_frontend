@@ -24,6 +24,7 @@ import 'package:outnest/presentation/profile/view/components/events_tab.dart';
 import 'package:outnest/presentation/profile/view/components/grid_tab.dart';
 import 'package:outnest/presentation/profile/view/components/profile_tab_bar.dart';
 import 'package:outnest/presentation/settings/view/components/add_authority.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/login_button.dart';
 import 'package:outnest/presentation/shared/popup.dart';
 
@@ -269,10 +270,9 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
           _isTogglingMembership = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('İşlem başarısız oldu, lütfen tekrar deneyin.'),
-          ),
+        showErrorPopup(
+          context,
+          message: 'Kullanıcı ekleme başarısız oldu, lütfen tekrar deneyin.',
         );
       }
     }

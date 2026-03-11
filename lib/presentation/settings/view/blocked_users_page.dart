@@ -4,6 +4,7 @@ import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/presentation/settings/view/components/blocked_user_tile.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 
 class BlockedUsersPage extends StatefulWidget {
   const BlockedUsersPage({super.key});
@@ -36,14 +37,13 @@ class _BlockedUsersPageState extends State<BlockedUsersPage> {
         id,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Kullanıcının engeli kaldırıldı.')),
-        );
+        showInfoPopup(context, message: 'Kullanıcının engeli kaldırıldı.');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata oluştu: $e')),
+        showErrorPopup(
+          context,
+          message: 'Kullanıcının engeli kaldırılırken hata oluştu',
         );
       }
     }
