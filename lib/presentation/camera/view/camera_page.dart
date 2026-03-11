@@ -328,7 +328,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         children: [
           Expanded(
             child: OutlinedButton(
-              onPressed: () => context.pop(),
+              onPressed: () => context.go('/home'),
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: primaryColor),
                 padding: EdgeInsets.symmetric(vertical: 10.h),

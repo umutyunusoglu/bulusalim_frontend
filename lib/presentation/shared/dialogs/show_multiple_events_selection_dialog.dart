@@ -6,6 +6,7 @@ import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/services/file_service.dart';
+import 'package:outnest/presentation/shared/navigation/dispatch_photo_intent.dart';
 
 void showMultipleEventsSelectionDialog(
   BuildContext context,
@@ -162,12 +163,11 @@ void showMultipleEventsSelectionDialog(
                         height: 34.h,
                         child: TextButton(
                           onPressed: () {
-                            context
-                              ..pop()
-                              ..push(
-                                '/camera',
-                                extra: {'event': activeEvents[selectedIndex]},
-                              );
+                            context..pop();
+                            dispatchPhotoIntent(
+                              context,
+                              activeEvents[selectedIndex] as EventEntity,
+                            );
                           },
                           style: TextButton.styleFrom(
                             backgroundColor: AppColors.primaryColor,

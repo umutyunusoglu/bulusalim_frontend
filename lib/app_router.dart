@@ -15,6 +15,9 @@ import 'package:outnest/presentation/chat/view/chat_page.dart';
 import 'package:outnest/presentation/chat/view/event_settings_page.dart';
 import 'package:outnest/presentation/chat/view/my_events_page.dart';
 import 'package:outnest/presentation/debug/debug_nsfw_screen.dart';
+import 'package:outnest/presentation/event_verification/my_qr_page.dart';
+import 'package:outnest/presentation/event_verification/qr_scanner_page.dart';
+import 'package:outnest/presentation/event_verification/verification_splash_screen.dart';
 import 'package:outnest/presentation/groups/view/groups_page.dart';
 import 'package:outnest/presentation/home/view/home_page.dart';
 import 'package:outnest/presentation/init_screen.dart';
@@ -123,6 +126,22 @@ final router = GoRouter(
                     return ProfileDispatcher(profileUserID: userId);
                   },
                 ),
+                GoRoute(
+                  path: 'event_verification',
+                  builder: (context, state) {
+                    final event = state.extra as EventEntity?;
+                    return VerificationSplashScreen(event!);
+                  },
+                  routes: [
+                    GoRoute(
+                      path: 'qr_scanner',
+                      builder: (context, state) {
+                        final event = state.extra as EventEntity?;
+                        return QRScannerScreen(event!);
+                      },
+                    ),
+                  ],
+                ),
               ],
             ),
           ],
@@ -200,7 +219,11 @@ final router = GoRouter(
       path: '/groups',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const GroupsPage(),
-      routes: [],
+    ),
+    GoRoute(
+      path: '/my-qr',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const MyQrPage(),
     ),
     GoRoute(
       path: '/notifications',
