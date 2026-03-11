@@ -1,8 +1,8 @@
-import 'package:outnest/presentation/shared/category_filter_chip.dart';
-import 'package:outnest/presentation/map/view/components/popup_next_button.dart';
-import 'package:outnest/core/constants/theme/color_themes.dart'; // AppColors
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart'; // AppColors
+import 'package:outnest/presentation/map/view/components/popup_next_button.dart';
+import 'package:outnest/presentation/shared/category_filter_chip.dart';
 
 class CategorySelectionStep extends StatefulWidget {
   const CategorySelectionStep({

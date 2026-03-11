@@ -392,7 +392,7 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                Icons.keyboard_backspace,
+                Icons.undo,
                 size: 24.sp,
                 color: AppColors.iconColor,
               ),
