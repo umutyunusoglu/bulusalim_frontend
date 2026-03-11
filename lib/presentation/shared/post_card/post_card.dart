@@ -23,6 +23,7 @@ import 'package:outnest/presentation/home/view/components/post/content_tag_chip.
 import 'package:outnest/presentation/home/view/components/post/emoji_chip.dart';
 import 'package:outnest/presentation/home/view/components/post/small_stacked_avatars.dart';
 import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/post_card/countdown_timer.dart';
 
 class PostCard extends StatefulWidget {
@@ -254,9 +255,7 @@ class _PostCardState extends State<PostCard> {
             _isEggedByMe = previousState;
           }
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('İşlem başarısız: $e')),
-        );
+        showErrorPopup(context, message: 'İşlem başarısız: $e');
       }
     }
   }
@@ -287,14 +286,13 @@ class _PostCardState extends State<PostCard> {
         ),
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Bildiriniz alındı, içerik gizlendi.')),
-        );
+        showInfoPopup(context, message: 'Bildiriniz alındı, içerik gizlendi.');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Rapor gönderilirken bir hata oluştu.')),
+        showErrorPopup(
+          context,
+          message: 'Rapor gönderilirken bir hata oluştu.',
         );
       }
     }
@@ -317,14 +315,13 @@ class _PostCardState extends State<PostCard> {
         ),
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Kullanıcı engellendi.')),
-        );
+        showInfoPopup(context, message: 'Kullanıcı engellendi.');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Engelleme başarısız oldu.')),
+        showErrorPopup(
+          context,
+          message: 'Engelleme başarısız oldu, lütfen tekrar deneyin',
         );
       }
     }
@@ -339,14 +336,13 @@ class _PostCardState extends State<PostCard> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Takip bırakıldı.')),
-        );
+        showInfoPopup(context, message: 'Takipten çıkıldı.');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('İşlem başarısız.')),
+        showErrorPopup(
+          context,
+          message: 'İşlem başarısız oldu, lütfen tekrar deneyin',
         );
       }
     }
@@ -390,8 +386,9 @@ class _PostCardState extends State<PostCard> {
         // Hata durumunda üst katmana eski durumu bildir
         widget.onPinToggle?.call(!newStatus);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('İşlem başarısız oldu.')),
+        showErrorPopup(
+          context,
+          message: 'İşlem başarısız oldu, lütfen tekrar deneyin',
         );
       }
     }

@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/domain/services/security_service.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/popup.dart';
 import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
@@ -148,17 +149,12 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
         );
       } catch (e) {
         _logger.error('Konum güncelleme hatası: $e');
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Buluşma konumunu güncellerken bir sorun oluştu. Lütfen tekrar deneyin.',
-            ),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-            duration: Duration(seconds: 3),
-          ),
+        showErrorPopup(
+          context,
+          message:
+              'Buluşma konum güncellenirken bir hata oluştu. Lütfen tekrar deneyin.',
         );
+
         if (mounted) {
           setState(() {
             _currentLocation = widget.location;
@@ -212,15 +208,10 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
       } catch (e) {
         _logger.error('Zaman güncelleme hatası: $e');
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Buluşma zamanını güncellerken bir sorun oluştu. Lütfen tekrar deneyin.',
-            ),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-            duration: Duration(seconds: 3),
-          ),
+        showErrorPopup(
+          context,
+          message:
+              'Buluşma zamanı güncellenirken bir hata oluştu. Lütfen tekrar deneyin.',
         );
       }
     }
@@ -251,16 +242,13 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
       );
     } catch (e) {
       _logger.error('Buluşma kilit durumunu güncellerken hata oluştu: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Buluşma kilit durumunu güncellerken bir sorun oluştu. Lütfen tekrar deneyin.',
-          ),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-          duration: Duration(seconds: 3),
-        ),
+
+      showErrorPopup(
+        context,
+        message:
+            'Buluşma kilit durumunu güncellerken bir hata oluştu. Lütfen tekrar deneyin',
       );
+
       setState(() => isLocked = !value);
     }
   }
@@ -306,16 +294,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
       }
     } catch (e) {
       _logger.error('Buluşmadan ayrılırken hata oluştu: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Buluşmadan ayrılırken bir sorun oluştu. Lütfen tekrar deneyin.',
-          ),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating, // Daha modern bir görünüm için
-          duration: Duration(seconds: 3),
-        ),
-      );
+      showErrorPopup(context, message: 'Buluşmadan ayrılırken bir hata oluştu');
     }
     context
       ..pop()
@@ -350,15 +329,9 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
 
             // Hata durumunda context hala geçerli mi kontrol et
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Buluşmayı iptal ederken bir sorun oluştu. Lütfen tekrar deneyin.',
-                  ),
-                  backgroundColor: Colors.redAccent,
-                  behavior: SnackBarBehavior.floating,
-                  duration: Duration(seconds: 3),
-                ),
+              showErrorPopup(
+                context,
+                message: 'Buluşmayı iptal ederken bir hata oluştu',
               );
             }
           }
@@ -467,15 +440,10 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
         });
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
+          showErrorPopup(
+            context,
+            message:
                 'Buluşma adını güncellerken bir sorun oluştu. Lütfen tekrar deneyin.',
-              ),
-              backgroundColor: Colors.redAccent,
-              behavior: SnackBarBehavior.floating,
-              duration: Duration(seconds: 3),
-            ),
           );
         }
       }
@@ -510,15 +478,10 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
         _currentVisibility = oldValue; // Hata durumunda UI'ı geri al
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
+        showErrorPopup(
+          context,
+          message:
               'Görünürlük ayarını güncellerken bir sorun oluştu. Lütfen tekrar deneyin.',
-            ),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-            duration: Duration(seconds: 3),
-          ),
         );
       }
     }

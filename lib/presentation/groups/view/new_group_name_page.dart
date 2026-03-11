@@ -4,6 +4,7 @@ import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/group_repository.dart';
 import 'package:outnest/presentation/groups/view/new_group_page.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 
 class NewGroupNamePage extends StatefulWidget {
   const NewGroupNamePage({super.key, required this.selectedUsers});
@@ -29,9 +30,8 @@ class _NewGroupNamePageState extends State<NewGroupNamePage> {
 
     // 1. Validasyon
     if (groupName.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen kümenize bir isim verin.')),
-      );
+      showErrorPopup(context, message: 'Lütfen kümenize bir isim verin');
+
       return;
     }
 
@@ -70,8 +70,10 @@ class _NewGroupNamePageState extends State<NewGroupNamePage> {
     } catch (e) {
       if (mounted) {
         setState(() => _isProcessing = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata oluştu: ${e.toString()}')),
+        showErrorPopup(
+          context,
+          message:
+              'Yeni küme oluşturulurken hata oluştu. Lütfen tekrar deneyin',
         );
       }
     }
@@ -111,7 +113,7 @@ class _NewGroupNamePageState extends State<NewGroupNamePage> {
           elevation: 0,
           actions: [
             Padding(
-              padding: const EdgeInsets.only(right: 16.0),
+              padding: const EdgeInsets.only(right: 16),
               child: GestureDetector(
                 onTap: _isProcessing
                     ? null

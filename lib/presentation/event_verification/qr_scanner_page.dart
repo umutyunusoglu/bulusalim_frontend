@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/services/event_verification_service.dart';
 import 'package:outnest/presentation/event_verification/components/build_app_bar.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
+import 'package:outnest/presentation/shared/utility/get_current_location.dart';
 
 class QRScannerScreen extends StatefulWidget {
   const QRScannerScreen(this.event, {super.key});
@@ -32,50 +33,6 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     super.dispose();
   }
 
-  // Güvenli Konum Alma Fonksiyonu
-  Future<Position?> _getCurrentLocation() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    try {
-      // 1. Konum servisleri açık mı kontrol et
-      serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        _showErrorSnackBar('Lütfen cihazınızın konum servislerini açın.');
-        return null;
-      }
-
-      // 2. Uygulama için konum izni verilmiş mi kontrol et
-      permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          _showErrorSnackBar('Konum izni reddedildi. Doğrulama yapılamıyor.');
-          return null;
-        }
-      }
-
-      // 3. İzin kalıcı olarak reddedilmişse
-      if (permission == LocationPermission.deniedForever) {
-        _showErrorSnackBar(
-          'Konum izni kalıcı olarak reddedilmiş. Lütfen ayarlardan izin verin.',
-        );
-        return null;
-      }
-
-      // Her şey yolundaysa anlık konumu döndür (Timeout ekleyerek sonsuza kadar beklemesini engelliyoruz)
-      return await Geolocator.getCurrentPosition(
-        timeLimit: const Duration(seconds: 15),
-      );
-    } catch (e) {
-      // Konum alınırken cihaz bazlı veya zaman aşımı gibi bir hata olursa yakala
-      _showErrorSnackBar(
-        'Konum alınırken beklenmeyen bir hata oluştu: Cihazınızın GPS\'ini kontrol edin.',
-      );
-      return null;
-    }
-  }
-
   Future<void> _onDetect(BarcodeCapture capture) async {
     if (_isVerified || _isLoading) return;
 
@@ -88,7 +45,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
 
         try {
           // Cihazın gerçek konumunu al
-          final position = await _getCurrentLocation();
+          final position = await getCurrentLocation(context);
 
           if (position == null) {
             // _getCurrentLocation içinde kullanıcıya zaten hata mesajı gösterdik
@@ -127,15 +84,19 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
               );
             });
           } else {
-            _showErrorSnackBar(
-              'Doğrulama başarısız. Lütfen doğru QR kodu okuttuğunuzdan emin olun.',
+            showErrorPopup(
+              context,
+              message:
+                  'Doğrulama başarısız. Lütfen doğru QR kodu okuttuğunuzdan emin olun.',
             );
           }
         } catch (e) {
           // Ağ hatası, backend hatası veya beklenmeyen herhangi bir Exception durumunda
           debugPrint('QR Doğrulama Hatası: $e');
-          _showErrorSnackBar(
-            "Kod Doğrulanırken Bir Hata Oluştu, Lütfen QR'ın Doğruluğundan Emin Olun!",
+          showErrorPopup(
+            context,
+            message:
+                "Kod Doğrulanırken Bir Hata Oluştu, Lütfen QR'ın Doğruluğundan Emin Olun!",
           );
         } finally {
           // Hata olsa da olmasa da, yönlendirme (başarı) gerçekleşmediği sürece loading'i kapatmalıyız.
@@ -150,19 +111,6 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
         break; // İlk anlamlı QR'ı işledik, döngüyü kır.
       }
     }
-  }
-
-  // Tekrarlanan SnackBar kodlarını temizlemek için yardımcı bir fonksiyon
-  void _showErrorSnackBar(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior
-            .floating, // Biraz daha modern bir görünüm için eklendi
-      ),
-    );
   }
 
   @override
