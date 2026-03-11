@@ -353,6 +353,7 @@ class _AboutCommunityPageState extends State<AboutCommunityPage> {
               instagramUrl: '',
               whatsappUrl: '',
               websiteUrl: '',
+              contactEmail: '',
             );
 
       await _userRepository.updateUser(_sessionService.currentUser!.userID, {
