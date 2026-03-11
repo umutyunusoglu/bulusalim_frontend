@@ -17,6 +17,7 @@ import 'package:outnest/domain/services/analytics/event_configs/select_gender_an
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/usecases/upload_profile_picture_usecase.dart';
 import 'package:outnest/presentation/settings/view/components/profile_input_row.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/form/formatters/name_surname_formatter.dart';
 import 'package:outnest/presentation/shared/form/validators/validate_bio.dart';
 import 'package:outnest/presentation/shared/form/validators/validate_date_of_birth.dart';
@@ -453,10 +454,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 await _saveProfileChanges();
                 if (context.mounted) Navigator.pop(context, true);
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Lütfen hatalı alanları düzeltin.'),
-                  ),
+                showErrorPopup(
+                  context,
+                  message: 'Lütfen hatalı alanları düzeltin.',
                 );
               }
             },
@@ -582,23 +582,23 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     return Column(
       children: [
-        Stack(
-          alignment: Alignment.bottomRight,
-          children: [
-            CircleAvatar(
-              radius: 38.r,
-              backgroundColor: Colors.grey.shade200,
-              backgroundImage:
-                  imageProvider, // Yukarıdaki mantığı buraya veriyoruz
-              child: _profileImageUrl.isEmpty
-                  ? Icon(Icons.person, size: 38.sp, color: Colors.grey)
-                  : null,
-            ),
+        GestureDetector(
+          onTap: () => _showPhotoOptions(),
+          child: Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              CircleAvatar(
+                radius: 38.r,
+                backgroundColor: Colors.grey.shade200,
+                backgroundImage:
+                    imageProvider, // Yukarıdaki mantığı buraya veriyoruz
+                child: _profileImageUrl.isEmpty
+                    ? Icon(Icons.person, size: 38.sp, color: Colors.grey)
+                    : null,
+              ),
 
-            // DÜZENLEME (KALEM) İKONU
-            GestureDetector(
-              onTap: _showPhotoOptions,
-              child: Container(
+              // DÜZENLEME (KALEM) İKONU
+              Container(
                 padding: EdgeInsets.all(4.r),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -614,8 +614,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
                 child: Icon(Icons.edit, size: 13.sp, color: Colors.black),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         SizedBox(height: 8.h),
         Text(
@@ -717,13 +717,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
     } catch (e) {
       debugPrint('Profil değişiklikleri kaydedilirken hata oluştu: $e');
       // Hata durumunda kullanıcıya bildirim göstermek isteyebilirsiniz
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
+      showErrorPopup(
+        context,
+        message:
             'Profil değişiklikleri kaydedilirken hata oluştu. Lütfen tekrar deneyin.',
-          ),
-          backgroundColor: Colors.redAccent,
-        ),
       );
     }
   }

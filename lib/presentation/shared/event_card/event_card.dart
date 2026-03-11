@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/event_card/event_card_background_painter.dart';
 import 'package:outnest/presentation/shared/popup.dart';
 import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
@@ -373,14 +374,13 @@ class _EventCardState extends State<EventCard> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Takip bırakıldı.')),
-        );
+        showInfoPopup(context, message: 'Takipten çıkıldı.');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('İşlem başarısız.')),
+        showErrorPopup(
+          context,
+          message: 'Takipten çıkma başarısız, lütfen tekrar deneyin.',
         );
       }
     }
@@ -400,16 +400,16 @@ class _EventCardState extends State<EventCard> {
         ),
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Şikayetiniz başarıyla gönderildi.')),
+        showInfoPopup(
+          context,
+          message: 'Şikayetiniz başarıyla gönderildi ve kullanıcı engellendi',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Şikayetiniz gönderilirken hata oluştu.'),
-          ),
+        showErrorPopup(
+          context,
+          message: 'Şikayetiniz gönderilirken hata oluştu.',
         );
       }
     }
@@ -560,8 +560,9 @@ class _EventCardState extends State<EventCard> {
         setState(() {
           _joinStatus = _EventJoinStatus.canJoin;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('İstek gönderilemedi, tekrar deneyin.')),
+        showErrorPopup(
+          context,
+          message: 'İstek gönderilemedi, tekrar deneyin.',
         );
       }
     }
