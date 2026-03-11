@@ -76,6 +76,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
             return const Center(child: CircularProgressIndicator());
           }
 
+          //Todo: tame the monkey
           if (snapshot.hasError) {
             return const Center(child: CircularProgressIndicator());
           }
