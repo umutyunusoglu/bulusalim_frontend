@@ -126,7 +126,6 @@ void showMultipleEventsSelectionDialog(
                   SizedBox(
                     height: 24.h,
                   ), // Butonlar ile yazı arasını biraz açtım
-                  // --- GÜNCELLENEN BUTON ALANI (77x34 Hug) ---
                   Row(
                     mainAxisAlignment:
                         MainAxisAlignment.center, // Butonları ortala
