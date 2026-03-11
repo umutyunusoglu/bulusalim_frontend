@@ -11,7 +11,6 @@ class TimeSelectionStep extends StatefulWidget {
     required this.onBack,
     required this.onNext,
     this.onClose,
-    // YENİ: X butonunu gizlemek için parametre
     this.hideCloseButton = false,
     super.key,
   });
@@ -19,7 +18,7 @@ class TimeSelectionStep extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback? onClose;
   final Function(DateTime date, TimeOfDay? time, bool isTimeUndefined) onNext;
-  final bool hideCloseButton; // Değişken tanımı
+  final bool hideCloseButton;
 
   @override
   State<TimeSelectionStep> createState() => _TimeSelectionStepState();
@@ -28,17 +27,25 @@ class TimeSelectionStep extends StatefulWidget {
 class _TimeSelectionStepState extends State<TimeSelectionStep> {
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
-  //bool _isTimeUndefined = false;
-
-  late DateTime _currentMonth;
   late DateTime _now;
   bool _localeInitialized = false;
+
+  // Sabit 7 günlük liste
+  List<DateTime> _selectableDays = [];
+
+  DateTime? _customSelectedDate;
 
   @override
   void initState() {
     super.initState();
     _now = DateTime.now();
-    _currentMonth = DateTime(_now.year, _now.month);
+
+    // Başlangıçta önümüzdeki 7 günü dolduruyoruz
+    _selectableDays = List.generate(
+      7,
+      (index) =>
+          DateTime(_now.year, _now.month, _now.day).add(Duration(days: index)),
+    );
 
     initializeDateFormatting('tr_TR').then((_) {
       if (mounted) {
@@ -49,14 +56,71 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
     });
   }
 
-  // --- SAAT SEÇİCİ (CUPERTINO WHEEL) ---
+  void _pickCustomDate() {
+    var initialDate = _customSelectedDate ?? _selectableDays.last;
+
+    final minDate = DateTime(_now.year, _now.month, _now.day);
+
+    if (initialDate.isBefore(minDate)) {
+      initialDate = minDate;
+    }
+
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (BuildContext context) => Container(
+        height: 250,
+        padding: const EdgeInsets.only(top: 6),
+        color: AppColors.popupSurface,
+        child: SafeArea(
+          top: false,
+          child: Column(
+            children: [
+              Container(
+                alignment: Alignment.centerRight,
+                child: CupertinoButton(
+                  child: const Text("Tamam"),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+              Expanded(
+                child: CupertinoDatePicker(
+                  initialDateTime: initialDate,
+                  mode: CupertinoDatePickerMode.date,
+                  minimumDate: minDate,
+                  onDateTimeChanged: (DateTime newDate) {
+                    setState(() {
+                      final pickedDate = DateTime(
+                        newDate.year,
+                        newDate.month,
+                        newDate.day,
+                      );
+
+                      // Seçilen tarih ilk 7 gün içinde mi kontrol et
+                      final bool isInFirst7Days = _selectableDays.any(
+                        (d) => _isSameDay(d, pickedDate),
+                      );
+
+                      if (isInFirst7Days) {
+                        _customSelectedDate = null;
+                        _selectedDate = pickedDate;
+                      } else {
+                        _customSelectedDate = pickedDate;
+                        _selectedDate = pickedDate;
+                      }
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _pickTime() {
     final now = DateTime.now();
-
-    // 1. Mantıksal kontrol: Seçilen gün bugün mü?
     final isSelectingToday = _isSameDay(_selectedDate, now);
-
-    // 2. Başlangıç zamanı ayarı
     final initialDateTime = DateTime(
       _selectedDate.year,
       _selectedDate.month,
@@ -65,8 +129,6 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
       _selectedTime.minute,
     );
 
-    // 3. Minimum tarih ayarı:
-    // Bugün ise "şu an", gelecek gün ise o günün başlangıcı (00:00:00)
     final minDate = isSelectingToday
         ? now
         : DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
@@ -87,12 +149,11 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
                       ? minDate
                       : initialDateTime,
                   mode: CupertinoDatePickerMode.time,
-                  minimumDate: minDate, // Dinamik minimum tarih
+                  minimumDate: minDate,
                   use24hFormat: true,
                   onDateTimeChanged: (DateTime newDate) {
                     setState(() {
                       _selectedTime = TimeOfDay.fromDateTime(newDate);
-                      //_isTimeUndefined = false;
                     });
                   },
                 ),
@@ -102,13 +163,6 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
         ),
       ),
     );
-  }
-
-  bool _isDateSelectable(DateTime date) {
-    final diff = date
-        .difference(DateTime(_now.year, _now.month, _now.day))
-        .inDays;
-    return diff >= 0 && diff <= 7;
   }
 
   bool _isSameDay(DateTime a, DateTime b) {
@@ -122,13 +176,6 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
     }
 
     final theme = Theme.of(context);
-    final daysInMonth = DateUtils.getDaysInMonth(
-      _currentMonth.year,
-      _currentMonth.month,
-    );
-    final firstDayOffset =
-        DateTime(_currentMonth.year, _currentMonth.month).weekday % 7;
-    final monthName = DateFormat('MMMM yyyy', 'tr_TR').format(_currentMonth);
 
     return Column(
       children: [
@@ -136,7 +183,6 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
         Stack(
           alignment: Alignment.center,
           children: [
-            // SOL BUTON (GERİ)
             Align(
               alignment: Alignment.centerLeft,
               child: GestureDetector(
@@ -148,8 +194,6 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
                 ),
               ),
             ),
-
-            // ORTA BAŞLIK
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -169,8 +213,6 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
                 ),
               ],
             ),
-
-            // SAĞ BUTON (KAPAT) - SADECE hideCloseButton FALSE İSE GÖSTER
             if (!widget.hideCloseButton)
               Align(
                 alignment: Alignment.centerRight,
@@ -186,126 +228,41 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
           ],
         ),
 
-        SizedBox(height: 12.h),
-
-        // 2. AY VE YIL
+        SizedBox(height: 24.h),
         Text(
-          monthName,
-          style: TextStyle(
-            fontFamily: 'SF Pro Display',
+          "Tarih",
+          style: theme.textTheme.titleMedium?.copyWith(
             fontSize: 14.sp,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w600,
             color: AppColors.onBackgroundColor,
           ),
         ),
+        SizedBox(height: 16.h),
 
-        SizedBox(height: 10.h),
-
-        // 3. GÜN İSİMLERİ
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10.w),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: ['P', 'S', 'Ç', 'P', 'C', 'C', 'P']
-                .map(
-                  (day) => SizedBox(
-                    width: 26.w,
-                    child: Text(
-                      day,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: const Color(0XFF8E8E93),
-                        fontSize: 14.sp,
-                        fontFamily: 'SF Pro Display',
-                      ),
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
-        ),
-
-        SizedBox(height: 4.h),
-
-        // 4. TAKVİM GRİDİ
+        // 3. TARİH KUTULARI
         Expanded(
-          child: GridView.builder(
+          child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 10.w),
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 7,
-              crossAxisSpacing: 24.w,
-              mainAxisSpacing: 6.h,
-              childAspectRatio: 0.9,
+            child: Wrap(
+              spacing: 12.w,
+              runSpacing: 16.h,
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                // Sabit 7 günlük liste
+                ..._selectableDays.map((date) => _buildDateCard(date)),
+
+                // --- 8. ELEMAN: Özel Dönüşen Buton ---
+                _buildDynamicCustomDateButton(),
+              ],
             ),
-            itemCount: daysInMonth + firstDayOffset,
-            itemBuilder: (context, index) {
-              if (index < firstDayOffset) return const SizedBox.shrink();
-
-              final day = index - firstDayOffset + 1;
-              final date = DateTime(
-                _currentMonth.year,
-                _currentMonth.month,
-                day,
-              );
-
-              final isSelectable = _isDateSelectable(date);
-              final isSelected = _isSameDay(date, _selectedDate);
-              final isToday = _isSameDay(date, _now);
-
-              Color textColor;
-              if (isSelected) {
-                textColor = Colors.white;
-              } else if (isToday) {
-                textColor = AppColors.primaryColor;
-              } else if (isSelectable) {
-                textColor = AppColors.onBackgroundColor;
-              } else {
-                textColor = AppColors.dividerColor;
-              }
-
-              return GestureDetector(
-                onTap: isSelectable
-                    ? () {
-                        setState(() {
-                          _selectedDate = date;
-                        });
-                      }
-                    : null,
-                child: Center(
-                  child: Container(
-                    width: 24.w,
-                    height: 24.w,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isSelected
-                          ? AppColors.secondaryColor
-                          : Colors.transparent,
-                    ),
-                    child: Text(
-                      '$day',
-                      style: TextStyle(
-                        fontFamily: 'SF Pro Display',
-                        fontSize: 14.sp,
-                        height: 1,
-                        fontWeight: (isSelected || isToday)
-                            ? FontWeight.w600
-                            : FontWeight.w400,
-                        color: textColor,
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
           ),
         ),
 
-        // 5. UYARI YAZISI
+        // 4. UYARI YAZISI
         SizedBox(height: 10.h),
         Text(
-          '* Yalnızca önümüzdeki 7 gün için Buluşma oluşturabilirsiniz',
+          '* Topluluk hesapları herhangi bir ileri tarih için Buluşma oluşturabilir.',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 10.sp,
@@ -315,85 +272,57 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
           ),
         ),
 
-        // 6. SAAT SEÇİMİ
-        SizedBox(height: 18.h),
+        SizedBox(height: 16.h),
+        Text(
+          "Saat",
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w600,
+            color: AppColors.onBackgroundColor,
+          ),
+        ),
+        SizedBox(height: 12.h),
 
+        // 5. SAAT SEÇİMİ BUTONU
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            /*
-            if (_isTimeUndefined)
-              GestureDetector(
-                onTap: _pickTime,
-                child: Container(
-                  width: 40.h,
-                  height: 40.h,
-                  decoration: BoxDecoration(
-                    color: AppColors.inputFillColor,
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Icon(
-                    Icons.access_time,
-                    color: AppColors.onBackgroundColor,
-                    size: 24.sp,
-                  ),
+            GestureDetector(
+              onTap: _pickTime,
+              child: Container(
+                width: 112.w,
+                height: 40.h,
+                decoration: BoxDecoration(
+                  color: AppColors.inputFillColor,
+                  borderRadius: BorderRadius.circular(6.r),
                 ),
-              )
-            else*/
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: _pickTime,
-                  child: Container(
-                    width: 112.w,
-                    height: 40.h,
-                    decoration: BoxDecoration(
-                      color: AppColors.inputFillColor,
-                      borderRadius: BorderRadius.circular(24.r),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.access_time,
+                      size: 24.sp,
+                      color: AppColors.onBackgroundColor,
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.access_time,
-                          size: 24.sp,
-                          color: AppColors.onBackgroundColor,
-                        ),
-                        SizedBox(width: 8.w),
-                        Text(
-                          "${_selectedTime.hour.toString().padLeft(2, '0')} : ${_selectedTime.minute.toString().padLeft(2, '0')}",
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.onBackgroundColor,
-                            fontFamily: 'SF Pro Display',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                /*
-                  SizedBox(width: 8.w),
-                  GestureDetector(
-                    onTap: () => setState(() => _isTimeUndefined = true),
-                    child: Container(
-                      padding: EdgeInsets.all(4.w),
-                      child: Icon(
-                        Icons.close,
-                        color: AppColors.secondaryColor,
-                        size: 20.sp,
+                    SizedBox(width: 8.w),
+                    Text(
+                      "${_selectedTime.hour.toString().padLeft(2, '0')} : ${_selectedTime.minute.toString().padLeft(2, '0')}",
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.onBackgroundColor,
+                        fontFamily: 'SF Pro Display',
                       ),
                     ),
-                  ),*/
-              ],
+                  ],
+                ),
+              ),
             ),
           ],
         ),
 
-        // 7. İLERLE BUTONU
+        // 6. İLERLE BUTONU
         SizedBox(height: 18.h),
-
         PopupNextButton(
           onPressed: () {
             widget.onNext(_selectedDate, _selectedTime, false);
@@ -401,5 +330,128 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
         ),
       ],
     );
+  }
+
+  Widget _buildDateCard(DateTime date) {
+    final isSelected = _isSameDay(_selectedDate, date);
+    final dayStr = DateFormat('d MMM', 'tr_TR').format(date);
+    final weekdayStr = DateFormat('EEEE', 'tr_TR').format(date);
+
+    return GestureDetector(
+      onTap: () => setState(() => _selectedDate = date),
+      child: Container(
+        width: 64.w,
+        height: 48.h,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF3F5F7),
+          borderRadius: BorderRadius.circular(10.r),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryColor : Colors.transparent,
+            width: isSelected ? 1.5 : 1.0,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              dayStr,
+              style: TextStyle(
+                fontSize: 11.sp,
+                fontWeight: FontWeight.bold,
+                color: AppColors.onBackgroundColor,
+                fontFamily: 'SF Pro Display',
+              ),
+            ),
+            Text(
+              weekdayStr,
+              maxLines: 1,
+              style: TextStyle(
+                fontSize: 8.sp,
+                color: AppColors.onBackgroundColor,
+                fontFamily: 'SF Pro Display',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- Dönüşen Özel Buton ---
+  Widget _buildDynamicCustomDateButton() {
+    // Eğer özel bir tarih seçilmediyse Klasik '+' butonunu göster
+    if (_customSelectedDate == null) {
+      return GestureDetector(
+        onTap: _pickCustomDate,
+        child: Container(
+          width: 32.w,
+          height: 32.w,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF3F5F7),
+            borderRadius: BorderRadius.circular(8.r),
+            border: Border.all(color: Colors.black12, width: 0.5),
+          ),
+          child: Icon(
+            Icons.add,
+            color: AppColors.onBackgroundColor.withOpacity(0.5),
+            size: 18.sp,
+          ),
+        ),
+      );
+    }
+    // Eğer özel tarih seçildiyse, kutucuk gibi göster
+    else {
+      final isSelected = _isSameDay(_selectedDate, _customSelectedDate!);
+      final dayStr = DateFormat('d MMM', 'tr_TR').format(_customSelectedDate!);
+      final weekdayStr = DateFormat(
+        'EEEE',
+        'tr_TR',
+      ).format(_customSelectedDate!);
+
+      return GestureDetector(
+        onTap: () {
+          if (isSelected) {
+            _pickCustomDate(); // Tıklayarak yeniden tarih seç
+          } else {
+            setState(() => _selectedDate = _customSelectedDate!); // Sadece seç
+          }
+        },
+        child: Container(
+          width: 64.w,
+          height: 48.h,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF3F5F7),
+            borderRadius: BorderRadius.circular(10.r),
+            border: Border.all(
+              color: isSelected ? AppColors.primaryColor : Colors.transparent,
+              width: isSelected ? 1.5 : 1.0,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                dayStr,
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.onBackgroundColor,
+                  fontFamily: 'SF Pro Display',
+                ),
+              ),
+              Text(
+                weekdayStr,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 8.sp,
+                  color: AppColors.onBackgroundColor,
+                  fontFamily: 'SF Pro Display',
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
   }
 }

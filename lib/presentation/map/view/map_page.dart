@@ -840,16 +840,20 @@ class _MapPageState extends State<MapPage> {
                         flex: 2,
                         child: MapTimeFilter(
                           onChanged: (range) {
+                            // 1. Durumu güncelle
                             setState(() => _filterTimeRange = range);
 
-                            if (_filterDebounce?.isActive ?? false)
-                              _filterDebounce!.cancel();
+                            // 2. Önceki zamanlayıcıyı iptal et
+                            _filterDebounce?.cancel();
 
+                            // 3. Debounce süresini 150-200ms civarında tutarak akıcılığı sağla
                             _filterDebounce = Timer(
-                              const Duration(milliseconds: 200),
+                              const Duration(milliseconds: 150),
                               () {
+                                // Filtreleri uygula
                                 _applyLocalFilters();
 
+                                // Analytics kaydı
                                 getIt<AnalyticsService>().logFilterMapByTime(
                                   FilterMapByTimeAnalyticsConfig(time: range),
                                 );
