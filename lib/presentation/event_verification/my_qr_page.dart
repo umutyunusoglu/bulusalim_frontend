@@ -48,7 +48,7 @@ class _MyQrPageState extends State<MyQrPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      appBar: buildAppBar(),
+      appBar: buildAppBar(context),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/domain/session_state.dart';
 
 class ActionButtonsSpeedDial extends StatefulWidget {
   const ActionButtonsSpeedDial({
@@ -55,72 +56,89 @@ class _ActionButtonsSpeedDialState extends State<ActionButtonsSpeedDial>
 
   @override
   Widget build(BuildContext context) {
-    _checkAndRunAnimation();
-
-    final isUserInEvent = _sessionService.currentState.ongoingEvents.isNotEmpty;
-    return ValueListenableBuilder(
+    return ValueListenableBuilder<SessionState>(
       valueListenable: _sessionService.stateListenable,
       builder: (context, state, child) {
-        return AnimatedBuilder(
-          animation: _shineController,
-          builder: (context, child) {
-            return SpeedDial(
-              openCloseDial: widget.isDialOpen,
-              // Ana buton ikonu yerine parlama efektli bir widget veriyoruz
-              child: _buildShineIcon(),
-              activeChild: const Icon(Icons.close, color: Colors.white),
-              backgroundColor: AppColors.primaryColor,
-              foregroundColor: Colors.white,
-              activeBackgroundColor: AppColors.primaryColor,
-              activeForegroundColor: Colors.white,
-              elevation: 8,
-              spacing: 6,
-              spaceBetweenChildren: 8,
-              overlayColor: Colors.transparent,
-              overlayOpacity: 0.0,
-              buttonSize: const Size(64, 64),
-              childrenButtonSize: const Size(64, 64),
-              childMargin: const EdgeInsets.symmetric(vertical: 5),
-              children: _buildChildren(context, isUserInEvent),
-            );
-          },
+        final currentState = _sessionService.currentState;
+        final isUserInEvent = currentState.ongoingEvents.isNotEmpty;
+        // Animasyon kontrolünü burada yapıyoruz ama tasarımı etkilemiyoruz
+        _handleAnimation(isUserInEvent);
+
+        return SpeedDial(
+          openCloseDial: widget.isDialOpen,
+          activeChild: const Icon(Icons.close, color: Colors.white),
+          backgroundColor: AppColors.primaryColor,
+          foregroundColor: Colors.white,
+          activeBackgroundColor: AppColors.primaryColor,
+          activeForegroundColor: Colors.white,
+          elevation: 8,
+          spacing: 6,
+          spaceBetweenChildren: 8,
+          overlayColor: Colors.transparent,
+          overlayOpacity: 0.0,
+          // Boyutları burada kesinleştiriyoruz
+          buttonSize: const Size(64, 64),
+          childrenButtonSize: const Size(64, 64),
+          childMargin: const EdgeInsets.symmetric(vertical: 5),
+          children: _buildChildren(context, isUserInEvent),
+          // Sadece İkon kısmını animasyonlu hale getiriyoruz ki buton iskeleti bozulmasın
+          child: AnimatedBuilder(
+            animation: _shineController,
+            builder: (context, _) => _buildShineIcon(isUserInEvent),
+          ),
         );
       },
     );
   }
 
-  // Parlama efektini oluşturan ana fonksiyon
-  Widget _buildShineIcon() {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        const Icon(Icons.add, color: Colors.white),
-        ClipOval(
-          child: SizedBox(
-            width: 64,
-            height: 64,
-            child: Transform.rotate(
-              angle: 0.5, // Parıltının açısı
-              child: Transform.translate(
-                offset: Offset(-100 + (_shineController.value * 200), 0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.white.withOpacity(0.05),
-                        Colors.white.withOpacity(0.5),
-                        Colors.white.withOpacity(0),
-                      ],
-                      stops: const [0.35, 0.5, 0.65],
+  // Boyut kaybını önlemek için Stack'i genişletiyoruz
+  Widget _buildShineIcon(bool showShine) {
+    return SizedBox(
+      width: 64, // Butonun tam boyutuyla eşleşmeli
+      height: 64,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          const Icon(
+            Icons.add,
+            color: Colors.white,
+            size: 28,
+          ), // İkon boyutu netleşti
+          if (showShine)
+            Positioned.fill(
+              // Parlamanın butonu taşırmamasını sağlar
+              child: ClipOval(
+                child: Transform.rotate(
+                  angle: 0.5,
+                  child: Transform.translate(
+                    offset: Offset(-100 + (_shineController.value * 200), 0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.white.withOpacity(0.0),
+                            Colors.white.withOpacity(0.4),
+                            Colors.white.withOpacity(0.0),
+                          ],
+                          stops: const [0.3, 0.5, 0.7],
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
+  }
+
+  void _handleAnimation(bool shouldAnimate) {
+    if (shouldAnimate) {
+      if (!_shineController.isAnimating) _shineController.repeat();
+    } else {
+      if (_shineController.isAnimating) _shineController.stop();
+    }
   }
 
   List<SpeedDialChild> _buildChildren(
