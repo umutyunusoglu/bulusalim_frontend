@@ -57,14 +57,12 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
 
     final university = currentUser.university ?? 'Üniversite Seçilmedi';
     final phoneNumber = currentUser.phoneNumber ?? 'Telefon Numarası Eklenmedi';
-    final socialMedia = currentUser.instagram ?? 'Sosyal Medya Bağlanmadı';
     final accountType = currentUser.accountType ?? AccountType.personal;
     final isPrivateAccount = currentUser.isPrivate ?? false;
 
     setState(() {
       _university = university;
       _phoneNumber = phoneNumber;
-      _socialMedia = socialMedia;
       _accountType = accountType;
       _isPrivateAccount = isPrivateAccount;
     });

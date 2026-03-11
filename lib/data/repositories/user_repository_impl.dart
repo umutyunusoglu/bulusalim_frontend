@@ -67,25 +67,19 @@ class UserRepositoryImpl implements UserRepository {
           .doc(uid)
           .collection('eventLog')
           .where('status', whereIn: ['upcoming', 'ongoing'])
-          .orderBy('date')
+          .orderBy(
+            'date',
+          ) // Eğer eventLog dökümanlarında 'date' alanı yoksa burası hata verebilir, 'updatedAt' kullanıyor olabilirsin.
           .get();
 
-      final eventFutures = historySnapshot.docs.map((
-        doc,
-      ) async {
+      final eventFutures = historySnapshot.docs.map((doc) async {
         final historyData = doc.data();
-        final eventId = historyData['eventID'] as Identifier; // ID'yi al
+        final eventId = historyData['eventID'] as Identifier;
 
-        final eventDoc = await _firestore
-            .collection('events')
-            .doc(eventId)
-            .get();
+        // BURA DEĞİŞTİ: Doğrudan Repository kullanıyoruz ki Enriched ve Sensitive datalar gelsin
+        final eventEntity = await eventRepository.getEvent(eventId);
 
-        if (!eventDoc.exists) return null;
-
-        final eventEntity = EventModel.fromFirestore(
-          eventDoc.data()!,
-        ).toEntity();
+        if (eventEntity == null) return null;
 
         return eventEntity.copyWith(
           myStatus: historyData['status'].toString(),
@@ -142,72 +136,58 @@ class UserRepositoryImpl implements UserRepository {
   Stream<UserEntity?> watchUser(Identifier userID) {
     final uid = userID;
 
-    return _firestore
-        .collection('users')
-        .doc(uid)
-        .snapshots() // 1. Dinlemeyi başlatıyoruz
-        .asyncMap((userDocSnapshot) async {
-          // 2. Her update geldiğinde ASYNC işlem yapıyoruz
+    return _firestore.collection('users').doc(uid).snapshots().asyncMap((
+      userDocSnapshot,
+    ) async {
+      try {
+        if (!userDocSnapshot.exists) return null;
 
-          try {
-            if (!userDocSnapshot.exists) return null;
+        final historySnapshot = await _firestore
+            .collection('users')
+            .doc(uid)
+            .collection('eventLog')
+            .where('status', whereIn: ['upcoming', 'ongoing'])
+            .orderBy('date')
+            .get();
 
-            // --- BURASI ESKİ KODUNUN AYNISI (Event Log Fetching) ---
-            final historySnapshot = await _firestore
-                .collection('users')
-                .doc(uid)
-                .collection('eventLog')
-                .where('status', whereIn: ['upcoming', 'ongoing'])
-                .orderBy('date')
-                .get(); // DİKKAT: Burası hala 'get', yani eventLog değişirse stream tetiklenmez!
+        final eventFutures = historySnapshot.docs.map((doc) async {
+          final historyData = doc.data();
+          final eventId = historyData['eventID'] as Identifier;
 
-            final eventFutures = historySnapshot.docs.map((doc) async {
-              final historyData = doc.data();
-              final eventId = historyData['eventID'] as Identifier;
+          // BURA DEĞİŞTİ: Doğrudan Repository kullanıyoruz
+          final eventEntity = await eventRepository.getEvent(eventId);
 
-              final eventDoc = await _firestore
-                  .collection('events')
-                  .doc(eventId)
-                  .get();
+          if (eventEntity == null) return null;
 
-              if (!eventDoc.exists) return null;
+          return eventEntity.copyWith(
+            myStatus: historyData['status'].toString(),
+            myRole: historyData['role'].toString(),
+          );
+        }).toList();
 
-              final eventEntity = EventModel.fromFirestore(
-                eventDoc.data()!,
-              ).toEntity();
+        final realActiveEvents = (await Future.wait(
+          eventFutures,
+        )).whereType<EventEntity>().toList();
 
-              return eventEntity.copyWith(
-                myStatus: historyData['status'].toString(),
-                myRole: historyData['role'].toString(),
-              );
-            }).toList();
+        final hobbyList =
+            (userDocSnapshot.data()?['hobbies'] as List<dynamic>?)
+                ?.map((hobby) => hobby.toString())
+                .toList() ??
+            [];
 
-            final realActiveEvents = (await Future.wait(
-              eventFutures,
-            )).whereType<EventEntity>().toList();
+        final userModel = await UserModel.fromFirestore(
+          userDocSnapshot.data()!,
+        );
 
-            // --- HOBBY LIST ---
-            final hobbyList =
-                (userDocSnapshot.data()?['hobbies'] as List<dynamic>?)
-                    ?.map((hobby) => hobby.toString())
-                    .toList() ??
-                [];
-
-            // --- MODEL OLUŞTURMA ---
-            final userModel = await UserModel.fromFirestore(
-              userDocSnapshot.data()!,
-            );
-
-            return userModel.toEntity().copyWith(
-              activeEvents: realActiveEvents,
-              hobbies: hobbyList,
-            );
-          } catch (e) {
-            // Stream içinde hata olursa logla ve null dön (veya hatayı fırlat)
-            _logger.error('User Repository Stream Error: $e');
-            return null;
-          }
-        });
+        return userModel.toEntity().copyWith(
+          activeEvents: realActiveEvents,
+          hobbies: hobbyList,
+        );
+      } catch (e) {
+        _logger.error('User Repository Stream Error: $e');
+        return null;
+      }
+    });
   }
 
   @override
@@ -598,43 +578,32 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Stream<List<EventEntity>> watchActiveEvents(
-    Identifier userID,
-  ) {
+  Stream<List<EventEntity>> watchActiveEvents(Identifier userID) {
     return _firestore
         .collection('users')
         .doc(userID)
         .collection('eventLog')
-        .where('status', whereIn: ['upcoming', 'ongoing']) // Sadece aktifler
+        .where('status', whereIn: ['upcoming', 'ongoing'])
         .orderBy('updatedAt', descending: true)
         .snapshots()
         .asyncMap((snapshot) async {
           if (snapshot.docs.isEmpty) return [];
 
-          // ID'leri alıp detayları çekme (Parallel Fetch)
           final eventFutures = snapshot.docs.map((doc) async {
             final historyData = doc.data();
             final eventId = historyData['eventID'] as Identifier;
 
-            // Event detayını çek
-            final eventDoc = await _firestore
-                .collection('events')
-                .doc(eventId)
-                .get();
-            if (!eventDoc.exists) return null;
+            // BURA DEĞİŞTİ: Repository üzerinden enrich edilmiş halini çekiyoruz
+            final eventEntity = await eventRepository.getEvent(eventId);
 
-            final eventEntity = EventModel.fromFirestore(
-              eventDoc.data()!,
-            ).toEntity();
+            if (eventEntity == null) return null;
 
-            // Status ve Role bilgisini güncelle
             return eventEntity.copyWith(
               myStatus: historyData['status'] as String,
               myRole: historyData['role'].toString(),
             );
           });
 
-          // Null olanları temizle ve listeyi döndür
           final events = await Future.wait(eventFutures);
           return events.whereType<EventEntity>().toList();
         });

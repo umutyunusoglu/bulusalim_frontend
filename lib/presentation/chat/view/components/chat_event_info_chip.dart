@@ -28,9 +28,9 @@ class ChatEventInfoChip extends StatelessWidget {
     final dateStr = _dateFormat.format(startTime);
 
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: MainAxisSize.min, // Alanı minimumda tutar
       children: [
-        // 1. Konum
+        // 1. Konum (FLEXIBLE KALDIRILDI)
         GestureDetector(
           onTap: onLocationTap,
           behavior: HitTestBehavior.opaque,
@@ -62,17 +62,15 @@ class ChatEventInfoChip extends StatelessWidget {
       children: [
         Icon(icon, size: 12.sp, color: AppColors.darkSlate),
         SizedBox(width: 2.w),
-        Flexible(
-          child: Text(
-            text,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontFamily: 'SF Pro Display',
-              fontSize: 11.sp,
-              fontWeight: FontWeight.w400,
-              color: AppColors.locationBadgeText,
-            ),
+        // FLEXIBLE KALDIRILDI
+        Text(
+          text,
+          maxLines: 1,
+          style: TextStyle(
+            fontFamily: 'SF Pro Display',
+            fontSize: 11.sp,
+            fontWeight: FontWeight.w400,
+            color: AppColors.locationBadgeText,
           ),
         ),
       ],

@@ -256,7 +256,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
         userID: getIt<FirebaseAuth>().currentUser!.uid,
         username: username,
         nameSurname: name,
-        email: universityEmail ?? '',
         birthDate: dob,
         gender: gender,
         university: university,
@@ -273,7 +272,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
         accountType: AccountType.personal,
         communityData: null,
         phoneNumber: getIt<AuthService>().getUserPhoneNumber(),
-        instagram: '',
       );
 
       await userRepository.createUser(

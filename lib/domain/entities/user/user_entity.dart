@@ -10,7 +10,6 @@ class UserEntity extends Equatable {
     required this.userID,
     required this.username,
     required this.nameSurname,
-    required this.email,
     required this.birthDate,
     required this.gender,
     required this.university,
@@ -26,7 +25,6 @@ class UserEntity extends Equatable {
     required this.communityData,
     required this.accountType,
     required this.phoneNumber,
-    required this.instagram,
 
     this.isPrivate = false,
     this.hideSavedEvents = false,
@@ -65,7 +63,6 @@ class UserEntity extends Equatable {
   }) {
     return UserEntity(
       userID: userID ?? this.userID,
-      email: email ?? this.email,
       username: username ?? this.username,
       nameSurname: nameSurname ?? this.nameSurname,
       birthDate: birthDate ?? this.birthDate,
@@ -76,7 +73,6 @@ class UserEntity extends Equatable {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       phoneNumber: phoneNumber ?? this.phoneNumber,
-      instagram: instagram ?? this.instagram,
       accountType: accountType ?? this.accountType,
       communityData: communityData ?? this.communityData,
       lastActiveAt: lastActiveAt ?? this.lastActiveAt,
@@ -93,7 +89,6 @@ class UserEntity extends Equatable {
   }
 
   final Identifier userID;
-  final String email;
   final String username;
   final String nameSurname;
   final DateTime birthDate;
@@ -104,7 +99,6 @@ class UserEntity extends Equatable {
   final bool isUniversityVerified;
   final String profileImageUrl;
   final String? bio;
-  final String? instagram;
   final AccountType accountType;
   final DateTime createdAt;
   final DateTime updatedAt;
