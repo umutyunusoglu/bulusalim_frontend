@@ -11,13 +11,6 @@ import 'package:outnest/presentation/home/view/home_content_page.dart';
 import 'package:outnest/presentation/shared/action_buttons_speed_dial.dart';
 import 'package:outnest/presentation/shared/navigation/navigate_to_camera.dart';
 
-class MockEvent {
-  MockEvent({this.name, this.imageUrls});
-  final String? name;
-  final List<String>? imageUrls;
-}
-// -----------------------------------------------------
-
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
