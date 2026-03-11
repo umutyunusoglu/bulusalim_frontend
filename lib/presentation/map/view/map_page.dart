@@ -43,6 +43,7 @@ import 'package:outnest/presentation/map/view/components/steps/time_selection_st
 import 'package:outnest/presentation/map/view/components/steps/visibility_selection_step.dart';
 import 'package:outnest/presentation/shared/action_buttons_speed_dial.dart';
 import 'package:outnest/presentation/shared/category_filter_chip.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/event_card/event_card.dart';
 import 'package:outnest/presentation/shared/navigation/navigate_to_camera.dart';
 
@@ -188,12 +189,9 @@ class _MapPageState extends State<MapPage> {
     } else {
       _logger.warn('Konum izni reddedildi. Harita konumu alınamayacak.');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Konum izni reddedildi. Harita konumu alınamayacak.',
-            ),
-          ),
+        showErrorPopup(
+          context,
+          message: 'Konum izni reddedildi. Harita konumu alınamayacak.',
         );
 
         setState(() {
@@ -1458,10 +1456,9 @@ class _MapPageState extends State<MapPage> {
     } catch (e) {
       _logger.error('Etkinlik oluşturulurken hata: $e');
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Etkinlik oluşturulurken bir hata oluştu.'),
-        ),
+      showErrorPopup(
+        context,
+        message: 'Etkinlik oluşturulurken bir hata oluştu.',
       );
     }
   }

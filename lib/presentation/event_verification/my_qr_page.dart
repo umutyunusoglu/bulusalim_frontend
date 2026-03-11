@@ -3,6 +3,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/domain/services/event_verification_service.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
+import 'package:outnest/presentation/shared/utility/get_current_location.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:outnest/presentation/event_verification/components/build_app_bar.dart';
 import 'package:outnest/presentation/event_verification/components/build_main_button.dart';
@@ -28,7 +30,7 @@ class _MyQrPageState extends State<MyQrPage> {
   }
 
   Future<String?> _generateUniqueData() async {
-    final currentLocation = await _getCurrentLocation();
+    final currentLocation = await getCurrentLocation(context);
 
     if (currentLocation == null) return null;
 
@@ -40,52 +42,6 @@ class _MyQrPageState extends State<MyQrPage> {
     );
 
     return secret;
-  }
-
-  Future<Position?> _getCurrentLocation() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    try {
-      serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        _showErrorSnackBar('Lütfen cihazınızın konum servislerini açın.');
-        return null;
-      }
-
-      permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          _showErrorSnackBar('Konum izni reddedildi.');
-          return null;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        _showErrorSnackBar('Konum izni kalıcı olarak reddedilmiş.');
-        return null;
-      }
-
-      return await Geolocator.getCurrentPosition(
-        timeLimit: const Duration(seconds: 10),
-        desiredAccuracy: LocationAccuracy.high,
-      );
-    } catch (e) {
-      _showErrorSnackBar('Konum alınamadı. GPS sinyalini kontrol edin.');
-      return null;
-    }
-  }
-
-  void _showErrorSnackBar(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.redAccent,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 
   @override
