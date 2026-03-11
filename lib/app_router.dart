@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/services/file_service.dart';
@@ -27,6 +28,7 @@ import 'package:outnest/presentation/notification/view/notification_page.dart';
 import 'package:outnest/presentation/profile/view/profile_dispatcher.dart';
 import 'package:outnest/presentation/search/view/search_page.dart';
 import 'package:outnest/presentation/settings/view/account_settings_page.dart';
+import 'package:outnest/presentation/settings/view/community_account_settings_page.dart';
 import 'package:outnest/presentation/settings/view/edit_profile_page.dart';
 import 'package:outnest/presentation/settings/view/settings_page.dart';
 import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
@@ -211,7 +213,17 @@ final router = GoRouter(
         ),
         GoRoute(
           path: 'edit-account',
-          builder: (context, state) => const AccountSettingsPage(),
+          builder: (context, state) {
+            final currentUser = getIt<SessionService>().currentUser;
+            if (currentUser != null) {
+              if (currentUser!.accountType == AccountType.community) {
+                return const CommunityAccountSettingsPage();
+              } else {
+                return const AccountSettingsPage();
+              }
+            }
+            return const AccountSettingsPage();
+          },
         ),
       ],
     ),
