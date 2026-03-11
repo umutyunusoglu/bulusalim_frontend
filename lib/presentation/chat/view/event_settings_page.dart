@@ -846,7 +846,6 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                       value: timeValue,
                       icon: Icons.access_time,
                       onTap: timeOnTap,
-                      showTrailing: timeShowTrailing,
                     ),
 
                     SizedBox(height: 8.h),

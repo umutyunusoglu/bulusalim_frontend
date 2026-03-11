@@ -77,7 +77,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text('Bir hata oluştu: ${snapshot.error}'));
+            return const Center(child: CircularProgressIndicator());
           }
 
           final allEnrichedEvents = snapshot.data ?? [];
