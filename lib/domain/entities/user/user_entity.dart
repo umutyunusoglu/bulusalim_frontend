@@ -138,9 +138,7 @@ class CommunityData extends Equatable {
     if (data['communityTeamMembers'] != null) {
       final membersList = data['communityTeamMembers'] as List<dynamic>;
       for (final member in membersList) {
-        // Map<String, dynamic> diye kısıtlamak yerine sadece Map mi diye bakıyoruz
         if (member is Map) {
-          // İçeriye gönderirken zorla String, dynamic formatına çeviriyoruz
           communityTeamMembers.add(
             CompactUserEntity.fromMap(Map<String, dynamic>.from(member)),
           );
@@ -151,6 +149,7 @@ class CommunityData extends Equatable {
     final instagramUrl = data['instagramUrl'] as String? ?? '';
     final whatsappUrl = data['whatsappUrl'] as String? ?? '';
     final websiteUrl = data['websiteUrl'] as String? ?? '';
+    final contactEmail = data['contactEmail'] as String? ?? '';
 
     return CommunityData(
       communityBio: communityBio,
@@ -159,8 +158,10 @@ class CommunityData extends Equatable {
       instagramUrl: instagramUrl,
       whatsappUrl: whatsappUrl,
       websiteUrl: websiteUrl,
+      contactEmail: contactEmail,
     );
   }
+
   CommunityData({
     required this.communityBio,
     required this.communityPhotoUrl,
@@ -168,6 +169,7 @@ class CommunityData extends Equatable {
     required this.instagramUrl,
     required this.whatsappUrl,
     required this.websiteUrl,
+    required this.contactEmail,
   });
 
   CommunityData copyWith({
@@ -177,6 +179,7 @@ class CommunityData extends Equatable {
     String? instagramUrl,
     String? whatsappUrl,
     String? websiteUrl,
+    String? contactEmail,
   }) {
     return CommunityData(
       communityBio: communityBio ?? this.communityBio,
@@ -185,6 +188,7 @@ class CommunityData extends Equatable {
       instagramUrl: instagramUrl ?? this.instagramUrl,
       whatsappUrl: whatsappUrl ?? this.whatsappUrl,
       websiteUrl: websiteUrl ?? this.websiteUrl,
+      contactEmail: contactEmail ?? this.contactEmail,
     );
   }
 
@@ -198,6 +202,7 @@ class CommunityData extends Equatable {
       'instagramUrl': instagramUrl,
       'whatsappUrl': whatsappUrl,
       'websiteUrl': websiteUrl,
+      'contactEmail': contactEmail,
     };
   }
 
@@ -207,6 +212,7 @@ class CommunityData extends Equatable {
   final String? instagramUrl;
   final String? whatsappUrl;
   final String websiteUrl;
+  final String contactEmail;
 
   @override
   List<Object?> get props => [
@@ -216,5 +222,6 @@ class CommunityData extends Equatable {
     instagramUrl,
     whatsappUrl,
     websiteUrl,
+    contactEmail,
   ];
 }

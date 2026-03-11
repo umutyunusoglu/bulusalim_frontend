@@ -7,12 +7,14 @@ import 'package:outnest/app_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
+import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/presentation/groups/view/groups_page.dart';
 import 'package:outnest/presentation/settings/view/about_community_page.dart';
 import 'package:outnest/presentation/settings/view/account_settings_page.dart';
 import 'package:outnest/presentation/settings/view/blocked_users_page.dart';
+import 'package:outnest/presentation/settings/view/community_account_settings_page.dart';
 import 'package:outnest/presentation/settings/view/components/avatar_settings_tile.dart';
 import 'package:outnest/presentation/settings/view/components/settings_section_header.dart';
 import 'package:outnest/presentation/settings/view/components/settings_tile.dart';
@@ -161,10 +163,9 @@ class _SettingsPageState extends State<SettingsPage>
 
   @override
   Widget build(BuildContext context) {
+    // 1. SessionService üzerinden kullanıcıyı alıyoruz
     final currentUser = getIt<SessionService>().currentUser;
-    final profileImageUrl = currentUser?.profileImageUrl ?? '';
 
-    // --- HESAP TÜRÜ KONTROLÜ ---
     final isCommunity = currentUser?.accountType == AccountType.community;
 
     return Scaffold(
@@ -195,14 +196,17 @@ class _SettingsPageState extends State<SettingsPage>
         padding: EdgeInsets.symmetric(horizontal: 16.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: _buildSettingsContent(isCommunity, profileImageUrl),
+          children: _buildSettingsContent(currentUser),
         ),
       ),
     );
   }
 
-  // --- DİNAMİK LİSTE ÜRETİCİSİ ---
-  List<Widget> _buildSettingsContent(bool isCommunity, String profileImageUrl) {
+  // DİNAMİK LİSTE ÜRETİCİSİ
+  List<Widget> _buildSettingsContent(UserEntity? currentUser) {
+    final isCommunity = currentUser?.accountType == AccountType.community;
+    final profileImageUrl = currentUser?.profileImageUrl ?? '';
+
     final content = <Widget>[
       SizedBox(height: 8.h),
       // 1. ÜST KISIM: PROFİLİ DÜZENLE
@@ -218,7 +222,7 @@ class _SettingsPageState extends State<SettingsPage>
       ),
     ];
 
-    // 2. SADECE TOPLULUK İSE: TOPLULUK HAKKINDA (Aynı Component Kullanıldı)
+    // 2. SADECE TOPLULUK İSE: TOPLULUK HAKKINDA
     if (isCommunity) {
       content.add(
         AvatarSettingsTile(
@@ -244,7 +248,21 @@ class _SettingsPageState extends State<SettingsPage>
           subtitle:
               'Gizlilik, üniversite, şifre, iletişim bilgileri, hesap türü',
           onTap: () {
-            context.push('/settings/edit-account');
+            if (isCommunity && currentUser != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CommunityAccountSettingsPage(
+                    currentUser: currentUser,
+                  ),
+                ),
+              );
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AccountSettingsPage()),
+              );
+            }
           },
         ),
       )

@@ -19,6 +19,7 @@ import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/session_state.dart';
 import 'package:outnest/presentation/home/view/components/post/small_stacked_avatars.dart';
 import 'package:outnest/presentation/profile/view/community_info_page.dart';
+import 'package:outnest/presentation/profile/view/components/community_bottom_sheet.dart';
 import 'package:outnest/presentation/profile/view/components/dump_tab.dart';
 import 'package:outnest/presentation/profile/view/components/events_tab.dart';
 import 'package:outnest/presentation/profile/view/components/grid_tab.dart';
@@ -372,6 +373,7 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
                       context,
                       isCurrentUser,
                       isMember,
+                      state,
                     ),
                   ),
                   SliverPersistentHeader(
@@ -414,6 +416,7 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
     BuildContext context,
     bool isCurrentUser,
     bool isMember,
+    SessionState state,
   ) {
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
@@ -597,15 +600,20 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
                 child: LoginButton(
                   label: 'iletişim',
                   onPress: () {
+                    final commData = isCurrentUser
+                        ? state.user?.communityData
+                        : _communityUser?.communityData;
+
                     showModalBottomSheet(
                       context: context,
                       useRootNavigator: true,
                       backgroundColor: Colors.transparent,
                       isScrollControlled: true,
-                      builder: (context) => const CommunityContactBottomSheet(
-                        instagram: 'instagram.com/itugastronomi/',
-                        website: 'https://chat.whatsapp.com/abc...',
-                        email: 'gastronomi@itu.edu.tr',
+                      builder: (context) => CommunityBottomSheet(
+                        instagram: commData?.instagramUrl ?? '',
+                        whatsapp: commData?.whatsappUrl ?? '',
+                        website: commData?.websiteUrl ?? '',
+                        email: commData?.contactEmail ?? '',
                       ),
                     );
                   },
@@ -754,114 +762,6 @@ class SectionHeaderDelegate extends SliverPersistentHeaderDelegate {
       color: Theme.of(context).colorScheme.surface,
       alignment: Alignment.center,
       child: Stack(alignment: Alignment.bottomCenter, children: [child]),
-    );
-  }
-}
-
-class CommunityContactBottomSheet extends StatelessWidget {
-  const CommunityContactBottomSheet({
-    required this.instagram,
-    required this.website,
-    required this.email,
-    super.key,
-  });
-  final String instagram;
-  final String website;
-  final String email;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.only(
-        top: 12.h,
-        bottom: MediaQuery.of(context).padding.bottom + 24.h,
-        left: 24.w,
-        right: 24.w,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 40.w,
-            height: 4.h,
-            margin: EdgeInsets.only(bottom: 24.h),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(2.r),
-            ),
-          ),
-
-          // Instagram
-          if (instagram.isNotEmpty)
-            _ContactItem(
-              icon: Icons.camera_alt_outlined,
-              text: instagram,
-              onTap: () {},
-            ),
-          if (instagram.isNotEmpty) SizedBox(height: 8.h),
-
-          // Website / WhatsApp
-          if (website.isNotEmpty)
-            _ContactItem(
-              icon: Icons.link_rounded,
-              text: website,
-              onTap: () {},
-            ),
-          if (website.isNotEmpty) SizedBox(height: 8.h),
-
-          // Email
-          if (email.isNotEmpty)
-            _ContactItem(
-              icon: Icons.mail_outline_rounded,
-              text: email,
-              onTap: () {},
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ContactItem extends StatelessWidget {
-  final IconData icon;
-  final String text;
-  final VoidCallback onTap;
-
-  const _ContactItem({
-    required this.icon,
-    required this.text,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12.r),
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
-        child: Row(
-          children: [
-            Icon(icon, color: const Color(0xFF19446B), size: 22.sp),
-            SizedBox(width: 16.w),
-            Expanded(
-              child: Text(
-                text,
-                style: TextStyle(
-                  fontFamily: 'SF Pro Display',
-                  fontSize: 15.sp,
-                  color: const Color(0xFF19446B),
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
