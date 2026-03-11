@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
+import 'package:go_router/go_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/services/remote_config_service.dart';
@@ -42,13 +43,13 @@ class ActionButtonsSpeedDial extends StatelessWidget {
             vertical: 5,
           ), // çocuklar arasındaki boşluk
           // Küçültme animasyonu
-          children: _buildChildren(),
+          children: _buildChildren(context),
         );
       },
     );
   }
 
-  List<SpeedDialChild> _buildChildren() {
+  List<SpeedDialChild> _buildChildren(BuildContext context) {
     return [
       _buildChild(
         icon: Icons.camera_alt_outlined,
@@ -63,10 +64,12 @@ class ActionButtonsSpeedDial extends StatelessWidget {
         onTap: onLocationTap,
       ),
       _buildChild(
-        icon: Icons.bug_report_outlined,
+        icon: Icons.qr_code_outlined,
         iconColor: AppColors.darkSecondaryColor,
         backgroundColor: AppColors.backgroundColor,
-        onTap: _launchFeedback,
+        onTap: () {
+          context.push('/my-qr');
+        },
       ),
     ];
   }
