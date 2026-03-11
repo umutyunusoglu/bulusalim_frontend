@@ -12,8 +12,6 @@ class UserModel extends Model<UserEntity> {
     required this.userID,
     required this.username,
     required this.nameSurname,
-    required this.searchName,
-    required this.email,
     required this.birthDate,
     required this.gender,
     required this.university,
@@ -29,7 +27,6 @@ class UserModel extends Model<UserEntity> {
     required this.followerCount,
     required this.isPrivate,
     required this.hideSavedEvents,
-    required this.instagram,
     required this.phoneNumber,
     required this.accountType,
     required this.communityData,
@@ -39,10 +36,8 @@ class UserModel extends Model<UserEntity> {
   factory UserModel.fromEntity(UserEntity entity) {
     return UserModel(
       userID: entity.userID,
-      email: entity.email,
       nameSurname: entity.nameSurname,
       username: entity.username,
-      searchName: entity.username.toLowerCase(),
       birthDate: entity.birthDate,
       gender: entity.gender,
       university: entity.university,
@@ -58,7 +53,6 @@ class UserModel extends Model<UserEntity> {
       followerCount: entity.followerCount,
       isPrivate: entity.isPrivate,
       hideSavedEvents: entity.hideSavedEvents,
-      instagram: entity.instagram,
       phoneNumber: entity.phoneNumber,
       accountType: entity.accountType,
       communityData: entity.communityData,
@@ -86,11 +80,9 @@ class UserModel extends Model<UserEntity> {
 
     return UserModel(
       userID: doc['userID'] as String,
-      email: doc['email'] as String? ?? '',
       nameSurname: doc['nameSurname'] as String? ?? 'Bilinmeyen Kullanıcı',
       username: doc['username'] as String? ?? 'Bilinmeyen Kullanıcı',
-      searchName: (doc['username'] as String? ?? 'Bilinmeyen Kullanıcı')
-          .toLowerCase(),
+
       birthDate: birthDate,
       gender: gender,
       university: doc['universityName'] as String?,
@@ -108,7 +100,6 @@ class UserModel extends Model<UserEntity> {
       followerCount: doc['followerCount'] as int? ?? 0,
       isPrivate: doc['isPrivate'] as bool? ?? false,
       hideSavedEvents: doc['hideSavedEvents'] as bool? ?? false,
-      instagram: doc['instagram'] as String?,
       phoneNumber: doc['phoneNumber'] as String?,
       accountType: AccountType.fromString(
         doc['accountType'] as String? ?? 'personal',
@@ -127,10 +118,8 @@ class UserModel extends Model<UserEntity> {
     );
     return {
       'userID': userID,
-      'email': email,
       'username': username,
       'nameSurname': nameSurname,
-      'searchName': searchName,
       'birthDate': Timestamp.fromDate(birthDate),
       'gender': gender.toString(),
       'universityName': university,
@@ -146,7 +135,6 @@ class UserModel extends Model<UserEntity> {
       'followerCount': followerCount,
       'isPrivate': isPrivate,
       'hideSavedEvents': hideSavedEvents,
-      'instagram': instagram,
       'phoneNumber': phoneNumber,
       'accountType': accountType.toString(),
       'communityData': communityData?.toMap(),
@@ -157,7 +145,6 @@ class UserModel extends Model<UserEntity> {
   UserEntity toEntity() {
     return UserEntity(
       userID: userID,
-      email: email,
       username: username,
       nameSurname: nameSurname,
       birthDate: birthDate,
@@ -175,7 +162,6 @@ class UserModel extends Model<UserEntity> {
       followerCount: followerCount,
       isPrivate: isPrivate,
       hideSavedEvents: hideSavedEvents,
-      instagram: instagram,
       phoneNumber: phoneNumber,
       accountType: accountType,
       communityData: communityData,
@@ -183,10 +169,8 @@ class UserModel extends Model<UserEntity> {
   }
 
   final Identifier userID;
-  final String email;
   final String username;
   final String nameSurname;
-  final String searchName;
   final DateTime birthDate;
   final GenderEnum gender;
   final String? university;
@@ -201,8 +185,6 @@ class UserModel extends Model<UserEntity> {
   final int followerCount;
   final bool isPrivate;
   final bool hideSavedEvents;
-
-  final String? instagram;
   final String? phoneNumber;
   final AccountType accountType;
   final CommunityData? communityData;

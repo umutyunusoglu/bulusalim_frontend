@@ -11,6 +11,7 @@ import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/usecases/upload_community_picture_usecase.dart';
 import 'package:outnest/presentation/settings/view/components/add_authority.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 
 class AboutCommunityPage extends StatefulWidget {
   const AboutCommunityPage({super.key});
@@ -361,15 +362,19 @@ class _AboutCommunityPageState extends State<AboutCommunityPage> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Topluluk bilgileri güncellendi.')),
+        showInfoPopup(
+          context,
+          message: 'Topluluk bilgileri başarıyla güncellendi.',
         );
+
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Kaydedilirken bir hata oluştu: $e')),
+        showErrorPopup(
+          context,
+          message:
+              'Topluluk bilgileri kaydedilirken bir hata oluştu, lütfen tekrar deneyin.',
         );
       }
       debugPrint('Update Error: $e');

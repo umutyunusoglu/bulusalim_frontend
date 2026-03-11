@@ -4,6 +4,7 @@ import 'package:outnest/presentation/auth/view/components/auth_input.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 
 class RegisterStepView extends StatelessWidget {
   const RegisterStepView({
@@ -47,18 +48,8 @@ class RegisterStepView extends StatelessWidget {
     if (validator != null) {
       final error = validator!();
       if (error != null) {
-        // Hata varsa SnackBar göster ve dur.
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              error,
-              style: const TextStyle(fontFamily: 'SF Pro Display'),
-            ),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(milliseconds: 1500),
-          ),
-        );
+        showErrorPopup(context, message: error);
+
         return;
       }
     }

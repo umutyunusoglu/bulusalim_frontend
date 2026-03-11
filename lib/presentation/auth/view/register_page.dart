@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 
 // Yükleme durumlarını yönetmek için Enum
 enum AuthStatus { none, phone, google, apple }
@@ -33,20 +34,6 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  // --- HATA GÖSTERME YARDIMCISI ---
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(color: Colors.white),
-        ),
-        backgroundColor: Colors.redAccent,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
   Future<void> _handleSendCode() async {
     // Herhangi bir işlem sürüyorsa durdur
     if (_authStatus != AuthStatus.none) return;
@@ -56,17 +43,20 @@ class _RegisterPageState extends State<RegisterPage> {
 
     // 2. VALIDASYON KONTROLLERİ
     if (rawNumber.isEmpty) {
-      _showErrorSnackBar('Lütfen telefon numaranızı giriniz.');
+      showErrorPopup(context, message: 'Lütfen telefon numaranızı giriniz.');
       return;
     }
 
     if (!rawNumber.startsWith('5')) {
-      _showErrorSnackBar('Telefon numarası 5 ile başlamalıdır.');
+      showErrorPopup(context, message: 'Telefon numarası 5 ile başlamalıdır.');
       return;
     }
 
     if (rawNumber.length != 10) {
-      _showErrorSnackBar('Lütfen numaranızı eksiksiz giriniz (10 hane).');
+      showErrorPopup(
+        context,
+        message: 'Lütfen numaranızı eksiksiz giriniz (10 hane).',
+      );
       return;
     }
 
@@ -83,7 +73,10 @@ class _RegisterPageState extends State<RegisterPage> {
         setState(() => _authStatus = AuthStatus.none);
 
         if (result.error != null) {
-          _showErrorSnackBar('Hata: ${result.error}');
+          showErrorPopup(
+            context,
+            message: 'Bir hata ile karşılaşıldı. Lütfen tekrar deneyiniz.',
+          );
         } else {
           final verificationID = result.verificationId;
           final resendToken = result.resendToken;
@@ -100,7 +93,7 @@ class _RegisterPageState extends State<RegisterPage> {
     } catch (e) {
       if (mounted) {
         setState(() => _authStatus = AuthStatus.none);
-        _showErrorSnackBar('Beklenmedik bir hata oluştu.');
+        showErrorPopup(context, message: 'Beklenmedik bir hata oluştu.');
       }
       debugPrint('Beklenmedik hata: $e');
     }
@@ -248,8 +241,10 @@ class _RegisterPageState extends State<RegisterPage> {
                           } catch (e) {
                             if (mounted) {
                               setState(() => _authStatus = AuthStatus.none);
-                              _showErrorSnackBar(
-                                e.toString().replaceAll('Exception: ', ''),
+                              showErrorPopup(
+                                context,
+                                message:
+                                    'Google ile giriş yaparken hata oluştu. Lütfen tekrar deneyiniz.',
                               );
                             }
                           }
@@ -301,8 +296,9 @@ class _RegisterPageState extends State<RegisterPage> {
                             } catch (e) {
                               if (mounted) {
                                 setState(() => _authStatus = AuthStatus.none);
-                                _showErrorSnackBar(
-                                  e.toString().replaceAll('Exception: ', ''),
+                                showErrorPopup(
+                                  context,
+                                  message: 'Apple ile giriş yaparken hata oluştu. Lütfen tekrar deneyiniz.',
                                 );
                               }
                             }

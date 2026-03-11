@@ -4,6 +4,7 @@ import 'package:outnest/domain/datasources/university_datasource.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/form/validators/validate_university_mail.dart';
 import 'package:pinput/pinput.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -78,9 +79,7 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
       _pinFocusNode.requestFocus();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Doğrulama kodu gönderildi!')),
-        );
+        showInfoPopup(context, message: 'Doğrulama kodu gönderildi!');
       }
     } catch (e) {
     } finally {
