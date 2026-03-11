@@ -1,14 +1,13 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
-import 'package:outnest/presentation/shared/toast_popup.dart';
-import 'package:outnest/core/constants/configs/app_config.dart';
-import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/services/draft_post_service.dart';
 import 'package:outnest/domain/usecases/upload_post_usecase.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 
 class NewPostPage extends StatefulWidget {
   const NewPostPage({
@@ -298,13 +297,12 @@ class _NewPostPageState extends State<NewPostPage> {
     final draftService = getIt<DraftPostService>();
 
     // Widget dispose olmadan önce messenger'ı ve verileri kopyala
-    final messenger = ScaffoldMessenger.of(context);
     final event = widget.event;
     final media = List<File>.from(_selectedMedia);
     final caption = _captionController.text.trim();
 
     // 1. Kullanıcıya "Başlıyoruz" bilgisi ver
-    showToastPopup(messenger, 'Paylaşılıyor...');
+    showInfoPopup(context, message: 'Gönderiniz paylaşılıyor...');
 
     // 2. Sayfayı hemen kapat
     context.go('/home');
@@ -322,15 +320,14 @@ class _NewPostPageState extends State<NewPostPage> {
 
       // Başarılı ise taslağı temizle ve haber ver
       await draftService.clearDraft(event.id);
-      showToastPopup(messenger, 'Paylaşıldı!');
+      showInfoPopup(context, message: 'Gönderiniz başarıyla paylaşıldı');
     } catch (e) {
       // Hata durumunda uyar
-      showToastPopup(
-        messenger,
-        'Hata oluştu, tekrar deneniyor.',
-        isError: true,
+      showErrorPopup(
+        context,
+        message:
+            'Gönderiniz paylaşılırken bir hata ile karşılaşıldı. Lütfen Tekrar Deneyiniz.',
       );
-      // Not: Burada retry mekanizması veya taslağı koruma mantığı eklenebilir.
     }
   }
 }

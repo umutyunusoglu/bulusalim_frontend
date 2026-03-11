@@ -27,6 +27,7 @@ import 'package:outnest/presentation/auth/view/components/otp_row.dart';
 import 'package:outnest/presentation/auth/view/components/register_step_view.dart';
 import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
 import 'package:outnest/presentation/shared/category_filter_chip.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/form/formatters/name_surname_formatter.dart';
 import 'package:outnest/presentation/shared/form/formatters/username_formatter.dart';
 import 'package:outnest/presentation/shared/form/validators/validate_date_of_birth.dart';
@@ -289,7 +290,11 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
 
       // EKRANA HATA MESAJI BASAN KOD BU:
       if (mounted) {
-        _showError('Bir sorun oluştu: $e');
+        showErrorPopup(
+          context,
+          message:
+              'Kayıt gerçekleşirken bir sorunla karşılaşıldı. Lütfen tekrar deneyiniz',
+        );
       }
     } finally {
       if (mounted) {
@@ -479,11 +484,9 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                 getIt<LoggingService>().warn(exists.toString());
 
                 if (exists) {
-                  // Hata mesajını göster (SnackBar veya bir state değişkeni ile)
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Bu kullanıcı adı zaten alınmış!'),
-                    ),
+                  showErrorPopup(
+                    context,
+                    message: 'Bu kullanıcı adı zaten alınmış!',
                   );
                 } else {
                   // 3. Her şey yolundaysa genel _nextPage fonksiyonunu çağır
@@ -554,8 +557,10 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                 } on FirebaseFunctionsException catch (error) {
                   if (mounted) {
                     if (error.code == 'resource-exhausted') {
-                      _showError(
-                        'Çok fazla mail yollama isteği gönderdiniz. Lütfen 1 dakika sonra tekrar deneyin!',
+                      showErrorPopup(
+                        context,
+                        message:
+                            'Çok fazla mail yollama isteği gönderdiniz. Lütfen 1 dakika sonra tekrar deneyin!',
                       );
 
                       _logger.error(
@@ -624,7 +629,10 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                   _nextPage(); // Başarılıysa devam et
                 } catch (e) {
                   if (mounted) {
-                    _showError('Kod hatalı veya geçersiz: $e');
+                    showErrorPopup(
+                      context,
+                      message: 'Kod hatalı veya geçersiz',
+                    );
                     setState(() => _isVerifyingEmail = true);
                   }
                 }
@@ -902,39 +910,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
     }
   }
 
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.error_outline, color: Colors.white, size: 20.sp),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Text(
-                message,
-                style: TextStyle(
-                  fontFamily: 'SF Pro Display',
-                  fontSize: 14.sp,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.redAccent.shade400,
-        behavior: SnackBarBehavior.floating, // Havada asılı durması için
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-        margin: EdgeInsets.all(20.w), // Kenarlardan boşluk
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
-
   Future<void> _syncAllPermissions() async {
     final notification = await Permission.notification.status;
     final bluetooth = await Permission.bluetooth.status;
@@ -971,7 +946,11 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
         Navigator.pop(context); // Modal'ı kapat
       }
     } catch (e) {
-      if (mounted) _showError('Resim seçilirken bir hata oluştu: $e');
+      if (mounted)
+        showErrorPopup(
+          context,
+          message: 'Resim seçilirken bir hata oluştu',
+        );
     }
   } // --- İZİN YARDIMCI FONKSİYONLARI ---
 

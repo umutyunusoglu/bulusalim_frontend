@@ -5,12 +5,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
-import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/domain/entities/notification/follow_notification_entity.dart';
 import 'package:outnest/domain/entities/user/friend_entity.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 // Durum Enum'ı
@@ -123,7 +123,11 @@ class _FollowRequestTileState extends State<FollowRequestTile> {
       );
       // Not: removeFollowee çağrıldığında SessionService muhtemelen kendini günceller
     } catch (e) {
-      _handleError(e, previousStatus);
+      setState(() => _currentStatus = previousStatus);
+      showErrorPopup(
+        context,
+        message: 'İşlem başarısız oldu, lütfen tekrar deneyin.',
+      );
     }
   }
 
@@ -154,7 +158,11 @@ class _FollowRequestTileState extends State<FollowRequestTile> {
       await _userRepository.addFollowee(currentUser.userID, target);
       await _userRepository.addFollower(widget.item.userID, me);
     } catch (e) {
-      _handleError(e, previousStatus);
+      setState(() => _currentStatus = previousStatus);
+      showErrorPopup(
+        context,
+        message: 'İşlem başarısız oldu, lütfen tekrar deneyin.',
+      );
     }
   }
 
@@ -174,7 +182,11 @@ class _FollowRequestTileState extends State<FollowRequestTile> {
         false, // isAccepted başlangıçta false
       );
     } catch (e) {
-      _handleError(e, previousStatus);
+      setState(() => _currentStatus = previousStatus);
+      showErrorPopup(
+        context,
+        message: 'İşlem başarısız oldu, lütfen tekrar deneyin.',
+      );
     }
   }
 
@@ -193,22 +205,10 @@ class _FollowRequestTileState extends State<FollowRequestTile> {
         widget.item.userID,
       );
     } catch (e) {
-      _handleError(e, previousStatus);
-    }
-  }
-
-  // --- YARDIMCI: HATA YÖNETİMİ ---
-  void _handleError(Object error, FollowStatus? previousStatus) {
-    debugPrint("İşlem başarısız: $error");
-    if (mounted) {
-      // Durumu geri al (Rollback)
       setState(() => _currentStatus = previousStatus);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('İşlem başarısız oldu, lütfen tekrar deneyin.'),
-          backgroundColor: Colors.redAccent,
-        ),
+      showErrorPopup(
+        context,
+        message: 'İşlem başarısız oldu, lütfen tekrar deneyin.',
       );
     }
   }

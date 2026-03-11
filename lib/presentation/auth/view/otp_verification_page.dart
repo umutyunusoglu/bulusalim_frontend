@@ -9,6 +9,7 @@ import 'package:outnest/domain/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 
 class OtpVerificationPage extends StatefulWidget {
   const OtpVerificationPage({
@@ -103,8 +104,10 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
     } catch (e) {
       debugPrint('Hata: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Doğrulama hatası: $e')),
+        showErrorPopup(
+          context,
+          message:
+              'Kod Doğrulanırken Bir Hata ile Karşılaşıldı. Lütfen Tekrar Deneyiniz.',
         );
       }
     } finally {
@@ -126,8 +129,10 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
 
       if (result.error != null) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Kod gönderilemedi: ${result.error}')),
+          showErrorPopup(
+            context,
+            message:
+                'Kod Gönderilirken Bir Hata İle Karşılaşıldı. Lütfen Tekrar Deneyiniz.',
           );
         }
       } else {
@@ -139,11 +144,9 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
         _startTimer();
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Yeni kod gönderildi!'),
-              backgroundColor: Colors.green,
-            ),
+          showInfoPopup(
+            context,
+            message: 'Yeni kod gönderildi!',
           );
         }
       }

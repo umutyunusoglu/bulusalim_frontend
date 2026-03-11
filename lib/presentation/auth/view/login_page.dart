@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/domain/services/auth_service.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/form/formatters/phone_input_formatter.dart';
 
 // Yükleme durumlarını ayırt etmek için enum
@@ -32,19 +33,6 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(color: Colors.white),
-        ),
-        backgroundColor: Colors.redAccent,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
   Future<void> _handleLogin() async {
     // Herhangi bir işlem sürüyorsa engelle
     if (_authStatus != AuthStatus.none) return;
@@ -52,17 +40,20 @@ class _LoginPageState extends State<LoginPage> {
     final rawNumber = _phoneController.text.replaceAll(' ', '');
 
     if (rawNumber.isEmpty) {
-      _showErrorSnackBar('Lütfen telefon numaranızı giriniz.');
+      showErrorPopup(context, message: 'Lütfen telefon numaranızı giriniz.');
       return;
     }
 
     if (!rawNumber.startsWith('5')) {
-      _showErrorSnackBar('Telefon numarası 5 ile başlamalıdır.');
+      showErrorPopup(context, message: 'Telefon numarası 5 ile başlamalıdır.');
       return;
     }
 
     if (rawNumber.length != 10) {
-      _showErrorSnackBar('Lütfen numaranızı eksiksiz giriniz (10 hane).');
+      showErrorPopup(
+        context,
+        message: 'Lütfen numaranızı eksiksiz giriniz (10 hane).',
+      );
       return;
     }
 
@@ -77,7 +68,11 @@ class _LoginPageState extends State<LoginPage> {
         setState(() => _authStatus = AuthStatus.none);
 
         if (result.error != null) {
-          _showErrorSnackBar('Hata: ${result.error}');
+          showErrorPopup(
+            context,
+            message:
+                'Hesabınız Doğrulanırken Bir hata oluştu. Lütfen tekrar deneyiniz.',
+          );
         } else {
           final verificationID = result.verificationId;
           final resendToken = result.resendToken;
@@ -94,7 +89,7 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       if (mounted) {
         setState(() => _authStatus = AuthStatus.none);
-        _showErrorSnackBar('Beklenmedik bir hata oluştu.');
+        showErrorPopup(context, message: 'Beklenmedik bir hata oluştu.');
       }
       debugPrint('Beklenmedik hata: $e');
     }
@@ -226,8 +221,10 @@ class _LoginPageState extends State<LoginPage> {
                           } catch (e) {
                             if (mounted) {
                               setState(() => _authStatus = AuthStatus.none);
-                              _showErrorSnackBar(
-                                e.toString().replaceAll('Exception: ', ''),
+                              showErrorPopup(
+                                context,
+                                message:
+                                    'Google ile giriş yaparken hata oluştu. Lütfen tekrar deneyiniz.',
                               );
                             }
                           }
@@ -272,8 +269,10 @@ class _LoginPageState extends State<LoginPage> {
                             } catch (e) {
                               if (mounted) {
                                 setState(() => _authStatus = AuthStatus.none);
-                                _showErrorSnackBar(
-                                  e.toString().replaceAll('Exception: ', ''),
+                                showErrorPopup(
+                                  context,
+                                  message:
+                                      'Apple ile giriş yaparken hata oluştu. Lütfen tekrar deneyiniz.',
                                 );
                               }
                             }

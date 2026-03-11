@@ -10,6 +10,7 @@ import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/session_state.dart';
 import 'package:outnest/presentation/profile/view/profile_page.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 
 class UserListItem extends StatefulWidget {
   final CompactUserEntity user;
@@ -82,8 +83,9 @@ class _UserListItemState extends State<UserListItem> {
       // Sadece senin tarafındaki ana işlem başarısız olursa buraya düşer
       debugPrint("ANA SİLME İŞLEMİ HATASI: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('İşlem başarısız: $e')),
+        showErrorPopup(
+          context,
+          message: 'İşlem başarısız, lütfen tekrar deneyin.',
         );
       }
     } finally {
@@ -151,8 +153,9 @@ class _UserListItemState extends State<UserListItem> {
     } catch (e) {
       debugPrint("İşlem başarısız: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('İşlem tamamlanamadı.')),
+        showErrorPopup(
+          context,
+          message: 'İşlem tamamlanamadı, lütfen tekrar deneyin.',
         );
       }
     } finally {

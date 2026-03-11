@@ -33,6 +33,7 @@ import 'package:outnest/presentation/profile/view/components/private_account_vie
 import 'package:outnest/presentation/profile/view/components/profile_photo.dart';
 import 'package:outnest/presentation/profile/view/components/profile_tab_bar.dart';
 import 'package:outnest/presentation/profile/view/follows_page.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/login_button.dart';
 import 'package:outnest/presentation/shared/popup.dart';
 
@@ -389,13 +390,11 @@ class _ProfilePageState extends State<ProfilePage> {
       await sessionService.refreshSession();
     } catch (e) {
       debugPrint("Takip işlemi başarısız: $e");
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('İşlem başarısız oldu, lütfen tekrar deneyin.'),
-          ),
-        );
-      }
+
+      showErrorPopup(
+        context,
+        message: 'İşlem başarısız oldu, lütfen tekrar deneyin.',
+      );
     }
   }
 
@@ -685,9 +684,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                               // 1. Kullanıcıya işlemin başladığını hissettir (Opsiyonel: Dialog'u kapatmadan önce loading gösterilebilir)
                               // Şimdilik pop yapıp ana ekranda Snackbar gösterelim.
-                              final scaffoldMessenger = ScaffoldMessenger.of(
-                                context,
-                              );
+
                               final navigator = Navigator.of(context);
 
                               navigator
@@ -705,14 +702,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                     );
 
                                 // 3. Başarılı durum bildirimi
-                                scaffoldMessenger.showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      resultMessage ??
-                                          'Davet başarıyla gönderildi!',
-                                    ),
-                                    backgroundColor: Colors.green,
-                                  ),
+                                showInfoPopup(
+                                  context,
+                                  message: 'Davet başarıyla gönderildi!',
                                 );
 
                                 getIt<AnalyticsService>()
@@ -728,15 +720,11 @@ class _ProfilePageState extends State<ProfilePage> {
                                 );
                               } on Exception catch (e) {
                                 // 4. Hata durum bildirimi
-                                scaffoldMessenger.showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Davet gönderilemedi: $e',
-                                    ),
-                                    backgroundColor: Colors.red,
-                                  ),
+                                showErrorPopup(
+                                  context,
+                                  message:
+                                      'Davet gönderilemedi, lütfen tekrar deneyin.',
                                 );
-                                debugPrint('Paylaşım hatası: $e');
                               }
                             },
                             style: TextButton.styleFrom(
