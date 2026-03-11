@@ -1,25 +1,15 @@
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:outnest/application/providers/get_it_init.dart';
-import 'package:outnest/presentation/home/view/components/custom_tab_bar.dart';
-import 'package:outnest/presentation/home/view/components/header.dart';
-import 'package:outnest/core/constants/theme/color_themes.dart';
-import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
-import 'package:outnest/core/utils/types/enums/feed_type.dart';
-import 'package:outnest/domain/entities/feed/event/event_entity.dart';
-import 'package:outnest/domain/services/analytics/analytics_service.dart';
-import 'package:outnest/domain/services/analytics/event_configs/select_feed_analytics_config.dart';
-import 'package:outnest/domain/services/file_service.dart';
-import 'package:outnest/domain/services/remote_config_service.dart';
-import 'package:outnest/domain/services/session_service.dart';
-import 'package:outnest/presentation/home/view/home_content_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/utils/types/enums/feed_type.dart';
+import 'package:outnest/domain/services/analytics/analytics_service.dart';
+import 'package:outnest/domain/services/analytics/event_configs/select_feed_analytics_config.dart';
+import 'package:outnest/presentation/home/view/components/custom_tab_bar.dart';
+import 'package:outnest/presentation/home/view/components/header.dart';
+import 'package:outnest/presentation/home/view/home_content_page.dart';
 import 'package:outnest/presentation/shared/action_buttons_speed_dial.dart';
-import 'package:outnest/presentation/shared/dialogs/show_multiple_events_selection_dialog.dart';
-import 'package:outnest/presentation/shared/dialogs/show_no_events_dialog.dart';
 import 'package:outnest/presentation/shared/navigation/navigate_to_camera.dart';
-import 'package:url_launcher/url_launcher.dart' as url_launcher;
 
 class MockEvent {
   MockEvent({this.name, this.imageUrls});
