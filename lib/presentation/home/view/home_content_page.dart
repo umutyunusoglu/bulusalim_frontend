@@ -1,7 +1,9 @@
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/presentation/profile/view/components/empty_profile_screen.dart';
 import 'package:outnest/presentation/shared/event_card/event_card.dart';
 import 'package:outnest/presentation/shared/post_card/post_card.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
@@ -165,13 +167,32 @@ class _HomeContentPageState extends State<HomeContentPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text('Henüz içerik yok.'),
           const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () => _feedRepository.refresh(),
-            //loading
-            child: const Text(''),
-          ),
+          if (widget.feedType == FeedType.university) ...[
+            const Text('Henüz Üniversiteni Doğrulamadın'),
+            const Padding(padding: EdgeInsets.only(top: 16)),
+
+            const EmptyProfileScreen(
+              text: 'Üniversiteni Doğrulama İçin Aşağıdaki Butona Tıklayın.',
+
+              icon: Icon(Icons.school),
+            ),
+            const Padding(padding: EdgeInsets.only(top: 16)),
+
+            ElevatedButton(
+              onPressed: () => context.go('/settings/edit-account'),
+              //loading
+              child: const Text('Üniversiteni Doğrula'),
+            ),
+          ] else ...[
+            const Text('Henüz içerik yok.'),
+
+            ElevatedButton(
+              onPressed: () => _feedRepository.refresh(),
+              //loading
+              child: const Text('Yenile'),
+            ),
+          ],
         ],
       ),
     );

@@ -23,6 +23,7 @@ import 'package:outnest/presentation/notification/view/follow_request_page.dart'
 import 'package:outnest/presentation/notification/view/notification_page.dart';
 import 'package:outnest/presentation/profile/view/profile_dispatcher.dart';
 import 'package:outnest/presentation/search/view/search_page.dart';
+import 'package:outnest/presentation/settings/view/account_settings_page.dart';
 import 'package:outnest/presentation/settings/view/edit_profile_page.dart';
 import 'package:outnest/presentation/settings/view/settings_page.dart';
 import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
@@ -188,6 +189,10 @@ final router = GoRouter(
         GoRoute(
           path: 'edit-profile',
           builder: (context, state) => const EditProfilePage(),
+        ),
+        GoRoute(
+          path: 'edit-account',
+          builder: (context, state) => const AccountSettingsPage(),
         ),
       ],
     ),

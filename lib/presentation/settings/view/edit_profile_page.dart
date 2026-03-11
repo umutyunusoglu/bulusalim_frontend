@@ -582,23 +582,23 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     return Column(
       children: [
-        Stack(
-          alignment: Alignment.bottomRight,
-          children: [
-            CircleAvatar(
-              radius: 38.r,
-              backgroundColor: Colors.grey.shade200,
-              backgroundImage:
-                  imageProvider, // Yukarıdaki mantığı buraya veriyoruz
-              child: _profileImageUrl.isEmpty
-                  ? Icon(Icons.person, size: 38.sp, color: Colors.grey)
-                  : null,
-            ),
+        GestureDetector(
+          onTap: () => _showPhotoOptions(),
+          child: Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              CircleAvatar(
+                radius: 38.r,
+                backgroundColor: Colors.grey.shade200,
+                backgroundImage:
+                    imageProvider, // Yukarıdaki mantığı buraya veriyoruz
+                child: _profileImageUrl.isEmpty
+                    ? Icon(Icons.person, size: 38.sp, color: Colors.grey)
+                    : null,
+              ),
 
-            // DÜZENLEME (KALEM) İKONU
-            GestureDetector(
-              onTap: _showPhotoOptions,
-              child: Container(
+              // DÜZENLEME (KALEM) İKONU
+              Container(
                 padding: EdgeInsets.all(4.r),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -614,8 +614,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
                 child: Icon(Icons.edit, size: 13.sp, color: Colors.black),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         SizedBox(height: 8.h),
         Text(
