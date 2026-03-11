@@ -5,8 +5,7 @@ enum ScreenEnum {
   chat._('chat'),
   notifications._('notifications'),
   settings._('settings'),
-  map._('map'),
-  eventPreview._('eventPreview');
+  map._('map');
 
   const ScreenEnum._(this.value);
   final String value;
@@ -30,8 +29,6 @@ enum ScreenEnum {
         return settings;
       case 'map':
         return map;
-      case 'eventPreview':
-        return eventPreview;
       default:
         throw ArgumentError('Unknown screen: $value');
     }
