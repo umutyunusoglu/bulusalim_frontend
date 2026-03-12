@@ -19,7 +19,6 @@ import 'package:outnest/domain/services/analytics/event_configs/unpin_post_analy
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
-import 'package:outnest/domain/services/share_links_service.dart';
 import 'package:outnest/presentation/home/view/components/event/participant_bottom_sheet.dart';
 import 'package:outnest/presentation/home/view/components/post/content_tag_chip.dart';
 import 'package:outnest/presentation/home/view/components/post/emoji_chip.dart';
