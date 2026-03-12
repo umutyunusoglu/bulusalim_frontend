@@ -683,6 +683,7 @@ class _MapPageState extends State<MapPage> {
             byPeople = currentUser.university == e.creator.university;
           }
 
+        //Custom case is legacy
         case VisibilityEnum.custom:
           if (e.visibilityGroupID == null) {
             byPeople = false;
@@ -871,7 +872,6 @@ class _MapPageState extends State<MapPage> {
                             'herkes',
                             'takipçiler',
                             'okul',
-                            'kümeler',
                           ],
                           initial: 'herkes',
                           onChanged: (val) {

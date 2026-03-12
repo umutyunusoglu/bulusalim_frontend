@@ -97,9 +97,9 @@ class _FollowRequestTileState extends State<FollowRequestTile> {
     final isPrivate = targetUser?.isPrivate ?? false;
 
     if (isPrivate) {
-      await _sendFollowRequest();
+      _sendFollowRequest();
     } else {
-      await _performDirectFollow();
+      _performDirectFollow();
     }
   }
 
@@ -324,6 +324,7 @@ class _FollowRequestTileState extends State<FollowRequestTile> {
               onTap: () {
                 // Silme/Reddetme mantığı
               },
+
               child: _buildStatusContainer(
                 'sil',
                 const Color(0xFFF2F2F7),
