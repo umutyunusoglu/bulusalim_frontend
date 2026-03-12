@@ -186,7 +186,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                       color: Colors.white,
                       size: 30,
                     ),
-                    onPressed: () => context.pop(),
+                    onPressed: () => context.push('/home'),
                   ),
                 ),
 

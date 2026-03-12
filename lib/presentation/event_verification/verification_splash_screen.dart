@@ -1,3 +1,4 @@
+import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
@@ -14,15 +15,8 @@ class VerificationSplashScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.reply,
-            color: AppColors.tertiaryColor,
-          ), // Lacivert geri oku
-          onPressed: () {
-            Navigator.pop(context); // Önceki ekrana dön
-          },
-        ),
+        automaticallyImplyLeading: false,
+        leading: null,
         actions: [
           IconButton(
             icon: const Icon(
@@ -42,7 +36,7 @@ class VerificationSplashScreen extends StatelessWidget {
           children: [
             // BAŞLIK
             const Text(
-              "Arkadaşının telefonuna yaklaş!",
+              "Buluşmada Olduğunu Doğrula",
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 22,
@@ -53,7 +47,7 @@ class VerificationSplashScreen extends StatelessWidget {
             const SizedBox(height: 15),
             // AÇIKLAMA METNİ
             const Text(
-              "Fotoğraf çekip paylaşabilmek için telefonunu arkadaşının telefonuna yaklaştırarak fotoğraf paylaşım moduna geçiş yapabilirsin.\n\nBir buluşma için yalnızca 3 fotoğraf paylaşabilirsin ve çekeceğin fotoğraflar ay sonu Dump’ında karşına çıkabilir.",
+              'Fotoğraf çekip paylaşabilmek için arkadaşının Qr’ını okutarak buluşmaya gittiğini doğrulamalısın.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -63,13 +57,31 @@ class VerificationSplashScreen extends StatelessWidget {
             ),
             const Spacer(), // Başlık ve Image arasındaki boşluğu doldurur
             // GRADYAN LOGO IMAGE ALANI (Tasarım bu)
-            Center(
-              child: Image.asset(
-                'assets/event_verification_logo.png', // Senin hazırladığın PNG dosyasının adı
-                width:
-                    MediaQuery.of(context).size.width *
-                    0.75, // Ekran genişliğinin %75'i kadar
-                fit: BoxFit.contain, // Görseli oranlı bir şekilde sığdır
+            AvatarGlow(
+              animate: true,
+              glowColor: AppColors.darkPrimaryColor,
+              duration: const Duration(milliseconds: 2000),
+              repeat: true,
+              // glowRadiusFactor: 1.0 tam genişliktir.
+              // Bunu 0.5 ile 1.0 arasında ayarlayarak yayılımın ne kadar dışa gideceğini seçebilirsin.
+              glowRadiusFactor: 0.1,
+              glowCount: 3, // Daha zengin bir görünüm için iç içe iki glow
+              glowShape: BoxShape.circle,
+              curve: Curves.easeOutQuart,
+              child: Container(
+                // Logonun etrafına biraz boşluk (padding) ekleyerek
+                // glow'un görselin tam altından değil, biraz daha dışından başlamasını simüle ediyoruz.
+                padding: const EdgeInsets.all(4.0),
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                ),
+                child: Image.asset(
+                  'assets/event_verification_logo.png',
+                  width:
+                      MediaQuery.of(context).size.width *
+                      0.70, // Biraz küçülttük ki glow'a alan kalsın
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
 
@@ -106,7 +118,7 @@ class VerificationSplashScreen extends StatelessWidget {
                       0, // Gölge Container'dan geldiği için burayı sıfırladık
                 ),
                 child: const Text(
-                  "QR oku",
+                  "QR Okut",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 17,
