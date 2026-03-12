@@ -30,6 +30,8 @@ class PushNotificationsServiceImpl implements PushNotificationsService {
   @override
   Future<void> initialize() async {
     _logger.info('Initializing Push Notifications Service');
+    NotificationSettings settings = await _firebaseMessaging
+        .requestPermission();
 
     // 2. SessionState'i Dinle (Login/Logout takibi için)
     _sessionService.stateListenable.addListener(_onSessionStateChanged);
