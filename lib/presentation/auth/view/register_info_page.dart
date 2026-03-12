@@ -952,11 +952,12 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
         Navigator.pop(context); // Modal'ı kapat
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         showErrorPopup(
           context,
           message: 'Resim seçilirken bir hata oluştu',
         );
+      }
     }
   } // --- İZİN YARDIMCI FONKSİYONLARI ---
 
@@ -1023,22 +1024,22 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
             SizedBox(width: 12.w),
             Row(
               children: [
-                Icon(
-                  value ? Icons.check_circle : Icons.cancel,
-                  color: value ? AppColors.primaryColor : Colors.grey.shade400,
-                  size: 20.sp,
-                ),
+                // Icon(
+                //   value ? Icons.check_circle : Icons.cancel,
+                //   color: value ? AppColors.primaryColor : Colors.grey.shade400,
+                //   size: 20.sp,
+                // ),
                 SizedBox(width: 6.w),
-                Text(
-                  value ? 'İzin Verildi' : 'Kapalı',
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w500,
-                    color: value
-                        ? AppColors.primaryColor
-                        : Colors.grey.shade500,
-                  ),
-                ),
+                // Text(
+                //   value ? 'İzin Verildi' : 'Kapalı',
+                //   style: TextStyle(
+                //     fontSize: 12.sp,
+                //     fontWeight: FontWeight.w500,
+                //     color: value
+                //         ? AppColors.primaryColor
+                //         : Colors.grey.shade500,
+                //   ),
+                // ),
                 SizedBox(width: 6.w),
 
                 if (!value)

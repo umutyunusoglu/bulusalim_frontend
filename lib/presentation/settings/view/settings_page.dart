@@ -12,9 +12,7 @@ import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/presentation/groups/view/groups_page.dart';
 import 'package:outnest/presentation/settings/view/about_community_page.dart';
-import 'package:outnest/presentation/settings/view/account_settings_page.dart';
 import 'package:outnest/presentation/settings/view/blocked_users_page.dart';
-import 'package:outnest/presentation/settings/view/community_account_settings_page.dart';
 import 'package:outnest/presentation/settings/view/components/avatar_settings_tile.dart';
 import 'package:outnest/presentation/settings/view/components/settings_section_header.dart';
 import 'package:outnest/presentation/settings/view/components/settings_tile.dart';
@@ -92,9 +90,6 @@ class _SettingsPageState extends State<SettingsPage>
     );
     await _checkAllPermissions();
   }
-
-  String _getStatusText(bool isGranted) =>
-      isGranted ? 'izin verildi' : 'izin verilmedi';
 
   void _showLogoutDialog(BuildContext context) {
     showDialog(
@@ -297,7 +292,6 @@ class _SettingsPageState extends State<SettingsPage>
       ..add(
         SettingsTile(
           title: 'Bildirimler',
-          trailingText: _getStatusText(_isNotifGranted),
           onTap: () => _navigateToPermissionDetail(
             title: 'Bildirimler',
             description:
@@ -309,7 +303,6 @@ class _SettingsPageState extends State<SettingsPage>
       ..add(
         SettingsTile(
           title: 'Konum Servisleri',
-          trailingText: _getStatusText(_isLocationGranted),
           onTap: () => _navigateToPermissionDetail(
             title: 'Konum Servisleri',
             description:
@@ -321,7 +314,6 @@ class _SettingsPageState extends State<SettingsPage>
       ..add(
         SettingsTile(
           title: 'Kamera',
-          trailingText: _getStatusText(_isCameraGranted),
           onTap: () => _navigateToPermissionDetail(
             title: 'Kamera',
             description:
@@ -333,7 +325,6 @@ class _SettingsPageState extends State<SettingsPage>
       ..add(
         SettingsTile(
           title: 'Fotoğraflar',
-          trailingText: _getStatusText(_isPhotosGranted),
           onTap: () => _navigateToPermissionDetail(
             title: 'Fotoğraflar',
             description:
