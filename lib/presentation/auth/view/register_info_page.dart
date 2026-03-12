@@ -990,7 +990,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
     return InkWell(
       borderRadius: BorderRadius.circular(12.r),
       // DEĞİŞİKLİK: Eğer değer true (izin verilmiş) ise onTap null olsun
-      onTap: value ? null : () => _handlePermissionTap(permission),
+      onTap: () => _handlePermissionTap(permission),
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: 14.h),
         child: Row(
@@ -1021,7 +1021,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                 ],
               ),
             ),
-            SizedBox(width: 12.w),
             Row(
               children: [
                 // Icon(
@@ -1030,6 +1029,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                 //   size: 20.sp,
                 // ),
                 SizedBox(width: 6.w),
+
                 // Text(
                 //   value ? 'İzin Verildi' : 'Kapalı',
                 //   style: TextStyle(
@@ -1040,14 +1040,11 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                 //         : Colors.grey.shade500,
                 //   ),
                 // ),
-                SizedBox(width: 6.w),
-
-                if (!value)
-                  Icon(
-                    Icons.chevron_right,
-                    size: 18.sp,
-                    color: Colors.grey.shade400,
-                  ),
+                Icon(
+                  Icons.chevron_right,
+                  size: 18.sp,
+                  color: Colors.grey.shade400,
+                ),
               ],
             ),
           ],
