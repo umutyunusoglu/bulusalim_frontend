@@ -76,13 +76,13 @@ class ProfileGridTab extends StatelessWidget {
         itemBuilder: (context, index) {
           // Index kontrolü düzeltildi:
           // Eğer index, pinned listesinin uzunluğundan küçükse o bir Pinned posttur.
-          final isPinnedItem = index < pinnedPosts.length;
+          final post = totalPosts[index];
+
+          final isPinnedItem = post.isPinned;
 
           final iconData = isPinnedItem
               ? Icons.push_pin
               : Icons.access_time_filled; // İsteğe bağlı ikon değişimi
-
-          final post = totalPosts[index];
 
           final isNetwork = post.imageUrls?.isNotEmpty ?? false;
           final imageUrl = isNetwork

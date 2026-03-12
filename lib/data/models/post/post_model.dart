@@ -25,6 +25,7 @@ class PostModel extends Model<PostEntity> {
     required this.showParticipants,
     required this.includeInDump,
     required this.imageUrls,
+    required this.isPinned,
     this.location,
     this.address,
   });
@@ -45,6 +46,7 @@ class PostModel extends Model<PostEntity> {
       emoteCounts: entity.emoteCounts,
       showParticipants: entity.showParticipants,
       includeInDump: entity.includeInDump,
+      isPinned: entity.isPinned,
     );
   }
 
@@ -183,6 +185,7 @@ class PostModel extends Model<PostEntity> {
         emoteCounts: parsedEmoteCounts,
         showParticipants: doc['showParticipants'] as bool? ?? true,
         includeInDump: doc['includeInDump'] as bool? ?? false,
+        isPinned: doc['isPinned'] as bool? ?? false,
       );
     } catch (e) {
       // Burası sadece en kötü senaryoda (PostModel'in kendisi oluşamazsa) çalışır.
@@ -210,6 +213,7 @@ class PostModel extends Model<PostEntity> {
       emoteCounts: emoteCounts,
       showParticipants: showParticipants,
       includeInDump: includeInDump,
+      isPinned: isPinned,
     );
   }
 
@@ -234,6 +238,7 @@ class PostModel extends Model<PostEntity> {
       'updatedAt': updatedAt,
       'showParticipants': showParticipants,
       'includeInDump': includeInDump,
+      'isPinned': isPinned,
       'feedType': feedType.toString(),
     };
   }
@@ -252,5 +257,6 @@ class PostModel extends Model<PostEntity> {
   final List<String> imageUrls;
   final List<CompactUserEntity> participants;
   final Map<EmoteEnum, int> emoteCounts;
+  final bool isPinned;
   final FeedEntityTypeEnum feedType = FeedEntityTypeEnum.post;
 }
