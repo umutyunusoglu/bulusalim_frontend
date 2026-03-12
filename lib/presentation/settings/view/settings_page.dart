@@ -269,6 +269,7 @@ class _SettingsPageState extends State<SettingsPage>
           },
         ),
       )
+      /*
       ..add(
         SettingsTile(
           title: 'Rozetler',
@@ -276,7 +277,7 @@ class _SettingsPageState extends State<SettingsPage>
             // TODO: Rozetler sayfasına yönlendir
           },
         ),
-      )
+      )*/
       ..add(
         SettingsTile(
           title: 'Engellenen Kullanıcılar',
