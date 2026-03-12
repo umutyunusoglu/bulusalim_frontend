@@ -871,7 +871,6 @@ class _MapPageState extends State<MapPage> {
                             'herkes',
                             'takipçiler',
                             'okul',
-                            'kümeler',
                           ],
                           initial: 'herkes',
                           onChanged: (val) {
