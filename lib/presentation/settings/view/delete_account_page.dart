@@ -213,19 +213,6 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
 
             SizedBox(height: 215.h),
 
-            // Şifre Uyarısı
-            Text(
-              'Bu işlemi onaylamak için şifreni girmen gerekiyor.',
-              style: TextStyle(
-                fontFamily: 'SF Pro Display',
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w400,
-                color: AppColors.textGrey,
-              ),
-            ),
-
-            SizedBox(height: 16.h),
-
             // Kırmızı/Turuncu Silme Butonu
             SizedBox(
               width: 173.w,
