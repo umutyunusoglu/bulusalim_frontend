@@ -68,7 +68,7 @@ class _MapTimeFilterState extends State<MapTimeFilter> {
       height: 40.h,
       padding: EdgeInsets.symmetric(horizontal: 10.w),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.3),
+        color: AppColors.inputFillColor,
         borderRadius: BorderRadius.circular(30.r),
         border: Border.all(color: const Color(0xFFC6D0D9), width: 1.2),
         boxShadow: [
