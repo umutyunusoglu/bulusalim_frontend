@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/providers/get_it_init.dart'; // getIt için gerekli
 import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
 import 'package:outnest/domain/services/session_service.dart'; // SessionService için gerekli
 import 'package:outnest/presentation/map/view/components/popup_next_button.dart';
 
@@ -51,9 +52,7 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
     // 2. KONTROL: Kullanıcı var mı ve hesabı topluluk hesabı mı?
     if (currentUser != null &&
         currentUser.accountType != null &&
-        currentUser.accountType.toString().toLowerCase().contains(
-          'community',
-        )) {
+        currentUser.accountType == AccountType.community) {
       _isCommunityAccount = true;
     }
 
