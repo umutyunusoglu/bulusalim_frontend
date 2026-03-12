@@ -64,15 +64,60 @@ final router = GoRouter(
     final raw = state.uri.toString();
     debugPrint('router.redirect called with: $raw');
 
-    if (raw.contains('outnest.app')) {
+    // only rewrite when we were passed a full url (deep link)
+    // could be http or https depending on environment
+    if (raw.startsWith('http')) {
       try {
         final uri = Uri.parse(raw);
         final fixed = uri.path + (uri.hasQuery ? '?${uri.query}' : '');
         debugPrint('router.redirect rewriting to: $fixed');
+        // deep‑linked profile requests should land in shell
+        if (uri.pathSegments.isNotEmpty) {
+          if (uri.pathSegments.first == 'profile') {
+            final myId = getIt<SessionService>().currentUser?.userID;
+            if (myId != null &&
+                uri.pathSegments.length >= 2 &&
+                uri.pathSegments[1] == myId) {
+              return '/my_profile';
+            }
+            return '/home$fixed';
+          }
+          // '/share/profile/…' should also remain in the shell branch
+          if (uri.pathSegments.first == 'share' &&
+              uri.pathSegments.length >= 3 &&
+              uri.pathSegments[1] == 'profile') {
+            final userId = uri.pathSegments[2];
+            final myId = getIt<SessionService>().currentUser?.userID;
+            debugPrint(
+              'router.redirect detected share/profile for $userId (myId=$myId)',
+            );
+            if (myId != null && userId == myId) {
+              debugPrint(
+                'router.redirect -> own profile via share, routing to /my_profile',
+              );
+              return '/my_profile';
+            }
+            debugPrint('router.redirect -> wrapping share path into shell');
+            return '/home$fixed';
+          }
+        }
         return fixed;
       } catch (e) {
         debugPrint('router.redirect parse error: $e');
       }
+    }
+
+    // also handle the case where GoRouter gives us a plain '/profile/...' internally
+    // and similarly for '/share/profile'
+    final path = state.uri.path;
+    if (path.startsWith('/profile/') || path.startsWith('/share/profile/')) {
+      final myId = getIt<SessionService>().currentUser?.userID;
+      if (myId != null) {
+        if (path == '/profile/$myId' || path == '/share/profile/$myId') {
+          return '/my_profile';
+        }
+      }
+      return '/home$path';
     }
 
     return null;
@@ -140,6 +185,13 @@ final router = GoRouter(
               routes: [
                 GoRoute(
                   path: 'profile/:userId',
+                  builder: (context, state) {
+                    final userId = state.pathParameters['userId'] ?? '';
+                    return ProfileDispatcher(profileUserID: userId);
+                  },
+                ),
+                GoRoute(
+                  path: 'share/profile/:userId',
                   builder: (context, state) {
                     final userId = state.pathParameters['userId'] ?? '';
                     return ProfileDispatcher(profileUserID: userId);
@@ -233,7 +285,7 @@ final router = GoRouter(
           builder: (context, state) {
             final currentUser = getIt<SessionService>().currentUser;
             if (currentUser != null) {
-              if (currentUser!.accountType == AccountType.community) {
+              if (currentUser.accountType == AccountType.community) {
                 return const CommunityAccountSettingsPage();
               } else {
                 return const AccountSettingsPage();

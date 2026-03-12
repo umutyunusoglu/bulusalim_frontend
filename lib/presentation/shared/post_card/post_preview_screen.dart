@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/domain/entities/feed/post/post_entity.dart';
 import 'package:outnest/presentation/shared/post_card/post_card.dart';
@@ -22,11 +23,23 @@ class PostPreviewScreen extends StatefulWidget {
 }
 
 class _PostPreviewScreenState extends State<PostPreviewScreen> {
-  late final Future<PostEntity?> _postFuture;
+  late Future<PostEntity?> _postFuture;
 
   @override
   void initState() {
     super.initState();
+    _loadPost();
+  }
+
+  @override
+  void didUpdateWidget(covariant PostPreviewScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.postId != widget.postId) {
+      _loadPost();
+    }
+  }
+
+  void _loadPost() {
     final postRepository = getIt<PostRepository>();
     _postFuture = postRepository.getPostById(widget.postId);
   }
@@ -34,7 +47,17 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Post')),
+      appBar: AppBar(
+        title: const Text('Post'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+          onPressed: () => context.go('/home'),
+        ),
+      ),
       body: FutureBuilder<PostEntity?>(
         future: _postFuture,
         builder: (context, snapshot) {
@@ -54,14 +77,15 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
           }
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
             child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 700),
-                child: PostCard(
-                  post: post,
-                  user: post.creator,
-                ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  PostCard(
+                    post: post,
+                    user: post.creator,
+                  ),
+                ],
               ),
             ),
           );

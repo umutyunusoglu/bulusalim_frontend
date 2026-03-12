@@ -22,6 +22,7 @@ import 'package:outnest/domain/services/analytics/event_configs/select_profile_s
 import 'package:outnest/domain/services/analytics/event_configs/send_event_invitation_analytics_config.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/domain/services/share_links_service.dart';
 import 'package:outnest/domain/session_state.dart';
 import 'package:outnest/domain/usecases/send_event_invitation_usecase.dart';
 import 'package:outnest/presentation/home/view/components/post/small_stacked_avatars.dart';
@@ -858,6 +859,21 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Future<void> _handleShareProfile(String userId) async {
+    try {
+      await getIt<ShareLinksService>().shareUserProfile(userId);
+    } catch (e) {
+      if (mounted) {
+        showErrorPopup(
+          context,
+          message:
+              'Profil paylaşılırken bir hata oluştu. Lütfen tekrar deneyin.',
+        );
+      }
+      debugPrint('Profil paylaşma hatası: $e');
+    }
+  }
+
   // HEADER ALANI
   // HEADER ALANI
   Widget _buildProfileHeader(BuildContext context, SessionState state) {
@@ -986,6 +1002,16 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                         ),
+                        GestureDetector(
+                          onTap: () =>
+                              _handleShareProfile(widget.profileUserID),
+                          child: Icon(
+                            Icons.share_outlined,
+                            color: AppColors.darkBackgroundColor,
+                            size: 24.sp,
+                          ),
+                        ),
+                        SizedBox(width: 8.w), // space between icons
                         // AYARLAR BUTONU (Sadece kendi profilinde)
                         if (isCurrentUser)
                           GestureDetector(
@@ -1000,6 +1026,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           )
                         else
                           SizedBox(width: 24.sp),
+                        SizedBox(width: 8.w), // extra right margin
                       ],
                     ),
                     SizedBox(height: 9.h),
@@ -1264,7 +1291,13 @@ class _ProfilePageState extends State<ProfilePage> {
                         color: theme.colorScheme.onSurface,
                         size: 20.sp,
                       ),
-                      onPressed: () => context.pop(),
+                      onPressed: () {
+                        if (Navigator.of(context).canPop()) {
+                          context.pop();
+                        } else {
+                          context.go('/home');
+                        }
+                      },
                     ),
                     title: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
