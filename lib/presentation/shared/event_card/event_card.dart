@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
@@ -213,7 +214,7 @@ class _EventCardState extends State<EventCard> {
             // 3. Ayrıl
             if (amIaParticipant)
               BottomSheetOption(
-                icon: Icons.exit_to_app_outlined,
+                icon: Symbols.move_item,
                 text: 'Buluşmadan Ayrıl',
                 isDestructive: true,
                 onTap: () {
@@ -241,7 +242,7 @@ class _EventCardState extends State<EventCard> {
             // 4. İptal Et
             if (amIaParticipant)
               BottomSheetOption(
-                icon: Icons.highlight_off_rounded,
+                icon: Symbols.cancel,
                 text: 'Buluşmayı İptal Et',
                 isDestructive: true,
                 onTap: () async {

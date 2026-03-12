@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/repositories/group_repository.dart';
@@ -75,7 +76,7 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
               child: GestureDetector(
                 onTap: widget.onBack,
                 child: Icon(
-                  Icons.undo,
+                  Symbols.reply,
                   size: 24.sp,
                   color: AppColors.iconColor,
                 ),

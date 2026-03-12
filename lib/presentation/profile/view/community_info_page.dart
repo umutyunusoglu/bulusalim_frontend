@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
@@ -84,16 +85,16 @@ class CommunityInfoPage extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppColors.dividerColor,
                     borderRadius: BorderRadius.circular(16.r),
-                    image: communityData!.communityPhotoUrl.isNotEmpty
+                    image: communityData.communityPhotoUrl.isNotEmpty
                         ? DecorationImage(
-                            image: NetworkImage(
-                              communityData!.communityPhotoUrl,
+                            image: CachedNetworkImageProvider(
+                              communityData.communityPhotoUrl,
                             ),
                             fit: BoxFit.cover,
                           )
                         : null,
                   ),
-                  child: communityData!.communityPhotoUrl.isEmpty
+                  child: communityData.communityPhotoUrl.isEmpty
                       ? Center(
                           child: Icon(
                             Icons.groups,
@@ -118,8 +119,8 @@ class CommunityInfoPage extends StatelessWidget {
                 ),
                 SizedBox(height: 8.h),
                 Text(
-                  communityData!.communityBio.isNotEmpty
-                      ? communityData!.communityBio
+                  communityData.communityBio.isNotEmpty
+                      ? communityData.communityBio
                       : 'Biyografi bulunmuyor.',
                   style: TextStyle(
                     fontFamily: 'SF Pro Display',
@@ -133,7 +134,7 @@ class CommunityInfoPage extends StatelessWidget {
                 SizedBox(height: 16.h),
 
                 // 3. EKİP ÜYELERİ BÖLÜMÜ
-                if (communityData!.communityTeamMembers.isNotEmpty) ...[
+                if (communityData.communityTeamMembers.isNotEmpty) ...[
                   Text(
                     'Ekip Üyeleri',
                     style: TextStyle(
@@ -149,7 +150,7 @@ class CommunityInfoPage extends StatelessWidget {
                   Wrap(
                     spacing: 12.w,
                     runSpacing: 12.h,
-                    children: communityData!.communityTeamMembers
+                    children: communityData.communityTeamMembers
                         .map((user) => _buildTeamMember(user))
                         .toList(),
                   ),
@@ -171,7 +172,7 @@ class CommunityInfoPage extends StatelessWidget {
         CircleAvatar(
           radius: 25.r,
           backgroundColor: AppColors.dividerColor,
-          backgroundImage: NetworkImage(user.profileImageUrl),
+          backgroundImage: CachedNetworkImageProvider(user.profileImageUrl),
         ),
         SizedBox(height: 4.h),
         SizedBox(

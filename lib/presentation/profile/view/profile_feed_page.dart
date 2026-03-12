@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
@@ -51,7 +52,7 @@ class _ProfilePostFeedPageState extends State<ProfilePostFeedPage> {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Symbols.reply, color: Colors.black),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(

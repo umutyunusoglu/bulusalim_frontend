@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
 
 class CategoryFilterChip extends StatelessWidget {
   const CategoryFilterChip({
@@ -28,20 +29,20 @@ class CategoryFilterChip extends StatelessWidget {
           vertical: 4.h,
         ),
         decoration: BoxDecoration(
-          // Arka plan her zaman beyaz (veya isteğe göre gri)
-          color: const Color(0XFFF2F2F7),
-          borderRadius: BorderRadius.circular(20.r),
-
-          // Seçiliyse 1px Siyah Border, değilse Transparent (görünmez)
+          color: AppColors.inputFillColor,
+          borderRadius: BorderRadius.circular(50.r),
           border: isSelected
-              ? Border.all(width: 1)
+              ? Border.all(
+                  color: AppColors.tertiaryColor,
+                  width: 1,
+                )
               : Border.all(
                   color: Colors.transparent,
-                ), // Zıplamayı önlemek için width tutuyoruz
-
+                  width: 1,
+                ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withOpacity(0.3),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -54,7 +55,7 @@ class CategoryFilterChip extends StatelessWidget {
             Text(
               emoji,
               style: TextStyle(
-                fontSize: 12.sp,
+                fontSize: 11.sp,
                 height: 1,
               ),
             ),
@@ -64,10 +65,10 @@ class CategoryFilterChip extends StatelessWidget {
               style: TextStyle(
                 fontFamily: 'SF Pro Display',
                 fontWeight: FontWeight.w400,
-                fontSize: 12.sp,
+                fontSize: 11.sp,
                 height: 1,
                 letterSpacing: 0,
-                color: Colors.black,
+                color: isSelected ? AppColors.tertiaryColor : Colors.black,
               ),
             ),
           ],

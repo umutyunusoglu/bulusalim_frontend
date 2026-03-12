@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/app_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/presentation/auth/view/components/auth_button.dart';
@@ -113,7 +114,7 @@ class _RegisterPageState extends State<RegisterPage> {
           elevation: 0,
           leading: IconButton(
             icon: Icon(
-              Icons.arrow_back_ios_new,
+              Symbols.reply,
               color: Colors.black,
               size: 24.sp,
             ),
@@ -298,7 +299,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                 setState(() => _authStatus = AuthStatus.none);
                                 showErrorPopup(
                                   context,
-                                  message: 'Apple ile giriş yaparken hata oluştu. Lütfen tekrar deneyiniz.',
+                                  message:
+                                      'Apple ile giriş yaparken hata oluştu. Lütfen tekrar deneyiniz.',
                                 );
                               }
                             }

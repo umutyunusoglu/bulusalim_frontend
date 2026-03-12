@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:outnest/application/providers/get_it_init.dart'; // getIt için gerekli
 import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/domain/services/session_service.dart'; // SessionService için gerekli
 import 'package:outnest/presentation/map/view/components/popup_next_button.dart';
 
 class TimeSelectionStep extends StatefulWidget {
@@ -32,13 +35,27 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
 
   // Sabit 7 günlük liste
   List<DateTime> _selectableDays = [];
-
   DateTime? _customSelectedDate;
+
+  // Topluluk hesabı kontrolü
+  bool _isCommunityAccount = false;
 
   @override
   void initState() {
     super.initState();
     _now = DateTime.now();
+
+    // 1. ŞU AN GİRİŞ YAPAN KULLANICIYI ÇEK
+    final currentUser = getIt<SessionService>().currentUser;
+
+    // 2. KONTROL: Kullanıcı var mı ve hesabı topluluk hesabı mı?
+    if (currentUser != null &&
+        currentUser.accountType != null &&
+        currentUser.accountType.toString().toLowerCase().contains(
+          'community',
+        )) {
+      _isCommunityAccount = true;
+    }
 
     // Başlangıçta önümüzdeki 7 günü dolduruyoruz
     _selectableDays = List.generate(
@@ -188,7 +205,7 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
               child: GestureDetector(
                 onTap: widget.onBack,
                 child: Icon(
-                  Icons.undo,
+                  Symbols.reply, // Material Symbols İkonu
                   size: 24.sp,
                   color: AppColors.iconColor,
                 ),
@@ -252,25 +269,37 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
                 // Sabit 7 günlük liste
                 ..._selectableDays.map((date) => _buildDateCard(date)),
 
-                // --- 8. ELEMAN: Özel Dönüşen Buton ---
+                // --- 8. ELEMAN: Özel Dönüşen Buton (Herkes görür ama yetkisi olan tıklar) ---
                 _buildDynamicCustomDateButton(),
               ],
             ),
           ),
         ),
 
-        // 4. UYARI YAZISI
+        // 4. UYARI YAZISI (Kullanıcı Tipi Odaklı)
         SizedBox(height: 10.h),
-        Text(
-          '* Topluluk hesapları herhangi bir ileri tarih için Buluşma oluşturabilir.',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 10.sp,
-            fontWeight: FontWeight.w400,
-            color: AppColors.secondaryColor,
-            fontFamily: 'SF Pro Display',
+        if (!_isCommunityAccount)
+          Text(
+            '* Sadece önümüzdeki 7 gün için Buluşma oluşturabilirsiniz.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 10.sp,
+              fontWeight: FontWeight.w400,
+              color: AppColors.secondaryColor,
+              fontFamily: 'SF Pro Display',
+            ),
           ),
-        ),
+        if (_isCommunityAccount)
+          Text(
+            '* Topluluk hesapları herhangi bir ileri tarih için Buluşma oluşturabilir.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 10.sp,
+              fontWeight: FontWeight.w400,
+              color: AppColors.secondaryColor,
+              fontFamily: 'SF Pro Display',
+            ),
+          ),
 
         SizedBox(height: 16.h),
         Text(
@@ -332,9 +361,10 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
     );
   }
 
+  // --- TARİH KUTUCUKLARI ---
   Widget _buildDateCard(DateTime date) {
     final isSelected = _isSameDay(_selectedDate, date);
-    final isToday = _isSameDay(_now, date); // Bugün mü kontrolü
+    final isToday = _isSameDay(_now, date);
 
     final dayStr = DateFormat('d MMM', 'tr_TR').format(date);
     final weekdayStr = DateFormat('EEEE', 'tr_TR').format(date);
@@ -348,7 +378,10 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
           color: isSelected ? AppColors.tertiaryColor : const Color(0xFFF3F5F7),
           borderRadius: BorderRadius.circular(10.r),
           border: Border.all(
-            color: isToday ? AppColors.primaryColor : Colors.transparent,
+            // BUGÜN VE SEÇİLİ DEĞİLSE turuncu çerçeve göster
+            color: (isToday && !isSelected)
+                ? AppColors.primaryColor
+                : Colors.transparent,
             width: 1.5.w,
           ),
         ),
@@ -360,7 +393,6 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
               style: TextStyle(
                 fontSize: 11.sp,
                 fontWeight: FontWeight.bold,
-                // Seçiliyse metin beyaz (daha okunaklı olur), değilse koyu
                 color: isSelected ? Colors.white : AppColors.onBackgroundColor,
                 fontFamily: 'SF Pro Display',
               ),
@@ -370,7 +402,6 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
               maxLines: 1,
               style: TextStyle(
                 fontSize: 8.sp,
-                // Seçiliyse metin beyaz, değilse koyu
                 color: isSelected ? Colors.white : AppColors.onBackgroundColor,
                 fontFamily: 'SF Pro Display',
               ),
@@ -381,11 +412,12 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
     );
   }
 
+  // --- ÖZEL TARİH (+) BUTONU VEYA SEÇİLMİŞ HALİ ---
   Widget _buildDynamicCustomDateButton() {
-    // Eğer özel bir tarih seçilmediyse Klasik '+' butonunu göster
     if (_customSelectedDate == null) {
       return GestureDetector(
-        onTap: _pickCustomDate,
+        // Topluluk hesabıysa tıklanabilir
+        onTap: _isCommunityAccount ? _pickCustomDate : null,
         child: Container(
           width: 32.w,
           height: 32.w,
@@ -396,19 +428,17 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
           ),
           child: Icon(
             Icons.add,
-            color: AppColors.onBackgroundColor.withOpacity(0.5),
+            // Topluluk değilse
+            color: AppColors.onBackgroundColor.withOpacity(
+              _isCommunityAccount ? 0.5 : 0.15,
+            ),
             size: 18.sp,
           ),
         ),
       );
-    }
-    // Eğer özel tarih seçildiyse, kutucuk gibi göster
-    else {
+    } else {
       final isSelected = _isSameDay(_selectedDate, _customSelectedDate!);
-      final isToday = _isSameDay(
-        _now,
-        _customSelectedDate!,
-      ); // Özel tarih bugün olabilir mi?
+      final isToday = _isSameDay(_now, _customSelectedDate!);
 
       final dayStr = DateFormat('d MMM', 'tr_TR').format(_customSelectedDate!);
       final weekdayStr = DateFormat(
@@ -433,7 +463,9 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
                 : const Color(0xFFF3F5F7),
             borderRadius: BorderRadius.circular(10.r),
             border: Border.all(
-              color: isToday ? AppColors.primaryColor : Colors.transparent,
+              color: (isToday && !isSelected)
+                  ? AppColors.primaryColor
+                  : Colors.transparent,
               width: 1.5.w,
             ),
           ),
