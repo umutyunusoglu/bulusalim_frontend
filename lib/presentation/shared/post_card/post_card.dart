@@ -20,6 +20,7 @@ import 'package:outnest/domain/services/analytics/event_configs/unpin_post_analy
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/presentation/home/view/components/event/participant_bottom_sheet.dart';
 import 'package:outnest/presentation/home/view/components/post/content_tag_chip.dart';
 import 'package:outnest/presentation/home/view/components/post/emoji_chip.dart';
 import 'package:outnest/presentation/home/view/components/post/small_stacked_avatars.dart';
@@ -259,6 +260,35 @@ class _PostCardState extends State<PostCard> {
         showErrorPopup(context, message: 'İşlem başarısız: $e');
       }
     }
+  }
+
+  void _showParticipantsBottomSheet() {
+    print('🔥 DEBUG: Bottom sheet açılıyor...'); // Debug için
+
+    final creator = CompactUserEntity(
+      userID: widget.post.creator.userID,
+      username: widget.post.creator.username,
+      profileImageUrl: widget.post.creator.profileImageUrl,
+      university: widget.post.creator.university,
+      nameSurname: null,
+      isPrivate: null,
+      bio: null,
+      accountType: null,
+      communityData: null,
+    );
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      builder: (context) {
+        return ParticipantsBottomSheet(
+          creator: creator,
+          participants: widget.post.participants,
+        );
+      },
+    );
   }
 
   void _navigateToProfile() {
@@ -747,10 +777,14 @@ class _PostCardState extends State<PostCard> {
             onTap: () => _handleEmoteTap(EmoteEnum.egg),
           ),
           const Spacer(),
-          SmallStackedAvatars(
-            profileImageUrls: likedByAvatars,
-            size: 28.r,
-            overlap: 10.r,
+
+          GestureDetector(
+            onTap: _showParticipantsBottomSheet,
+            child: SmallStackedAvatars(
+              profileImageUrls: likedByAvatars,
+              size: 28.r,
+              overlap: 10.r,
+            ),
           ),
         ],
       ),
