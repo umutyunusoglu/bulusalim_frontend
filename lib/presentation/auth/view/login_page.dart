@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/errors/exceptions/auth_exceptions.dart';
 import 'package:outnest/presentation/auth/view/components/auth_button.dart';
 import 'package:outnest/presentation/auth/view/components/auth_input.dart';
 import 'package:flutter/material.dart';
@@ -220,13 +221,23 @@ class _LoginPageState extends State<LoginPage> {
                             if (mounted) {
                               context.go('/home');
                             }
+                          } on AuthException catch (e) {
+                            if (mounted) {
+                              setState(() => _authStatus = AuthStatus.none);
+
+                              showErrorPopup(
+                                context,
+                                message: e.toString(),
+                              );
+                            }
                           } catch (e) {
                             if (mounted) {
                               setState(() => _authStatus = AuthStatus.none);
+
                               showErrorPopup(
                                 context,
                                 message:
-                                    'Google ile giriş yaparken hata oluştu. Lütfen tekrar deneyiniz.',
+                                    'Google ile giriş yapılırken bir hata ile karşılaşıldı. Lütfen tekrar deneyiniz.',
                               );
                             }
                           }
@@ -268,13 +279,23 @@ class _LoginPageState extends State<LoginPage> {
                                 isLogin: true,
                               );
                               if (mounted) context.go('/home');
+                            } on AuthException catch (e) {
+                              if (mounted) {
+                                setState(() => _authStatus = AuthStatus.none);
+
+                                showErrorPopup(
+                                  context,
+                                  message: e.toString(),
+                                );
+                              }
                             } catch (e) {
                               if (mounted) {
                                 setState(() => _authStatus = AuthStatus.none);
+
                                 showErrorPopup(
                                   context,
                                   message:
-                                      'Apple ile giriş yaparken hata oluştu. Lütfen tekrar deneyiniz.',
+                                      'Apple ile giriş yapılırken bir hata ile karşılaşıldı. Lütfen tekrar deneyiniz.',
                                 );
                               }
                             }

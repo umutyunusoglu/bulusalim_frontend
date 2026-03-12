@@ -481,6 +481,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                 final exists = await getIt<UserRepository>().doesUsernameExist(
                   username,
                 );
+                FocusScope.of(context).unfocus();
 
                 getIt<LoggingService>().warn(exists.toString());
 
@@ -548,6 +549,8 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
               onNext: () async {
                 if (_isSendingEmail) return;
                 setState(() => _isSendingEmail = true);
+                FocusScope.of(context).unfocus();
+
                 try {
                   print(FirebaseAuth.instance.currentUser?.uid);
                   await getIt<UserRepository>().sendVerificationEmail(
@@ -613,6 +616,8 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
               customContent: OtpRow(controllers: _eduOtpControllers),
 
               onNext: () async {
+                FocusScope.of(context).unfocus();
+
                 if (_isVerifyingEmail) return;
                 setState(() => _isVerifyingEmail = true);
                 final otpCode = _eduOtpControllers.map((c) => c.text).join();

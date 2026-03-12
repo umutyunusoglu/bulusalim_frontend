@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/core/errors/exceptions/auth_exceptions.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/presentation/auth/view/components/auth_button.dart';
@@ -102,13 +103,19 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
       } else {
         await context.push('/register-info');
       }
+    } on AuthException catch (e) {
+      if (mounted) {
+        showErrorPopup(
+          context,
+          message: e.toString(),
+        );
+      }
     } catch (e) {
-      debugPrint('Hata: $e');
       if (mounted) {
         showErrorPopup(
           context,
           message:
-              'Kod Doğrulanırken Bir Hata ile Karşılaşıldı. Lütfen Tekrar Deneyiniz.',
+              'Telefon ile giriş yapılırken bir hata ile karşılaşıldı. Lütfen tekrar deneyiniz.',
         );
       }
     } finally {

@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/errors/exceptions/auth_exceptions.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/core/utils/validators/masks.dart';
+import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 
 class AuthServiceImpl implements AuthService {
@@ -191,8 +193,10 @@ class AuthServiceImpl implements AuthService {
       );
       final user = userCredential.user;
 
+      final UserRepository userRepository = getIt<UserRepository>();
+
       if (user != null) {
-        final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
+        final isNewUser = !await userRepository.isUserRegistered(user.uid);
 
         // Login'de yeni kullanıcıyı engelle
         if (isLogin && isNewUser) {
@@ -277,9 +281,9 @@ class AuthServiceImpl implements AuthService {
         appleProvider,
       );
       final user = userCredential.user;
-
+      final UserRepository userRepository = getIt<UserRepository>();
       if (user != null) {
-        final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
+        final isNewUser = !await userRepository.isUserRegistered(user.uid);
 
         // 1. Giriş ekranında yeni kullanıcı gelirse:
         if (isLogin && isNewUser) {
@@ -323,7 +327,7 @@ class AuthServiceImpl implements AuthService {
     } catch (e) {
       _logger.error('signInWithApple unexpected error: $e');
       if (e is AuthException) rethrow;
-      throw AuthException('Beklenmedik bir hata oluştu.');
+      throw Exception('Beklenmedik bir hata oluştu.');
     }
   }
 
@@ -351,9 +355,9 @@ class AuthServiceImpl implements AuthService {
       // --- TASLAK SONU ---
 
       final user = userCredential.user;
-
+      final UserRepository userRepository = getIt<UserRepository>();
       if (user != null) {
-        final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
+        final isNewUser = !await userRepository.isUserRegistered(user.uid);
 
         // 1. Giriş sayfasında yeni kullanıcı engelleme
         if (isLogin && isNewUser) {
@@ -376,7 +380,7 @@ class AuthServiceImpl implements AuthService {
     } catch (e) {
       _logger.error('signInWithGoogle error: $e');
       if (e is AuthException) rethrow;
-      throw AuthException('Google işlemi başarısız.: $e');
+      throw Exception('Google işlemi başarısız.: $e');
     }
   }
 
