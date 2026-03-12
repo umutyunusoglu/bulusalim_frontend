@@ -321,7 +321,11 @@ class _EventCardState extends State<EventCard> {
                 await _handleReportEvent(sheetContext);
               },
             ),
-            BottomSheetOption(icon: Icons.share, text: "Buluşmayı Paylaş", onTap: _handleEventShare)
+            BottomSheetOption(
+              icon: Icons.share,
+              text: "Buluşmayı Paylaş",
+              onTap: _handleEventShare,
+            ),
           ],
         ],
       ),

@@ -72,7 +72,7 @@ class ParticipantsBottomSheet extends StatelessWidget {
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'Buluşmaya Katılacak Kişiler ($totalCount)',
+                'Kişiler ($totalCount)',
                 style: TextStyle(
                   fontFamily: 'SF Pro Display',
                   fontSize: 16.sp,
