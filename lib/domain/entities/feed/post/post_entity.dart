@@ -22,9 +22,9 @@ class PostEntity extends FeedEntity with EquatableMixin {
     required this.createdAt,
     required this.updatedAt,
     required this.imageUrls,
+    required this.isPinned,
     this.location,
     this.displayAddress,
-    this.isPinned = false,
   }) : super(feedType: FeedEntityTypeEnum.post, id: postID);
 
   PostEntity copyWith({

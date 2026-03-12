@@ -75,10 +75,13 @@ class _NotificationPageState extends State<NotificationPage> {
                     FutureBuilder<bool>(
                       future: _inboxRepository.hasUnreadFollowRequest(),
                       builder: (context, snapshot) {
-                        final hasUnread = snapshot.data ?? false;
-                        if (!snapshot.hasData || snapshot.data == false) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return const SizedBox.shrink();
                         }
+
+                        final hasUnread = snapshot.data ?? false;
+                        if (!hasUnread) return const SizedBox.shrink();
 
                         return Positioned(
                           right: 0,
