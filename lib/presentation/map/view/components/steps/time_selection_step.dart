@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
-import 'package:outnest/presentation/map/view/components/popup_next_button.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/presentation/map/view/components/popup_next_button.dart';
 
 class TimeSelectionStep extends StatefulWidget {
   const TimeSelectionStep({
@@ -334,20 +334,22 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
 
   Widget _buildDateCard(DateTime date) {
     final isSelected = _isSameDay(_selectedDate, date);
+    final isToday = _isSameDay(_now, date); // Bugün mü kontrolü
+
     final dayStr = DateFormat('d MMM', 'tr_TR').format(date);
     final weekdayStr = DateFormat('EEEE', 'tr_TR').format(date);
 
     return GestureDetector(
       onTap: () => setState(() => _selectedDate = date),
       child: Container(
-        width: 64.w,
+        width: 60.w,
         height: 48.h,
         decoration: BoxDecoration(
-          color: const Color(0xFFF3F5F7),
+          color: isSelected ? AppColors.tertiaryColor : const Color(0xFFF3F5F7),
           borderRadius: BorderRadius.circular(10.r),
           border: Border.all(
-            color: isSelected ? AppColors.primaryColor : Colors.transparent,
-            width: isSelected ? 1.5 : 1.0,
+            color: isToday ? AppColors.primaryColor : Colors.transparent,
+            width: 1.5.w,
           ),
         ),
         child: Column(
@@ -358,7 +360,8 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
               style: TextStyle(
                 fontSize: 11.sp,
                 fontWeight: FontWeight.bold,
-                color: AppColors.onBackgroundColor,
+                // Seçiliyse metin beyaz (daha okunaklı olur), değilse koyu
+                color: isSelected ? Colors.white : AppColors.onBackgroundColor,
                 fontFamily: 'SF Pro Display',
               ),
             ),
@@ -367,7 +370,8 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
               maxLines: 1,
               style: TextStyle(
                 fontSize: 8.sp,
-                color: AppColors.onBackgroundColor,
+                // Seçiliyse metin beyaz, değilse koyu
+                color: isSelected ? Colors.white : AppColors.onBackgroundColor,
                 fontFamily: 'SF Pro Display',
               ),
             ),
@@ -377,7 +381,6 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
     );
   }
 
-  // --- Dönüşen Özel Buton ---
   Widget _buildDynamicCustomDateButton() {
     // Eğer özel bir tarih seçilmediyse Klasik '+' butonunu göster
     if (_customSelectedDate == null) {
@@ -402,6 +405,11 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
     // Eğer özel tarih seçildiyse, kutucuk gibi göster
     else {
       final isSelected = _isSameDay(_selectedDate, _customSelectedDate!);
+      final isToday = _isSameDay(
+        _now,
+        _customSelectedDate!,
+      ); // Özel tarih bugün olabilir mi?
+
       final dayStr = DateFormat('d MMM', 'tr_TR').format(_customSelectedDate!);
       final weekdayStr = DateFormat(
         'EEEE',
@@ -411,20 +419,22 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
       return GestureDetector(
         onTap: () {
           if (isSelected) {
-            _pickCustomDate(); // Tıklayarak yeniden tarih seç
+            _pickCustomDate();
           } else {
-            setState(() => _selectedDate = _customSelectedDate!); // Sadece seç
+            setState(() => _selectedDate = _customSelectedDate!);
           }
         },
         child: Container(
           width: 64.w,
           height: 48.h,
           decoration: BoxDecoration(
-            color: const Color(0xFFF3F5F7),
+            color: isSelected
+                ? AppColors.tertiaryColor
+                : const Color(0xFFF3F5F7),
             borderRadius: BorderRadius.circular(10.r),
             border: Border.all(
-              color: isSelected ? AppColors.primaryColor : Colors.transparent,
-              width: isSelected ? 1.5 : 1.0,
+              color: isToday ? AppColors.primaryColor : Colors.transparent,
+              width: 1.5.w,
             ),
           ),
           child: Column(
@@ -435,7 +445,9 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
                 style: TextStyle(
                   fontSize: 11.sp,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.onBackgroundColor,
+                  color: isSelected
+                      ? Colors.white
+                      : AppColors.onBackgroundColor,
                   fontFamily: 'SF Pro Display',
                 ),
               ),
@@ -444,7 +456,9 @@ class _TimeSelectionStepState extends State<TimeSelectionStep> {
                 maxLines: 1,
                 style: TextStyle(
                   fontSize: 8.sp,
-                  color: AppColors.onBackgroundColor,
+                  color: isSelected
+                      ? Colors.white
+                      : AppColors.onBackgroundColor,
                   fontFamily: 'SF Pro Display',
                 ),
               ),
