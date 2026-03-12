@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
-import 'package:outnest/domain/services/share_links_service.dart';
 import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/event_card/event_card_background_painter.dart';
@@ -416,20 +415,6 @@ class _EventCardState extends State<EventCard> {
         showErrorPopup(
           context,
           message: 'Şikayetiniz gönderilirken hata oluştu.',
-        );
-      }
-    }
-  }
-
-  Future<void> _handleEventShare() async {
-    Navigator.pop(context);
-    try {
-      await getIt<ShareLinksService>().shareEvent(widget.event.id);
-    } catch (e) {
-      if (mounted) {
-        showErrorPopup(
-          context,
-          message: 'Paylaşım başarısız oldu, lütfen tekrar deneyin',
         );
       }
     }
