@@ -1,14 +1,15 @@
 import 'dart:async';
 
-import 'package:outnest/application/providers/get_it_init.dart';
-import 'package:outnest/presentation/auth/view/components/auth_button.dart';
-import 'package:outnest/presentation/auth/view/components/otp_row.dart';
-import 'package:outnest/core/constants/theme/color_themes.dart';
-import 'package:outnest/core/utils/logging/logging_service.dart';
-import 'package:outnest/domain/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/domain/services/auth_service.dart';
+import 'package:outnest/presentation/auth/view/components/auth_button.dart';
+import 'package:outnest/presentation/auth/view/components/otp_row.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 
 class OtpVerificationPage extends StatefulWidget {
@@ -168,7 +169,8 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
           elevation: 0,
           leading: IconButton(
             icon: Icon(
-              Icons.arrow_back_ios_new,
+              Symbols.reply,
+              weight: 400,
               color: Colors.black,
               size: 24.sp,
             ),

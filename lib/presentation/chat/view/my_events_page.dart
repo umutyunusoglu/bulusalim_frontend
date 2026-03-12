@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
@@ -391,7 +392,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
             child: Column(
               children: [
                 Icon(
-                  Icons.map_outlined,
+                  Symbols.map_search,
                   size: 90.sp,
                   color: AppColors.salmonPink.withOpacity(0.3),
                 ),

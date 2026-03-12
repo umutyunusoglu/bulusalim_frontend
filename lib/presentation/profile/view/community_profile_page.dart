@@ -4,7 +4,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/types/enums/profile_segment_enum.dart';
 import 'package:outnest/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
@@ -348,7 +350,7 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
                     centerTitle: false,
                     leading: IconButton(
                       icon: Icon(
-                        Icons.arrow_back_ios_new,
+                        Symbols.reply,
                         color: theme.colorScheme.onSurface,
                         size: 20.sp,
                       ),
@@ -450,7 +452,7 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
                         ? CachedNetworkImageProvider(profileImageUrl)
                         : null,
                     child: profileImageUrl.isEmpty
-                        ? Icon(Icons.groups, size: 30.sp, color: Colors.grey)
+                        ? Icon(Symbols.groups, size: 30.sp, color: Colors.grey)
                         : null,
                   ),
                   SizedBox(height: 8.h),
@@ -491,7 +493,7 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
                                 ),
                                 SizedBox(width: 6.w),
                                 Icon(
-                                  Icons.group_rounded,
+                                  Symbols.groups,
                                   size: 22.sp,
                                   color: onSurface.withOpacity(0.9),
                                 ),
@@ -588,8 +590,8 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
                   fontWeight: FontWeight.w600,
                   backgroundColor: isMember
                       ? const Color(0xFFF2F2F7)
-                      : const Color(0xFFFF6B4A),
-                  textColor: isMember ? const Color(0xFF5D6B82) : Colors.white,
+                      : AppColors.primaryColor,
+                  textColor: isMember ? AppColors.primaryColor : Colors.white,
                   borderColor: Colors.transparent,
                 ),
               ),
@@ -623,7 +625,7 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
                   backgroundColor: const Color(0xFFF2F2F7),
-                  textColor: const Color(0xFF5D6B82),
+                  textColor: AppColors.tertiaryColor,
                   borderColor: Colors.transparent,
                 ),
               ),
@@ -642,8 +644,8 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
                 child: IconButton(
                   padding: EdgeInsets.zero,
                   icon: Icon(
-                    Icons.info_outline_rounded,
-                    color: const Color(0xFF5D6B82),
+                    Symbols.info,
+                    color: AppColors.tertiaryColor,
                     size: 20.sp,
                   ),
                   onPressed: () {

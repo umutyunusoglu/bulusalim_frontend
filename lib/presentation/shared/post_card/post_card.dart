@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/core/utils/types/enums/emote_enum.dart';
@@ -419,21 +420,21 @@ class _PostCardState extends State<PostCard> {
               if (_amIFollowingPostCreator)
                 _buildOptionItem(
                   context,
-                  icon: Icons.person_remove_outlined,
+                  icon: Symbols.person_remove,
                   text: 'Takibi Bırak',
                   color: Colors.black,
                   onTap: _handleUnfollowUser,
                 ),
               _buildOptionItem(
                 context,
-                icon: Icons.block_outlined,
+                icon: Symbols.account_circle_off,
                 text: 'Engelle',
                 color: const Color(0xFFFF3B30),
                 onTap: _handleBlockUser,
               ),
               _buildOptionItem(
                 context,
-                icon: Icons.report_gmailerrorred_outlined,
+                icon: Symbols.report,
                 text: 'Şikayet Et',
                 color: const Color(0xFFFF3B30),
                 onTap: _handleReportPost,
@@ -602,7 +603,7 @@ class _PostCardState extends State<PostCard> {
                   options: [
                     if (_isPinned)
                       BottomSheetOption(
-                        icon: Icons.push_pin,
+                        icon: Symbols.keep_off,
                         text: 'Sabitlemeyi Kaldır',
                         onTap: () {
                           sheetContext.pop();
@@ -611,7 +612,7 @@ class _PostCardState extends State<PostCard> {
                       )
                     else
                       BottomSheetOption(
-                        icon: Icons.push_pin_outlined,
+                        icon: Symbols.keep,
                         text: 'Gönderiyi Profile Sabitle',
                         onTap: () {
                           sheetContext.pop();
@@ -626,7 +627,7 @@ class _PostCardState extends State<PostCard> {
                       },
                     ),*/
                     BottomSheetOption(
-                      icon: Icons.delete_outline,
+                      icon: Symbols.delete,
                       text: 'Gönderiyi Sil',
                       isDestructive: true,
                       onTap: () async {
