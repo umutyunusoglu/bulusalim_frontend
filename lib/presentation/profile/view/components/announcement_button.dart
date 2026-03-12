@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 class AnnouncementButton extends StatelessWidget {
   const AnnouncementButton({
@@ -39,7 +40,7 @@ class AnnouncementButton extends StatelessWidget {
           ),
           child: Center(
             child: Icon(
-              Icons.campaign_outlined,
+              Symbols.campaign,
               color: iconColor ?? theme.colorScheme.onSurface,
               size: 24.sp,
             ),

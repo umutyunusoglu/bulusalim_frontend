@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:outnest/presentation/groups/view/new_group_page.dart';
 
@@ -27,7 +28,7 @@ class UserSelectionTile extends StatelessWidget {
             radius: 22,
             backgroundColor: Colors.grey.shade300,
             backgroundImage: user.avatarUrl.isNotEmpty
-                ? NetworkImage(user.avatarUrl)
+                ? CachedNetworkImageProvider(user.avatarUrl)
                 : null,
             child: user.avatarUrl.isEmpty
                 ? const Icon(Icons.person, color: Colors.white)

@@ -1,3 +1,4 @@
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/notification/notification_entity.dart';
@@ -38,7 +39,11 @@ class _NotificationPageState extends State<NotificationPage> {
         centerTitle: false,
         titleSpacing: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black, size: 24.sp),
+          icon: Icon(
+            Symbols.reply,
+            color: Colors.black,
+            size: 24.sp,
+          ),
           onPressed: () => context.pop(),
         ),
         title: Text(
@@ -66,7 +71,7 @@ class _NotificationPageState extends State<NotificationPage> {
                   children: [
                     const Center(
                       child: Icon(
-                        Icons.person_add_alt_outlined,
+                        Symbols.person_add,
                         color: Colors.black,
                         size: 26,
                       ),
