@@ -9,6 +9,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
@@ -409,12 +410,12 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
             ),
 
             BottomSheetOption(
-              icon: Icons.block_outlined,
+              icon: Icons.block,
               text: 'Belirtmek İstemiyorum',
               onTap: () => _selectGender('Belirtmek İstemiyorum'),
             ),
             BottomSheetOption(
-              icon: Icons.circle_outlined,
+              icon: Icons.brightness_1,
               text: 'Özel',
               onTap: () => _selectGender('Özel'),
             ),
@@ -460,7 +461,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
           leading: _currentIndex == 0
               ? null
               : IconButton(
-                  icon: Icon(Icons.undo, color: Colors.black, size: 24.sp),
+                  icon: Icon(Symbols.reply, color: Colors.black, size: 24.sp),
                   onPressed: _prevPage,
                 ),
         ),

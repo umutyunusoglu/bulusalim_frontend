@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/presentation/auth/view/components/auth_button.dart';
 import 'package:outnest/presentation/auth/view/components/auth_input.dart';
@@ -109,7 +110,8 @@ class _LoginPageState extends State<LoginPage> {
           elevation: 0,
           leading: IconButton(
             icon: Icon(
-              Icons.arrow_back_ios_new,
+              Symbols.reply,
+              weight: 400,
               color: Colors.black,
               size: 20.sp,
             ),

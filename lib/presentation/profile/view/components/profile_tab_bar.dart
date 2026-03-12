@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 class ProfileTabBar extends StatelessWidget {
   const ProfileTabBar({
@@ -29,9 +30,9 @@ class ProfileTabBar extends StatelessWidget {
         : secondaryColor;
 
     final icons = <IconData>[
-      Icons.grid_view_rounded, // 0: Sol
-      Icons.location_on_outlined, // 1: Orta
-      Icons.style_outlined, // 2: Sağ
+      Symbols.view_cozy, // 0: Sol
+      Symbols.location_on, // 1: Orta
+      Symbols.view_apps, // 2: Sağ
     ];
 
     return LayoutBuilder(

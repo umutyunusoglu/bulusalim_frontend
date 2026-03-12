@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart'; // AppColors
 import 'package:outnest/presentation/map/view/components/popup_next_button.dart';
 import 'package:outnest/presentation/shared/category_filter_chip.dart';
@@ -47,7 +48,7 @@ class _CategorySelectionStepState extends State<CategorySelectionStep> {
               child: GestureDetector(
                 onTap: widget.onClose,
                 child: Icon(
-                  Icons.undo,
+                  Symbols.reply,
                   size: 24.sp,
                   color: AppColors.iconColor,
                 ),

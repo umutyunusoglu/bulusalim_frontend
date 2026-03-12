@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
@@ -153,7 +154,7 @@ class EventChatCard extends StatelessWidget {
             alignment: Alignment.center,
             children: [
               Icon(
-                Icons.chat_bubble_outline_rounded,
+                Symbols.chat,
                 color: AppColors
                     .primaryColor, // Kendi orijinal rengine geri alındı
                 size: 22.sp,
@@ -196,7 +197,7 @@ class EventChatCard extends StatelessWidget {
         width: 30.w,
         height: 30.w,
         child: Icon(
-          Icons.hourglass_empty_rounded,
+          Symbols.hourglass,
           color: AppColors.textGrey.withOpacity(0.5),
           size: 22.sp,
         ),

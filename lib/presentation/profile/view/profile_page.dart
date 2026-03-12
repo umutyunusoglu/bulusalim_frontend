@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
@@ -993,7 +994,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               context.push('/settings');
                             },
                             child: Icon(
-                              Icons.settings_outlined,
+                              Symbols.settings,
                               color: AppColors.darkBackgroundColor,
                               size: 24.sp,
                             ),
@@ -1260,7 +1261,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     elevation: 0,
                     leading: IconButton(
                       icon: Icon(
-                        Icons.arrow_back_ios_new,
+                        Symbols.reply,
+                        weight: 400,
                         color: theme.colorScheme.onSurface,
                         size: 20.sp,
                       ),

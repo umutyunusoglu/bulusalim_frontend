@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
@@ -188,7 +189,7 @@ class _NewGroupNamePageState extends State<NewGroupNamePage> {
                           radius: 22,
                           backgroundColor: Colors.grey.shade300,
                           backgroundImage: user.avatarUrl.isNotEmpty
-                              ? NetworkImage(user.avatarUrl)
+                              ? CachedNetworkImageProvider(user.avatarUrl)
                               : null,
                           child: user.avatarUrl.isEmpty
                               ? const Icon(Icons.person, color: Colors.white)
