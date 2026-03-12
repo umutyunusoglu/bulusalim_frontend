@@ -41,7 +41,7 @@ class _MapPeopleFilterState extends State<MapPeopleFilter> {
       width: 98.w,
       height: 40.h,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.3),
+        color: AppColors.inputFillColor,
         borderRadius: BorderRadius.circular(30.r),
         border: Border.all(color: const Color(0xFFC6D0D9), width: 1.2),
         boxShadow: [
