@@ -3,11 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
-import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
-import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
-import 'package:outnest/presentation/shared/event_card/event_card_background_painter.dart';
-import 'package:outnest/presentation/shared/popup.dart';
-import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
@@ -27,6 +22,11 @@ import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/presentation/home/view/components/event/event_info_chip.dart';
 import 'package:outnest/presentation/home/view/components/event/event_location_chip.dart';
 import 'package:outnest/presentation/home/view/components/event/participant_bottom_sheet.dart';
+import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
+import 'package:outnest/presentation/shared/event_card/event_card_background_painter.dart';
+import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
+import 'package:outnest/presentation/shared/popup.dart';
 
 // 3 DURUM
 enum _EventJoinStatus {
@@ -616,7 +616,7 @@ class _EventCardState extends State<EventCard> {
         padding: EdgeInsets.only(
           left: 16.w,
           right: 16.w,
-          bottom: 12.h,
+          bottom: 24.h,
           top: 24.h,
         ),
         child: Stack(
