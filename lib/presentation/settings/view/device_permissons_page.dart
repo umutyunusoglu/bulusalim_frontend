@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class DevicePermissionsPage extends StatefulWidget {
   const DevicePermissionsPage({
@@ -118,27 +118,10 @@ class _DevicePermissionsPageState extends State<DevicePermissionsPage>
                           ),
                         ),
                       ),
-                      Row(
-                        children: [
-                          Text(
-                            _isGranted ? "İzin Verildi" : "İzin Verilmedi",
-                            style: TextStyle(
-                              fontFamily: 'SF Pro Display',
-                              fontSize: 13.sp,
-                              color: _isGranted
-                                  ? Colors.green
-                                  : AppColors.textGrey,
-                            ),
-                          ),
-                          SizedBox(width: 8.w),
-                          Icon(
-                            Icons.arrow_forward_ios_rounded,
-                            size: 16.sp,
-                            color: _isGranted
-                                ? Colors.green
-                                : AppColors.textGrey,
-                          ),
-                        ],
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 16.sp,
+                        color: AppColors.textGrey,
                       ),
                     ],
                   ),
