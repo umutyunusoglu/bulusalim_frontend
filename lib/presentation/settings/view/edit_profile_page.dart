@@ -525,7 +525,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                   // 3. Ayırıcı Çizgi ve Switch
                   Divider(color: Colors.grey.shade200, thickness: 1),
-                  Row(
+                  /*Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
@@ -555,6 +555,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       ),
                     ],
                   ),
+                
+                */
                 ],
               ),
             ),
