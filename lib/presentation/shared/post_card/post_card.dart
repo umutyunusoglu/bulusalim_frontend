@@ -379,21 +379,6 @@ class _PostCardState extends State<PostCard> {
     }
   }
 
-  Future<void> _handleSharePost() async {
-    Navigator.pop(context);
-    try {
-      await getIt<ShareLinksService>().sharePost(widget.post.id);
-    } catch (e) {
-      if (mounted) {
-        showErrorPopup(
-          context,
-          message: 'Paylaşım başarısız oldu, lütfen tekrar deneyin',
-        );
-      }
-      debugPrint('Share post error: $e');
-    }
-  }
-
   // --- PIN MANTIĞI ---
   Future<void> _togglePinStatus() async {
     final newStatus = !_isPinned;
@@ -483,13 +468,6 @@ class _PostCardState extends State<PostCard> {
                 text: 'Şikayet Et',
                 color: const Color(0xFFFF3B30),
                 onTap: _handleReportPost,
-              ),
-              _buildOptionItem(
-                context,
-                icon: Icons.share_outlined,
-                text: 'Paylaş',
-                color: Colors.black,
-                onTap: _handleSharePost,
               ),
               SizedBox(height: 10.h),
             ],
