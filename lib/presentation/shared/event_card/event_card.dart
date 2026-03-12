@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/core/utils/types/enums/visibility_enum.dart';
 import 'package:outnest/domain/services/share_links_service.dart';
 import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
@@ -267,7 +268,7 @@ class _EventCardState extends State<EventCard> {
             if (_amIFollowingCreator)
               BottomSheetOption(
                 icon: Icons.person_remove_outlined,
-                text: "Takibi Bırak",
+                text: 'Buluşma Sahibini Takibi Bırak',
                 onTap: () {
                   sheetContext.pop(); // Önce bottom sheet'i kapatıyoruz
 
@@ -321,7 +322,16 @@ class _EventCardState extends State<EventCard> {
                 await _handleReportEvent(sheetContext);
               },
             ),
-            BottomSheetOption(icon: Icons.share, text: "Buluşmayı Paylaş", onTap: _handleEventShare)
+            if (widget.event.visibility == VisibilityEnum.everyone)
+              BottomSheetOption(
+                icon: Icons.share,
+                text: 'Buluşmayı Paylaş',
+                onTap: () {
+                  // close only the bottom sheet using the provided sheetContext
+                  sheetContext.pop();
+                  _handleEventShare();
+                },
+              ),
           ],
         ],
       ),
@@ -418,7 +428,7 @@ class _EventCardState extends State<EventCard> {
   }
 
   Future<void> _handleEventShare() async {
-    Navigator.pop(context);
+    // no automatic pop here; caller should close any sheets if needed
     try {
       await getIt<ShareLinksService>().shareEvent(widget.event.id);
     } catch (e) {

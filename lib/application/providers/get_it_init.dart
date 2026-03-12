@@ -23,4 +23,5 @@ Future<void> getItSetup() async {
     ValueNotifier(0),
     instanceName: 'homeScrollTrigger',
   );
+  // notifiers to request feed scroll to a specific item
 }
