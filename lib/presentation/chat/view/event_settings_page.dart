@@ -869,11 +869,12 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                     ] else
                       _thinDivider(),
 
-                    _buildSimpleActionRow(
-                      'Buluşmadan Ayrıl',
-                      textColor: AppColors.primaryColor,
-                      onTap: _onLeaveEventTap,
-                    ),
+                    if (!isCreator)
+                      _buildSimpleActionRow(
+                        'Buluşmadan Ayrıl',
+                        textColor: AppColors.primaryColor,
+                        onTap: _onLeaveEventTap,
+                      ),
 
                     if (isCreator) ...[
                       _thinDivider(),

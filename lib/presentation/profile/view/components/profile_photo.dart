@@ -65,13 +65,14 @@ class ProfilePhoto extends StatelessWidget {
         SizedBox(height: 16.h),
 
         // 2. ROZETLER
+        /*
         SizedBox(
           height: badgeSize,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: _buildBadgeSlots(badgeSize, inactiveBadgeColor),
           ),
-        ),
+        ),*/
       ],
     );
   }

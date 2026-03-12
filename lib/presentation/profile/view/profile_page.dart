@@ -281,12 +281,19 @@ class _ProfilePageState extends State<ProfilePage> {
 
       getIt<LoggingService>().debug("Profile data fetched: $user");
 
+      String bioText =
+          (user.bio ?? 'Merhaba, profilime hoşgeldiniz.') as String;
+      if (bioText.isEmpty || bioText == "") {
+        bioText = 'Merhaba, profilime hoşgeldiniz.';
+      }
+
       setState(() {
         // dynamic olduğu için [] operatörü veya nokta operatörü kullanılabilir
         // null check (?.) ve null-coalescing (??) ile güvenliğe alıyoruz
+
         _username = (user.username ?? '').toString();
         _fullName = (user.nameSurname ?? '').toString();
-        _bio = (user.bio ?? '').toString();
+        _bio = bioText;
         _school = (user.university ?? 'Üniversite Doğrulanmadı').toString();
         _profileImageUrl = (user.profileImageUrl ?? '').toString();
 
@@ -902,14 +909,17 @@ class _ProfilePageState extends State<ProfilePage> {
         displayFollowingCount = numberOfFollowing + 1;
       }
     }
-
+    String bioText = (sessionUser?.bio ?? 'Merhaba, profilime hoşgeldiniz.');
+    if (bioText.isEmpty || bioText == "") {
+      bioText = 'Merhaba, profilime hoşgeldiniz.';
+    }
     final currentUsername = isCurrentUser
         ? (sessionUser?.username ?? '')
         : _username;
     final currentFullName = isCurrentUser
         ? (sessionUser?.nameSurname ?? '')
         : _fullName;
-    final currentBio = isCurrentUser ? (sessionUser?.bio ?? '') : _bio;
+    final currentBio = bioText;
     final currentSchool = isCurrentUser
         ? (sessionUser?.university ?? 'Üniversite Doğrulanmadı')
         : _school;
