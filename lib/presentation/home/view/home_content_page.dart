@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/presentation/profile/view/components/empty_profile_screen.dart';
 import 'package:outnest/presentation/shared/event_card/event_card.dart';
 import 'package:outnest/presentation/shared/post_card/post_card.dart';
@@ -120,15 +121,50 @@ class _HomeContentPageState extends State<HomeContentPage> {
               );
             }
 
+            final SessionService sessionService = getIt<SessionService>();
+            final user = sessionService.currentUser;
+
+            if (widget.feedType == FeedType.university &&
+                !user!.isUniversityVerified) {
+              return Column(
+                mainAxisAlignment:
+                    MainAxisAlignment.center, // Ortalamak isterseniz
+                children: [
+                  const Text(
+                    'Henüz Üniversiteni Doğrulamadın',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(
+                    height: 16,
+                  ), // Padding yerine SizedBox daha yaygındır
+
+                  const EmptyProfileScreen(
+                    text:
+                        'Üniversiteni Doğrulama İçin Aşağıdaki Butona Tıklayın.',
+                    icon: Icon(Icons.school),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  ElevatedButton(
+                    onPressed: () => context.go('/settings/edit-account'),
+                    child: const Text('Üniversiteni Doğrula'),
+                  ),
+                ],
+              );
+            }
+
             // 3. Veri Yok veya Boş Liste Durumu
             final items = snapshot.data;
             if (items == null || items.isEmpty) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
+
               // Sadece gerçekten "bekleme" bitmiş ve hala veri yoksa empty state göster
               return _buildEmptyState();
             }
+
             // 4. Veri Geldiğinde Liste Görünümü
             return ListView.builder(
               controller: _scrollController,
@@ -168,31 +204,14 @@ class _HomeContentPageState extends State<HomeContentPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const SizedBox(height: 16),
-          if (widget.feedType == FeedType.university) ...[
-            const Text('Henüz Üniversiteni Doğrulamadın'),
-            const Padding(padding: EdgeInsets.only(top: 16)),
 
-            const EmptyProfileScreen(
-              text: 'Üniversiteni Doğrulama İçin Aşağıdaki Butona Tıklayın.',
+          const Text('Henüz içerik yok.'),
 
-              icon: Icon(Icons.school),
-            ),
-            const Padding(padding: EdgeInsets.only(top: 16)),
-
-            ElevatedButton(
-              onPressed: () => context.go('/settings/edit-account'),
-              //loading
-              child: const Text('Üniversiteni Doğrula'),
-            ),
-          ] else ...[
-            const Text('Henüz içerik yok.'),
-
-            ElevatedButton(
-              onPressed: () => _feedRepository.refresh(),
-              //loading
-              child: const Text('Yenile'),
-            ),
-          ],
+          ElevatedButton(
+            onPressed: () => _feedRepository.refresh(),
+            //loading
+            child: const Text('Yenile'),
+          ),
         ],
       ),
     );
