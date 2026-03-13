@@ -652,7 +652,9 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => CommunityInfoPage(),
+                        builder: (context) => CommunityInfoPage(
+                          communityUser: _communityUser,
+                        ),
                       ),
                     );
                   },

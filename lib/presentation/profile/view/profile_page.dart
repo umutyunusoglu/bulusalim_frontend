@@ -283,6 +283,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
       String bioText =
           (user.bio ?? 'Merhaba, profilime hoşgeldiniz.') as String;
+
       if (bioText.isEmpty || bioText == "") {
         bioText = 'Merhaba, profilime hoşgeldiniz.';
       }
@@ -909,9 +910,9 @@ class _ProfilePageState extends State<ProfilePage> {
         displayFollowingCount = numberOfFollowing + 1;
       }
     }
-    String bioText = (sessionUser?.bio ?? 'Merhaba, profilime hoşgeldiniz.');
-    if (bioText.isEmpty || bioText == "") {
-      bioText = 'Merhaba, profilime hoşgeldiniz.';
+    String myBioText = (sessionUser?.bio ?? '').toString();
+    if (myBioText.trim().isEmpty) {
+      myBioText = 'Merhaba, profilime hoşgeldiniz.';
     }
     final currentUsername = isCurrentUser
         ? (sessionUser?.username ?? '')
@@ -919,7 +920,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final currentFullName = isCurrentUser
         ? (sessionUser?.nameSurname ?? '')
         : _fullName;
-    final currentBio = bioText;
+    final currentBio = isCurrentUser ? myBioText : _bio;
     final currentSchool = isCurrentUser
         ? (sessionUser?.university ?? 'Üniversite Doğrulanmadı')
         : _school;
