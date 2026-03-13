@@ -103,8 +103,7 @@ class _EventCardState extends State<EventCard> {
     }
 
     // 1. Zaten katılımcı mı? -> KATILDIN
-    if (widget.participants.any((p) => p.userID == uid) ||
-        widget.event.creator.userID == uid) {
+    if (widget.participants.any((p) => p.userID == uid)) {
       _joinStatus = _EventJoinStatus.joined;
     }
     // 2. İstek göndermiş mi? -> BEKLİYOR (KUM SAATİ)
