@@ -72,9 +72,17 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 26
         targetSdk = 35
-        versionCode = 23
+        versionCode = 24
         versionName = "1.1.0"
         multiDexEnabled = true
+
+        externalNativeBuild {
+      // For ndk-build, instead use the ndkBuild block.
+        cmake {
+            // Passes optional arguments to CMake.
+            arguments += listOf("-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON")
+        }
+    }
 
        
     
