@@ -50,12 +50,33 @@
 	<string>Çevredeki buluşma cihazlarıyla bağlantı kurabilmek için Bluetooth izni gerekiyor.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Profil fotoğrafınızı çekebilmek ve buluşmalerde fotoğraf paylaşabilmek için kameraya erişim izni gerekiyor.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Size en yakın buluşmaleri ve toplulukları gösterebilmek için konum izni gerekiyor.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Etkinlik konumlarını size gösterebilmek için konum iznine ihtiyacımız var.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Size en yakın buluşmaleri ve toplulukları gösterebilmek için konum izni gerekiyor.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Profil fotoğrafı seçebilmek ve galeriye fotoğraf kaydedebilmek için erişim izni gerekiyor.</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>FlutterSceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>

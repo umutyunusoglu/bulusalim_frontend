@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/presentation/map/view/components/popup_next_button.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/services/remote_config_service.dart';

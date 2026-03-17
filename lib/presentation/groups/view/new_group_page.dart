@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/session_service.dart';

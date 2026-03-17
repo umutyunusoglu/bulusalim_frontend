@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:outnest/app_router.dart';
-import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/presentation/auth/view/components/auth_button.dart';
 import 'package:outnest/presentation/auth/view/components/auth_input.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';

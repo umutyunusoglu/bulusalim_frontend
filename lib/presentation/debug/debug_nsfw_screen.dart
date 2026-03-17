@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/domain/services/security_service.dart';
 
 class NsfwDebugScreen extends StatefulWidget {

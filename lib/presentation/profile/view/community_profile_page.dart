@@ -4,7 +4,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/application/service_locators/get_it_init.dart';
+import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/core/utils/types/enums/profile_segment_enum.dart';
 import 'package:outnest/core/utils/types/enums/user_event_status_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
@@ -422,6 +423,9 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
     final onSurface = theme.colorScheme.onSurface;
 
     final profileImageUrl = _communityUser?.profileImageUrl ?? '';
+    final safeProfileImageUrl = profileImageUrl.isNotEmpty
+        ? fixEmulatorUrl(profileImageUrl)
+        : '';
     final nameSurname = _communityUser?.nameSurname ?? '';
     final username = _communityUser?.username ?? '';
     final bio = _communityUser?.bio ?? '';
@@ -447,8 +451,13 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
                     radius: 38.r,
                     backgroundColor: Colors.grey.shade100,
                     backgroundImage: profileImageUrl.isNotEmpty
-                        ? CachedNetworkImageProvider(profileImageUrl)
+                        ? CachedNetworkImageProvider(safeProfileImageUrl)
                         : null,
+                    onBackgroundImageError: (error, stackTrace) {
+                      debugPrint(
+                        'CommunityProfilePage image load failed: url=$safeProfileImageUrl error=$error stack=$stackTrace',
+                      );
+                    },
                     child: profileImageUrl.isEmpty
                         ? Icon(Icons.groups, size: 30.sp, color: Colors.grey)
                         : null,

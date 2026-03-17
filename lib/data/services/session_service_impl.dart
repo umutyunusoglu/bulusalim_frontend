@@ -57,6 +57,7 @@ class SessionServiceImpl implements SessionService {
   // --- INIT ---
   @override
   Future<void> init() async {
+    await _authSubscription?.cancel(); // idemppotent - safe to call on re-login
     _authSubscription = _authService.onAuthStateChanged.listen(
       _onAuthStateChanged,
     );

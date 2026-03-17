@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/presentation/auth/view/components/auth_button.dart';
 import 'package:outnest/presentation/auth/view/components/auth_input.dart';
 import 'package:flutter/material.dart';
@@ -216,7 +216,7 @@ class _LoginPageState extends State<LoginPage> {
                             );
 
                             if (mounted) {
-                              context.go('/home');
+                              context.go('/splash');
                             }
                           } catch (e) {
                             if (mounted) {
@@ -265,7 +265,7 @@ class _LoginPageState extends State<LoginPage> {
                               await getIt<AuthService>().signInWithApple(
                                 isLogin: true,
                               );
-                              if (mounted) context.go('/home');
+                              if (mounted) context.go('/splash');
                             } catch (e) {
                               if (mounted) {
                                 setState(() => _authStatus = AuthStatus.none);

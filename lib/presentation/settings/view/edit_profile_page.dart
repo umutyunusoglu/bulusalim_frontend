@@ -5,7 +5,7 @@ import 'package:flutter/cupertino.dart'; // Carousel DatePicker için gerekli
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
@@ -55,6 +55,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
 
   bool _hasChanges = false;
+  String? _lastLoggedRemoteImageUrl;
 
   // Carousel dönerken seçilen geçici tarih
   DateTime _tempSelectedDate =
@@ -83,6 +84,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _username = user?.username ?? '';
     _nameSurname = user?.nameSurname ?? '';
     _profileImageUrl = user?.profileImageUrl ?? '';
+    if (_profileImageUrl.startsWith('http')) {
+      getIt<LoggingService>().debug(
+        'EditProfilePage init profile image URL: ${fixEmulatorUrl(_profileImageUrl)}',
+      );
+    }
     _hideSavedEvents = user?.hideSavedEvents ?? false;
     _selectedGender = user?.gender ?? GenderEnum.preferNotToSay;
     _selectedDob = user?.birthDate ?? DateTime(2002, 1);
@@ -567,12 +573,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
   // --- AVATAR BÖLÜMÜ ---
   Widget _buildProfilePhotoSection() {
     ImageProvider? imageProvider;
+    String? remoteImageUrl;
 
     if (_profileImageUrl.isNotEmpty) {
       // Eğer URL 'http' ile başlıyorsa sunucudaki resimdir
       if (_profileImageUrl.startsWith('http')) {
+        remoteImageUrl = fixEmulatorUrl(_profileImageUrl);
+        if (_lastLoggedRemoteImageUrl != remoteImageUrl) {
+          _lastLoggedRemoteImageUrl = remoteImageUrl;
+          getIt<LoggingService>().debug(
+            'Trying to load profile image from Firebase URL: $remoteImageUrl',
+          );
+        }
         imageProvider = CachedNetworkImageProvider(
-          fixEmulatorUrl(_profileImageUrl),
+          remoteImageUrl,
         );
       } else {
         // Değilse, cihazdan yeni seçilmiş yerel bir dosyadır
@@ -592,6 +606,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 backgroundColor: Colors.grey.shade200,
                 backgroundImage:
                     imageProvider, // Yukarıdaki mantığı buraya veriyoruz
+                onBackgroundImageError: (error, stackTrace) {
+                  getIt<LoggingService>().error(
+                    'Profile image load failed. url=$remoteImageUrl error=$error stack=$stackTrace',
+                  );
+                },
                 child: _profileImageUrl.isEmpty
                     ? Icon(Icons.person, size: 38.sp, color: Colors.grey)
                     : null,

@@ -2,7 +2,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/presentation/profile/view/components/empty_profile_screen.dart';
 import 'package:outnest/presentation/shared/event_card/event_card.dart';
 import 'package:outnest/presentation/shared/post_card/post_card.dart';
@@ -130,6 +130,7 @@ class _HomeContentPageState extends State<HomeContentPage> {
               return _buildEmptyState();
             }
             // 4. Veri Geldiğinde Liste Görünümü
+
             return ListView.builder(
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(
