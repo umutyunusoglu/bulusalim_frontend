@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/app_router.dart';
-import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/errors/exceptions/auth_exceptions.dart';
 import 'package:outnest/presentation/auth/view/components/auth_button.dart';
 import 'package:outnest/presentation/auth/view/components/auth_input.dart';

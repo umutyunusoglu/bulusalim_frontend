@@ -4,7 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:outnest/application/providers/get_it_init.dart'; // getIt için gerekli
+import 'package:outnest/application/service_locators/get_it_init.dart'; // getIt için gerekli
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
 import 'package:outnest/domain/services/session_service.dart'; // SessionService için gerekli

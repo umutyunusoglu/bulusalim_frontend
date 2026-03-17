@@ -34,6 +34,7 @@ class PushNotificationsServiceImpl implements PushNotificationsService {
         .requestPermission();
 
     // 2. SessionState'i Dinle (Login/Logout takibi için)
+    _sessionService.stateListenable.removeListener(_onSessionStateChanged); // idempotent — safe to call on re-login
     _sessionService.stateListenable.addListener(_onSessionStateChanged);
 
     // 3. Token Yenilenmesini Dinle (Firebase tarafında token değişirse)

@@ -9,7 +9,7 @@ import 'package:flutter/services.dart'
         rootBundle; // Diğer yerlerde kullanmıyorsan silebilirsin, yeni paket assetleri kendi okuyor
 import 'package:flutter_onnxruntime/flutter_onnxruntime.dart'; // YENİ PAKET EKLENDİ
 import 'package:image/image.dart' as img;
-import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
