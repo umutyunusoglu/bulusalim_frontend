@@ -48,10 +48,15 @@ class ProfilePhoto extends StatelessWidget {
                       width: photoSize,
                       height: photoSize,
                       // İnternet varken yükleme hatası olursa asset'i bas
-                      errorWidget: (context, url, error) => Image.asset(
-                        FileService.defaultProfileImageUrl(),
-                        fit: BoxFit.cover,
-                      ),
+                      errorWidget: (context, url, error) {
+                        debugPrint(
+                          'ProfilePhoto Firebase image load failed: url=$url error=$error',
+                        );
+                        return Image.asset(
+                          FileService.defaultProfileImageUrl(),
+                          fit: BoxFit.cover,
+                        );
+                      },
                     )
                   : Image.asset(
                       FileService.defaultProfileImageUrl(),

@@ -8,7 +8,7 @@ import 'package:flutter/services.dart'
     show rootBundle; // Asset yüklemek için gerekli
 import 'package:image/image.dart' as img; // Resim işleme paketi
 import 'package:onnxruntime/onnxruntime.dart'; // ONNX Runtime
-import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';

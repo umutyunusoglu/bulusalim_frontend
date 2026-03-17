@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
-import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
@@ -52,6 +53,35 @@ List<AvatarInfo> _mapToAvatarInfo(List<dynamic> rawList) {
   }).toList();
 }
 
+String? remapProfilePaths(Uri uri) {
+  if (uri.pathSegments.isEmpty) return null;
+
+  final pathWithQuery = uri.path + (uri.hasQuery ? '?${uri.query}' : '');
+  final myId = getIt<SessionService>().currentUser?.userID;
+
+  if (uri.pathSegments.first == 'profile' && uri.pathSegments.length >= 2) {
+    final userId = uri.pathSegments[1];
+    if (myId != null && userId == myId) {
+      return '/my_profile';
+    }
+    return '/home$pathWithQuery';
+  }
+
+  if (uri.pathSegments.first == 'share' &&
+      uri.pathSegments.length >= 3 &&
+      uri.pathSegments[1] == 'profile') {
+    final userId = uri.pathSegments[2];
+    if (myId != null && userId == myId) {
+      return '/my_profile';
+    }
+    // Keep share/profile on its dedicated top-level route. This keeps
+    // behavior consistent with share/post and share/event entry.
+    return null;
+  }
+
+  return null;
+}
+
 final router = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/splash',
@@ -69,55 +99,46 @@ final router = GoRouter(
     if (raw.startsWith('http')) {
       try {
         final uri = Uri.parse(raw);
+        final remapped = remapProfilePaths(uri);
+        if (remapped != null) {
+          return remapped;
+        }
         final fixed = uri.path + (uri.hasQuery ? '?${uri.query}' : '');
         debugPrint('router.redirect rewriting to: $fixed');
-        // deep‑linked profile requests should land in shell
-        if (uri.pathSegments.isNotEmpty) {
-          if (uri.pathSegments.first == 'profile') {
-            final myId = getIt<SessionService>().currentUser?.userID;
-            if (myId != null &&
-                uri.pathSegments.length >= 2 &&
-                uri.pathSegments[1] == myId) {
-              return '/my_profile';
-            }
-            return '/home$fixed';
-          }
-          // '/share/profile/…' should also remain in the shell branch
-          if (uri.pathSegments.first == 'share' &&
-              uri.pathSegments.length >= 3 &&
-              uri.pathSegments[1] == 'profile') {
-            final userId = uri.pathSegments[2];
-            final myId = getIt<SessionService>().currentUser?.userID;
-            debugPrint(
-              'router.redirect detected share/profile for $userId (myId=$myId)',
-            );
-            if (myId != null && userId == myId) {
-              debugPrint(
-                'router.redirect -> own profile via share, routing to /my_profile',
-              );
-              return '/my_profile';
-            }
-            debugPrint('router.redirect -> wrapping share path into shell');
-            return '/home$fixed';
-          }
-        }
         return fixed;
       } catch (e) {
         debugPrint('router.redirect parse error: $e');
       }
     }
 
-    // also handle the case where GoRouter gives us a plain '/profile/...' internally
-    // and similarly for '/share/profile'
+    // also handle plain '/profile/...' or '/share/profile/...' internal paths
+    final internalRemapped = remapProfilePaths(state.uri);
+    if (internalRemapped != null) {
+      return internalRemapped;
+    }
+
+    // If a logged-in user opens a share link before session initialization
+    // completes, route through splash first and continue to the original target.
     final path = state.uri.path;
-    if (path.startsWith('/profile/') || path.startsWith('/share/profile/')) {
-      final myId = getIt<SessionService>().currentUser?.userID;
-      if (myId != null) {
-        if (path == '/profile/$myId' || path == '/share/profile/$myId') {
-          return '/my_profile';
-        }
+    final isSharePath = path.startsWith('/share/') ||
+        path.startsWith('/home/share/');
+    final isProfileSharePath = path.startsWith('/share/profile/') ||
+        path.startsWith('/home/share/profile/');
+    final sessionUser = getIt<SessionService>().currentState.user;
+
+    // Profile deep links depend on session-backed app state.
+    // Always route through splash if session is not ready yet.
+    if (isProfileSharePath && path != '/splash' && sessionUser == null) {
+      final next = Uri.encodeComponent(state.uri.toString());
+      return '/splash?next=$next';
+    }
+
+    if (isSharePath && path != '/splash') {
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser != null && sessionUser == null) {
+        final next = Uri.encodeComponent(state.uri.toString());
+        return '/splash?next=$next';
       }
-      return '/home$path';
     }
 
     return null;
@@ -125,7 +146,10 @@ final router = GoRouter(
   routes: [
     GoRoute(
       path: '/splash',
-      builder: (context, state) => const InitScreen(),
+      builder: (context, state) {
+        final nextPath = state.uri.queryParameters['next'];
+        return InitScreen(nextPath: nextPath);
+      },
     ),
     GoRoute(
       path: '/welcome',

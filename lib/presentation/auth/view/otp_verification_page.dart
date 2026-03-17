@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/presentation/auth/view/components/auth_button.dart';
 import 'package:outnest/presentation/auth/view/components/otp_row.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
@@ -97,7 +97,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
       if (!mounted) return;
 
       if (widget.isLogin) {
-        context.go('/home');
+        context.go('/splash');
       } else {
         await context.push('/register-info');
       }
