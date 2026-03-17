@@ -1,84 +1,84 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
-import 'package:outnest/application/providers/get_it_init.dart';
-import 'package:outnest/domain/repositories/user_repository.dart';
-import 'package:outnest/domain/services/auth_service.dart';
-import 'package:outnest/domain/services/push_notifications_service.dart';
-import 'package:outnest/domain/services/session_service.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:outnest/application/app_state/app_initialization_state.dart';
 
-class InitScreen extends StatefulWidget {
-  const InitScreen({Key? key}) : super(key: key);
+class InitScreen extends HookConsumerWidget {
+  const InitScreen({super.key});
 
   @override
-  State<InitScreen> createState() => _InitScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(isUserLoggedInProvider);
+    final registeredState = ref.watch(isUserRegisteredProvider);
+    final appInit = ref.watch(isAppInitialisedProvider);
 
-class _InitScreenState extends State<InitScreen> with RouteAware {
-  // Kontrolün birden fazla kez üst üste tetiklenmesini engellemek için flag
-  bool _isProcessing = false;
+    // Persists across rebuilds without triggering a rebuild when mutated.
+    // Guards against double navigation if providers re-emit after navigation starts.
+    final hasNavigated = useRef<bool>(false);
 
-  @override
-  void initState() {
-    super.initState();
-    // İlk açılışta çalıştır
-    _initializeApp();
-  }
+    // Tracks whether auth state has gone through AsyncLoading since this instance
+    // mounted. On cold start, StreamProvider always starts as AsyncLoading. After
+    // login, the provider already has a value (AsyncData(false)) and jumps directly
+    // to AsyncData(true) via a platform-channel event — never going through
+    // AsyncLoading. Without this guard, InitScreen would see the stale false value
+    // and incorrectly redirect to /welcome before the login state propagates.
+    final seenAuthLoading = useRef<bool>(false);
 
-  // Sayfa her odağa geldiğinde (Geri dönüldüğünde vb.) tetiklenir
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Eğer sayfa şu an aktifse ve bir işlem yürütülmüyorsa tekrar kontrol et
-    if (!_isProcessing) {
-      _initializeApp();
-    }
-  }
+    useEffect(() {
+      if (hasNavigated.value) return null;
 
-  Future<void> _initializeApp() async {
-    if (_isProcessing) return;
+      // Step 1: auth state must be known
+      if (authState.isLoading) {
+        seenAuthLoading.value = true;
+        return null;
+      }
 
-    setState(() => _isProcessing = true);
-
-    final authService = getIt<AuthService>();
-    final userRepository = getIt<UserRepository>();
-    final pushService = getIt<PushNotificationsService>();
-    final sessionService = getIt<SessionService>();
-
-    try {
-      // Temel servisleri her seferinde valide et
-      await sessionService.init();
-      await pushService.initialize();
-
-      final isLoggedIn = await authService.isUserLoggedIn();
+      final isLoggedIn = authState.asData?.value;
+      if (isLoggedIn == null) return null;
 
       if (!isLoggedIn) {
-        if (mounted) context.go('/welcome');
-      } else {
-        final userId = authService.getCurrentUserID();
-        final isUserRegistered = await userRepository.isUserRegistered(userId);
+        // Guard: only route to /welcome if auth state was freshly resolved from
+        // AsyncLoading. If seenAuthLoading is false, this is a stale AsyncData(false)
+        // from before login — wait for the real auth event to arrive.
+        if (!seenAuthLoading.value) return null;
 
-        if (isUserRegistered) {
-          // İstediğin session yenileme metodu her başarılı girişte/dönüşte çalışır
-          await sessionService.refreshSession();
-          if (mounted) context.go('/home');
-        } else {
-          // Kullanıcı login ama register değilse register'a yönlendir
-          if (mounted) context.go('/register-info');
-        }
+        hasNavigated.value = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) context.go('/welcome');
+        });
+        return null;
       }
-    } catch (e) {
-      debugPrint("Init Error: $e");
-    } finally {
-      if (mounted) setState(() => _isProcessing = false);
-    }
-  }
 
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
+      // Step 2: registration status must be known
+      final isRegistered = registeredState.asData?.value;
+      if (isRegistered == null) return null;
+
+      if (!isRegistered) {
+        hasNavigated.value = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) context.go('/register-info');
+        });
+        return null;
+      }
+
+      // Step 3: wait for app services to initialize and user data to load
+      if (appInit.asData?.value != true) return null;
+
+      hasNavigated.value = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) context.go('/home');
+      });
+
+      return null;
+    }, [authState, registeredState, appInit]);
+
+    if (appInit.hasError) {
+      return Scaffold(
+        body: Center(child: Text('Başlatma hatası: ${appInit.error}')),
+      );
+    }
+
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }
