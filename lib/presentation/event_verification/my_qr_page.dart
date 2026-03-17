@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/domain/services/event_verification_service.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
