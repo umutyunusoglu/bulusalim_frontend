@@ -1,4 +1,4 @@
-import 'package:outnest/application/providers/get_it_init.dart';
+import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/datasources/university_datasource.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
