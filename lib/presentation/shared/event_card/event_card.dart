@@ -6,6 +6,7 @@ import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
 import 'package:outnest/core/utils/types/enums/screen_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
@@ -605,6 +606,11 @@ class _EventCardState extends State<EventCard> {
         ? categories[widget.event.hobbies[0]] ?? ''
         : '🎉';
 
+    final creatorCompact = widget.participants
+        .where((p) => p.userID == widget.event.creator.userID)
+        .firstOrNull;
+    final isCommunity = creatorCompact?.accountType == AccountType.community;
+
     return AnimatedCrossFade(
       duration: const Duration(milliseconds: 500),
       crossFadeState: isVisible
@@ -680,7 +686,10 @@ class _EventCardState extends State<EventCard> {
                                   size: 19.sp,
                                 ),
                               ),
-                            ),
+                            )
+                          else
+                            SizedBox(width: 24.w, height: 24.w),
+
                           SizedBox(width: 8.w),
 
                           // 3 NOKTA MENÜ (MORE VERT)
@@ -722,19 +731,49 @@ class _EventCardState extends State<EventCard> {
                       ),
                     ),
 
-                    // 3. KATIL BUTONU
+                    // 3. KATIL / i BUTONU
                     if (widget.showJoinButton)
                       Positioned(
                         bottom: 12.h,
-                        right: 13.w,
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: _handleJoinTap,
-                            borderRadius: BorderRadius.circular(20.r),
-                            child: _buildJoinButtonContent(),
-                          ),
-                        ),
+                        right: 12.w,
+                        child: isCommunity
+                            ? GestureDetector(
+                                onTap: () {
+                                  context.push(
+                                    '/community-event-detail-view',
+                                    extra: widget.event,
+                                  );
+                                },
+                                child: Container(
+                                  width: 36.w,
+                                  height: 36.w,
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.secondaryColor,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Color(0x1A000000),
+                                        offset: Offset(0, 4),
+                                        blurRadius: 8,
+                                      ),
+                                    ],
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Icon(
+                                    Symbols.info,
+                                    color: Colors.white,
+                                    size: 20.sp,
+                                  ),
+                                ),
+                              )
+                            : Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: _handleJoinTap,
+                                  borderRadius: BorderRadius.circular(20.r),
+                                  child: _buildJoinButtonContent(),
+                                ),
+                              ),
                       ),
                   ],
                 ),
@@ -743,20 +782,69 @@ class _EventCardState extends State<EventCard> {
 
             Positioned(
               top: -24.h,
-              child: SizedBox(
-                width: 50.w,
-                height: 50.w,
-                child: Center(
-                  child: Text(
-                    categoryIcon,
-                    style: TextStyle(
-                      fontFamily: 'SF Pro Display',
-                      fontSize: 24.sp,
-                      fontWeight: FontWeight.bold,
+              child: isCommunity
+                  ? SizedBox(
+                      width: 46.w,
+                      height: 46.w,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        alignment: Alignment.center,
+                        children: [
+                          CircleAvatar(
+                            radius: 16.r,
+                            backgroundColor: AppColors.inputFillColor,
+                            backgroundImage:
+                                widget.event.creator.profileImageUrl.isNotEmpty
+                                ? NetworkImage(
+                                    widget.event.creator.profileImageUrl,
+                                  )
+                                : null,
+                            child: widget.event.creator.profileImageUrl.isEmpty
+                                ? Icon(
+                                    Icons.group,
+                                    size: 16.sp,
+                                    color: AppColors.textGrey,
+                                  )
+                                : null,
+                          ),
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              width: 18.w,
+                              height: 18.h,
+                              decoration: BoxDecoration(
+                                color: AppColors.cardBackgroundColor,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.cardBackgroundColor,
+                                  width: 1.5,
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                categoryIcon,
+                                style: TextStyle(fontSize: 10.sp),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : SizedBox(
+                      width: 50.w,
+                      height: 50.w,
+                      child: Center(
+                        child: Text(
+                          categoryIcon,
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Display',
+                            fontSize: 24.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ),
             ),
 
             // AVATARLAR
