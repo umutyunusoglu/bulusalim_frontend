@@ -35,6 +35,13 @@ class EventModel extends Model<EventEntity> {
     required this.visibility,
     required this.showOnMap,
     this.visibilityGroupID,
+    this.communityDescription,
+    this.communityRules,
+    this.communityVenueInfo,
+    this.communityLink,
+    this.communityMaxParticipants,
+    this.communityRequiresDocument,
+    this.communityCoverImageUrl,
   });
 
   @override
@@ -63,6 +70,13 @@ class EventModel extends Model<EventEntity> {
       visibility: entity.visibility,
       visibilityGroupID: entity.visibilityGroupID,
       showOnMap: entity.showOnMap,
+      communityDescription: entity.communityDescription,
+      communityRules: entity.communityRules,
+      communityVenueInfo: entity.communityVenueInfo,
+      communityLink: entity.communityLink,
+      communityMaxParticipants: entity.communityMaxParticipants,
+      communityRequiresDocument: entity.communityRequiresDocument,
+      communityCoverImageUrl: entity.communityCoverImageUrl,
     );
   }
 
@@ -154,6 +168,13 @@ class EventModel extends Model<EventEntity> {
       visibility: visibility,
       visibilityGroupID: doc['visibilityGroupID'] as String?,
       showOnMap: (doc['showOnMap'] as bool?) ?? false,
+      communityDescription: doc['communityDescription'] as String?,
+      communityRules: doc['communityRules'] as String?,
+      communityVenueInfo: doc['communityVenueInfo'] as String?,
+      communityLink: doc['communityLink'] as String?,
+      communityMaxParticipants: doc['communityMaxParticipants'] as int?,
+      communityRequiresDocument: doc['communityRequiresDocument'] as bool?,
+      communityCoverImageUrl: doc['communityCoverImageUrl'] as String?,
     );
   }
 
@@ -189,6 +210,13 @@ class EventModel extends Model<EventEntity> {
       'visibility': visibility.toString(),
       'visibilityGroupID': visibilityGroupID,
       'showOnMap': showOnMap,
+      'communityDescription': communityDescription,
+      'communityRules': communityRules,
+      'communityVenueInfo': communityVenueInfo,
+      'communityLink': communityLink,
+      'communityMaxParticipants': communityMaxParticipants,
+      'communityRequiresDocument': communityRequiresDocument,
+      'communityCoverImageUrl': communityCoverImageUrl,
     };
   }
 
@@ -227,6 +255,13 @@ class EventModel extends Model<EventEntity> {
       visibility: visibility,
       visibilityGroupID: visibilityGroupID,
       showOnMap: showOnMap,
+      communityDescription: communityDescription,
+      communityRules: communityRules,
+      communityVenueInfo: communityVenueInfo,
+      communityLink: communityLink,
+      communityMaxParticipants: communityMaxParticipants,
+      communityRequiresDocument: communityRequiresDocument,
+      communityCoverImageUrl: communityCoverImageUrl,
     );
   }
 
@@ -279,4 +314,11 @@ class EventModel extends Model<EventEntity> {
   final String? visibilityGroupID;
   final String geohash;
   final bool showOnMap;
+  final String? communityDescription;
+  final String? communityRules;
+  final String? communityVenueInfo;
+  final String? communityLink;
+  final int? communityMaxParticipants;
+  final bool? communityRequiresDocument;
+  final String? communityCoverImageUrl;
 }

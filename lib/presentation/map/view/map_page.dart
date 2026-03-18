@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:dart_geohash/dart_geohash.dart';
@@ -14,6 +15,7 @@ import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
 import 'package:outnest/core/utils/types/enums/create_event_step_enum.dart';
 import 'package:outnest/core/utils/types/enums/event_role_enum.dart';
 import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
@@ -77,6 +79,13 @@ class _MapPageState extends State<MapPage> {
   bool _isCardVisible = false;
   EventEntity? _selectedEvent;
   DateTimeRange? _filterTimeRange;
+  String? _tempCommunityDescription;
+  String? _tempCommunityRules;
+  String? _tempCommunityVenueInfo;
+  String? _tempCommunityLink;
+  int? _tempCommunityMaxParticipants;
+  bool? _tempCommunityRequiresDocument;
+  File? _tempCommunityImage;
 
   VisibilityEnum _filterPeople = VisibilityEnum.everyone;
   // --- WIZARD STATE ---
@@ -1273,11 +1282,51 @@ class _MapPageState extends State<MapPage> {
         return EventNameStep(
           onBack: () => setState(() => _createEventStep = 3),
           onClose: () => _closeWizard(CreateEventStepEnum.name),
-          onNext: (n, s) => setState(() {
+          onNext: (n, s) async {
             _tempEventName = n;
-            _createEventStep = 5;
             _isNameSuggestionUsed = s;
-          }),
+
+            final isCommunity =
+                getIt<SessionService>().currentUser?.accountType ==
+                AccountType.community;
+
+            if (isCommunity) {
+              final result = await context.push<Map<String, dynamic>>(
+                '/community-event-detail',
+                extra: {
+                  'eventName': n,
+                  'displayAddress': _tempDisplayAddress ?? '',
+                  'startTime': DateTime(
+                    _tempDate!.year,
+                    _tempDate!.month,
+                    _tempDate!.day,
+                    _tempTime!.hour,
+                    _tempTime!.minute,
+                  ),
+                  'category': _tempCategory ?? '',
+                },
+              );
+
+              // "onayla ve ilerle"ye basıldıysa result dolu gelir
+              if (result != null && mounted) {
+                setState(() {
+                  _tempCommunityDescription = result['description'] as String;
+                  _tempCommunityRules = result['rules'] as String;
+                  _tempCommunityVenueInfo = result['venueInfo'] as String;
+                  _tempCommunityLink = result['link'] as String;
+                  _tempCommunityMaxParticipants =
+                      result['maxParticipants'] as int;
+                  _tempCommunityRequiresDocument =
+                      result['requiresDocument'] as bool;
+                  _tempCommunityImage = result['coverImage'] as File?;
+                  _createEventStep = 5;
+                });
+              }
+              // result null → kullanıcı geri döndü, wizard olduğu yerde kalır
+            } else {
+              setState(() => _createEventStep = 5);
+            }
+          },
           category: _tempCategory ?? 'Kahve',
         );
       default:
@@ -1354,6 +1403,7 @@ class _MapPageState extends State<MapPage> {
         role: EventRoleEnum.creator,
         eventScore: 5,
         university: currentUser.university,
+        accountType: currentUser.accountType,
       ),
       status: EventStatusEnum.upcoming,
       capacity: 5,
@@ -1419,6 +1469,7 @@ class _MapPageState extends State<MapPage> {
           role: EventRoleEnum.creator,
           eventScore: 0,
           university: currentUser.university,
+          accountType: currentUser.accountType,
         ),
         capacity: AppConfig.eventCapacity,
         participants: [currentUserCompact],
@@ -1440,6 +1491,13 @@ class _MapPageState extends State<MapPage> {
             ? _tempVisibilityGroupID
             : null,
         showOnMap: _tempShowOnMap ?? true,
+        communityDescription: _tempCommunityDescription,
+        communityRules: _tempCommunityRules,
+        communityVenueInfo: _tempCommunityVenueInfo,
+        communityLink: _tempCommunityLink,
+        communityMaxParticipants: _tempCommunityMaxParticipants,
+        communityRequiresDocument: _tempCommunityRequiresDocument,
+        communityCoverImageUrl: null, // TODO: Firebase Storage upload
       );
       eventRepository.createEvent(event);
 

@@ -99,7 +99,7 @@ class EventRepositoryImpl implements EventRepository {
         nameSurname: null,
         isPrivate: null,
         bio: null,
-        accountType: null,
+        accountType: event.creator.accountType,
         communityData: null,
       );
 
