@@ -15,7 +15,6 @@ import 'package:outnest/presentation/camera/view/camera_page.dart';
 import 'package:outnest/presentation/chat/view/chat_page.dart';
 import 'package:outnest/presentation/chat/view/event_settings_page.dart';
 import 'package:outnest/presentation/chat/view/my_events_page.dart';
-import 'package:outnest/presentation/debug/debug_nsfw_screen.dart';
 import 'package:outnest/presentation/event_verification/my_qr_page.dart';
 import 'package:outnest/presentation/event_verification/qr_scanner_page.dart';
 import 'package:outnest/presentation/event_verification/verification_splash_screen.dart';
@@ -103,11 +102,6 @@ final router = GoRouter(
     GoRoute(
       path: '/register-info',
       builder: (context, state) => const RegisterInfoPage(),
-    ),
-    GoRoute(
-      path: '/debug',
-      parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const NsfwDebugScreen(),
     ),
 
     StatefulShellRoute.indexedStack(
