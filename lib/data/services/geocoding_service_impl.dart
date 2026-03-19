@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/domain/services/geocoding_service.dart';
@@ -8,7 +9,7 @@ class GeocodingServiceImpl implements GeocodingService {
   List<dynamic> _features = [];
 
   Future<void> init() async {
-    final raw = await rootBundle.loadString('assets/turkey_map.json');
+    final raw = await rootBundle.loadString('assets/data/turkey_map.json');
     final geojson = jsonDecode(raw) as Map<String, dynamic>;
     _features = geojson['features'] as List<dynamic>;
   }
