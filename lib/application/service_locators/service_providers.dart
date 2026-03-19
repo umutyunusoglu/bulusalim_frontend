@@ -9,6 +9,7 @@ import 'package:outnest/data/repositories/inbox_repository_impl.dart';
 import 'package:outnest/data/services/auth_service_impl.dart';
 import 'package:outnest/data/services/event_verification_service_impl.dart';
 import 'package:outnest/data/services/file_service_impl.dart';
+import 'package:outnest/data/services/geocoding_service_impl.dart';
 import 'package:outnest/data/services/persistance_service_impl.dart';
 import 'package:outnest/data/services/push_notifications_service_impl.dart';
 import 'package:outnest/data/services/remote_config_service_impl.dart';
@@ -19,6 +20,7 @@ import 'package:outnest/domain/services/analytics/analytics_service.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/services/event_verification_service.dart';
 import 'package:outnest/domain/services/file_service.dart';
+import 'package:outnest/domain/services/geocoding_service.dart';
 import 'package:outnest/domain/services/global_content_cache.dart';
 import 'package:outnest/domain/services/persistance_service.dart';
 import 'package:outnest/domain/services/push_notifications_service.dart';
@@ -97,6 +99,7 @@ extension ServiceModule on GetIt {
           persistanceService: this(),
           logger: this(),
         ),
-      );
+      )
+      ..registerLazySingleton<GeocodingService>(() => GeocodingServiceImpl());
   }
 }
