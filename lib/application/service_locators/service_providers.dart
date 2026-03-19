@@ -100,6 +100,13 @@ extension ServiceModule on GetIt {
           logger: this(),
         ),
       )
-      ..registerLazySingleton<GeocodingService>(() => GeocodingServiceImpl());
+      ..registerSingletonAsync<GeocodingService>(
+        () async {
+          final service = GeocodingServiceImpl();
+          await service.init();
+          return service;
+        },
+        dependsOn: [],
+      );
   }
 }
