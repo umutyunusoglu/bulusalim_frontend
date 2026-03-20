@@ -1,5 +1,6 @@
 // lib/domain/repositories/auth_repository.dart
 
+import 'package:outnest/core/errors/exceptions/auth_exceptions.dart';
 import 'package:outnest/core/utils/types/types.dart';
 
 abstract class AuthService {
@@ -23,11 +24,12 @@ abstract class AuthService {
   Future<String> signInWithApple({required bool isLogin});
   Future<String> signInWithGoogle({required bool isLogin});
 
+  /// Gets the current user's ID. 
+  /// Throws [AuthException] if no user is signed in.
   Identifier getCurrentUserID();
   Stream<String?> get onAuthStateChanged;
 
   Future<void> signOut();
-  Future<bool> isUserLoggedIn();
 
   String getUserPhoneNumber();
 }
