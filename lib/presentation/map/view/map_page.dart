@@ -552,7 +552,7 @@ class _MapPageState extends State<MapPage> {
     await mapboxMap.location.updateSettings(
       LocationComponentSettings(
         enabled: true,
-        puckBearingEnabled: true, // İkonun cihazın yönüne göre dönmesini sağlar
+        puckBearingEnabled: true,
       ),
     );
     try {
@@ -871,7 +871,6 @@ class _MapPageState extends State<MapPage> {
                             'herkes',
                             'takipçiler',
                             'okul',
-                            'kümeler',
                           ],
                           initial: 'herkes',
                           onChanged: (val) {

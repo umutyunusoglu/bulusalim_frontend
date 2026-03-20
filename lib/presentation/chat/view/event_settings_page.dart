@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/domain/services/security_service.dart';
@@ -629,7 +630,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
             ),
             if (isSelected)
               Icon(
-                Icons.check_circle,
+                Symbols.check_circle,
                 color: AppColors.primaryColor,
                 size: 24.sp,
               ),
@@ -727,7 +728,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                     GestureDetector(
                       onTap: () => context.pop(),
                       child: Icon(
-                        Icons.arrow_back,
+                        Symbols.reply,
                         color: Colors.black87,
                         size: 24.sp,
                       ),
@@ -837,14 +838,14 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                       value: _currentLocation.isNotEmpty
                           ? _currentLocation
                           : 'Konum seçilmedi',
-                      icon: Icons.location_on_outlined,
+                      icon: Symbols.location_on,
                       onTap: locationOnTap,
                     ),
                     _thinDivider(),
                     _buildPillRow(
                       title: 'Buluşma Zamanı',
                       value: timeValue,
-                      icon: Icons.access_time,
+                      icon: Symbols.schedule,
                       onTap: timeOnTap,
                     ),
 
@@ -868,11 +869,12 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                     ] else
                       _thinDivider(),
 
-                    _buildSimpleActionRow(
-                      'Buluşmadan Ayrıl',
-                      textColor: AppColors.primaryColor,
-                      onTap: _onLeaveEventTap,
-                    ),
+                    if (!isCreator)
+                      _buildSimpleActionRow(
+                        'Buluşmadan Ayrıl',
+                        textColor: AppColors.primaryColor,
+                        onTap: _onLeaveEventTap,
+                      ),
 
                     if (isCreator) ...[
                       _thinDivider(),

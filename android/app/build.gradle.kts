@@ -35,8 +35,18 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace = "app.outnest"
     compileSdk = 36
-    ndkVersion = flutter.ndkVersion
-
+    ndkVersion = "29.0.14206865"
+    packaging {
+        jniLibs {
+            // Bu satır yerel kütüphanelerin sıkıştırılmadan, 
+            // sayfa sınırlarına uygun paketlenmesini sağlar.
+            useLegacyPackaging = false
+            
+        }
+        resources {
+                excludes += "**/lib/**/gdbserver"
+            }
+        }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -62,9 +72,20 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 26
         targetSdk = 35
-        versionCode = 21
-        versionName = "1.0.14"
+        versionCode = 24
+        versionName = "1.1.0"
         multiDexEnabled = true
+
+        externalNativeBuild {
+      // For ndk-build, instead use the ndkBuild block.
+        cmake {
+            // Passes optional arguments to CMake.
+            arguments += listOf("-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON")
+        }
+    }
+
+       
+    
     }
 
     buildTypes {

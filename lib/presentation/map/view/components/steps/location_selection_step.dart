@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/presentation/map/view/components/popup_next_button.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
@@ -392,7 +393,7 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                Icons.undo,
+                Symbols.reply,
                 size: 24.sp,
                 color: AppColors.iconColor,
               ),

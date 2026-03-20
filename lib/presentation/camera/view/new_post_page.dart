@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/application/service_locators/get_it_init.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/services/draft_post_service.dart';
 import 'package:outnest/domain/usecases/upload_post_usecase.dart';
@@ -320,14 +321,19 @@ class _NewPostPageState extends State<NewPostPage> {
 
       // Başarılı ise taslağı temizle ve haber ver
       await draftService.clearDraft(event.id);
-      showInfoPopup(context, message: 'Gönderiniz başarıyla paylaşıldı');
+      if (mounted) {
+        showInfoPopup(context, message: 'Gönderiniz başarıyla paylaşıldı');
+      }
     } catch (e) {
       // Hata durumunda uyar
-      showErrorPopup(
-        context,
-        message:
-            'Gönderiniz paylaşılırken bir hata ile karşılaşıldı. Lütfen Tekrar Deneyiniz.',
-      );
+      getIt<LoggingService>().error(e.toString());
+      if (mounted) {
+        showErrorPopup(
+          context,
+          message:
+              'Gönderiniz paylaşılırken bir hata ile karşılaşıldı. Lütfen Tekrar Deneyiniz.',
+        );
+      }
     }
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
@@ -161,10 +162,9 @@ class _AboutCommunityPageState extends State<AboutCommunityPage> {
                               image: FileImage(_selectedImage!),
                               fit: BoxFit.cover,
                             )
-                          : (_imagePath!
-                                .isNotEmpty) // Eğer yeni resim seçilmediyse ama veritabanında resim varsa onu göster
+                          : (_imagePath!.isNotEmpty)
                           ? DecorationImage(
-                              image: NetworkImage(_imagePath!),
+                              image: CachedNetworkImageProvider(_imagePath!),
                               fit: BoxFit.cover,
                             )
                           : null,
@@ -409,7 +409,9 @@ class _AboutCommunityPageState extends State<AboutCommunityPage> {
               CircleAvatar(
                 radius: 25.r,
                 backgroundColor: AppColors.dividerColor,
-                backgroundImage: NetworkImage(user.profileImageUrl),
+                backgroundImage: CachedNetworkImageProvider(
+                  user.profileImageUrl,
+                ),
               ),
               if (isShowingOverlay)
                 Container(

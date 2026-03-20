@@ -8,7 +8,10 @@ PreferredSizeWidget buildAppBar(BuildContext context, {bool showBack = true}) {
     elevation: 0,
     leading: showBack
         ? IconButton(
-            icon: const Icon(Icons.reply, color: AppColors.darkSlate),
+            icon: const Icon(
+              Icons.arrow_back,
+              color: AppColors.darkSlate,
+            ),
             onPressed: () {
               context.pop();
             },

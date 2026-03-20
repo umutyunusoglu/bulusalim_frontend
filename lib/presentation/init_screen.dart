@@ -41,6 +41,34 @@ class InitScreen extends HookConsumerWidget {
 
       final isLoggedIn = authState.asData?.value;
       if (isLoggedIn == null) return null;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(isUserLoggedInProvider);
+    final registeredState = ref.watch(isUserRegisteredProvider);
+    final appInit = ref.watch(isAppInitialisedProvider);
+
+    // Persists across rebuilds without triggering a rebuild when mutated.
+    // Guards against double navigation if providers re-emit after navigation starts.
+    final hasNavigated = useRef<bool>(false);
+
+    // Tracks whether auth state has gone through AsyncLoading since this instance
+    // mounted. On cold start, StreamProvider always starts as AsyncLoading. After
+    // login, the provider already has a value (AsyncData(false)) and jumps directly
+    // to AsyncData(true) via a platform-channel event — never going through
+    // AsyncLoading. Without this guard, InitScreen would see the stale false value
+    // and incorrectly redirect to /welcome before the login state propagates.
+    final seenAuthLoading = useRef<bool>(false);
+
+    useEffect(() {
+      if (hasNavigated.value) return null;
+
+      // Step 1: auth state must be known
+      if (authState.isLoading) {
+        seenAuthLoading.value = true;
+        return null;
+      }
+
+      final isLoggedIn = authState.asData?.value;
+      if (isLoggedIn == null) return null;
 
       if (!isLoggedIn) {
         // Guard: only route to /welcome if auth state was freshly resolved from

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 
 class PrivateAccountView extends StatelessWidget {
@@ -22,7 +23,7 @@ class PrivateAccountView extends StatelessWidget {
               ),
             ),
             child: Icon(
-              Icons.lock_outline,
+              Symbols.lock,
               size: 50.sp,
               color: AppColors.primaryColor,
             ),

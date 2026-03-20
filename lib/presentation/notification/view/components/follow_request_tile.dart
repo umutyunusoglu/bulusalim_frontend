@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -95,11 +97,11 @@ class _FollowRequestTileState extends State<FollowRequestTile> {
     // Kullanıcının gizlilik durumunu bilmediğimiz için hızlıca çekiyoruz
     final targetUser = await _userRepository.getUserPublicData(targetUserID);
     final isPrivate = targetUser?.isPrivate ?? false;
-
+    //todo: implement rollback
     if (isPrivate) {
-      await _sendFollowRequest();
+      unawaited(_sendFollowRequest());
     } else {
-      await _performDirectFollow();
+      unawaited(_performDirectFollow());
     }
   }
 
