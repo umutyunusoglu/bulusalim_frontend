@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
@@ -337,12 +338,20 @@ class _ProfilePageState extends State<ProfilePage> {
 
       getIt<LoggingService>().debug("Profile data fetched: $user");
 
+      String bioText =
+          (user.bio ?? 'Merhaba, profilime hoşgeldiniz.') as String;
+
+      if (bioText.isEmpty || bioText == "") {
+        bioText = 'Merhaba, profilime hoşgeldiniz.';
+      }
+
       setState(() {
         // dynamic olduğu için [] operatörü veya nokta operatörü kullanılabilir
         // null check (?.) ve null-coalescing (??) ile güvenliğe alıyoruz
+
         _username = (user.username ?? '').toString();
         _fullName = (user.nameSurname ?? '').toString();
-        _bio = (user.bio ?? '').toString();
+        _bio = bioText;
         _school = (user.university ?? 'Üniversite Doğrulanmadı').toString();
         _profileImageUrl = (user.profileImageUrl ?? '').toString();
 
@@ -973,14 +982,17 @@ class _ProfilePageState extends State<ProfilePage> {
         displayFollowingCount = numberOfFollowing + 1;
       }
     }
-
+    String myBioText = (sessionUser?.bio ?? '').toString();
+    if (myBioText.trim().isEmpty) {
+      myBioText = 'Merhaba, profilime hoşgeldiniz.';
+    }
     final currentUsername = isCurrentUser
         ? (sessionUser?.username ?? '')
         : _username;
     final currentFullName = isCurrentUser
         ? (sessionUser?.nameSurname ?? '')
         : _fullName;
-    final currentBio = isCurrentUser ? (sessionUser?.bio ?? '') : _bio;
+    final currentBio = isCurrentUser ? myBioText : _bio;
     final currentSchool = isCurrentUser
         ? (sessionUser?.university ?? 'Üniversite Doğrulanmadı')
         : _school;
@@ -1075,7 +1087,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               context.push('/settings');
                             },
                             child: Icon(
-                              Icons.settings_outlined,
+                              Symbols.settings,
                               color: AppColors.darkBackgroundColor,
                               size: 24.sp,
                             ),
@@ -1343,7 +1355,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     elevation: 0,
                     leading: IconButton(
                       icon: Icon(
-                        Icons.arrow_back_ios_new,
+                        Symbols.reply,
+                        weight: 400,
                         color: theme.colorScheme.onSurface,
                         size: 20.sp,
                       ),

@@ -1,7 +1,9 @@
 import 'dart:io';
 
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/app_router.dart';
 import 'package:outnest/application/service_locators/get_it_init.dart';
+import 'package:outnest/core/errors/exceptions/auth_exceptions.dart';
 import 'package:outnest/presentation/auth/view/components/auth_button.dart';
 import 'package:outnest/presentation/auth/view/components/auth_input.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
@@ -113,7 +115,7 @@ class _RegisterPageState extends State<RegisterPage> {
           elevation: 0,
           leading: IconButton(
             icon: Icon(
-              Icons.arrow_back_ios_new,
+              Symbols.reply,
               color: Colors.black,
               size: 24.sp,
             ),
@@ -238,13 +240,23 @@ class _RegisterPageState extends State<RegisterPage> {
                               isLogin: false,
                             );
                             if (mounted) context.push('/register-info');
+                          } on AuthException catch (e) {
+                            if (mounted) {
+                              setState(() => _authStatus = AuthStatus.none);
+
+                              showErrorPopup(
+                                context,
+                                message: e.toString(),
+                              );
+                            }
                           } catch (e) {
                             if (mounted) {
                               setState(() => _authStatus = AuthStatus.none);
+
                               showErrorPopup(
                                 context,
                                 message:
-                                    'Google ile giriş yaparken hata oluştu. Lütfen tekrar deneyiniz.',
+                                    'Google ile giriş yapılırken bir hata ile karşılaşıldı. Lütfen tekrar deneyiniz.',
                               );
                             }
                           }
@@ -293,12 +305,23 @@ class _RegisterPageState extends State<RegisterPage> {
                                 isLogin: false,
                               );
                               if (mounted) context.push('/register-info');
+                            } on AuthException catch (e) {
+                              if (mounted) {
+                                setState(() => _authStatus = AuthStatus.none);
+
+                                showErrorPopup(
+                                  context,
+                                  message: e.toString(),
+                                );
+                              }
                             } catch (e) {
                               if (mounted) {
                                 setState(() => _authStatus = AuthStatus.none);
+
                                 showErrorPopup(
                                   context,
-                                  message: 'Apple ile giriş yaparken hata oluştu. Lütfen tekrar deneyiniz.',
+                                  message:
+                                      'Apple ile giriş yapılırken bir hata ile karşılaşıldı. Lütfen tekrar deneyiniz.',
                                 );
                               }
                             }

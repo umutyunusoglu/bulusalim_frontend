@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/core/utils/types/enums/emote_enum.dart';
@@ -19,7 +20,7 @@ import 'package:outnest/domain/services/analytics/event_configs/unpin_post_analy
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
-import 'package:outnest/domain/services/share_links_service.dart';
+import 'package:outnest/presentation/home/view/components/event/participant_bottom_sheet.dart';
 import 'package:outnest/presentation/home/view/components/post/content_tag_chip.dart';
 import 'package:outnest/presentation/home/view/components/post/emoji_chip.dart';
 import 'package:outnest/presentation/home/view/components/post/small_stacked_avatars.dart';
@@ -261,6 +262,35 @@ class _PostCardState extends State<PostCard> {
     }
   }
 
+  void _showParticipantsBottomSheet() {
+    print('🔥 DEBUG: Bottom sheet açılıyor...'); // Debug için
+
+    final creator = CompactUserEntity(
+      userID: widget.post.creator.userID,
+      username: widget.post.creator.username,
+      profileImageUrl: widget.post.creator.profileImageUrl,
+      university: widget.post.creator.university,
+      nameSurname: null,
+      isPrivate: null,
+      bio: null,
+      accountType: null,
+      communityData: null,
+    );
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      builder: (context) {
+        return ParticipantsBottomSheet(
+          creator: creator,
+          participants: widget.post.participants,
+        );
+      },
+    );
+  }
+
   void _navigateToProfile() {
     final userId = widget.user?.userID;
     if (userId != null && userId.isNotEmpty) {
@@ -349,21 +379,6 @@ class _PostCardState extends State<PostCard> {
     }
   }
 
-  Future<void> _handleSharePost() async {
-    Navigator.pop(context);
-    try {
-      await getIt<ShareLinksService>().sharePost(widget.post.id);
-    } catch (e) {
-      if (mounted) {
-        showErrorPopup(
-          context,
-          message: 'Paylaşım başarısız oldu, lütfen tekrar deneyin',
-        );
-      }
-      debugPrint('Share post error: $e');
-    }
-  }
-
   // --- PIN MANTIĞI ---
   Future<void> _togglePinStatus() async {
     final newStatus = !_isPinned;
@@ -435,31 +450,24 @@ class _PostCardState extends State<PostCard> {
               if (_amIFollowingPostCreator)
                 _buildOptionItem(
                   context,
-                  icon: Icons.person_remove_outlined,
+                  icon: Symbols.person_remove,
                   text: 'Takibi Bırak',
                   color: Colors.black,
                   onTap: _handleUnfollowUser,
                 ),
               _buildOptionItem(
                 context,
-                icon: Icons.block_outlined,
+                icon: Symbols.account_circle_off,
                 text: 'Engelle',
                 color: const Color(0xFFFF3B30),
                 onTap: _handleBlockUser,
               ),
               _buildOptionItem(
                 context,
-                icon: Icons.report_gmailerrorred_outlined,
+                icon: Symbols.report,
                 text: 'Şikayet Et',
                 color: const Color(0xFFFF3B30),
                 onTap: _handleReportPost,
-              ),
-              _buildOptionItem(
-                context,
-                icon: Icons.share_outlined,
-                text: 'Paylaş',
-                color: Colors.black,
-                onTap: _handleSharePost,
               ),
               SizedBox(height: 10.h),
             ],
@@ -625,7 +633,7 @@ class _PostCardState extends State<PostCard> {
                   options: [
                     if (_isPinned)
                       BottomSheetOption(
-                        icon: Icons.push_pin,
+                        icon: Symbols.keep_off,
                         text: 'Sabitlemeyi Kaldır',
                         onTap: () {
                           sheetContext.pop();
@@ -634,7 +642,7 @@ class _PostCardState extends State<PostCard> {
                       )
                     else
                       BottomSheetOption(
-                        icon: Icons.push_pin_outlined,
+                        icon: Symbols.keep,
                         text: 'Gönderiyi Profile Sabitle',
                         onTap: () {
                           sheetContext.pop();
@@ -649,7 +657,7 @@ class _PostCardState extends State<PostCard> {
                       },
                     ),*/
                     BottomSheetOption(
-                      icon: Icons.delete_outline,
+                      icon: Symbols.delete,
                       text: 'Gönderiyi Sil',
                       isDestructive: true,
                       onTap: () async {
@@ -769,10 +777,14 @@ class _PostCardState extends State<PostCard> {
             onTap: () => _handleEmoteTap(EmoteEnum.egg),
           ),
           const Spacer(),
-          SmallStackedAvatars(
-            profileImageUrls: likedByAvatars,
-            size: 28.r,
-            overlap: 10.r,
+
+          GestureDetector(
+            onTap: _showParticipantsBottomSheet,
+            child: SmallStackedAvatars(
+              profileImageUrls: likedByAvatars,
+              size: 28.r,
+              overlap: 10.r,
+            ),
           ),
         ],
       ),

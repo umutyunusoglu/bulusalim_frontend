@@ -8,6 +8,7 @@ import 'package:outnest/domain/repositories/user_repository.dart'; // Eklendi
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/session_state.dart';
 import 'package:outnest/presentation/settings/view/change_password_page.dart'; // Eklendi
+import 'package:outnest/presentation/settings/view/change_university_page.dart';
 import 'package:outnest/presentation/settings/view/edit_social_media_link_page.dart';
 
 class CommunityAccountSettingsPage extends StatefulWidget {
@@ -90,7 +91,12 @@ class _CommunityAccountSettingsPageState
                   value: currentUser.university ?? 'Belirtilmemiş',
                   trailing: GestureDetector(
                     onTap: () {
-                      /* TODO: Üniversite Değiştir */
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ChangeUniversityPage(),
+                        ),
+                      );
                     },
                     child: Text(
                       'değiştir',
@@ -103,11 +109,12 @@ class _CommunityAccountSettingsPageState
                     ),
                   ),
                 ),
+                /*
                 _buildInfoRow(
                   label: 'Telefon\nNumarası',
                   value: currentUser.phoneNumber ?? 'Belirtilmemiş',
                   showArrow: true,
-                ),
+                )*/
                 _buildInfoRow(
                   label: 'Instagram',
                   value: (communityData?.instagramUrl?.isNotEmpty == true)

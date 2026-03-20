@@ -151,6 +151,7 @@ class FeedRepositoryImpl implements FeedRepository {
       }
     } catch (e) {
       _logger.error('❌ Feed Load Error: $e');
+      rethrow;
     } finally {
       _isLoading = false;
     }
@@ -236,36 +237,46 @@ class FeedRepositoryImpl implements FeedRepository {
     int limit,
     DocumentSnapshot? lastDoc,
   ) async {
-    if (followeeIds.isEmpty) return [];
+    try {
+      if (followeeIds.isEmpty) return [];
 
-    final chunks = _chunkList(followeeIds, 30); // Firestore `whereIn` limiti
-    DateTime? lastDate;
+      final chunks = _chunkList(followeeIds, 30);
+      DateTime? lastDate;
 
-    if (lastDoc != null) {
-      final data = lastDoc.data()! as Map<String, dynamic>;
-      lastDate = (data['createdAt'] as Timestamp).toDate();
-    }
-
-    final futures = chunks.map((chunk) {
-      var query = collection
-          .where('creator.userID', whereIn: chunk)
-          .orderBy('createdAt', descending: true);
-
-      if (collection.id == 'events') {
-        query = query.where('status', whereIn: ['upcoming', 'ongoing']);
+      if (lastDoc != null) {
+        final data = lastDoc.data()! as Map<String, dynamic>;
+        lastDate = (data['createdAt'] as Timestamp).toDate();
       }
 
-      if (lastDate != null) {
-        query = query.startAfter([Timestamp.fromDate(lastDate)]);
-      }
-      return query.limit(limit).get();
-    }).toList();
+      final isEvents = collection.id == 'events';
 
-    final snapshots = await Future.wait(futures);
+      final futures = chunks.map((chunk) {
+        var query = collection
+            .where('creator.userID', whereIn: chunk)
+            .orderBy('createdAt', descending: true);
 
-    // Tüm chunk'ları birleştir ve yeniden sırala
-    final allDocs = snapshots.expand((s) => s.docs).toList()
-      ..sort((a, b) {
+        // ❌ Kaldırıldı: .where('status', whereIn: [...]) — çift whereIn hatası
+
+        if (lastDate != null) {
+          query = query.startAfter([Timestamp.fromDate(lastDate)]);
+        }
+        return query.limit(limit).get();
+      }).toList();
+
+      final snapshots = await Future.wait(futures);
+
+      final allDocs = snapshots.expand((s) => s.docs).toList();
+
+      // ✅ Status filtresi client-side uygulanıyor
+      final filtered = isEvents
+          ? allDocs.where((doc) {
+              final data = doc.data()! as Map<String, dynamic>;
+              final status = data['status'] as String?;
+              return status == 'upcoming' || status == 'ongoing';
+            }).toList()
+          : allDocs;
+
+      filtered.sort((a, b) {
         final tA =
             (a.data()! as Map<String, dynamic>)['createdAt'] as Timestamp;
         final tB =
@@ -273,7 +284,10 @@ class FeedRepositoryImpl implements FeedRepository {
         return tB.compareTo(tA);
       });
 
-    return allDocs.length > limit ? allDocs.sublist(0, limit) : allDocs;
+      return filtered.length > limit ? filtered.sublist(0, limit) : filtered;
+    } catch (e) {
+      rethrow;
+    }
   }
 
   // --- MERGE & PROCESS ---

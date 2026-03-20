@@ -9,6 +9,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
@@ -409,12 +410,12 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
             ),
 
             BottomSheetOption(
-              icon: Icons.block_outlined,
+              icon: Icons.block,
               text: 'Belirtmek İstemiyorum',
               onTap: () => _selectGender('Belirtmek İstemiyorum'),
             ),
             BottomSheetOption(
-              icon: Icons.circle_outlined,
+              icon: Icons.brightness_1,
               text: 'Özel',
               onTap: () => _selectGender('Özel'),
             ),
@@ -460,7 +461,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
           leading: _currentIndex == 0
               ? null
               : IconButton(
-                  icon: Icon(Icons.undo, color: Colors.black, size: 24.sp),
+                  icon: Icon(Symbols.reply, color: Colors.black, size: 24.sp),
                   onPressed: _prevPage,
                 ),
         ),
@@ -480,6 +481,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                 final exists = await getIt<UserRepository>().doesUsernameExist(
                   username,
                 );
+                FocusScope.of(context).unfocus();
 
                 getIt<LoggingService>().warn(exists.toString());
 
@@ -547,6 +549,8 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
               onNext: () async {
                 if (_isSendingEmail) return;
                 setState(() => _isSendingEmail = true);
+                FocusScope.of(context).unfocus();
+
                 try {
                   print(FirebaseAuth.instance.currentUser?.uid);
                   await getIt<UserRepository>().sendVerificationEmail(
@@ -612,6 +616,8 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
               customContent: OtpRow(controllers: _eduOtpControllers),
 
               onNext: () async {
+                FocusScope.of(context).unfocus();
+
                 if (_isVerifyingEmail) return;
                 setState(() => _isVerifyingEmail = true);
                 final otpCode = _eduOtpControllers.map((c) => c.text).join();
@@ -946,11 +952,12 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
         Navigator.pop(context); // Modal'ı kapat
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         showErrorPopup(
           context,
           message: 'Resim seçilirken bir hata oluştu',
         );
+      }
     }
   } // --- İZİN YARDIMCI FONKSİYONLARI ---
 
@@ -983,7 +990,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
     return InkWell(
       borderRadius: BorderRadius.circular(12.r),
       // DEĞİŞİKLİK: Eğer değer true (izin verilmiş) ise onTap null olsun
-      onTap: value ? null : () => _handlePermissionTap(permission),
+      onTap: () => _handlePermissionTap(permission),
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: 14.h),
         child: Row(
@@ -1014,33 +1021,30 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                 ],
               ),
             ),
-            SizedBox(width: 12.w),
             Row(
               children: [
-                Icon(
-                  value ? Icons.check_circle : Icons.cancel,
-                  color: value ? AppColors.primaryColor : Colors.grey.shade400,
-                  size: 20.sp,
-                ),
-                SizedBox(width: 6.w),
-                Text(
-                  value ? 'İzin Verildi' : 'Kapalı',
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w500,
-                    color: value
-                        ? AppColors.primaryColor
-                        : Colors.grey.shade500,
-                  ),
-                ),
+                // Icon(
+                //   value ? Icons.check_circle : Icons.cancel,
+                //   color: value ? AppColors.primaryColor : Colors.grey.shade400,
+                //   size: 20.sp,
+                // ),
                 SizedBox(width: 6.w),
 
-                if (!value)
-                  Icon(
-                    Icons.chevron_right,
-                    size: 18.sp,
-                    color: Colors.grey.shade400,
-                  ),
+                // Text(
+                //   value ? 'İzin Verildi' : 'Kapalı',
+                //   style: TextStyle(
+                //     fontSize: 12.sp,
+                //     fontWeight: FontWeight.w500,
+                //     color: value
+                //         ? AppColors.primaryColor
+                //         : Colors.grey.shade500,
+                //   ),
+                // ),
+                Icon(
+                  Icons.chevron_right,
+                  size: 18.sp,
+                  color: Colors.grey.shade400,
+                ),
               ],
             ),
           ],

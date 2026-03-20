@@ -16,7 +16,6 @@ import 'package:outnest/presentation/camera/view/camera_page.dart';
 import 'package:outnest/presentation/chat/view/chat_page.dart';
 import 'package:outnest/presentation/chat/view/event_settings_page.dart';
 import 'package:outnest/presentation/chat/view/my_events_page.dart';
-import 'package:outnest/presentation/debug/debug_nsfw_screen.dart';
 import 'package:outnest/presentation/event_verification/my_qr_page.dart';
 import 'package:outnest/presentation/event_verification/qr_scanner_page.dart';
 import 'package:outnest/presentation/event_verification/verification_splash_screen.dart';
@@ -32,9 +31,7 @@ import 'package:outnest/presentation/settings/view/account_settings_page.dart';
 import 'package:outnest/presentation/settings/view/community_account_settings_page.dart';
 import 'package:outnest/presentation/settings/view/edit_profile_page.dart';
 import 'package:outnest/presentation/settings/view/settings_page.dart';
-import 'package:outnest/presentation/shared/event_card/event_preview_screen.dart';
 import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
-import 'package:outnest/presentation/shared/post_card/post_preview_screen.dart';
 import 'package:outnest/scaffold_with_navbar.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -87,7 +84,6 @@ final router = GoRouter(
   initialLocation: '/splash',
   errorBuilder: (context, state) {
     debugPrint('GoRouter Hatası: ${state.error}');
-    debugPrint('  state.location = ${state.uri.toString()}');
     return const HomePage();
   },
   redirect: (context, state) {
@@ -120,9 +116,10 @@ final router = GoRouter(
     // If a logged-in user opens a share link before session initialization
     // completes, route through splash first and continue to the original target.
     final path = state.uri.path;
-    final isSharePath = path.startsWith('/share/') ||
-        path.startsWith('/home/share/');
-    final isProfileSharePath = path.startsWith('/share/profile/') ||
+    final isSharePath =
+        path.startsWith('/share/') || path.startsWith('/home/share/');
+    final isProfileSharePath =
+        path.startsWith('/share/profile/') ||
         path.startsWith('/home/share/profile/');
     final sessionUser = getIt<SessionService>().currentState.user;
 
@@ -189,11 +186,6 @@ final router = GoRouter(
     GoRoute(
       path: '/register-info',
       builder: (context, state) => const RegisterInfoPage(),
-    ),
-    GoRoute(
-      path: '/debug',
-      parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const NsfwDebugScreen(),
     ),
 
     StatefulShellRoute.indexedStack(
@@ -421,31 +413,6 @@ final router = GoRouter(
           creatorID: (extra?['creatorID'] as String?) ?? '',
           event: extra?['event'] as EventEntity,
         );
-      },
-    ),
-    GoRoute(
-      path: '/share/event/:eventId',
-      builder: (context, state) {
-        final eventId = state.pathParameters['eventId'] ?? '';
-        return EventPreviewScreen(
-          eventId: eventId,
-        );
-      },
-    ),
-    GoRoute(
-      path: '/share/post/:postId',
-      builder: (context, state) {
-        final postId = state.pathParameters['postId'] ?? '';
-        return PostPreviewScreen(
-          postId: postId,
-        );
-      },
-    ),
-    GoRoute(
-      path: '/share/profile/:userId',
-      builder: (context, state) {
-        final userId = state.pathParameters['userId'] ?? '';
-        return ProfileDispatcher(profileUserID: userId);
       },
     ),
   ],

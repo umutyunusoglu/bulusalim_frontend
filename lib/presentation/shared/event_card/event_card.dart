@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/utils/types/enums/visibility_enum.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/domain/services/share_links_service.dart';
 import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
@@ -28,6 +29,11 @@ import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/presentation/home/view/components/event/event_info_chip.dart';
 import 'package:outnest/presentation/home/view/components/event/event_location_chip.dart';
 import 'package:outnest/presentation/home/view/components/event/participant_bottom_sheet.dart';
+import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
+import 'package:outnest/presentation/shared/event_card/event_card_background_painter.dart';
+import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
+import 'package:outnest/presentation/shared/popup.dart';
 
 // 3 DURUM
 enum _EventJoinStatus {
@@ -104,8 +110,7 @@ class _EventCardState extends State<EventCard> {
     }
 
     // 1. Zaten katılımcı mı? -> KATILDIN
-    if (widget.participants.any((p) => p.userID == uid) ||
-        widget.event.creator.userID == uid) {
+    if (widget.participants.any((p) => p.userID == uid)) {
       _joinStatus = _EventJoinStatus.joined;
     }
     // 2. İstek göndermiş mi? -> BEKLİYOR (KUM SAATİ)
@@ -215,7 +220,7 @@ class _EventCardState extends State<EventCard> {
             // 3. Ayrıl
             if (amIaParticipant)
               BottomSheetOption(
-                icon: Icons.exit_to_app_outlined,
+                icon: Symbols.move_item,
                 text: 'Buluşmadan Ayrıl',
                 isDestructive: true,
                 onTap: () {
@@ -243,7 +248,7 @@ class _EventCardState extends State<EventCard> {
             // 4. İptal Et
             if (amIaParticipant)
               BottomSheetOption(
-                icon: Icons.highlight_off_rounded,
+                icon: Symbols.cancel,
                 text: 'Buluşmayı İptal Et',
                 isDestructive: true,
                 onTap: () async {
@@ -641,7 +646,7 @@ class _EventCardState extends State<EventCard> {
         padding: EdgeInsets.only(
           left: 16.w,
           right: 16.w,
-          bottom: 12.h,
+          bottom: 24.h,
           top: 24.h,
         ),
         child: Stack(

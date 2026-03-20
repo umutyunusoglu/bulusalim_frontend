@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:outnest/application/service_locators/get_it_init.dart';
@@ -10,21 +11,20 @@ import 'package:outnest/presentation/profile/view/components/empty_profile_scree
 
 class CommunityInfoPage extends StatelessWidget {
   CommunityInfoPage({
+    required this.communityUser,
     super.key,
   });
 
   final SessionService _sessionService = getIt<SessionService>();
-  final UserRepository _userRepository = getIt<UserRepository>();
 
+  final CompactUserEntity? communityUser;
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
       valueListenable: _sessionService.stateListenable,
       builder: (context, state, child) {
-        final currentUser = _sessionService.currentUser;
-        final communityData = currentUser?.communityData;
-
-        if (currentUser == null || communityData == null) {
+        final communityData = communityUser?.communityData;
+        if (communityData == null) {
           return const Scaffold(
             body: Center(
               child: EmptyProfileScreen(
@@ -53,7 +53,7 @@ class CommunityInfoPage extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  currentUser.nameSurname,
+                  communityUser?.nameSurname ?? '',
                   style: TextStyle(
                     fontFamily: 'SF Pro Display',
                     fontSize: 16.sp,
@@ -84,16 +84,16 @@ class CommunityInfoPage extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppColors.dividerColor,
                     borderRadius: BorderRadius.circular(16.r),
-                    image: communityData!.communityPhotoUrl.isNotEmpty
+                    image: communityData.communityPhotoUrl.isNotEmpty
                         ? DecorationImage(
-                            image: NetworkImage(
-                              communityData!.communityPhotoUrl,
+                            image: CachedNetworkImageProvider(
+                              communityData.communityPhotoUrl,
                             ),
                             fit: BoxFit.cover,
                           )
                         : null,
                   ),
-                  child: communityData!.communityPhotoUrl.isEmpty
+                  child: communityData.communityPhotoUrl.isEmpty
                       ? Center(
                           child: Icon(
                             Icons.groups,
@@ -118,8 +118,8 @@ class CommunityInfoPage extends StatelessWidget {
                 ),
                 SizedBox(height: 8.h),
                 Text(
-                  communityData!.communityBio.isNotEmpty
-                      ? communityData!.communityBio
+                  communityData.communityBio.isNotEmpty
+                      ? communityData.communityBio
                       : 'Biyografi bulunmuyor.',
                   style: TextStyle(
                     fontFamily: 'SF Pro Display',
@@ -133,7 +133,7 @@ class CommunityInfoPage extends StatelessWidget {
                 SizedBox(height: 16.h),
 
                 // 3. EKİP ÜYELERİ BÖLÜMÜ
-                if (communityData!.communityTeamMembers.isNotEmpty) ...[
+                if (communityData.communityTeamMembers.isNotEmpty) ...[
                   Text(
                     'Ekip Üyeleri',
                     style: TextStyle(
@@ -149,7 +149,7 @@ class CommunityInfoPage extends StatelessWidget {
                   Wrap(
                     spacing: 12.w,
                     runSpacing: 12.h,
-                    children: communityData!.communityTeamMembers
+                    children: communityData.communityTeamMembers
                         .map((user) => _buildTeamMember(user))
                         .toList(),
                   ),
@@ -171,7 +171,7 @@ class CommunityInfoPage extends StatelessWidget {
         CircleAvatar(
           radius: 25.r,
           backgroundColor: AppColors.dividerColor,
-          backgroundImage: NetworkImage(user.profileImageUrl),
+          backgroundImage: CachedNetworkImageProvider(user.profileImageUrl),
         ),
         SizedBox(height: 4.h),
         SizedBox(
