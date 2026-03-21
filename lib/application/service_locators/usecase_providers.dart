@@ -50,5 +50,6 @@ extension UseCaseModule on GetIt {
           functions: this(),
         ),
       );
+
   }
 }
