@@ -44,24 +44,14 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>Çevredeki buluşma cihazlarıyla bağlantı kurabilmek için Bluetooth izni gerekiyor.</string>
-	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>Çevredeki buluşma cihazlarıyla bağlantı kurabilmek için Bluetooth izni gerekiyor.</string>
-	<key>NSCameraUsageDescription</key>
+<key>NSCameraUsageDescription</key>
 	<string>Profil fotoğrafınızı çekebilmek ve buluşmalerde fotoğraf paylaşabilmek için kameraya erişim izni gerekiyor.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Outnest, çevrendeki spontane buluşmaları canlı haritada görebilmen ve uygulamayı arka plana attığında dahi arkadaşlarına konumunu doğrulayabilmen için konum erişimine ihtiyaç duyar.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Etkinlik konumlarını size gösterebilmek için konum iznine ihtiyacımız var.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Outnest, anlık buluşmalar oluştururken konumunu haritaya sabitlemen ve çevrendeki etkinliklere katılabilmen için konum erişimine ihtiyaç duyar.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Profil fotoğrafı seçebilmek ve galeriye fotoğraf kaydedebilmek için erişim izni gerekiyor.</string>
-	<key>NSUserActivityTypes</key>
-	<array>
-		<string>INSendMessageIntent</string>
-	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -88,7 +78,6 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
-		<string>location</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>

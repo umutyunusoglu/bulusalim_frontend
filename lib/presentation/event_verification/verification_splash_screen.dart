@@ -47,7 +47,7 @@ class VerificationSplashScreen extends StatelessWidget {
             const SizedBox(height: 15),
             // AÇIKLAMA METNİ
             const Text(
-              'Fotoğraf çekip paylaşabilmek için arkadaşının Qr’ını okutarak buluşmaya gittiğini doğrulamalısın.',
+              'Fotoğraf çekip paylaşabilmek için arkadaşının Qr’ını okutarak buluşmaya gittiğini doğrulamalısın. Doğrulama işlemi anlık konumunu kullanır.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,

@@ -10,6 +10,7 @@ import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/domain/repositories/map_repository.dart';
+import 'package:outnest/domain/services/geocoding_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
 
@@ -50,6 +51,8 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
   Geolocation? _selectedLocation;
   bool _isLocationSearchUsed = false;
   final MapRepository _mapRepository = getIt<MapRepository>();
+  final GeocodingService _geocodingService = getIt<GeocodingService>();
+  final LoggingService _logger = getIt<LoggingService>();
   List<Place> _places = [];
   bool _isLoading = false;
   bool _hasSearched = false;
@@ -122,8 +125,6 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
     _debounce = Timer(const Duration(milliseconds: 500), () async {
       setState(() => _isLoading = true);
       try {
-        //userın konumuna göre daha alakalı sonuçlar getirmek için proximity eklenebilir
-
         var results = <Place>[];
         LocationPermission permission = await Geolocator.checkPermission();
         if (permission == LocationPermission.always ||
@@ -266,8 +267,8 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
                                 setState(() {
                                   _selectedAddress = place.adresss;
                                   _selectedPlaceId = place.id;
-                                  _selectedDisplayAddress =
-                                      place.displayAddress;
+                                  _selectedDisplayAddress = null;
+                                  _selectedLocation = null;
 
                                   _searchController.text = place.adresss;
 
@@ -339,6 +340,7 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
           onPressed: (_selectedAddress == null || _selectedAddress!.isEmpty)
               ? null
               : () async {
+                  // 1. Koordinat yoksa Mapbox'tan al
                   if (_selectedLocation == null &&
                       _selectedPlaceId.isNotEmpty) {
                     try {
@@ -348,28 +350,77 @@ class _LocationSelectionStepState extends State<LocationSelectionStep> {
                         _sessionToken,
                       );
                       _sessionToken = const Uuid().v4();
+
+                      // DEBUG: Koordinat kontrolü
+                      _logger.debug(
+                        '🔍 getPlaceLocation sonucu: $_selectedLocation '
+                        '(lat: ${_selectedLocation?.latitude}, '
+                        'lng: ${_selectedLocation?.longitude})',
+                      );
                     } catch (e) {
-                      // Hata yönetimi
+                      _logger.error('getPlaceLocation hatası: $e');
                     } finally {
                       if (mounted) setState(() => _isLoading = false);
                     }
                   }
 
-                  if (_selectedLocation != null && _selectedAddress != null) {
-                    final display =
-                        _selectedDisplayAddress ?? _selectedAddress!;
+                  if (_selectedLocation == null || _selectedAddress == null) {
+                    _logger.error(
+                      '❌ Koordinat veya adres null! '
+                      'location: $_selectedLocation, address: $_selectedAddress',
+                    );
+                    return;
+                  }
 
-                    final logger = getIt<LoggingService>()
-                      ..debug(
-                        'Seçilen konum: $_selectedAddress, Lokasyon: $_selectedLocation',
+                  // 2. Display address hesapla
+                  String? display = _selectedDisplayAddress;
+
+                  if (display == null || display.isEmpty) {
+                    // DEBUG: GeocodingService'e gönderilen koordinat
+                    _logger.debug(
+                      '🗺️ GeocodingService çağrılıyor → '
+                      'lat: ${_selectedLocation!.latitude}, '
+                      'lng: ${_selectedLocation!.longitude}',
+                    );
+
+                    final localResult = _geocodingService
+                        .getCityDistrictFromGeolocation(
+                          _selectedLocation!,
+                        );
+
+                    _logger.debug(
+                      '🗺️ GeocodingService sonucu: $localResult '
+                      '(null mı: ${localResult == null})',
+                    );
+
+                    if (localResult != null) {
+                      display = '${localResult.district}, ${localResult.city}';
+                      _logger.debug(
+                        '✅ Display address bulundu: $display',
                       );
-                    widget.onNext(
-                      _selectedAddress!,
-                      display,
-                      _selectedLocation!,
-                      _isLocationSearchUsed,
+                    } else {
+                      _logger.warn(
+                        '⚠️ GeocodingService null döndü! '
+                        'Koordinat: (${_selectedLocation!.latitude}, '
+                        '${_selectedLocation!.longitude})',
+                      );
+                    }
+                  }
+
+                  // 3. Son fallback
+                  if (display == null || display.isEmpty) {
+                    display = _selectedAddress!;
+                    _logger.warn(
+                      '⚠️ Fallback: tam adres kullanılıyor → $display',
                     );
                   }
+
+                  widget.onNext(
+                    _selectedAddress!,
+                    display,
+                    _selectedLocation!,
+                    _isLocationSearchUsed,
+                  );
                 },
         ),
 

@@ -6,6 +6,7 @@ enum ScreenEnum {
   notifications._('notifications'),
   settings._('settings'),
   map._('map'),
+  eventPreview._('eventPreview'),
   communityDetail._('communityDetail');
 
   const ScreenEnum._(this.value);
@@ -30,6 +31,8 @@ enum ScreenEnum {
         return settings;
       case 'map':
         return map;
+      case 'eventPreview':
+        return eventPreview;
       case 'communityDetail':
         return communityDetail;
       default:

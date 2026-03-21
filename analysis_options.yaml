@@ -1,5 +1,10 @@
 include: package:very_good_analysis/analysis_options.yaml
 analyzer:
+  plugins:
+    lint_hard:
+      diagnostics:
+        document_thrown_exceptions: true
+        unthrown_exceptions_documented: true
   errors:
     avoid_positional_boolean_parameters: ignore
     camel_case_types: ignore

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
@@ -15,7 +16,6 @@ import 'package:outnest/presentation/camera/view/camera_page.dart';
 import 'package:outnest/presentation/chat/view/chat_page.dart';
 import 'package:outnest/presentation/chat/view/event_settings_page.dart';
 import 'package:outnest/presentation/chat/view/my_events_page.dart';
-import 'package:outnest/presentation/debug/debug_nsfw_screen.dart';
 import 'package:outnest/presentation/event_verification/my_qr_page.dart';
 import 'package:outnest/presentation/event_verification/qr_scanner_page.dart';
 import 'package:outnest/presentation/event_verification/verification_splash_screen.dart';
@@ -34,7 +34,9 @@ import 'package:outnest/presentation/settings/view/account_settings_page.dart';
 import 'package:outnest/presentation/settings/view/community_account_settings_page.dart';
 import 'package:outnest/presentation/settings/view/edit_profile_page.dart';
 import 'package:outnest/presentation/settings/view/settings_page.dart';
-import 'package:outnest/presentation/shared/event_card/view/components/stacked_avatars.dart';
+import 'package:outnest/presentation/shared/event_card/event_preview_screen.dart';
+import 'package:outnest/presentation/shared/post_card/post_preview_screen.dart';
+import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
 import 'package:outnest/scaffold_with_navbar.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -53,6 +55,35 @@ List<AvatarInfo> _mapToAvatarInfo(List<dynamic> rawList) {
   }).toList();
 }
 
+String? remapProfilePaths(Uri uri) {
+  if (uri.pathSegments.isEmpty) return null;
+
+  final pathWithQuery = uri.path + (uri.hasQuery ? '?${uri.query}' : '');
+  final myId = getIt<SessionService>().currentUser?.userID;
+
+  if (uri.pathSegments.first == 'profile' && uri.pathSegments.length >= 2) {
+    final userId = uri.pathSegments[1];
+    if (myId != null && userId == myId) {
+      return '/my_profile';
+    }
+    return '/home$pathWithQuery';
+  }
+
+  if (uri.pathSegments.first == 'share' &&
+      uri.pathSegments.length >= 3 &&
+      uri.pathSegments[1] == 'profile') {
+    final userId = uri.pathSegments[2];
+    if (myId != null && userId == myId) {
+      return '/my_profile';
+    }
+    // Keep share/profile on its dedicated top-level route. This keeps
+    // behavior consistent with share/post and share/event entry.
+    return null;
+  }
+
+  return null;
+}
+
 final router = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/splash',
@@ -61,12 +92,66 @@ final router = GoRouter(
     return const HomePage();
   },
   redirect: (context, state) {
+    final raw = state.uri.toString();
+    debugPrint('router.redirect called with: $raw');
+
+    // only rewrite when we were passed a full url (deep link)
+    // could be http or https depending on environment
+    if (raw.startsWith('http')) {
+      try {
+        final uri = Uri.parse(raw);
+        final remapped = remapProfilePaths(uri);
+        if (remapped != null) {
+          return remapped;
+        }
+        final fixed = uri.path + (uri.hasQuery ? '?${uri.query}' : '');
+        debugPrint('router.redirect rewriting to: $fixed');
+        return fixed;
+      } catch (e) {
+        debugPrint('router.redirect parse error: $e');
+      }
+    }
+
+    // also handle plain '/profile/...' or '/share/profile/...' internal paths
+    final internalRemapped = remapProfilePaths(state.uri);
+    if (internalRemapped != null) {
+      return internalRemapped;
+    }
+
+    // If a logged-in user opens a share link before session initialization
+    // completes, route through splash first and continue to the original target.
+    final path = state.uri.path;
+    final isSharePath =
+        path.startsWith('/share/') || path.startsWith('/home/share/');
+    final isProfileSharePath =
+        path.startsWith('/share/profile/') ||
+        path.startsWith('/home/share/profile/');
+    final sessionUser = getIt<SessionService>().currentState.user;
+
+    // Profile deep links depend on session-backed app state.
+    // Always route through splash if session is not ready yet.
+    if (isProfileSharePath && path != '/splash' && sessionUser == null) {
+      final next = Uri.encodeComponent(state.uri.toString());
+      return '/splash?next=$next';
+    }
+
+    if (isSharePath && path != '/splash') {
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser != null && sessionUser == null) {
+        final next = Uri.encodeComponent(state.uri.toString());
+        return '/splash?next=$next';
+      }
+    }
+
     return null;
   },
   routes: [
     GoRoute(
       path: '/splash',
-      builder: (context, state) => const InitScreen(),
+      builder: (context, state) {
+        final nextPath = state.uri.queryParameters['next'];
+        return InitScreen(nextPath: nextPath);
+      },
     ),
     GoRoute(
       path: '/welcome',
@@ -107,11 +192,6 @@ final router = GoRouter(
       path: '/register-info',
       builder: (context, state) => const RegisterInfoPage(),
     ),
-    GoRoute(
-      path: '/debug',
-      parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const NsfwDebugScreen(),
-    ),
 
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
@@ -126,6 +206,13 @@ final router = GoRouter(
               routes: [
                 GoRoute(
                   path: 'profile/:userId',
+                  builder: (context, state) {
+                    final userId = state.pathParameters['userId'] ?? '';
+                    return ProfileDispatcher(profileUserID: userId);
+                  },
+                ),
+                GoRoute(
+                  path: 'share/profile/:userId',
                   builder: (context, state) {
                     final userId = state.pathParameters['userId'] ?? '';
                     return ProfileDispatcher(profileUserID: userId);
@@ -219,7 +306,7 @@ final router = GoRouter(
           builder: (context, state) {
             final currentUser = getIt<SessionService>().currentUser;
             if (currentUser != null) {
-              if (currentUser!.accountType == AccountType.community) {
+              if (currentUser.accountType == AccountType.community) {
                 return const CommunityAccountSettingsPage();
               } else {
                 return const AccountSettingsPage();
@@ -352,6 +439,27 @@ final router = GoRouter(
           creatorID: (extra?['creatorID'] as String?) ?? '',
           event: extra?['event'] as EventEntity,
         );
+      },
+    ),
+    GoRoute(
+      path: '/share/event/:eventId',
+      builder: (context, state) {
+        final eventId = state.pathParameters['eventId'] ?? '';
+        return EventPreviewScreen(eventId: eventId);
+      },
+    ),
+    GoRoute(
+      path: '/share/post/:postId',
+      builder: (context, state) {
+        final postId = state.pathParameters['postId'] ?? '';
+        return PostPreviewScreen(postId: postId);
+      },
+    ),
+    GoRoute(
+      path: '/share/profile/:userId',
+      builder: (context, state) {
+        final userId = state.pathParameters['userId'] ?? '';
+        return ProfileDispatcher(profileUserID: userId);
       },
     ),
   ],

@@ -9,22 +9,26 @@ import 'package:outnest/data/repositories/inbox_repository_impl.dart';
 import 'package:outnest/data/services/auth_service_impl.dart';
 import 'package:outnest/data/services/event_verification_service_impl.dart';
 import 'package:outnest/data/services/file_service_impl.dart';
+import 'package:outnest/data/services/geocoding_service_impl.dart';
 import 'package:outnest/data/services/persistance_service_impl.dart';
 import 'package:outnest/data/services/push_notifications_service_impl.dart';
 import 'package:outnest/data/services/remote_config_service_impl.dart';
 import 'package:outnest/data/services/security_service_impl.dart';
 import 'package:outnest/data/services/session_service_impl.dart';
+import 'package:outnest/data/services/share_links_service_impl.dart';
 import 'package:outnest/domain/repositories/inbox_repository.dart';
 import 'package:outnest/domain/services/analytics/analytics_service.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/services/event_verification_service.dart';
 import 'package:outnest/domain/services/file_service.dart';
+import 'package:outnest/domain/services/geocoding_service.dart';
 import 'package:outnest/domain/services/global_content_cache.dart';
 import 'package:outnest/domain/services/persistance_service.dart';
 import 'package:outnest/domain/services/push_notifications_service.dart';
 import 'package:outnest/domain/services/remote_config_service.dart';
 import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/domain/services/share_links_service.dart';
 
 extension ServiceModule on GetIt {
   void registerServices() {
@@ -97,6 +101,17 @@ extension ServiceModule on GetIt {
           persistanceService: this(),
           logger: this(),
         ),
+      )
+      ..registerSingletonAsync<GeocodingService>(
+        () async {
+          final service = GeocodingServiceImpl();
+          await service.init();
+          return service;
+        },
+        dependsOn: [],
+      )
+      ..registerLazySingleton<ShareLinksService>(
+        () => ShareLinksServiceImpl(),
       );
   }
 }
