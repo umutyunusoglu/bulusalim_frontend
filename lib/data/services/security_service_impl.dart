@@ -1,14 +1,8 @@
 import 'dart:io';
-import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:flutter/services.dart'
-    show
-        rootBundle; // Diğer yerlerde kullanmıyorsan silebilirsin, yeni paket assetleri kendi okuyor
-import 'package:flutter_onnxruntime/flutter_onnxruntime.dart'; // YENİ PAKET EKLENDİ
-import 'package:image/image.dart' as img;
+// Diğer yerlerde kullanmıyorsan silebilirsin, yeni paket assetleri kendi okuyor
 import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/types.dart';
@@ -30,8 +24,6 @@ class SecurityServiceImpl implements SecurityService {
   final FirebaseFunctions _functions;
 
   // ONNX Oturumu için değişkenler
-  final OnnxRuntime _ort = OnnxRuntime();
-  OrtSession? _session;
 
   @override
   Future<void> blockUser(ReportData reportData) async {
@@ -135,179 +127,8 @@ class SecurityServiceImpl implements SecurityService {
     return doc.exists;
   }
 
-  // --- YENİ EKLENEN NSFW KONTROL KISMI ---
-
-  /// Modeli hafızaya yükler.
-  Future<void> _loadModel() async {
-    if (_session != null) return;
-    try {
-      // flutter_onnxruntime paketinde model direkt asset'ten yüklenebiliyor
-      _session = await _ort.createSessionFromAsset(
-        'assets/nsfw/small_model.onnx',
-      );
-      _logger.info("NSFW Modeli başarıyla yüklendi.");
-    } catch (e) {
-      _logger.error("NSFW Modeli yüklenirken hata oluştu: $e");
-    }
-  }
-
   @override
   Future<bool> isImageSafe(File imageFile) async {
-    try {
-      // 1. Modeli yükle (Eğer yüklenmemişse)
-      await _loadModel();
-      if (_session == null) {
-        _logger.warn("Model session is null, skipping check.");
-        return true;
-      }
-
-      // 2. Resmi decode et
-      final imageBytes = await imageFile.readAsBytes();
-      final img.Image? originalImage = img.decodeImage(imageBytes);
-
-      if (originalImage == null) {
-        _logger.error("Resim dosyası okunamadı.");
-        return false;
-      }
-
-      // 3. Resmi boyutlandır
-      final resizedImage = img.copyResize(
-        originalImage,
-        width: 224,
-        height: 224,
-      );
-
-      // 4. Preprocessing (Normalizasyon)
-      const mean = [0.485, 0.456, 0.406];
-      const std = [0.229, 0.224, 0.225];
-
-      final Float32List inputFloats = Float32List(1 * 3 * 224 * 224);
-
-      int pixelIndex = 0;
-      for (int c = 0; c < 3; c++) {
-        for (int y = 0; y < 224; y++) {
-          for (int x = 0; x < 224; x++) {
-            final pixel = resizedImage.getPixel(x, y);
-
-            double channelValue;
-            if (c == 0) {
-              channelValue = pixel.r / 255.0;
-            } else if (c == 1) {
-              channelValue = pixel.g / 255.0;
-            } else {
-              channelValue = pixel.b / 255.0;
-            }
-
-            inputFloats[pixelIndex++] = (channelValue - mean[c]) / std[c];
-          }
-        }
-      }
-
-      // 5. Tensör oluştur (YENİ API)
-      final inputOrt = await OrtValue.fromList(inputFloats, [1, 3, 224, 224]);
-
-      // 6. Tahmini Çalıştır
-      final inputs = {'pixel_values': inputOrt};
-      final outputs = await _session!.run(inputs);
-
-      // 7. Sonuçları Yorumla
-      final outputValue = outputs.values.first;
-      if (outputValue == null) {
-        throw Exception("Model geçerli bir sonuç döndürmedi.");
-      }
-
-      final outputList = await outputValue.asList() as List;
-      final scores = outputList[0] as List;
-
-      // Temizlik (YENİ API)
-      await inputOrt.dispose();
-      for (final out in outputs.values) {
-        if (out != null) await out.dispose();
-      }
-
-      final normalScore = (scores[0] as num).toDouble();
-      final nsfwScore = (scores[1] as num).toDouble();
-
-      _logger.info("NSFW Check: Normal=$normalScore, NSFW=$nsfwScore");
-
-      if (nsfwScore > normalScore) {
-        return false; // NOT SAFE
-      }
-
-      return true; // SAFE
-    } catch (e) {
-      _logger.error("NSFW kontrolü sırasında hata: $e");
-      return true;
-    }
-  }
-
-  @override
-  Future<Map<String, double>> analyzeImageScores(File imageFile) async {
-    try {
-      await _loadModel();
-      if (_session == null) return {'normal': 0.0, 'nsfw': 0.0};
-
-      final imageBytes = await imageFile.readAsBytes();
-      final img.Image? originalImage = img.decodeImage(imageBytes);
-      if (originalImage == null) return {'normal': 0.0, 'nsfw': 0.0};
-
-      final resizedImage = img.copyResize(
-        originalImage,
-        width: 224,
-        height: 224,
-      );
-      const mean = [0.485, 0.456, 0.406];
-      const std = [0.229, 0.224, 0.225];
-      final Float32List inputFloats = Float32List(1 * 3 * 224 * 224);
-      int pixelIndex = 0;
-      for (int c = 0; c < 3; c++) {
-        for (int y = 0; y < 224; y++) {
-          for (int x = 0; x < 224; x++) {
-            final pixel = resizedImage.getPixel(x, y);
-            double channelValue;
-            if (c == 0) {
-              channelValue = pixel.r / 255.0;
-            } else if (c == 1) {
-              channelValue = pixel.g / 255.0;
-            } else {
-              channelValue = pixel.b / 255.0;
-            }
-            inputFloats[pixelIndex++] = (channelValue - mean[c]) / std[c];
-          }
-        }
-      }
-
-      // Tensör oluştur
-      final inputOrt = await OrtValue.fromList(inputFloats, [1, 3, 224, 224]);
-      final inputs = {'pixel_values': inputOrt};
-
-      // Tahmini çalıştır
-      final outputs = await _session!.run(inputs);
-
-      // Sonucu al
-      final outputValue = outputs.values.first;
-      if (outputValue == null) return {'normal': 0.0, 'nsfw': 0.0};
-
-      final outputList = await outputValue.asList() as List;
-      final rawScores = outputList[0] as List;
-
-      // Temizlik
-      await inputOrt.dispose();
-      for (final out in outputs.values) {
-        if (out != null) await out.dispose();
-      }
-
-      double normalExp = exp((rawScores[0] as num).toDouble());
-      double nsfwExp = exp((rawScores[1] as num).toDouble());
-      double sumExp = normalExp + nsfwExp;
-
-      return {
-        'normal': normalExp / sumExp,
-        'nsfw': nsfwExp / sumExp,
-      };
-    } catch (e) {
-      _logger.error("Score analizi hatası: $e");
-      return {'normal': 0.0, 'nsfw': 0.0};
-    }
+    return true;
   }
 }

@@ -6,7 +6,7 @@ import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/feed_type.dart';
 import 'package:outnest/core/utils/types/enums/visibility_enum.dart';
 import 'package:outnest/data/models/event/event_model.dart';
-import 'package:outnest/data/models/post/post_model.dart' hide getIt;
+import 'package:outnest/data/models/post/post_model.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/feed/feed_entity.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
@@ -151,6 +151,7 @@ class FeedRepositoryImpl implements FeedRepository {
       }
     } catch (e) {
       _logger.error('❌ Feed Load Error: $e');
+      rethrow;
     } finally {
       _isLoading = false;
     }
@@ -236,36 +237,46 @@ class FeedRepositoryImpl implements FeedRepository {
     int limit,
     DocumentSnapshot? lastDoc,
   ) async {
-    if (followeeIds.isEmpty) return [];
+    try {
+      if (followeeIds.isEmpty) return [];
 
-    final chunks = _chunkList(followeeIds, 30); // Firestore `whereIn` limiti
-    DateTime? lastDate;
+      final chunks = _chunkList(followeeIds, 30);
+      DateTime? lastDate;
 
-    if (lastDoc != null) {
-      final data = lastDoc.data()! as Map<String, dynamic>;
-      lastDate = (data['createdAt'] as Timestamp).toDate();
-    }
-
-    final futures = chunks.map((chunk) {
-      var query = collection
-          .where('creator.userID', whereIn: chunk)
-          .orderBy('createdAt', descending: true);
-
-      if (collection.id == 'events') {
-        query = query.where('status', whereIn: ['upcoming', 'ongoing']);
+      if (lastDoc != null) {
+        final data = lastDoc.data()! as Map<String, dynamic>;
+        lastDate = (data['createdAt'] as Timestamp).toDate();
       }
 
-      if (lastDate != null) {
-        query = query.startAfter([Timestamp.fromDate(lastDate)]);
-      }
-      return query.limit(limit).get();
-    }).toList();
+      final isEvents = collection.id == 'events';
 
-    final snapshots = await Future.wait(futures);
+      final futures = chunks.map((chunk) {
+        var query = collection
+            .where('creator.userID', whereIn: chunk)
+            .orderBy('createdAt', descending: true);
 
-    // Tüm chunk'ları birleştir ve yeniden sırala
-    final allDocs = snapshots.expand((s) => s.docs).toList()
-      ..sort((a, b) {
+        // ❌ Kaldırıldı: .where('status', whereIn: [...]) — çift whereIn hatası
+
+        if (lastDate != null) {
+          query = query.startAfter([Timestamp.fromDate(lastDate)]);
+        }
+        return query.limit(limit).get();
+      }).toList();
+
+      final snapshots = await Future.wait(futures);
+
+      final allDocs = snapshots.expand((s) => s.docs).toList();
+
+      // ✅ Status filtresi client-side uygulanıyor
+      final filtered = isEvents
+          ? allDocs.where((doc) {
+              final data = doc.data()! as Map<String, dynamic>;
+              final status = data['status'] as String?;
+              return status == 'upcoming' || status == 'ongoing';
+            }).toList()
+          : allDocs;
+
+      filtered.sort((a, b) {
         final tA =
             (a.data()! as Map<String, dynamic>)['createdAt'] as Timestamp;
         final tB =
@@ -273,7 +284,10 @@ class FeedRepositoryImpl implements FeedRepository {
         return tB.compareTo(tA);
       });
 
-    return allDocs.length > limit ? allDocs.sublist(0, limit) : allDocs;
+      return filtered.length > limit ? filtered.sublist(0, limit) : filtered;
+    } catch (e) {
+      rethrow;
+    }
   }
 
   // --- MERGE & PROCESS ---
@@ -513,15 +527,36 @@ class FeedRepositoryImpl implements FeedRepository {
     _logger.info('🚀 Feed warmup: Starting prefetch engine...');
 
     final sessionService = getIt<SessionService>();
-    var attempts = 0;
-    const maxAttempts = 60;
-    while (sessionService.currentState.user == null && attempts < maxAttempts) {
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-      attempts++;
+    var user = sessionService.currentState.user;
+
+    // Ensure auth/session subscriptions are nudged before waiting.
+    if (user == null) {
+      await sessionService.refreshSession();
+      user = sessionService.currentState.user;
     }
 
-    // 2. Kullanıcı bulunduysa veya limit dolduysa durumu kontrol et
-    final user = sessionService.currentState.user;
+    // Wait reactively for session user instead of polling with short attempts.
+    if (user == null) {
+      final completer = Completer<void>();
+      void onSessionChanged() {
+        if (sessionService.currentState.user != null &&
+            !completer.isCompleted) {
+          completer.complete();
+        }
+      }
+
+      sessionService.stateListenable.addListener(onSessionChanged);
+      try {
+        onSessionChanged();
+        await completer.future.timeout(const Duration(seconds: 20));
+      } on TimeoutException {
+        // Keep same warmup behavior below (warn + skip refresh) if still null.
+      } finally {
+        sessionService.stateListenable.removeListener(onSessionChanged);
+      }
+
+      user = sessionService.currentState.user;
+    }
 
     if (user != null) {
       _logger.info('✅ Warmup: User found. Triggering initial refresh...');

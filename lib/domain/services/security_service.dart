@@ -16,7 +16,6 @@ abstract class SecurityService {
     Identifier ownerID,
     Identifier queriedUserID,
   );
-  Future<Map<String, double>> analyzeImageScores(File imageFile);
   Future<bool> isImageSafe(File imageFile);
 }
 
