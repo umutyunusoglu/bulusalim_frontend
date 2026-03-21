@@ -16,7 +16,6 @@ import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/analytics/analytics_service.dart';
 import 'package:outnest/domain/services/analytics/event_configs/click_save_event_analytics_config.dart';
 import 'package:outnest/domain/services/analytics/event_configs/click_view_event_participants_analytics_config.dart';
-import 'package:outnest/domain/services/analytics/event_configs/send_join_request_to_event_analytics_config.dart';
 import 'package:outnest/domain/services/remote_config_service.dart';
 import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
@@ -25,16 +24,10 @@ import 'package:outnest/presentation/home/view/components/event/event_location_c
 import 'package:outnest/presentation/home/view/components/event/participant_bottom_sheet.dart';
 import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
-import 'package:outnest/presentation/shared/event_card/event_card_background_painter.dart';
-import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
+import 'package:outnest/presentation/shared/event_card/view/components/event_card_background_painter.dart';
+import 'package:outnest/presentation/shared/event_card/view/components/event_join_button.dart';
+import 'package:outnest/presentation/shared/event_card/view/components/stacked_avatars.dart';
 import 'package:outnest/presentation/shared/popup.dart';
-
-// 3 DURUM
-enum _EventJoinStatus {
-  canJoin, // 1. Katıl
-  pending, // 2. Bekliyor
-  joined, // 3. Katıldın
-}
 
 class EventCard extends StatefulWidget {
   const EventCard({
@@ -49,6 +42,7 @@ class EventCard extends StatefulWidget {
   final ScreenEnum screen;
   final List<CompactUserEntity> participants;
   final bool showJoinButton;
+
   @override
   State<EventCard> createState() => _EventCardState();
 }
@@ -58,8 +52,6 @@ class _EventCardState extends State<EventCard> {
   late final EventRepository eventRepository;
   late final SessionService sessionService;
   bool _amIFollowingCreator = false;
-
-  late _EventJoinStatus _joinStatus;
 
   bool isSaved = false;
   bool isVisible = true;
@@ -74,8 +66,13 @@ class _EventCardState extends State<EventCard> {
     _updateFollowingStatus();
     sessionService.stateListenable.addListener(_updateFollowingStatus);
 
-    _calculateJoinStatus();
     _checkIfSaved();
+  }
+
+  @override
+  void dispose() {
+    sessionService.stateListenable.removeListener(_updateFollowingStatus);
+    super.dispose();
   }
 
   void _updateFollowingStatus() {
@@ -91,35 +88,9 @@ class _EventCardState extends State<EventCard> {
     });
   }
 
-  // --- GÜVENLİ DURUM HESAPLAMA ---
-  void _calculateJoinStatus() {
-    final currentUser = sessionService.currentUser;
-    // Kullanıcı yoksa boş string ata, çökmesini engelle
-    final uid = currentUser?.userID ?? '';
-
-    // Kullanıcı giriş yapmamışsa varsayılan durum
-    if (uid.isEmpty) {
-      _joinStatus = _EventJoinStatus.canJoin;
-      return;
-    }
-
-    // 1. Zaten katılımcı mı? -> KATILDIN
-    if (widget.participants.any((p) => p.userID == uid)) {
-      _joinStatus = _EventJoinStatus.joined;
-    }
-    // 2. İstek göndermiş mi? -> BEKLİYOR (KUM SAATİ)
-    else if (widget.event.requestPool.any((p) => p.userID == uid)) {
-      _joinStatus = _EventJoinStatus.pending;
-    }
-    // 3. Diğer her durumda -> KATIL
-    else {
-      _joinStatus = _EventJoinStatus.canJoin;
-    }
-  }
-
   Future<void> _checkIfSaved() async {
     final currentUser = sessionService.currentUser;
-    if (currentUser == null) return; // Güvenlik kontrolü
+    if (currentUser == null) return;
 
     if (widget.event.creator.userID == currentUser.userID) {
       if (mounted) setState(() => isSaved = true);
@@ -134,7 +105,7 @@ class _EventCardState extends State<EventCard> {
 
   Future<void> _toggleSave() async {
     final currentUser = sessionService.currentUser;
-    if (currentUser == null) return; // Güvenlik kontrolü
+    if (currentUser == null) return;
 
     final userRepository = getIt<UserRepository>();
     setState(() => isSaved = !isSaved);
@@ -161,7 +132,6 @@ class _EventCardState extends State<EventCard> {
     }
   }
 
-  // --- ACTION SHEET ---
   void _showActionBottomSheet(bool isEventMine) {
     final myEvents = sessionService.activeEvents;
     final myEventIds = myEvents.map((e) => e.eventID);
@@ -174,14 +144,12 @@ class _EventCardState extends State<EventCard> {
       backgroundColor: Colors.transparent,
       builder: (sheetContext) => CustomActionBottomSheet(
         options: [
-          // BULUŞMA SAHİBİ İSE
           if (isEventMine) ...[
-            // 1. Buluşma Ayarları
             BottomSheetOption(
               icon: Icons.settings_outlined,
               text: "Buluşma Ayarları'na Git",
               onTap: () {
-                sheetContext.pop(); // Önce bottom sheet'i kapatıyoruz
+                sheetContext.pop();
 
                 final encodedId = Uri.encodeComponent(widget.event.id);
 
@@ -202,16 +170,6 @@ class _EventCardState extends State<EventCard> {
                 );
               },
             ),
-            // 2. Paylaş
-            /* BottomSheetOption(
-              icon: Icons.share_outlined,
-              text: 'Buluşmayı Paylaş',
-              onTap: () {
-                logger.info('Buluşma paylaşıldı: ${widget.event.id}');
-                sheetContext.pop();
-              },
-            ),*/
-            // 3. Ayrıl
             if (amIaParticipant)
               BottomSheetOption(
                 icon: Symbols.move_item,
@@ -239,7 +197,6 @@ class _EventCardState extends State<EventCard> {
                   }
                 },
               ),
-            // 4. İptal Et
             if (amIaParticipant)
               BottomSheetOption(
                 icon: Symbols.cancel,
@@ -247,7 +204,6 @@ class _EventCardState extends State<EventCard> {
                 isDestructive: true,
                 onTap: () async {
                   sheetContext.pop();
-                  // TODO: İptal etme servisini çağır
                   _onCancelEventTap();
                 },
               ),
@@ -257,8 +213,7 @@ class _EventCardState extends State<EventCard> {
                 icon: Icons.person_remove_outlined,
                 text: "Takibi Bırak",
                 onTap: () {
-                  sheetContext.pop(); // Önce bottom sheet'i kapatıyoruz
-
+                  sheetContext.pop();
                   _handleUnfollowUser();
                 },
               ),
@@ -289,8 +244,6 @@ class _EventCardState extends State<EventCard> {
                   }
                 },
               ),
-
-            // 2. Engelle
             BottomSheetOption(
               icon: Icons.person_off_outlined,
               text: 'Buluşma Sahibini Engelle',
@@ -299,7 +252,6 @@ class _EventCardState extends State<EventCard> {
                 await _handleBlockUser(sheetContext);
               },
             ),
-            // 3. Şikayet Et
             BottomSheetOption(
               icon: Icons.error_outline,
               text: 'Şikayet Et',
@@ -406,8 +358,6 @@ class _EventCardState extends State<EventCard> {
   }
 
   void _showParticipantsBottomSheet() {
-    print('🔥 DEBUG: Bottom sheet açılıyor...'); // Debug için
-
     final creator = CompactUserEntity(
       userID: widget.event.creator.userID,
       username: widget.event.creator.username,
@@ -440,125 +390,6 @@ class _EventCardState extends State<EventCard> {
     );
   }
 
-  Future<void> _handleJoinTap() async {
-    final currentUser = sessionService.currentUser;
-    if (currentUser == null) return;
-
-    // --- PENDING: Geri alma akışı ---
-    if (_joinStatus == _EventJoinStatus.pending) {
-      _showWithdrawConfirmDialog();
-      return;
-    }
-
-    if (_joinStatus != _EventJoinStatus.canJoin) return;
-
-    setState(() {
-      _joinStatus = _EventJoinStatus.pending;
-    });
-
-    try {
-      await eventRepository.requestJoin(
-        widget.event.id,
-        CompactUserEntity(
-          userID: currentUser.userID,
-          username: currentUser.username,
-          profileImageUrl: currentUser.profileImageUrl,
-          university: currentUser.university,
-          nameSurname: currentUser.nameSurname,
-          isPrivate: currentUser.isPrivate,
-          bio: currentUser.bio,
-          accountType: currentUser.accountType,
-          communityData: null,
-        ),
-      );
-
-      widget.event.requestPool.add(
-        CompactUserEntity(
-          userID: currentUser.userID,
-          username: currentUser.username,
-          profileImageUrl: currentUser.profileImageUrl,
-          university: currentUser.university,
-          nameSurname: currentUser.nameSurname,
-          isPrivate: currentUser.isPrivate,
-          bio: currentUser.bio,
-          accountType: currentUser.accountType,
-          communityData: null,
-        ),
-      );
-
-      final sameUniversityAsCreator =
-          sessionService.currentUser?.university != null &&
-          sessionService.currentUser!.university ==
-              widget.event.creator.university;
-
-      final numberOfFollowerParticipants = widget.event.participants
-          .where(
-            (p) =>
-                sessionService.stateListenable.value?.followers.any(
-                  (u) => u.userID == p.userID,
-                ) ??
-                false,
-          )
-          .length;
-
-      final numberOfNonFollowerParticipants =
-          widget.event.participants.length - numberOfFollowerParticipants;
-
-      final numberOfFolloweeParticipants = widget.event.participants
-          .where(
-            (p) =>
-                sessionService.stateListenable.value?.followees.any(
-                  (u) => u.userID == p.userID,
-                ) ??
-                false,
-          )
-          .length;
-
-      final numberOfNonFolloweeParticipants =
-          widget.event.participants.length - numberOfFolloweeParticipants;
-
-      final numberOfSameUniversityParticipants = widget.event.participants
-          .where((p) => p.university == sessionService.currentUser?.university)
-          .length;
-
-      getIt<AnalyticsService>().logSendJoinRequestToEvent(
-        SendJoinRequestToEventAnalyticsConfig(
-          eventID: widget.event.id,
-          numberOfParticipants: widget.event.participantCount,
-          numberOfFollowerParticipants: numberOfFollowerParticipants,
-          numberOfNonFollowerParticipants: numberOfNonFollowerParticipants,
-          numberOfFolloweeParticipants: numberOfFolloweeParticipants,
-          numberOfNonFolloweeParticipants: numberOfNonFolloweeParticipants,
-          sameUniversityAsCreator: sameUniversityAsCreator,
-          numberOfSameUniversityParticipants:
-              numberOfSameUniversityParticipants,
-          showOnMap: widget.event.showOnMap,
-          remainingTimeToStart: widget.event.startTime.difference(
-            DateTime.now(),
-          ),
-          eventStartTime: widget.event.startTime,
-          eventVisibility: widget.event.visibility.toString(),
-          category: widget.event.hobbies.isNotEmpty
-              ? widget.event.hobbies[0]
-              : 'null',
-          screen: widget.screen,
-        ),
-      );
-    } catch (e) {
-      logger.error('Join request failed: $e');
-
-      if (mounted) {
-        setState(() {
-          _joinStatus = _EventJoinStatus.canJoin;
-        });
-        showErrorPopup(
-          context,
-          message: 'İstek gönderilemedi, tekrar deneyin.',
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final currentUser = sessionService.currentUser;
@@ -573,7 +404,6 @@ class _EventCardState extends State<EventCard> {
     final displayAvatars = <AvatarInfo>[];
 
     if (widget.participants.isNotEmpty) {
-      // 1. Önce creator'ı bul ve ekle
       final creatorEntry = widget.participants
           .where((u) => u.userID == widget.event.creator.userID)
           .map((u) => AvatarInfo(userId: u.userID, imageUrl: u.profileImageUrl))
@@ -583,7 +413,6 @@ class _EventCardState extends State<EventCard> {
         displayAvatars.add(creatorEntry);
       }
 
-      // 2. Creator dışındakileri ekle
       displayAvatars.addAll(
         widget.participants
             .where((u) => u.userID != widget.event.creator.userID)
@@ -622,12 +451,11 @@ class _EventCardState extends State<EventCard> {
                 bumpOffset: 24.h,
               ),
               child: SizedBox(
-                // İstenilen Kart Gövde Yüksekliği
                 height: 212.h,
                 width: double.infinity,
                 child: Stack(
                   children: [
-                    // 1. ÜST SATIR (Başlık ve İkonlar)
+                    // 1. ÜST SATIR
                     Positioned(
                       top: 30.h,
                       left: 0,
@@ -656,30 +484,25 @@ class _EventCardState extends State<EventCard> {
                           ),
                           SizedBox(width: 7.w),
 
-                          // Katılınabilir durumdaysa (canJoin) kaydet butonunu göster
-                          if (_joinStatus == _EventJoinStatus.canJoin)
-                            SizedBox(
-                              width: 24.w,
-                              height: 24.w,
-                              child: InkWell(
-                                onTap: _toggleSave,
-                                child: Icon(
-                                  isSaved
-                                      ? Icons.bookmark
-                                      : Icons.bookmark_border,
-                                  color: isSaved
-                                      ? AppColors.primaryColor
-                                      : Colors.black54,
-                                  size: 19.sp,
-                                ),
+                          SizedBox(
+                            width: 24.w,
+                            height: 24.w,
+                            child: InkWell(
+                              onTap: _toggleSave,
+                              child: Icon(
+                                isSaved
+                                    ? Icons.bookmark
+                                    : Icons.bookmark_border,
+                                color: isSaved
+                                    ? AppColors.primaryColor
+                                    : Colors.black54,
+                                size: 19.sp,
                               ),
-                            )
-                          else
-                            SizedBox(width: 24.w, height: 24.w),
+                            ),
+                          ),
 
                           SizedBox(width: 8.w),
 
-                          // 3 NOKTA MENÜ (MORE VERT)
                           SizedBox(
                             width: 19.w,
                             height: 19.w,
@@ -718,7 +541,7 @@ class _EventCardState extends State<EventCard> {
                       ),
                     ),
 
-                    // 3. KATIL / i BUTONU
+                    // 3. KATIL BUTONU → EventJoinButton
                     if (widget.showJoinButton)
                       Positioned(
                         bottom: 12.h,
@@ -753,13 +576,9 @@ class _EventCardState extends State<EventCard> {
                                   ),
                                 ),
                               )
-                            : Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: _handleJoinTap,
-                                  borderRadius: BorderRadius.circular(20.r),
-                                  child: _buildJoinButtonContent(),
-                                ),
+                            : EventJoinButton(
+                                event: widget.event,
+                                screen: widget.screen,
                               ),
                       ),
                   ],
@@ -841,13 +660,9 @@ class _EventCardState extends State<EventCard> {
               right: 0,
               child: Center(
                 child: GestureDetector(
-                  behavior: HitTestBehavior
-                      .opaque, // Boş alanlara tıklamayı da yakalar
-                  onTap: () {
-                    _showParticipantsBottomSheet();
-                  },
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _showParticipantsBottomSheet,
                   child: AbsorbPointer(
-                    // Bu widget, altındaki tüm etkileşimi (click, scroll vb.) engeller
                     child: StackedAvatars(
                       avatarDataList: displayAvatars,
                     ),
@@ -859,154 +674,5 @@ class _EventCardState extends State<EventCard> {
         ),
       ),
     );
-  }
-
-  // 3 FARKLI BUTON STİLİ
-  Widget _buildJoinButtonContent() {
-    final width = 72.w;
-    final height = 36.h;
-
-    switch (_joinStatus) {
-      // 1. KATIL (Standart Dolu Renk)
-      case _EventJoinStatus.canJoin:
-        return Container(
-          width: width,
-          height: height,
-          decoration: BoxDecoration(
-            color: AppColors.primaryColor,
-            borderRadius: BorderRadius.circular(20.r),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x26000000),
-                offset: Offset(0, 4),
-                blurRadius: 4,
-              ),
-            ],
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            'katıl',
-            style: TextStyle(
-              fontFamily: 'SF Pro Display',
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
-            ),
-          ),
-        );
-
-      // 2. BEKLİYOR
-      case _EventJoinStatus.pending:
-        return Container(
-          width: width,
-          height: height,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20.r),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x1A000000),
-                offset: Offset(0, 4),
-                blurRadius: 8,
-              ),
-            ],
-          ),
-          alignment: Alignment.center,
-          child: Icon(
-            Icons.hourglass_empty_rounded,
-            color: AppColors.primaryColor,
-            size: 20.sp,
-          ),
-        );
-
-      // 3. KATILDIN
-      case _EventJoinStatus.joined:
-        return Container(
-          width: width,
-          height: height,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20.r),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x1A000000),
-                offset: Offset(0, 4),
-                blurRadius: 8,
-              ),
-            ],
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            'katıldın',
-            style: TextStyle(
-              fontFamily: 'SF Pro Display',
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primaryColor,
-            ),
-          ),
-        );
-    }
-  }
-
-  void _showWithdrawConfirmDialog() {
-    showDialog<void>(
-      context: context,
-      builder: (context) => Popup(
-        title: 'Katılma isteğini geri almak istiyor musun?',
-        description:
-            'İsteğini geri alırsan buluşma sahibi artık isteğini göremeyecek.',
-        confirmButtonText: 'geri al',
-        confirmButtonColor: AppColors.darkSecondaryColor,
-        onConfirm: () async {
-          context.pop(); // Dialogu kapat
-          await _executeWithdraw();
-        },
-      ),
-    );
-  }
-
-  Future<void> _executeWithdraw() async {
-    final currentUser = sessionService.currentUser;
-    if (currentUser == null) return;
-
-    // Optimistic UI
-    setState(() {
-      _joinStatus = _EventJoinStatus.canJoin;
-    });
-
-    try {
-      await eventRepository.withdrawJoinRequest(
-        widget.event.id,
-        CompactUserEntity(
-          userID: currentUser.userID,
-          username: currentUser.username,
-          profileImageUrl: currentUser.profileImageUrl,
-          university: currentUser.university,
-          nameSurname: currentUser.nameSurname,
-          isPrivate: currentUser.isPrivate,
-          bio: currentUser.bio,
-          accountType: currentUser.accountType,
-          communityData: null,
-        ),
-      );
-
-      // Lokal requestPool'dan sil
-      widget.event.requestPool.removeWhere(
-        (p) => p.userID == currentUser.userID,
-      );
-    } catch (e) {
-      logger.error('Withdraw request failed: $e');
-
-      if (mounted) {
-        setState(() {
-          _joinStatus = _EventJoinStatus.pending;
-        });
-        showErrorPopup(
-          context,
-          message: 'İstek geri alınamadı, tekrar deneyin.',
-        );
-      }
-    }
   }
 }
