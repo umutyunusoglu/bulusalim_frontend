@@ -55,19 +55,11 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
-              <!---
               <intent-filter android:autoVerify="true">
     <action android:name="android.intent.action.VIEW" />
     <category android:name="android.intent.category.DEFAULT" />
     <category android:name="android.intent.category.BROWSABLE" />
     <data android:scheme="https" android:host="bulusalim.com" />
-</intent-filter> -->
-              <intent-filter android:autoVerify="true">
-    <action android:name="android.intent.action.VIEW" />
-    <category android:name="android.intent.category.DEFAULT" />
-    <category android:name="android.intent.category.BROWSABLE" />
-    <data android:scheme="https" android:host="outnest.app" android:pathPrefix="/share" />
-    <data android:scheme="https" android:host="www.outnest.app" android:pathPrefix="/share" />
 </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

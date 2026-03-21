@@ -5,12 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:outnest/application/app_state/app_initialization_state.dart';
 
 class InitScreen extends HookConsumerWidget {
-  const InitScreen({
-    super.key,
-    this.nextPath,
-  });
-
-  final String? nextPath;
+  const InitScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -72,14 +67,7 @@ class InitScreen extends HookConsumerWidget {
 
       hasNavigated.value = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) return;
-        final destination =
-            (nextPath != null &&
-                nextPath!.isNotEmpty &&
-                nextPath!.startsWith('/'))
-            ? nextPath!
-            : '/home';
-        context.go(destination);
+        if (context.mounted) context.go('/home');
       });
 
       return null;

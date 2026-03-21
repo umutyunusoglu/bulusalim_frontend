@@ -1,11 +1,5 @@
 import 'dart:async';
 
-import 'package:outnest/application/service_locators/get_it_init.dart';
-import 'package:outnest/presentation/auth/view/components/auth_button.dart';
-import 'package:outnest/presentation/auth/view/components/otp_row.dart';
-import 'package:outnest/core/constants/theme/color_themes.dart';
-import 'package:outnest/core/utils/logging/logging_service.dart';
-import 'package:outnest/domain/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';

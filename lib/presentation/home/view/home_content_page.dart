@@ -166,7 +166,6 @@ class _HomeContentPageState extends State<HomeContentPage> {
             }
 
             // 4. Veri Geldiğinde Liste Görünümü
-
             return ListView.builder(
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(

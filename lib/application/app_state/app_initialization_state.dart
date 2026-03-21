@@ -33,8 +33,7 @@ final _appServicesCoordinator = Provider<void>((ref) {
   Future<void> maybeInit() async {
     if (hasInitialized) return;
     if (ref.read(isUserRegisteredProvider).asData?.value != true) return;
-    hasInitialized =
-        true; // set before await — prevents double-init on re-entry
+    hasInitialized = true; // set before await — prevents double-init on re-entry
     await getIt<SessionService>().init();
     await getIt<PushNotificationsService>().initialize();
   }

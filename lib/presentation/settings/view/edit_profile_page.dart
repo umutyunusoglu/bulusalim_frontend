@@ -55,7 +55,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
 
   bool _hasChanges = false;
-  String? _lastLoggedRemoteImageUrl;
 
   // Carousel dönerken seçilen geçici tarih
   DateTime _tempSelectedDate =
@@ -84,11 +83,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _username = user?.username ?? '';
     _nameSurname = user?.nameSurname ?? '';
     _profileImageUrl = user?.profileImageUrl ?? '';
-    if (_profileImageUrl.startsWith('http')) {
-      getIt<LoggingService>().debug(
-        'EditProfilePage init profile image URL: ${fixEmulatorUrl(_profileImageUrl)}',
-      );
-    }
     _hideSavedEvents = user?.hideSavedEvents ?? false;
     _selectedGender = user?.gender ?? GenderEnum.preferNotToSay;
     _selectedDob = user?.birthDate ?? DateTime(2002, 1);
@@ -575,20 +569,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
   // --- AVATAR BÖLÜMÜ ---
   Widget _buildProfilePhotoSection() {
     ImageProvider? imageProvider;
-    String? remoteImageUrl;
 
     if (_profileImageUrl.isNotEmpty) {
       // Eğer URL 'http' ile başlıyorsa sunucudaki resimdir
       if (_profileImageUrl.startsWith('http')) {
-        remoteImageUrl = fixEmulatorUrl(_profileImageUrl);
-        if (_lastLoggedRemoteImageUrl != remoteImageUrl) {
-          _lastLoggedRemoteImageUrl = remoteImageUrl;
-          getIt<LoggingService>().debug(
-            'Trying to load profile image from Firebase URL: $remoteImageUrl',
-          );
-        }
         imageProvider = CachedNetworkImageProvider(
-          remoteImageUrl,
+          fixEmulatorUrl(_profileImageUrl),
         );
       } else {
         // Değilse, cihazdan yeni seçilmiş yerel bir dosyadır
@@ -608,11 +594,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 backgroundColor: Colors.grey.shade200,
                 backgroundImage:
                     imageProvider, // Yukarıdaki mantığı buraya veriyoruz
-                onBackgroundImageError: (error, stackTrace) {
-                  getIt<LoggingService>().error(
-                    'Profile image load failed. url=$remoteImageUrl error=$error stack=$stackTrace',
-                  );
-                },
                 child: _profileImageUrl.isEmpty
                     ? Icon(Icons.person, size: 38.sp, color: Colors.grey)
                     : null,

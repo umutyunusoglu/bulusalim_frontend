@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -24,7 +23,6 @@ import 'package:outnest/domain/services/analytics/event_configs/select_profile_s
 import 'package:outnest/domain/services/analytics/event_configs/send_event_invitation_analytics_config.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
-import 'package:outnest/domain/services/share_links_service.dart';
 import 'package:outnest/domain/session_state.dart';
 import 'package:outnest/domain/usecases/send_event_invitation_usecase.dart';
 import 'package:outnest/presentation/home/view/components/post/small_stacked_avatars.dart';
@@ -180,42 +178,6 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
-  bool _isTransientProfileError(Object error) {
-    if (error is FirebaseException && error.code == 'unavailable') {
-      return true;
-    }
-
-    final message = error.toString().toLowerCase();
-    return message.contains('cloud_firestore/unavailable') ||
-        message.contains('unknownhostexception') ||
-        message.contains('unable to resolve host') ||
-        message.contains('socketexception');
-  }
-
-  Future<T> _withProfileRetry<T>(
-    Future<T> Function() action, {
-    required String label,
-    int maxAttempts = 3,
-  }) async {
-    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        return await action();
-      } catch (e) {
-        final shouldRetry =
-            _isTransientProfileError(e) && attempt < maxAttempts;
-        if (!shouldRetry) rethrow;
-
-        final delayMs = 300 * attempt;
-        getIt<LoggingService>().warn(
-          'Profile fetch retry ($attempt/$maxAttempts) for $label due to transient error: $e',
-        );
-        await Future<void>.delayed(Duration(milliseconds: delayMs));
-      }
-    }
-
-    throw StateError('Unreachable retry state for $label');
-  }
-
   Future<void> _fetchProfileData() async {
     if (!mounted) return;
 
@@ -223,21 +185,17 @@ class _ProfilePageState extends State<ProfilePage> {
       final userRepository = getIt<UserRepository>();
       final eventRepository = getIt<EventRepository>();
 
-      dynamic user;
+      var user;
 
       if (widget.profileUserID == getIt<SessionService>().currentUser?.userID) {
         user = getIt<SessionService>().currentUser;
       } else {
         getIt<LoggingService>().debug("Others profi");
-        user = await _withProfileRetry(
-          () => userRepository.getUserPublicData(widget.profileUserID),
-          label: 'getUserPublicData',
-        );
+        user = await userRepository.getUserPublicData(widget.profileUserID);
       }
 
-      final userEventsEnrolled = await _withProfileRetry(
-        () => userRepository.getUserEventLog(widget.profileUserID),
-        label: 'getUserEventLog',
+      final userEventsEnrolled = await userRepository.getUserEventLog(
+        widget.profileUserID,
       );
 
       final enrolledEventIds = <Identifier>[];
@@ -252,7 +210,7 @@ class _ProfilePageState extends State<ProfilePage> {
           case UserEventStatusEnum.saved:
             savedEventIds.add(event.eventId);
           case UserEventStatusEnum.completed:
-            break;
+            numberOfEvents += 1;
           default:
             break;
         }
@@ -283,53 +241,38 @@ class _ProfilePageState extends State<ProfilePage> {
       if (user!.userID == currentUser?.userID) {
         isFollowing = true;
       } else {
-        isFollowing = await _withProfileRetry(
-          () => userRepository.isFollowing(
-            currentUser!.userID,
-            user.userID as Identifier,
-          ),
-          label: 'isFollowing',
+        isFollowing = await userRepository.isFollowing(
+          currentUser!.userID,
+          user.userID as Identifier,
         );
       }
 
       var hasSentFollowRequest = false;
       if (!isFollowing) {
-        hasSentFollowRequest = await _withProfileRetry(
-          () => userRepository.hasSentFollowRequest(
-            currentUser!.userID,
-            user.userID as Identifier,
-          ),
-          label: 'hasSentFollowRequest',
+        hasSentFollowRequest = await userRepository.hasSentFollowRequest(
+          currentUser!.userID,
+          user.userID as Identifier,
         );
       }
 
       var enrolledEvents = <EventEntity>[];
       if (enrolledEventIds.isNotEmpty) {
-        enrolledEvents = await _withProfileRetry(
-          () => eventRepository.getEventsByIds(enrolledEventIds),
-          label: 'getEnrolledEventsByIds',
-        );
+        enrolledEvents = await eventRepository.getEventsByIds(enrolledEventIds);
       }
 
       var savedEvents = <EventEntity>[];
       if (savedEventIds.isNotEmpty) {
-        savedEvents = await _withProfileRetry(
-          () => eventRepository.getEventsByIds(savedEventIds),
-          label: 'getSavedEventsByIds',
-        );
+        savedEvents = await eventRepository.getEventsByIds(savedEventIds);
       }
 
-      final followerCount = await _withProfileRetry(
-        () => userRepository.getFollowersCount(widget.profileUserID),
-        label: 'getFollowersCount',
+      final followerCount = await userRepository.getFollowersCount(
+        widget.profileUserID,
       );
-      final followeeCount = await _withProfileRetry(
-        () => userRepository.getFolloweesCount(widget.profileUserID),
-        label: 'getFolloweesCount',
+      final followeeCount = await userRepository.getFolloweesCount(
+        widget.profileUserID,
       );
-      final completedEventCountFromRepo = await _withProfileRetry(
-        () => userRepository.getCompletedEventCount(widget.profileUserID),
-        label: 'getCompletedEventCount',
+      final completedEventCount = await userRepository.getCompletedEventCount(
+        widget.profileUserID,
       );
 
       final isPrivate = user.isPrivate;
@@ -363,7 +306,7 @@ class _ProfilePageState extends State<ProfilePage> {
         // Sayısal verilerde hata almamak için 0'a yuvarlıyoruz
         numberOfFollowers = followerCount ?? 0;
         numberOfFollowing = followeeCount ?? 0;
-        numberOfEvents = completedEventCountFromRepo;
+        numberOfEvents = completedEventCount ?? 0;
 
         _commonFollowers = commonFollows ?? [];
         _currentEvents = enrolledEvents ?? [];
@@ -455,7 +398,7 @@ class _ProfilePageState extends State<ProfilePage> {
       // BU KOD BÜTÜN UYGULAMAYI ANINDA GÜNCELLER (Profil sayfası dahil)
       await sessionService.refreshSession();
     } catch (e) {
-      debugPrint('Takip işlemi başarısız: $e');
+      debugPrint("Takip işlemi başarısız: $e");
 
       showErrorPopup(
         context,
@@ -924,21 +867,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Future<void> _handleShareProfile(String userId) async {
-    try {
-      await getIt<ShareLinksService>().shareUserProfile(userId);
-    } catch (e) {
-      if (mounted) {
-        showErrorPopup(
-          context,
-          message:
-              'Profil paylaşılırken bir hata oluştu. Lütfen tekrar deneyin.',
-        );
-      }
-      debugPrint('Profil paylaşma hatası: $e');
-    }
-  }
-
   // HEADER ALANI
   // HEADER ALANI
   Widget _buildProfileHeader(BuildContext context, SessionState state) {
@@ -1070,16 +998,6 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () =>
-                              _handleShareProfile(widget.profileUserID),
-                          child: Icon(
-                            Icons.share_outlined,
-                            color: AppColors.darkBackgroundColor,
-                            size: 24.sp,
-                          ),
-                        ),
-                        SizedBox(width: 8.w), // space between icons
                         // AYARLAR BUTONU (Sadece kendi profilinde)
                         if (isCurrentUser)
                           GestureDetector(
@@ -1094,7 +1012,6 @@ class _ProfilePageState extends State<ProfilePage> {
                           )
                         else
                           SizedBox(width: 24.sp),
-                        SizedBox(width: 8.w), // extra right margin
                       ],
                     ),
                     SizedBox(height: 9.h),
@@ -1360,13 +1277,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         color: theme.colorScheme.onSurface,
                         size: 20.sp,
                       ),
-                      onPressed: () {
-                        if (Navigator.of(context).canPop()) {
-                          context.pop();
-                        } else {
-                          context.go('/home');
-                        }
-                      },
+                      onPressed: () => context.pop(),
                     ),
                     title: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,

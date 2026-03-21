@@ -53,8 +53,6 @@ abstract class EventRepository {
   );
   Future<void> removeParticipant(Identifier eventId, CompactUserEntity user);
 
-  Future<List<CompactUserEntity>> getEventParticipants(String eventId);
-
   /// === Query & Search ===
 
   bool canUserJoinEvent(

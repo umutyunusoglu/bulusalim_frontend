@@ -20,7 +20,6 @@ import 'package:outnest/domain/services/analytics/event_configs/unpin_post_analy
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
-import 'package:outnest/domain/services/share_links_service.dart';
 import 'package:outnest/presentation/home/view/components/event/participant_bottom_sheet.dart';
 import 'package:outnest/presentation/home/view/components/post/content_tag_chip.dart';
 import 'package:outnest/presentation/home/view/components/post/emoji_chip.dart';
@@ -380,20 +379,6 @@ class _PostCardState extends State<PostCard> {
     }
   }
 
-  Future<void> _handleSharePost() async {
-    Navigator.pop(context);
-    try {
-      await getIt<ShareLinksService>().sharePost(widget.post.id);
-    } catch (e) {
-      if (mounted) {
-        showErrorPopup(
-          context,
-          message: 'Paylaşım başarısız oldu, lütfen tekrar deneyin',
-        );
-      }
-    }
-  }
-
   // --- PIN MANTIĞI ---
   Future<void> _togglePinStatus() async {
     final newStatus = !_isPinned;
@@ -462,13 +447,6 @@ class _PostCardState extends State<PostCard> {
                 ),
               ),
               SizedBox(height: 20.h),
-              _buildOptionItem(
-                context,
-                icon: Symbols.share,
-                text: 'Paylaş',
-                color: Colors.black,
-                onTap: _handleSharePost,
-              ),
               if (_amIFollowingPostCreator)
                 _buildOptionItem(
                   context,
@@ -484,7 +462,6 @@ class _PostCardState extends State<PostCard> {
                 color: const Color(0xFFFF3B30),
                 onTap: _handleBlockUser,
               ),
-
               _buildOptionItem(
                 context,
                 icon: Symbols.report,
