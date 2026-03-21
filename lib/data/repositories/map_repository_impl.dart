@@ -5,7 +5,6 @@ import 'package:dart_geohash/dart_geohash.dart';
 import 'package:dio/dio.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:outnest/application/service_locators/get_it_init.dart';
-// min, max, clamp için
 
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
@@ -14,12 +13,11 @@ import 'package:outnest/data/models/event/event_model.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/map_repository.dart';
+import 'package:outnest/domain/services/geocoding_service.dart';
 import 'package:outnest/domain/services/global_content_cache.dart';
 import 'package:outnest/domain/services/in_memory_cache.dart';
 import 'package:outnest/domain/services/session_service.dart';
 
-// FIX: Magic Numbers Lookup Table'a taşındı.
-// Her precision seviyesi için yaklaşık derece (lat, lon) boyutları.
 const Map<int, ({double lat, double lon})> _geohashDimensions = {
   3: (lat: 1.40625, lon: 1.40625),
   4: (lat: 0.1757, lon: 0.3515),
@@ -34,15 +32,18 @@ class MapRepositoryImpl implements MapRepository {
     required GlobalContentCache globalCache,
     required LoggingService logger,
     required EventRepository eventRepository,
+    required GeocodingService geocodingService,
   }) : _firestore = firestore,
        _globalCache = globalCache,
        _logger = logger,
-       _eventRepository = eventRepository;
+       _eventRepository = eventRepository,
+       _geocodingService = geocodingService;
 
   final FirebaseFirestore _firestore;
   final GlobalContentCache _globalCache;
   final LoggingService _logger;
   final EventRepository _eventRepository;
+  final GeocodingService _geocodingService;
   final GeoHasher _geoHasher = GeoHasher();
   final dio = Dio(
     BaseOptions(
@@ -51,9 +52,7 @@ class MapRepositoryImpl implements MapRepository {
     ),
   );
 
-  // Daha önce başarıyla çekilmiş region'lar
   final Set<String> _fetchedRegions = {};
-
   final Set<String> _fetchLock = {};
 
   final InMemoryCache<EventEntity> _eventCache = InMemoryCache<EventEntity>(
@@ -66,23 +65,19 @@ class MapRepositoryImpl implements MapRepository {
     required dynamic bounds,
     int precision = 7,
   }) async {
-    // 1. Koordinat hesaplamaları
     final expandedBounds = _expandBounds(bounds as CoordinateBounds, 0.5);
     final searchPrecision = _calculateSearchPrecision(expandedBounds);
 
-    // 2. Bölgeleri Hesapla
     final parentGeohashes = _getGeohashesInBounds(
       expandedBounds,
       precision: searchPrecision,
     );
 
-    // 3. Henüz çekilmemiş VE şu an başkası tarafından çekilmeyen bölgeleri bul
     final newRegions = parentGeohashes.where((h) {
       return !_fetchedRegions.contains(h) && !_fetchLock.contains(h);
     }).toList();
 
     if (newRegions.isNotEmpty) {
-      // İşleme girenleri kilitle
       _fetchLock.addAll(newRegions);
 
       final futures = <Future<QuerySnapshot>>[];
@@ -113,7 +108,6 @@ class MapRepositoryImpl implements MapRepository {
               final eventModel = EventModel.fromFirestore(
                 doc.data()! as Map<String, dynamic>,
               );
-
               eventsToEnrich.add(eventModel.toEntity());
             } catch (e) {
               _logger.error('MapRepo Parse Error: $e');
@@ -136,25 +130,19 @@ class MapRepositoryImpl implements MapRepository {
           }),
         );
 
-        // Zenginleştirilmiş verileri cache'e yazıyoruz
         for (final entity in locationInjectedEvents) {
-          // Global Cache (Detay sayfası için hazır olsun)
           _globalCache.cacheEntity(entity);
-          // Map Cache (Harita gösterimi için)
           _eventCache.set(entity.id, entity);
         }
 
-        // Başarılı olan bölgeleri fetched listesine ekle
         _fetchedRegions.addAll(newRegions);
       } catch (e) {
         _logger.error('Fetch hatası: $e');
       } finally {
-        // İşlem bitince kilidi aç
         _fetchLock.removeAll(newRegions);
       }
     }
 
-    // 4. Cache'ten şu anki ekrana uyanları filtrele ve döndür
     final allCachedEvents = _eventCache.values;
     final visibleEvents = allCachedEvents.where((event) {
       return _isLocationInBounds(event.location, expandedBounds);
@@ -165,12 +153,10 @@ class MapRepositoryImpl implements MapRepository {
 
   // --- YARDIMCI METOTLAR ---
 
-  /// Enlemi -90 ile +90 arasında tutar (Kutuplar)
   double _clampLatitude(double lat) {
     return lat.clamp(-90.0, 90.0);
   }
 
-  /// Boylamı -180 ile +180 arasına sığdırır (Dünya turu/Wrapping)
   double _normalizeLongitude(double lng) {
     if (lng >= -180 && lng <= 180) return lng;
     return ((lng + 180) % 360 + 360) % 360 - 180;
@@ -186,7 +172,6 @@ class MapRepositoryImpl implements MapRepository {
     final latBuffer = latDiff * factor;
     final lngBuffer = lngDiff * factor;
 
-    // FIX: Güvenli matematik fonksiyonları kullanıldı
     final newSouthLat = _clampLatitude(southWest.lat.toDouble() - latBuffer);
     final newNorthLat = _clampLatitude(northEast.lat.toDouble() + latBuffer);
 
@@ -226,10 +211,8 @@ class MapRepositoryImpl implements MapRepository {
     final southWest = bounds.southwest.coordinates;
     final northEast = bounds.northeast.coordinates;
 
-    // FIX: Lookup Table kullanımı
     final dimensions = _geohashDimensions[precision] ?? _geohashDimensions[7]!;
 
-    // FIX: Overlap garantisi için step aralığını %10 küçültüyoruz
     final latStep = dimensions.lat * 0.9;
     final lonStep = dimensions.lon * 0.9;
 
@@ -244,7 +227,6 @@ class MapRepositoryImpl implements MapRepository {
       var currentLon = southWest.lng.toDouble();
 
       while (currentLon < endLon + epsilon) {
-        // FIX: Koordinatları normalize et
         final clampedLat = _clampLatitude(currentLat);
         final normalizedLon = _normalizeLongitude(currentLon);
 
@@ -283,7 +265,6 @@ class MapRepositoryImpl implements MapRepository {
     final sw = bounds.southwest.coordinates;
     final ne = bounds.northeast.coordinates;
 
-    // Basit box check (Antimeridian durumu için ekstra logic eklenebilir ama şu an yeterli)
     return lat >= sw.lat.toDouble() &&
         lat <= ne.lat.toDouble() &&
         lng >= sw.lng.toDouble() &&
@@ -303,11 +284,9 @@ class MapRepositoryImpl implements MapRepository {
     String sessionToken,
   ) async {
     final accessToken = AppConfig.mapBoxAccessTokenKey;
-    // Access token veya query boş ise direkt boş dön
     if (accessToken.isEmpty) return null;
 
     try {
-      // 1. DÜZELTME: Uri yapısı ve query parametresi
       final response = await dio.get(
         'https://api.mapbox.com/search/searchbox/v1/retrieve/$placeId',
         queryParameters: {
@@ -320,7 +299,6 @@ class MapRepositoryImpl implements MapRepository {
       if (response.statusCode == 200) {
         final data = response.data as Map<String, dynamic>;
         _logger.info('Place data retrieved: $data');
-        // 2. DÜZELTME: Güvenli liste dönüşümü
 
         final features = data['features'] as List<dynamic>?;
         _logger.info('Place features: $features');
@@ -350,7 +328,6 @@ class MapRepositoryImpl implements MapRepository {
         return null;
       }
     } catch (e) {
-      // 5. DÜZELTME: Hatayı logluyoruz
       _logger.warn('Error searching places on Mapbox: $e');
       return null;
     }
@@ -363,15 +340,13 @@ class MapRepositoryImpl implements MapRepository {
     Geolocation? proximity,
   ) async {
     final accessToken = AppConfig.mapBoxAccessTokenKey;
-    // Access token veya query boş ise direkt boş dön
     if (accessToken.isEmpty || query.isEmpty) return [];
 
     try {
-      // 1. DÜZELTME: Uri yapısı ve query parametresi
       final response = await dio.get(
         'https://api.mapbox.com/search/searchbox/v1/suggest',
         queryParameters: {
-          'q': query, // "search_text" yerine gerçek query
+          'q': query,
           'access_token': accessToken,
           'session_token': sessionToken,
           'language': 'tr',
@@ -386,19 +361,16 @@ class MapRepositoryImpl implements MapRepository {
       if (response.statusCode == 200) {
         final data = response.data as Map<String, dynamic>;
 
-        // 2. DÜZELTME: Güvenli liste dönüşümü
         final suggestions = data['suggestions'] as List?;
-
         if (suggestions == null) return [];
 
-        final places = suggestions.map((suggestion) async {
-          // suggestion dynamic olabilir, Map'e cast ediyoruz
+        // Ekstra Mapbox API çağrısı yok.
+        // Display address, kullanıcı seçim yaptıktan sonra
+        // GeocodingService ile koordinattan hesaplanacak.
+        final places = suggestions.map((suggestion) {
           final map = suggestion as Map<String, dynamic>;
-          _logger.info('Processing suggestion: $map');
 
           final id = map['mapbox_id'] as String? ?? '';
-
-          // TODO: UI'da name ve full adress ayrı gösterilebilir.
           final placeName = map['name'] as String? ?? '';
           final adress = map['full_address'] as String? ?? '';
 
@@ -411,71 +383,15 @@ class MapRepositoryImpl implements MapRepository {
             fullAdress = '$placeName, $adress';
           }
 
-          //TODO: Burada context içinden şehir ve ilçe bilgilerini almak daha doğru olabilir
-          final context = map['context'] as Map<String, dynamic>? ?? {};
-          String city, district;
-          if (context.isEmpty) {
-            _logger.warn('Suggestion context is empty for place: $placeName');
-            city = map['region'] as String? ?? '';
-            district = map['place'] as String? ?? '';
-          } else {
-            city = context['region']?['name'] as String? ?? '';
-            district = context['place']?['name'] as String? ?? '';
-          }
-
-          if (city.isEmpty) {
-            final cityResponse = await dio.get(
-              'https://api.mapbox.com/search/searchbox/v1/suggest',
-              queryParameters: {
-                'q': district,
-                'access_token': accessToken,
-                'session_token': sessionToken,
-                'language': 'tr',
-                'limit': '5',
-                'country': 'tr',
-                'types': 'place',
-                if (proximity != null)
-                  'proximity': '${proximity.longitude},${proximity.latitude}',
-              },
-            );
-
-            final cityData = cityResponse.data as Map<String, dynamic>;
-            final citySuggestions = cityData['suggestions'] as List?;
-            if (citySuggestions != null && citySuggestions.isNotEmpty) {
-              // İlk öneriyi al
-              final firstSuggestion =
-                  citySuggestions[0] as Map<String, dynamic>;
-
-              // Önerinin içindeki context'e git
-              final contextObj =
-                  firstSuggestion['context'] as Map<String, dynamic>? ?? {};
-
-              // Şehri (region) oradan çek
-              city = contextObj['region']?['name'] as String? ?? '';
-
-              // EĞER context boşsa, bazen suggestion'ın kendisi de bir 'region' tipinde olabilir
-              if (city.isEmpty) {
-                city = firstSuggestion['name'] as String? ?? '';
-              }
-            }
-          }
-
-          var displayAdress = city.isNotEmpty ? '$district, $city' : district;
-
-          if (displayAdress.isEmpty) {
-            displayAdress = placeName;
-          }
-
-          _logger.info('Place found: $displayAdress and address: $placeName');
           return Place(
             id: id,
-            displayAddress: displayAdress,
+            displayAddress:
+                '', // Seçim sonrası GeocodingService ile doldurulacak
             adresss: fullAdress,
           );
         }).toList();
 
-        // 4. DÜZELTME: Listeyi return ediyoruz
-        return Future.wait(places);
+        return places;
       } else {
         _logger.warn(
           'Mapbox API Error: ${response.statusCode} - ${response.data}',
@@ -483,7 +399,6 @@ class MapRepositoryImpl implements MapRepository {
         return [];
       }
     } catch (e) {
-      // 5. DÜZELTME: Hatayı logluyoruz
       _logger.warn('Error searching places on Mapbox: $e');
       return [];
     }
@@ -493,8 +408,36 @@ class MapRepositoryImpl implements MapRepository {
   Future<Place?> geocodeLocation(
     Geolocation location,
   ) async {
+    // 1. Önce lokal GeocodingService ile il/ilçe bilgisini al (anında, API yok)
+    final localResult = _geocodingService.getCityDistrictFromGeolocation(
+      location,
+    );
+
+    String displayAddress;
+    if (localResult != null) {
+      displayAddress = '${localResult.district}, ${localResult.city}';
+      _logger.info(
+        'GeocodingService ile displayAddress bulundu: $displayAddress',
+      );
+    } else {
+      _logger.warn(
+        'GeocodingService eşleşme bulamadı, Mapbox fallback kullanılıyor',
+      );
+      displayAddress = '';
+    }
+
+    // 2. Full address için Mapbox reverse geocode kullan
     final accessToken = AppConfig.mapBoxAccessTokenKey;
-    if (accessToken.isEmpty) return null;
+    if (accessToken.isEmpty) {
+      if (localResult != null) {
+        return Place(
+          id: '',
+          displayAddress: displayAddress,
+          adresss: displayAddress,
+        );
+      }
+      return null;
+    }
 
     try {
       final response = await dio.get(
@@ -505,7 +448,6 @@ class MapRepositoryImpl implements MapRepository {
           'latitude': location.latitude,
           'language': 'tr',
           'country': 'tr',
-          // 'street' parametresi v6'da geçersizdir, kaldırıldı.
           'types':
               'country,region,postcode,district,place,locality,neighborhood,address',
         },
@@ -516,30 +458,54 @@ class MapRepositoryImpl implements MapRepository {
 
         final features = data['features'] as List<dynamic>?;
         final properties = features?[0]['properties'] as Map<String, dynamic>?;
-        // Features listesi boşsa null dön
-        if (properties == null || properties.isEmpty) return null;
-
-        final city = properties['context']?['region']?['name'] as String? ?? '';
-
-        final district =
-            properties['context']?['place']?['name'] as String? ?? '';
-
-        final displayAddress = city.isNotEmpty ? '$district, $city' : district;
+        if (properties == null || properties.isEmpty) {
+          if (localResult != null) {
+            return Place(
+              id: '',
+              displayAddress: displayAddress,
+              adresss: displayAddress,
+            );
+          }
+          return null;
+        }
 
         final fullAddress = properties['full_address'] as String? ?? '';
 
+        // GeocodingService bulamadıysa Mapbox'a fallback yap
+        if (localResult == null) {
+          final city =
+              properties['context']?['region']?['name'] as String? ?? '';
+          final district =
+              properties['context']?['place']?['name'] as String? ?? '';
+          displayAddress = city.isNotEmpty ? '$district, $city' : district;
+        }
+
         _logger.info('Geocoded place: $displayAddress, $fullAddress');
         return Place(
-          id: '', // İsterseniz properties['mapbox_id'] kullanabilirsiniz
+          id: '',
           displayAddress: displayAddress,
-          adresss: fullAddress,
+          adresss: fullAddress.isNotEmpty ? fullAddress : displayAddress,
         );
       } else {
         _logger.warn('Mapbox API Error: ${response.statusCode}');
+        if (localResult != null) {
+          return Place(
+            id: '',
+            displayAddress: displayAddress,
+            adresss: displayAddress,
+          );
+        }
         return null;
       }
     } catch (e) {
-      _logger.warn('Error searching places on Mapbox: $e');
+      _logger.warn('Error in geocodeLocation: $e');
+      if (localResult != null) {
+        return Place(
+          id: '',
+          displayAddress: displayAddress,
+          adresss: displayAddress,
+        );
+      }
       return null;
     }
   }

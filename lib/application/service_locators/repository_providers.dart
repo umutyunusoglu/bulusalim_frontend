@@ -55,6 +55,7 @@ extension RepositoryModule on GetIt {
           logger: this(),
           globalCache: this(),
           eventRepository: this(),
+          geocodingService: this(),
         ),
       )
       ..registerLazySingleton<ChatRepository>(
