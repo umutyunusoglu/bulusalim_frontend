@@ -1,10 +1,13 @@
+import 'package:fpdart/fpdart.dart' hide State;
 import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/core/errors/exceptions/auth_exceptions.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:pinput/pinput.dart';
 
 class ChangePhoneNumberPage extends StatefulWidget {
@@ -119,25 +122,25 @@ class _ChangePhoneNumberPageState extends State<ChangePhoneNumberPage> {
             _buildButton(
               text: 'gönder',
               onPressed: () async {
-                var fullPhone = _phoneController.text.replaceAll(
-                  ' ',
-                  '',
-                ); // +905XXXXXXXXX
+                final fullPhone = _phoneController.text.replaceAll(' ', '');
 
-                // AuthService üzerinden SMS gönder
-                final result = await _authService.sendSMS(
-                  phoneNumber: fullPhone,
-                );
+                final result = await _authService
+                    .sendSMS(phoneNumber: fullPhone)
+                    .run();
 
-                if (result.error != null) {
-                  // Hata göster (SnackBar)
-                } else {
-                  setState(() {
-                    _verificationId = result.verificationId;
-                    _resendToken = result.resendToken;
-                  });
-                  // OTP alanına odaklan
-                  _pinFocusNode.requestFocus();
+                if (!mounted) return;
+
+                switch (result) {
+                  case Right(value: final sms):
+                    setState(() {
+                      _verificationId = sms.verificationId;
+                      _resendToken = sms.resendToken;
+                    });
+                    _pinFocusNode.requestFocus();
+                  case Left(value: final error):
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(error.message)),
+                    );
                 }
               },
             ),
@@ -186,25 +189,38 @@ class _ChangePhoneNumberPageState extends State<ChangePhoneNumberPage> {
                 if (_verificationId == null) return;
 
                 var code = _pinController.text;
-                try {
-                  // Yeni eklediğimiz metodu çağırıyoruz
-                  await _authService.verifyAndChangePhoneNumber(
-                    verificationId: _verificationId!,
-                    smsCode: code,
-                  );
+                // Yeni eklediğimiz metodu çağırıyoruz
+                await _authService.verifyAndChangePhoneNumber(
+                  verificationId: _verificationId!,
+                  smsCode: code,
+                );
 
-                  // İşlem başarılıysa Firestore'u güncelle ve geri dön
-                  await _userRepository.updateUser(
-                    _authService.getCurrentUserID(),
-                    {
-                      'phoneNumber': _phoneController.text,
-                    },
-                  );
+                // İşlem başarılıysa Firestore'u güncelle ve geri dön
+                final currentID = _authService.getCurrentUserID();
 
-                  Navigator.pop(context, true);
-                } catch (e) {
-                  // Hata mesajı göster
+                switch (currentID) {
+                  case Right(value: final userId):
+                    await _userRepository.updateUser(
+                      userId,
+                      {
+                        'phoneNumber': _phoneController.text,
+                      },
+                    );
+                  case Left(value: final error):
+                    switch (error) {
+                      case AuthNotFoundException():
+                        if (!context.mounted) return;
+                        showErrorPopup(
+                          context,
+                          message:
+                              'Giriş yapmış bir kullanıcı bulunamadı. Lütfen tekrar giriş yapmayı deneyin.',
+                        );
+                    }
                 }
+
+                if (!context.mounted) return;
+
+                Navigator.pop(context, true);
               },
             ),
             SizedBox(height: 40.h),
