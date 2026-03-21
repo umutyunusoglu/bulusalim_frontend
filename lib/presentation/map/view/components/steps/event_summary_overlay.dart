@@ -13,12 +13,14 @@ class EventSummaryOverlay extends StatelessWidget {
     required this.previewEvent,
     required this.onCancel,
     required this.onConfirm,
+    this.isLoading = false,
     super.key,
   });
 
   final EventEntity previewEvent;
   final VoidCallback onCancel;
   final VoidCallback onConfirm;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -87,20 +89,24 @@ class EventSummaryOverlay extends StatelessWidget {
                   // VAZGEÇ
                   Expanded(
                     child: GestureDetector(
-                      onTap: onCancel,
-                      child: Container(
-                        height: 50.h,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(30.r),
-                        ),
-                        child: Text(
-                          'vazgeç',
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                      onTap: isLoading ? null : onCancel,
+
+                      child: Opacity(
+                        opacity: isLoading ? 0.5 : 1.0,
+                        child: Container(
+                          height: 50.h,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(30.r),
+                          ),
+                          child: Text(
+                            'vazgeç',
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
                           ),
                         ),
                       ),
@@ -112,12 +118,15 @@ class EventSummaryOverlay extends StatelessWidget {
                   // OLUŞTUR
                   Expanded(
                     child: GestureDetector(
-                      onTap: onConfirm,
-                      child: Container(
+                      onTap: isLoading ? null : onConfirm,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
                         height: 50.h,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: AppColors.primaryColor,
+                          color: isLoading
+                              ? AppColors.primaryColor.withOpacity(0.6)
+                              : AppColors.primaryColor,
                           borderRadius: BorderRadius.circular(30.r),
                           boxShadow: [
                             BoxShadow(
@@ -127,15 +136,24 @@ class EventSummaryOverlay extends StatelessWidget {
                             ),
                           ],
                         ),
-                        child: Text(
-                          'Buluşma Oluştur',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 15.sp,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
+                        child: isLoading
+                            ? SizedBox(
+                                width: 22.w,
+                                height: 22.w,
+                                child: const CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                'Buluşma Oluştur',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 15.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
                       ),
                     ),
                   ),

@@ -486,6 +486,49 @@ class EventRepositoryImpl implements EventRepository {
   }
 
   @override
+  Future<void> withdrawJoinRequest(
+    String eventId,
+    CompactUserEntity user,
+  ) async {
+    try {
+      final eventDoc = await _firestore.collection('events').doc(eventId).get();
+      if (!eventDoc.exists) throw Exception('Buluşma bulunamadı');
+
+      final creatorId = eventDoc.data()?['creator']?['userID'] as String?;
+
+      final batch = _firestore.batch();
+
+      final requestPoolRef = _firestore
+          .collection('events')
+          .doc(eventId)
+          .collection('requestPool')
+          .doc(user.userID);
+
+      final userEventLogRef = _firestore
+          .collection('users')
+          .doc(user.userID)
+          .collection('eventLog')
+          .doc(eventId);
+
+      batch
+        ..delete(requestPoolRef)
+        ..delete(userEventLogRef);
+
+      if (creatorId != null) {
+        _triggerCreatorRefresh(null, batch, creatorId, eventId);
+      }
+
+      await batch.commit();
+
+      _globalCache.removeEntity(eventId);
+      _logger.info('Join request withdrawn for event: $eventId');
+    } catch (e) {
+      _logger.error('Failed to withdraw join request: $e');
+      rethrow;
+    }
+  }
+
+  @override
   Future<void> acceptParticipant(String eventId, CompactUserEntity user) async {
     try {
       final eventRef = _firestore.collection('events').doc(eventId);
