@@ -81,7 +81,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
   final _friendSearchController = TextEditingController();
   // --- İZİN STATE'LERİ (Varsayılan Kapalı) ---
   bool _permNotifications = false;
-  bool _permBluetooth = false;
   bool _permLocation = false;
   bool _permCamera = false;
   bool _permPhotos = false;
@@ -129,10 +128,10 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
+  Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
     // Uygulama arka plandan ön plana geldiğinde (ayarlardan dönünce)
     if (state == AppLifecycleState.resumed) {
-      _syncAllPermissions();
+      await _syncAllPermissions();
     }
   }
 
@@ -174,8 +173,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
         // Fotoğraf seçimi validasyonu yapılacak
         break;
       case RegisterStep.interests:
-        final selectedCategories = _selectedInterests;
-
         analytics.logSelectHobbies(
           SelectHobbiesAnalyticsConfig(
             value: _selectedInterests,
@@ -235,7 +232,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
       gender = GenderEnum.fromString(_genderDisplayController.text);
 
       final interests = _selectedInterests;
-      final File? profilePhoto; // Fotoğraf seçme işlemi eklenmeli.
       final uploadUseCase = getIt<UploadProfilePicture>();
       var profileImageUrl = '';
       if (_selectedImage != null) {
@@ -273,7 +269,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
         followerCount: 0,
         accountType: AccountType.personal,
         communityData: null,
-        phoneNumber: getIt<AuthService>().getUserPhoneNumber(),
+        phoneNumber: getIt<AuthService>().getUserPhoneNumber().toNullable(),
       );
 
       await userRepository.createUser(
@@ -927,7 +923,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
 
     setState(() {
       _permNotifications = notification.isGranted;
-      _permBluetooth = bluetooth.isGranted;
       _permLocation = location.isGranted;
       _permCamera = camera.isGranted;
       _permPhotos = photos.isGranted || photos.isLimited;

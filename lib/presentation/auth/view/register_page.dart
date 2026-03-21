@@ -1,17 +1,16 @@
 import 'dart:io';
-
-import 'package:material_symbols_icons/symbols.dart';
-import 'package:outnest/app_router.dart';
-import 'package:outnest/application/service_locators/get_it_init.dart';
-import 'package:outnest/core/errors/exceptions/auth_exceptions.dart';
-import 'package:outnest/presentation/auth/view/components/auth_button.dart';
-import 'package:outnest/presentation/auth/view/components/auth_input.dart';
-import 'package:outnest/core/constants/theme/color_themes.dart';
-import 'package:outnest/domain/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:fpdart/fpdart.dart' show Left, Right, TaskEither;
 import 'package:go_router/go_router.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:outnest/application/service_locators/get_it_init.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/core/errors/exceptions/auth_exceptions.dart';
+import 'package:outnest/domain/services/auth_service.dart';
+import 'package:outnest/presentation/auth/view/components/auth_button.dart';
+import 'package:outnest/presentation/auth/view/components/auth_input.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 
 // Yükleme durumlarını yönetmek için Enum
@@ -37,13 +36,10 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> _handleSendCode() async {
-    // Herhangi bir işlem sürüyorsa durdur
     if (_authStatus != AuthStatus.none) return;
 
-    // 1. FORMATI TEMİZLE
     final rawNumber = _phoneController.text.replaceAll(' ', '');
 
-    // 2. VALIDASYON KONTROLLERİ
     if (rawNumber.isEmpty) {
       showErrorPopup(context, message: 'Lütfen telefon numaranızı giriniz.');
       return;
@@ -62,42 +58,44 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    // Telefon işlemi başladı
     setState(() => _authStatus = AuthStatus.phone);
 
-    try {
-      final result = await getIt<AuthService>().sendSMS(
-        phoneNumber: '+90$rawNumber',
-      );
+    final result = await getIt<AuthService>()
+        .sendSMS(phoneNumber: '+90$rawNumber')
+        .run();
 
-      if (mounted) {
-        // Sonuç geldi, yüklemeyi durdur
-        setState(() => _authStatus = AuthStatus.none);
+    if (!mounted) return;
+    setState(() => _authStatus = AuthStatus.none);
 
-        if (result.error != null) {
-          showErrorPopup(
-            context,
-            message: 'Bir hata ile karşılaşıldı. Lütfen tekrar deneyiniz.',
-          );
-        } else {
-          final verificationID = result.verificationId;
-          final resendToken = result.resendToken;
-          await context.push(
-            '/verification-code-field',
-            extra: {
-              'verificationID': verificationID,
-              'phoneNumber': '+90$rawNumber',
-              'resendToken': resendToken,
-            },
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _authStatus = AuthStatus.none);
-        showErrorPopup(context, message: 'Beklenmedik bir hata oluştu.');
-      }
-      debugPrint('Beklenmedik hata: $e');
+    switch (result) {
+      case Right(value: final sms):
+        if (!mounted) return;
+        await context.push(
+          '/verification-code-field',
+          extra: {
+            'verificationID': sms.verificationId,
+            'phoneNumber': '+90$rawNumber',
+            'resendToken': sms.resendToken,
+          },
+        );
+      case Left(value: OTPSendException()):
+        if (!mounted) return;
+        showErrorPopup(
+          context,
+          message: 'SMS gönderilemedi. Lütfen tekrar deneyiniz.',
+        );
+      case Left(value: SMSTimeoutException()):
+        if (!mounted) return;
+        showErrorPopup(
+          context,
+          message: 'Zaman aşımına uğradı. Lütfen tekrar deneyiniz.',
+        );
+      case Left(value: final _):
+        if (!mounted) return;
+        showErrorPopup(
+          context,
+          message: 'Beklenmedik bir hata oluştu.',
+        );
     }
   }
 
@@ -233,37 +231,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: OutlinedButton.icon(
                   onPressed: isAnyLoading
                       ? null
-                      : () async {
-                          setState(() => _authStatus = AuthStatus.google);
-                          try {
-                            await getIt<AuthService>().signInWithGoogle(
-                              isLogin: false,
-                            );
-                            if (mounted) context.push('/register-info');
-                          } on AuthException catch (e) {
-                            if (mounted) {
-                              setState(() => _authStatus = AuthStatus.none);
-
-                              showErrorPopup(
-                                context,
-                                message: e.toString(),
-                              );
-                            }
-                          } catch (e) {
-                            if (mounted) {
-                              setState(() => _authStatus = AuthStatus.none);
-
-                              showErrorPopup(
-                                context,
-                                message:
-                                    'Google ile giriş yapılırken bir hata ile karşılaşıldı. Lütfen tekrar deneyiniz.',
-                              );
-                            }
-                          }
-                          // push işleminden geri dönülürse loading'i kapatmak için
-                          // finally bloğu eklenebilir ancak görsel akış için
-                          // şimdilik sadece hata durumunda resetliyoruz.
-                        },
+                      : () => _handleSocialSignIn(
+                          status: AuthStatus.google,
+                          signIn: () => getIt<AuthService>().signInWithGoogle(
+                            isLogin: false,
+                          ),
+                          providerName: 'Google',
+                        ),
                   icon: _authStatus == AuthStatus.google
                       ? SizedBox(
                           height: 22.h,
@@ -298,34 +272,13 @@ class _RegisterPageState extends State<RegisterPage> {
                   child: ElevatedButton.icon(
                     onPressed: isAnyLoading
                         ? null
-                        : () async {
-                            setState(() => _authStatus = AuthStatus.apple);
-                            try {
-                              await getIt<AuthService>().signInWithApple(
-                                isLogin: false,
-                              );
-                              if (mounted) context.push('/register-info');
-                            } on AuthException catch (e) {
-                              if (mounted) {
-                                setState(() => _authStatus = AuthStatus.none);
-
-                                showErrorPopup(
-                                  context,
-                                  message: e.toString(),
-                                );
-                              }
-                            } catch (e) {
-                              if (mounted) {
-                                setState(() => _authStatus = AuthStatus.none);
-
-                                showErrorPopup(
-                                  context,
-                                  message:
-                                      'Apple ile giriş yapılırken bir hata ile karşılaşıldı. Lütfen tekrar deneyiniz.',
-                                );
-                              }
-                            }
-                          },
+                        : () => _handleSocialSignIn(
+                            status: AuthStatus.apple,
+                            signIn: () => getIt<AuthService>().signInWithApple(
+                              isLogin: false,
+                            ),
+                            providerName: 'Apple',
+                          ),
                     icon: _authStatus == AuthStatus.apple
                         ? SizedBox(
                             height: 22.h,
@@ -359,6 +312,42 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleSocialSignIn({
+    required AuthStatus status,
+    required TaskEither<AuthException, String> Function() signIn,
+    required String providerName,
+  }) async {
+    if (_authStatus != AuthStatus.none) return;
+
+    setState(() => _authStatus = status);
+
+    final result = await signIn().run();
+
+    if (!mounted) return;
+
+    switch (result) {
+      case Right():
+        setState(() => _authStatus = AuthStatus.none);
+        if (!mounted) return;
+        await context.push('/register-info');
+      case Left(value: AuthCancelledException()):
+        setState(() => _authStatus = AuthStatus.none);
+      case Left(value: UserAlreadyExistsException(:final message)):
+        setState(() => _authStatus = AuthStatus.none);
+        if (!mounted) return;
+        showErrorPopup(context, message: message);
+      case Left(value: final _):
+        setState(() => _authStatus = AuthStatus.none);
+        if (!mounted) return;
+        showErrorPopup(
+          context,
+          message:
+              '$providerName ile kayıt olurken bir hata oluştu. '
+              'Lütfen tekrar deneyiniz.',
+        );
+    }
   }
 }
 

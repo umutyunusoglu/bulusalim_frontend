@@ -34,6 +34,7 @@ import 'package:outnest/domain/services/analytics/event_configs/fail_event_creat
 import 'package:outnest/domain/services/analytics/event_configs/filter_map_by_time_analytics_config.dart';
 import 'package:outnest/domain/services/analytics/event_configs/filter_map_by_visibility_analytics_config.dart';
 import 'package:outnest/domain/services/file_service.dart';
+import 'package:outnest/domain/services/geocoding_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/usecases/upload_community_event_photo_usecase.dart';
 import 'package:outnest/presentation/map/view/components/create_event_popup.dart';
@@ -72,6 +73,7 @@ class _MapPageState extends State<MapPage> {
   final PageController _pageController = PageController();
   final LoggingService _logger = getIt<LoggingService>();
   final MapRepository _mapRepository = getIt<MapRepository>();
+  final GeocodingService _geocodingService = getIt<GeocodingService>();
 
   Geolocation? _userLocation = null;
   final ValueNotifier<bool> _isDialOpen = ValueNotifier(false);
@@ -314,14 +316,29 @@ class _MapPageState extends State<MapPage> {
 
       setState(() {
         _pickingMarker = annotation;
+        _tempLocation = newLocation;
       });
 
+      // Display address'i GeocodingService ile senkron hesapla
+      final localResult = _geocodingService.getCityDistrictFromGeolocation(
+        newLocation,
+      );
+      if (localResult != null && mounted) {
+        setState(() {
+          _tempDisplayAddress = '${localResult.district}, ${localResult.city}';
+        });
+      }
+
+      // Full address için Mapbox reverse geocode (arka planda)
       final place = await _mapRepository.geocodeLocation(newLocation);
       if (place != null && mounted) {
         setState(() {
-          _tempDisplayAddress = place.displayAddress;
           _tempAddress = place.adresss;
-          _tempLocation = newLocation;
+          // geocodeLocation zaten GeocodingService kullanıyor,
+          // ama eğer localResult null idiyse displayAddress'i de güncelle
+          if (localResult == null) {
+            _tempDisplayAddress = place.displayAddress;
+          }
         });
       }
     } catch (e) {

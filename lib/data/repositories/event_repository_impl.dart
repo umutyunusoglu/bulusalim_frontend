@@ -707,6 +707,24 @@ class EventRepositoryImpl implements EventRepository {
     throw UnimplementedError();
   }
 
+  @override
+  Future<List<CompactUserEntity>> getEventParticipants(String eventId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('events')
+          .doc(eventId)
+          .collection('participants')
+          .get();
+
+      return snapshot.docs
+          .map((doc) => CompactUserEntity.fromMap(doc.data()))
+          .toList();
+    } catch (e) {
+      _logger.error('Failed to get event participants: $e');
+      rethrow;
+    }
+  }
+
   // --- MESSAGES SUBCOLLECTION ---
 
   @override

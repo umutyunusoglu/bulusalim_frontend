@@ -59,5 +59,6 @@ extension UseCaseModule on GetIt {
           sessionService: this(),
         ),
       );
+
   }
 }

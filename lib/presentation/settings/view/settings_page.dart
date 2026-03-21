@@ -124,7 +124,7 @@ class _SettingsPageState extends State<SettingsPage>
                   child: ElevatedButton(
                     onPressed: () async {
                       Navigator.pop(context);
-                      unawaited(getIt<AuthService>().signOut());
+                      unawaited(getIt<AuthService>().signOut().run());
                       if (context.mounted) {
                         router.go('/welcome');
                       }
