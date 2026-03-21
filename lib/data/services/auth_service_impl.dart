@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:google_sign_in/google_sign_in.dart' hide GoogleSignInException;
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/errors/exceptions/auth_exceptions.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
@@ -118,7 +118,7 @@ class AuthServiceImpl implements AuthService {
             _logger.error('sendSMS verificationFailed: ${e.message}');
             if (!completer.isCompleted) {
               completer.completeError(
-                OTPSendException(e.message ?? 'SMS doğrulama başarısız'),
+                OTPSendException('SMS doğrulama başarısız'),
               );
             }
           },
@@ -280,7 +280,7 @@ class AuthServiceImpl implements AuthService {
         final user = userCredential.user;
 
         if (user == null) {
-          throw AppleSignInException(
+          throw AppleAuthInException(
             'Apple servisinden kullanıcı verisi alınamadı.',
           );
         }
@@ -292,7 +292,7 @@ class AuthServiceImpl implements AuthService {
           _logger.warn(
             'Login attempt with new Apple account. Deleting user...',
           );
-           _cleanupUser(user);
+          await _cleanupUser(user).run();
           throw AuthNotFoundException(
             'Apple hesabınızla ilişkili bir kayıt bulunamadı. Lütfen önce kayıt olun.',
           );
@@ -315,15 +315,14 @@ class AuthServiceImpl implements AuthService {
           if (error.code == 'canceled' || error.code == 'user-cancelled') {
             return AuthCancelledException('İşlem iptal edildi.');
           }
-          return AppleSignInException(
-            error.message ?? 'Apple girişi sırasında bir hata oluştu.',
+          return AppleAuthInException(
+            'Apple girişi sırasında bir hata oluştu.',
           );
         }
-        return AppleSignInException('Beklenmedik bir hata oluştu: $error');
+        return AppleAuthInException('Beklenmedik bir hata oluştu: $error');
       },
     );
   }
-
 
   @override
   TaskEither<AuthException, String> signInWithGoogle({
@@ -347,7 +346,7 @@ class AuthServiceImpl implements AuthService {
         final user = userCredential.user;
 
         if (user == null) {
-          throw GoogleSignInException(
+          throw GoogleAuthException(
             'Google servisinden kullanıcı verisi alınamadı.',
           );
         }
@@ -369,11 +368,22 @@ class AuthServiceImpl implements AuthService {
           if (error.code == 'canceled' || error.code == 'user-cancelled') {
             return AuthCancelledException('İşlem iptal edildi.');
           }
-          return GoogleSignInException(
-            error.message ?? 'Google girişi sırasında bir hata oluştu.',
+          return GoogleAuthException(
+            'Google girişi sırasında bir hata oluştu.',
           );
         }
-        return GoogleSignInException('Google işlemi başarısız: $error');
+        // Google Sign In paketi kendi exception'ını fırlatıyor
+        if (error is GoogleAuthException) {
+          if (error is GoogleSignInException) {
+            return AuthCancelledException('İşlem iptal edildi.');
+          }
+          return GoogleAuthException(
+            'Google ile giriş yapma başarısız, lütfen tekrar deneyin.',
+          );
+        }
+        return GoogleAuthException(
+          'Google ile giriş yapma başarısız, lütfen tekrar deneyin.',
+        );
       },
     );
   }
@@ -399,25 +409,25 @@ class AuthServiceImpl implements AuthService {
     return Right(phoneNumber);
   }
 
-
-TaskEither<AuthException, void> _cleanupUser(User user) {
-  return TaskEither.tryCatch(
-    () => user.delete(),
-    (error, stack) {
-      _logger.error('Kullanıcı silinemedi: $error');
-      return UnknownAuthException('Geçici kullanıcı temizlenemedi.');
-    },
-  ).orElse(
-    // delete başarısız olursa signOut dene
-    (_) => TaskEither.tryCatch(
-      () => _firebaseAuth.signOut(),
+  TaskEither<AuthException, void> _cleanupUser(User user) {
+    return TaskEither.tryCatch(
+      () => user.delete(),
       (error, stack) {
-        _logger.error('Oturum da kapatılamadı: $error');
-        return UnknownAuthException('Oturum kapatılamadı.');
+        _logger.error('Kullanıcı silinemedi: $error');
+        return UnknownAuthException('Geçici kullanıcı temizlenemedi.');
       },
-    ),
-  );
-}
+    ).orElse(
+      // delete başarısız olursa signOut dene
+      (_) => TaskEither.tryCatch(
+        () => _firebaseAuth.signOut(),
+        (error, stack) {
+          _logger.error('Oturum da kapatılamadı: $error');
+          return UnknownAuthException('Oturum kapatılamadı.');
+        },
+      ),
+    );
+  }
+
   // ortak kontrol
   Future<void> _validateLoginRegister({
     required User user,
