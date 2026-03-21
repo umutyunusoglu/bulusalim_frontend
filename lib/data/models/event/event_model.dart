@@ -2,11 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_geohash/dart_geohash.dart';
 import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
 import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/core/utils/types/enums/visibility_enum.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/data/models/model.dart';
+import 'package:outnest/domain/entities/feed/event/event_community_data.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 
@@ -34,7 +36,9 @@ class EventModel extends Model<EventEntity> {
     required this.geohash,
     required this.visibility,
     required this.showOnMap,
+    required this.accountType,
     this.visibilityGroupID,
+    this.communityData,
   });
 
   @override
@@ -63,6 +67,8 @@ class EventModel extends Model<EventEntity> {
       visibility: entity.visibility,
       visibilityGroupID: entity.visibilityGroupID,
       showOnMap: entity.showOnMap,
+      accountType: entity.accountType,
+      communityData: entity.communityData,
     );
   }
 
@@ -78,7 +84,6 @@ class EventModel extends Model<EventEntity> {
         longitude: geolocation.longitude,
       );
 
-      // Eğer geohash yoksa ama location varsa hesapla (Fallback)
       if (geohash == null) {
         final geohasher = GeoHasher();
         geohash = geohasher.encode(
@@ -89,7 +94,6 @@ class EventModel extends Model<EventEntity> {
       }
     }
 
-    // 2. Address kontrolü
     final String? address = doc['address'] as String?;
 
     final creator = EventParticipantEntity.fromMap(
@@ -97,7 +101,6 @@ class EventModel extends Model<EventEntity> {
     );
 
     final participants = <CompactUserEntity>[];
-    // Boş liste olarak başlat
 
     final requestPool =
         (doc['requestPool'] as List<dynamic>?)
@@ -105,7 +108,7 @@ class EventModel extends Model<EventEntity> {
               (e) => CompactUserEntity.fromMap(e as Map<String, dynamic>),
             )
             .toList() ??
-        <CompactUserEntity>[]; // Eğer null ise boş liste
+        <CompactUserEntity>[];
 
     final rejectedUsers =
         (doc['rejectedUsers'] as List<dynamic>?)
@@ -113,9 +116,8 @@ class EventModel extends Model<EventEntity> {
               (e) => CompactUserEntity.fromMap(e as Map<String, dynamic>),
             )
             .toList() ??
-        <CompactUserEntity>[]; // Eğer null ise boş liste
+        <CompactUserEntity>[];
 
-    // Count null ise ve liste doluysa, listenin uzunluğunu alabiliriz fallback olarak
     final pCount =
         (doc['participantCount'] as int?) ??
         (participants.isNotEmpty ? participants.length : 1);
@@ -129,6 +131,23 @@ class EventModel extends Model<EventEntity> {
       );
       visibility = VisibilityEnum.everyone;
     }
+
+    // AccountType: Firebase'den oku, yoksa personal
+    final accountType = AccountType.fromString(
+      doc['accountType'] as String? ?? 'personal',
+    );
+
+    // Community data: varsa parse et
+    final communityData = EventCommunityData.fromMap(doc);
+    // Tüm alanlar null ise communityData'yı null yap
+    final hasAnyCommunityField =
+        communityData.description != null ||
+        communityData.rules != null ||
+        communityData.venueInfo != null ||
+        communityData.link != null ||
+        communityData.maxParticipants != null ||
+        communityData.requiresDocument != null ||
+        communityData.coverImageUrl != null;
 
     return EventModel(
       eventId: doc['eventID'] as String,
@@ -154,6 +173,8 @@ class EventModel extends Model<EventEntity> {
       visibility: visibility,
       visibilityGroupID: doc['visibilityGroupID'] as String?,
       showOnMap: (doc['showOnMap'] as bool?) ?? false,
+      accountType: accountType,
+      communityData: hasAnyCommunityField ? communityData : null,
     );
   }
 
@@ -163,9 +184,9 @@ class EventModel extends Model<EventEntity> {
     creatorMap['profileImageUrl'] = creator.profileImageUrl;
 
     final participantsMaps = participants.map((p) => p.toMap()).toList();
-
     final requstPoolMaps = requestPool.map((p) => p.toMap()).toList();
     final rejectedUsersMaps = rejectedUsers.map((p) => p.toMap()).toList();
+
     return {
       'eventID': eventId,
       'name': name,
@@ -174,8 +195,8 @@ class EventModel extends Model<EventEntity> {
       'creator': creatorMap,
       'capacity': capacity,
       'status': status.toString(),
-      'participantCount': participantCount, // Sadece sayıyı yazıyoruz
-      'participants': participantsMaps, // Artık burada saklamıyoruz
+      'participantCount': participantCount,
+      'participants': participantsMaps,
       'requestPool': requstPoolMaps,
       'rejectedUsers': rejectedUsersMaps,
       'startTime': startTime,
@@ -189,6 +210,9 @@ class EventModel extends Model<EventEntity> {
       'visibility': visibility.toString(),
       'visibilityGroupID': visibilityGroupID,
       'showOnMap': showOnMap,
+      'accountType': accountType.toString(),
+      // Community alanlarını flat olarak yaz (Firebase yapısını bozmamak için)
+      if (communityData != null) ...communityData!.toMap(),
     };
   }
 
@@ -227,6 +251,8 @@ class EventModel extends Model<EventEntity> {
       visibility: visibility,
       visibilityGroupID: visibilityGroupID,
       showOnMap: showOnMap,
+      accountType: accountType,
+      communityData: communityData,
     );
   }
 
@@ -248,10 +274,10 @@ class EventModel extends Model<EventEntity> {
 
   Map<String, dynamic> toSensitiveFirestore() {
     return {
-      'realAddress': address, // Entity'deki gerçek adres
+      'realAddress': address,
       'realLocation': location != null
           ? GeoPoint(location!.latitude, location!.longitude)
-          : null, // Entity'deki gerçek konum
+          : null,
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
@@ -279,4 +305,6 @@ class EventModel extends Model<EventEntity> {
   final String? visibilityGroupID;
   final String geohash;
   final bool showOnMap;
+  final AccountType accountType;
+  final EventCommunityData? communityData;
 }

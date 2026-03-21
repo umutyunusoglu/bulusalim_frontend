@@ -67,18 +67,15 @@ class SessionServiceImpl implements SessionService {
   @override
   Future<void> refreshSession() async {
     final result = _authService.getCurrentUserID();
-    
-    switch(result){
+
+    switch (result) {
       case Right(value: final userID):
         await _onAuthStateChanged(userID);
-      
 
       case Left(value: final error):
         _logger.error('Error refreshing session: $error');
         await _onAuthStateChanged(null); // Force logout on error
-      
     }
-
   }
 
   // --- LOGIC ---

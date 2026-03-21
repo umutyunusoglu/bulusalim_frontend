@@ -455,11 +455,13 @@ class _CommunityProfilePageState extends State<CommunityProfilePage> {
                     backgroundImage: profileImageUrl.isNotEmpty
                         ? CachedNetworkImageProvider(safeProfileImageUrl)
                         : null,
-                    onBackgroundImageError: (error, stackTrace) {
-                      debugPrint(
-                        'CommunityProfilePage image load failed: url=$safeProfileImageUrl error=$error stack=$stackTrace',
-                      );
-                    },
+                    onBackgroundImageError: profileImageUrl.isNotEmpty
+                        ? (error, stackTrace) {
+                            debugPrint(
+                              'CommunityProfilePage image load failed: url=$safeProfileImageUrl error=$error stack=$stackTrace',
+                            );
+                          }
+                        : null,
                     child: profileImageUrl.isEmpty
                         ? Icon(Symbols.groups, size: 30.sp, color: Colors.grey)
                         : null,
