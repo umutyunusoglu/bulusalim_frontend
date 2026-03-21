@@ -22,6 +22,7 @@ import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/core/utils/types/enums/screen_enum.dart';
 import 'package:outnest/core/utils/types/enums/visibility_enum.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
+import 'package:outnest/domain/entities/feed/event/event_community_data.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
@@ -34,6 +35,7 @@ import 'package:outnest/domain/services/analytics/event_configs/filter_map_by_ti
 import 'package:outnest/domain/services/analytics/event_configs/filter_map_by_visibility_analytics_config.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/domain/usecases/upload_community_event_photo_usecase.dart';
 import 'package:outnest/presentation/map/view/components/create_event_popup.dart';
 import 'package:outnest/presentation/map/view/components/map_people_filter.dart';
 import 'package:outnest/presentation/map/view/components/map_time_filter.dart';
@@ -108,6 +110,8 @@ class _MapPageState extends State<MapPage> {
   PointAnnotation? _pickingMarker;
   String? _currentUserImageUrl;
   bool? _tempShowOnMap;
+
+  bool _isCreating = false;
 
   bool _isLocationSearchUsed = false;
   bool _isNameSuggestionUsed = false;
@@ -1011,6 +1015,7 @@ class _MapPageState extends State<MapPage> {
                     previewEvent: _createPreviewEvent(),
                     onCancel: () => _closeWizard(CreateEventStepEnum.summary),
                     onConfirm: _confirmEventCreation,
+                    isLoading: _isCreating,
                   ),
                 )
               else
@@ -1426,10 +1431,13 @@ class _MapPageState extends State<MapPage> {
       ),
       visibility: _tempVisibility ?? VisibilityEnum.everyone,
       showOnMap: _tempShowOnMap ?? true,
+      accountType: currentUser.accountType,
     );
   }
 
   Future<void> _confirmEventCreation() async {
+    if (_isCreating) return;
+    setState(() => _isCreating = true);
     try {
       final eventRepository = getIt<EventRepository>();
       final currentUser = getIt<SessionService>().currentUser!;
@@ -1442,6 +1450,7 @@ class _MapPageState extends State<MapPage> {
         time.hour,
         time.minute,
       );
+
       final currentUserCompact = CompactUserEntity(
         userID: currentUser.userID,
         username: currentUser.username,
@@ -1453,11 +1462,26 @@ class _MapPageState extends State<MapPage> {
         accountType: currentUser.accountType,
         communityData: currentUser.communityData,
       );
+
       final geohash = GeoHasher().encode(
         _tempLocation!.longitude,
         _tempLocation!.latitude,
         precision: 7,
       );
+
+      // 1. Kapak fotoğrafı varsa önce upload et
+      String? coverImageUrl;
+      if (_tempCommunityImage != null) {
+        coverImageUrl = await getIt<UploadCommunityEventPhoto>().call(
+          filePath: _tempCommunityImage!.path,
+        );
+
+        if (coverImageUrl == null) {
+          throw Exception('Kapak fotoğrafı yüklenemedi.');
+        }
+      }
+
+      // 2. Event'i URL ile birlikte oluştur
       final event = EventEntity(
         eventID: '',
         name: _tempEventName ?? '',
@@ -1491,36 +1515,42 @@ class _MapPageState extends State<MapPage> {
             ? _tempVisibilityGroupID
             : null,
         showOnMap: _tempShowOnMap ?? true,
-        communityDescription: _tempCommunityDescription,
-        communityRules: _tempCommunityRules,
-        communityVenueInfo: _tempCommunityVenueInfo,
-        communityLink: _tempCommunityLink,
-        communityMaxParticipants: _tempCommunityMaxParticipants,
-        communityRequiresDocument: _tempCommunityRequiresDocument,
-        communityCoverImageUrl: null, // TODO: Firebase Storage upload
+        accountType: currentUser.accountType ?? AccountType.personal,
+        communityData: EventCommunityData(
+          description: _tempCommunityDescription,
+          rules: _tempCommunityRules,
+          venueInfo: _tempCommunityVenueInfo,
+          link: _tempCommunityLink,
+          maxParticipants: _tempCommunityMaxParticipants,
+          requiresDocument: _tempCommunityRequiresDocument,
+          coverImageUrl: coverImageUrl,
+        ),
       );
-      eventRepository.createEvent(event);
 
-      final analytics = getIt<AnalyticsService>()
-        ..logCreateEvent(
-          CreateEventAnalyticsConfig(
-            category: _tempCategory ?? 'diğer',
-            isLocationSearched: _isLocationSearchUsed,
-            hasStartTime: _tempTime != null,
-            visibility: _tempVisibility ?? VisibilityEnum.everyone,
-            showOnMap: _tempShowOnMap ?? true,
-            isNameSuggestionUsed: _isNameSuggestionUsed,
-          ),
-        );
+      await eventRepository.createEvent(event);
+
+      getIt<AnalyticsService>().logCreateEvent(
+        CreateEventAnalyticsConfig(
+          category: _tempCategory ?? 'diğer',
+          isLocationSearched: _isLocationSearchUsed,
+          hasStartTime: _tempTime != null,
+          visibility: _tempVisibility ?? VisibilityEnum.everyone,
+          showOnMap: _tempShowOnMap ?? true,
+          isNameSuggestionUsed: _isNameSuggestionUsed,
+        ),
+      );
 
       _closeWizard(CreateEventStepEnum.summary, completed: true);
     } catch (e) {
       _logger.error('Etkinlik oluşturulurken hata: $e');
-
       showErrorPopup(
         context,
         message: 'Etkinlik oluşturulurken bir hata oluştu.',
       );
+    } finally {
+      if (mounted) {
+        setState(() => _isCreating = false);
+      }
     }
   }
 }

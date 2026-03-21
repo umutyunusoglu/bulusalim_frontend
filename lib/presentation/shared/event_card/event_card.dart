@@ -249,21 +249,9 @@ class _EventCardState extends State<EventCard> {
                   sheetContext.pop();
                   // TODO: İptal etme servisini çağır
                   _onCancelEventTap();
-                  if (mounted) setState(() => isVisible = false);
                 },
               ),
-          ]
-          // BAŞKASININ ETKİNLİĞİ İSE
-          else ...[
-            // 1. Paylaş
-            /*
-            BottomSheetOption(
-              icon: Icons.share_outlined,
-              text: 'Buluşmayı Paylaş',
-              onTap: () {
-                sheetContext.pop();
-              },
-            )*/
+          ] else ...[
             if (_amIFollowingCreator)
               BottomSheetOption(
                 icon: Icons.person_remove_outlined,
@@ -339,6 +327,7 @@ class _EventCardState extends State<EventCard> {
         confirmButtonColor: const Color(0xFF1F415B),
         onConfirm: () async {
           if (mounted) context.pop();
+          if (mounted) setState(() => isVisible = false);
 
           await eventRepository.deleteEvent(widget.event.eventID);
         },
@@ -453,7 +442,13 @@ class _EventCardState extends State<EventCard> {
 
   Future<void> _handleJoinTap() async {
     final currentUser = sessionService.currentUser;
-    if (currentUser == null) return; // Güvenlik kontrolü
+    if (currentUser == null) return;
+
+    // --- PENDING: Geri alma akışı ---
+    if (_joinStatus == _EventJoinStatus.pending) {
+      _showWithdrawConfirmDialog();
+      return;
+    }
 
     if (_joinStatus != _EventJoinStatus.canJoin) return;
 
@@ -490,10 +485,6 @@ class _EventCardState extends State<EventCard> {
           communityData: null,
         ),
       );
-
-      final participants = widget.event.participants
-          .map((p) => p.userID)
-          .toList(growable: true);
 
       final sameUniversityAsCreator =
           sessionService.currentUser?.university != null &&
@@ -541,7 +532,6 @@ class _EventCardState extends State<EventCard> {
           sameUniversityAsCreator: sameUniversityAsCreator,
           numberOfSameUniversityParticipants:
               numberOfSameUniversityParticipants,
-
           showOnMap: widget.event.showOnMap,
           remainingTimeToStart: widget.event.startTime.difference(
             DateTime.now(),
@@ -606,10 +596,7 @@ class _EventCardState extends State<EventCard> {
         ? categories[widget.event.hobbies[0]] ?? ''
         : '🎉';
 
-    final creatorCompact = widget.participants
-        .where((p) => p.userID == widget.event.creator.userID)
-        .firstOrNull;
-    final isCommunity = creatorCompact?.accountType == AccountType.community;
+    final isCommunity = widget.event.accountType == AccountType.community;
 
     return AnimatedCrossFade(
       duration: const Duration(milliseconds: 500),
@@ -959,6 +946,67 @@ class _EventCardState extends State<EventCard> {
             ),
           ),
         );
+    }
+  }
+
+  void _showWithdrawConfirmDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (context) => Popup(
+        title: 'Katılma isteğini geri almak istiyor musun?',
+        description:
+            'İsteğini geri alırsan buluşma sahibi artık isteğini göremeyecek.',
+        confirmButtonText: 'geri al',
+        confirmButtonColor: AppColors.darkSecondaryColor,
+        onConfirm: () async {
+          context.pop(); // Dialogu kapat
+          await _executeWithdraw();
+        },
+      ),
+    );
+  }
+
+  Future<void> _executeWithdraw() async {
+    final currentUser = sessionService.currentUser;
+    if (currentUser == null) return;
+
+    // Optimistic UI
+    setState(() {
+      _joinStatus = _EventJoinStatus.canJoin;
+    });
+
+    try {
+      await eventRepository.withdrawJoinRequest(
+        widget.event.id,
+        CompactUserEntity(
+          userID: currentUser.userID,
+          username: currentUser.username,
+          profileImageUrl: currentUser.profileImageUrl,
+          university: currentUser.university,
+          nameSurname: currentUser.nameSurname,
+          isPrivate: currentUser.isPrivate,
+          bio: currentUser.bio,
+          accountType: currentUser.accountType,
+          communityData: null,
+        ),
+      );
+
+      // Lokal requestPool'dan sil
+      widget.event.requestPool.removeWhere(
+        (p) => p.userID == currentUser.userID,
+      );
+    } catch (e) {
+      logger.error('Withdraw request failed: $e');
+
+      if (mounted) {
+        setState(() {
+          _joinStatus = _EventJoinStatus.pending;
+        });
+        showErrorPopup(
+          context,
+          message: 'İstek geri alınamadı, tekrar deneyin.',
+        );
+      }
     }
   }
 }

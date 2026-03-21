@@ -16,25 +16,24 @@ class CommunityEventDetailViewPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final community = event.communityData;
+
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       appBar: _buildAppBar(context),
       body: Stack(
         children: [
-          // 1. KAYDIRILABİLİR İÇERİK
           Positioned.fill(
             child: SingleChildScrollView(
               padding: EdgeInsets.only(top: 8.h, bottom: 180.h),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // KAPAK FOTOĞRAFI
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16.w),
-                    child: _buildCoverImage(),
+                    child: _buildCoverImage(community?.coverImageUrl),
                   ),
 
-                  // ETKİNLİK BİLGİ KARTI
                   CommunityEventInfoCard(
                     profileImageUrl: event.creator.profileImageUrl,
                     communityName: event.creator.username,
@@ -42,46 +41,41 @@ class CommunityEventDetailViewPage extends StatelessWidget {
                     displayAddress: event.displayAddress,
                     startTime: event.startTime,
                     maxParticipants:
-                        event.communityMaxParticipants ?? event.capacity,
+                        community?.maxParticipants ?? event.capacity,
                     category: event.hobbies.isNotEmpty
                         ? event.hobbies[0]
                         : 'Genel',
-                    link: event.communityLink,
+                    link: community?.link,
                   ),
 
-                  // DETAY BÖLÜMLERİ
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16.w),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (event.communityDescription != null &&
-                            event.communityDescription!.isNotEmpty) ...[
+                        if (community?.description != null &&
+                            community!.description!.isNotEmpty)
                           _buildSection(
                             'Buluşma Hakkında',
-                            event.communityDescription!,
+                            community.description!,
                           ),
-                        ],
-                        if (event.communityRules != null &&
-                            event.communityRules!.isNotEmpty &&
-                            event.communityRules!.trim() != '•') ...[
+                        if (community?.rules != null &&
+                            community!.rules!.isNotEmpty &&
+                            community.rules!.trim() != '•')
                           _buildSection(
                             'Katılım Kuralları & Gereklilikler',
-                            event.communityRules!,
+                            community.rules!,
                           ),
-                        ],
-                        if (event.communityVenueInfo != null &&
-                            event.communityVenueInfo!.isNotEmpty) ...[
-                          _buildSection('Mekan', event.communityVenueInfo!),
-                        ],
-                        if (event.communityLink != null &&
-                            event.communityLink!.isNotEmpty) ...[
+                        if (community?.venueInfo != null &&
+                            community!.venueInfo!.isNotEmpty)
+                          _buildSection('Mekan', community.venueInfo!),
+                        if (community?.link != null &&
+                            community!.link!.isNotEmpty)
                           _buildSection(
                             'Bağlantı',
-                            event.communityLink!,
+                            community.link!,
                             isLink: true,
                           ),
-                        ],
                       ],
                     ),
                   ),
@@ -90,7 +84,6 @@ class CommunityEventDetailViewPage extends StatelessWidget {
             ),
           ),
 
-          // 2. "BULUŞMAYA KATIL" BUTONU
           Positioned(
             bottom: 106.h,
             left: 0,
@@ -168,13 +161,12 @@ class CommunityEventDetailViewPage extends StatelessWidget {
     );
   }
 
-  Widget _buildCoverImage() {
-    if (event.communityCoverImageUrl != null &&
-        event.communityCoverImageUrl!.isNotEmpty) {
+  Widget _buildCoverImage(String? coverImageUrl) {
+    if (coverImageUrl != null && coverImageUrl.isNotEmpty) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(16.r),
         child: Image.network(
-          event.communityCoverImageUrl!,
+          coverImageUrl,
           width: double.infinity,
           height: 360.h,
           fit: BoxFit.cover,

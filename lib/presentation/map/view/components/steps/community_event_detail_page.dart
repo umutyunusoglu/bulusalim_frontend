@@ -54,6 +54,27 @@ class CommunityEventDetailPage extends HookWidget {
       if (picked != null) coverImage.value = File(picked.path);
     }, []);
 
+    Future<void> onNext() async {
+      if (!context.mounted) return;
+
+      await context.push(
+        '/community-event-detail-preview',
+        extra: {
+          'description': descController.text.trim(),
+          'rules': rulesController.text.trim(),
+          'venueInfo': venueController.text.trim(),
+          'link': linkController.text.trim(),
+          'maxParticipants': maxParticipants.value ?? 0,
+          'requiresDocument': requiresDocument.value,
+          'coverImage': coverImage.value,
+          'eventName': args['eventName'],
+          'displayAddress': args['displayAddress'],
+          'startTime': args['startTime'],
+          'category': args['category'],
+        },
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
@@ -129,9 +150,7 @@ class CommunityEventDetailPage extends HookWidget {
                           : null,
                     ),
                   ),
-
                   SizedBox(height: 8.h),
-
                   GestureDetector(
                     onTap: pickImage,
                     child: Text(
@@ -269,26 +288,7 @@ class CommunityEventDetailPage extends HookWidget {
             // İLERLE BUTONU
             Center(
               child: PopupNextButton(
-                onPressed: isFormValid
-                    ? () async {
-                        await context.push(
-                          '/community-event-detail-preview',
-                          extra: {
-                            'description': descController.text.trim(),
-                            'rules': rulesController.text.trim(),
-                            'venueInfo': venueController.text.trim(),
-                            'link': linkController.text.trim(),
-                            'maxParticipants': maxParticipants.value ?? 0,
-                            'requiresDocument': requiresDocument.value,
-                            'coverImage': coverImage.value,
-                            'eventName': args['eventName'],
-                            'displayAddress': args['displayAddress'],
-                            'startTime': args['startTime'],
-                            'category': args['category'],
-                          },
-                        );
-                      }
-                    : null,
+                onPressed: isFormValid ? () async => onNext() : null,
               ),
             ),
 
