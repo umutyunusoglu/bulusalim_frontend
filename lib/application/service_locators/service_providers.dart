@@ -109,6 +109,7 @@ extension ServiceModule on GetIt {
           return service;
         },
         dependsOn: [],
+      )
       ..registerLazySingleton<ShareLinksService>(
         () => ShareLinksServiceImpl(),
       );
