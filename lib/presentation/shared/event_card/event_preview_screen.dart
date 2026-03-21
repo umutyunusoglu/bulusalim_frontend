@@ -5,7 +5,7 @@ import 'package:outnest/core/utils/types/enums/screen_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
-import 'package:outnest/presentation/shared/event_card/event_card.dart';
+import 'package:outnest/presentation/shared/event_card/view/event_card.dart';
 
 class EventPreviewScreen extends StatefulWidget {
   final String eventId;
