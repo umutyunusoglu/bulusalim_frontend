@@ -1,5 +1,5 @@
 import 'package:outnest/application/service_locators/get_it_init.dart';
-import 'package:outnest/presentation/shared/event_card/event_card.dart';
+import 'package:outnest/presentation/shared/event_card/view/event_card.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/types/enums/screen_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';

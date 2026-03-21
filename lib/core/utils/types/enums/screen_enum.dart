@@ -5,7 +5,8 @@ enum ScreenEnum {
   chat._('chat'),
   notifications._('notifications'),
   settings._('settings'),
-  map._('map');
+  map._('map'),
+  communityDetail._('communityDetail');
 
   const ScreenEnum._(this.value);
   final String value;
@@ -29,6 +30,8 @@ enum ScreenEnum {
         return settings;
       case 'map':
         return map;
+      case 'communityDetail':
+        return communityDetail;
       default:
         throw ArgumentError('Unknown screen: $value');
     }

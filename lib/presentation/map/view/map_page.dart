@@ -48,7 +48,7 @@ import 'package:outnest/presentation/map/view/components/steps/visibility_select
 import 'package:outnest/presentation/shared/action_buttons_speed_dial.dart';
 import 'package:outnest/presentation/shared/category_filter_chip.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
-import 'package:outnest/presentation/shared/event_card/event_card.dart';
+import 'package:outnest/presentation/shared/event_card/view/event_card.dart';
 import 'package:outnest/presentation/shared/navigation/navigate_to_camera.dart';
 
 class MapPage extends StatefulWidget {

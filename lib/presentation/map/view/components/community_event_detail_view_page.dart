@@ -3,8 +3,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/core/utils/types/enums/screen_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/presentation/map/view/components/community_event_info_card.dart';
+import 'package:outnest/presentation/shared/event_card/view/components/event_join_button.dart';
 
 class CommunityEventDetailViewPage extends StatelessWidget {
   const CommunityEventDetailViewPage({
@@ -33,7 +35,6 @@ class CommunityEventDetailViewPage extends StatelessWidget {
                     padding: EdgeInsets.symmetric(horizontal: 16.w),
                     child: _buildCoverImage(community?.coverImageUrl),
                   ),
-
                   CommunityEventInfoCard(
                     profileImageUrl: event.creator.profileImageUrl,
                     communityName: event.creator.username,
@@ -47,7 +48,6 @@ class CommunityEventDetailViewPage extends StatelessWidget {
                         : 'Genel',
                     link: community?.link,
                   ),
-
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16.w),
                     child: Column(
@@ -84,40 +84,16 @@ class CommunityEventDetailViewPage extends StatelessWidget {
             ),
           ),
 
+          // ─── KATIL BUTONU ───
           Positioned(
             bottom: 106.h,
             left: 0,
             right: 0,
             child: Center(
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  // TODO: Katıl Butonu
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 24.w,
-                    vertical: 12.h,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30.r),
-                  ),
-                  elevation: 6,
-                  shadowColor: AppColors.primaryColor.withOpacity(0.4),
-                ),
-                icon: Icon(
-                  Symbols.confirmation_number,
-                  color: Colors.white,
-                  size: 22.sp,
-                ),
-                label: Text(
-                  'Buluşmaya Katıl',
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
+              child: EventJoinButton(
+                event: event,
+                screen: ScreenEnum.communityDetail,
+                style: EventJoinButtonStyle.expanded,
               ),
             ),
           ),

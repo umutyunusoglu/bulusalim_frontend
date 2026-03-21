@@ -34,7 +34,7 @@ import 'package:outnest/presentation/settings/view/account_settings_page.dart';
 import 'package:outnest/presentation/settings/view/community_account_settings_page.dart';
 import 'package:outnest/presentation/settings/view/edit_profile_page.dart';
 import 'package:outnest/presentation/settings/view/settings_page.dart';
-import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
+import 'package:outnest/presentation/shared/event_card/view/components/stacked_avatars.dart';
 import 'package:outnest/scaffold_with_navbar.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
