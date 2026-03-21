@@ -22,6 +22,9 @@ import 'package:outnest/presentation/event_verification/verification_splash_scre
 import 'package:outnest/presentation/groups/view/groups_page.dart';
 import 'package:outnest/presentation/home/view/home_page.dart';
 import 'package:outnest/presentation/init_screen.dart';
+import 'package:outnest/presentation/map/view/components/community_event_detail_view_page.dart';
+import 'package:outnest/presentation/map/view/components/steps/community_event_detail_page.dart';
+import 'package:outnest/presentation/map/view/components/steps/community_event_detail_preview_page.dart';
 import 'package:outnest/presentation/map/view/map_page.dart';
 import 'package:outnest/presentation/notification/view/follow_request_page.dart';
 import 'package:outnest/presentation/notification/view/notification_page.dart';
@@ -32,8 +35,8 @@ import 'package:outnest/presentation/settings/view/community_account_settings_pa
 import 'package:outnest/presentation/settings/view/edit_profile_page.dart';
 import 'package:outnest/presentation/settings/view/settings_page.dart';
 import 'package:outnest/presentation/shared/event_card/event_preview_screen.dart';
+import 'package:outnest/presentation/shared/event_card/view/components/stacked_avatars.dart';
 import 'package:outnest/presentation/shared/post_card/post_preview_screen.dart';
-import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
 import 'package:outnest/scaffold_with_navbar.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -343,6 +346,27 @@ final router = GoRouter(
       path: '/pick-time-map',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const MapPage(isTimePicker: true),
+    ),
+    GoRoute(
+      path: '/community-event-detail',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => CommunityEventDetailPage(
+        args: state.extra! as Map<String, dynamic>,
+      ),
+    ),
+    GoRoute(
+      path: '/community-event-detail-preview',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => CommunityEventDetailPreviewPage(
+        data: state.extra! as Map<String, dynamic>,
+      ),
+    ),
+    GoRoute(
+      path: '/community-event-detail-view',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => CommunityEventDetailViewPage(
+        event: state.extra! as EventEntity,
+      ),
     ),
     GoRoute(
       path: '/camera',

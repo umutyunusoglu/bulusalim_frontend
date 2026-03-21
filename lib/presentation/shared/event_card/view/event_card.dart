@@ -7,12 +7,11 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/domain/services/share_links_service.dart';
 import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
-import 'package:outnest/presentation/shared/event_card/event_card_background_painter.dart';
 import 'package:outnest/presentation/shared/popup.dart';
-import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
 import 'package:outnest/core/utils/types/enums/screen_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
@@ -22,7 +21,6 @@ import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/analytics/analytics_service.dart';
 import 'package:outnest/domain/services/analytics/event_configs/click_save_event_analytics_config.dart';
 import 'package:outnest/domain/services/analytics/event_configs/click_view_event_participants_analytics_config.dart';
-import 'package:outnest/domain/services/analytics/event_configs/send_join_request_to_event_analytics_config.dart';
 import 'package:outnest/domain/services/remote_config_service.dart';
 import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
@@ -31,16 +29,10 @@ import 'package:outnest/presentation/home/view/components/event/event_location_c
 import 'package:outnest/presentation/home/view/components/event/participant_bottom_sheet.dart';
 import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
-import 'package:outnest/presentation/shared/event_card/event_card_background_painter.dart';
-import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
+import 'package:outnest/presentation/shared/event_card/view/components/event_card_background_painter.dart';
+import 'package:outnest/presentation/shared/event_card/view/components/event_join_button.dart';
+import 'package:outnest/presentation/shared/event_card/view/components/stacked_avatars.dart';
 import 'package:outnest/presentation/shared/popup.dart';
-
-// 3 DURUM
-enum _EventJoinStatus {
-  canJoin, // 1. Katıl
-  pending, // 2. Bekliyor
-  joined, // 3. Katıldın
-}
 
 class EventCard extends StatefulWidget {
   const EventCard({
@@ -55,6 +47,7 @@ class EventCard extends StatefulWidget {
   final ScreenEnum screen;
   final List<CompactUserEntity> participants;
   final bool showJoinButton;
+
   @override
   State<EventCard> createState() => _EventCardState();
 }
@@ -64,8 +57,6 @@ class _EventCardState extends State<EventCard> {
   late final EventRepository eventRepository;
   late final SessionService sessionService;
   bool _amIFollowingCreator = false;
-
-  late _EventJoinStatus _joinStatus;
 
   bool isSaved = false;
   bool isVisible = true;
@@ -80,8 +71,13 @@ class _EventCardState extends State<EventCard> {
     _updateFollowingStatus();
     sessionService.stateListenable.addListener(_updateFollowingStatus);
 
-    _calculateJoinStatus();
     _checkIfSaved();
+  }
+
+  @override
+  void dispose() {
+    sessionService.stateListenable.removeListener(_updateFollowingStatus);
+    super.dispose();
   }
 
   void _updateFollowingStatus() {
@@ -97,35 +93,9 @@ class _EventCardState extends State<EventCard> {
     });
   }
 
-  // --- GÜVENLİ DURUM HESAPLAMA ---
-  void _calculateJoinStatus() {
-    final currentUser = sessionService.currentUser;
-    // Kullanıcı yoksa boş string ata, çökmesini engelle
-    final uid = currentUser?.userID ?? '';
-
-    // Kullanıcı giriş yapmamışsa varsayılan durum
-    if (uid.isEmpty) {
-      _joinStatus = _EventJoinStatus.canJoin;
-      return;
-    }
-
-    // 1. Zaten katılımcı mı? -> KATILDIN
-    if (widget.participants.any((p) => p.userID == uid)) {
-      _joinStatus = _EventJoinStatus.joined;
-    }
-    // 2. İstek göndermiş mi? -> BEKLİYOR (KUM SAATİ)
-    else if (widget.event.requestPool.any((p) => p.userID == uid)) {
-      _joinStatus = _EventJoinStatus.pending;
-    }
-    // 3. Diğer her durumda -> KATIL
-    else {
-      _joinStatus = _EventJoinStatus.canJoin;
-    }
-  }
-
   Future<void> _checkIfSaved() async {
     final currentUser = sessionService.currentUser;
-    if (currentUser == null) return; // Güvenlik kontrolü
+    if (currentUser == null) return;
 
     if (widget.event.creator.userID == currentUser.userID) {
       if (mounted) setState(() => isSaved = true);
@@ -140,7 +110,7 @@ class _EventCardState extends State<EventCard> {
 
   Future<void> _toggleSave() async {
     final currentUser = sessionService.currentUser;
-    if (currentUser == null) return; // Güvenlik kontrolü
+    if (currentUser == null) return;
 
     final userRepository = getIt<UserRepository>();
     setState(() => isSaved = !isSaved);
@@ -167,7 +137,6 @@ class _EventCardState extends State<EventCard> {
     }
   }
 
-  // --- ACTION SHEET ---
   void _showActionBottomSheet(bool isEventMine) {
     final myEvents = sessionService.activeEvents;
     final myEventIds = myEvents.map((e) => e.eventID);
@@ -180,14 +149,12 @@ class _EventCardState extends State<EventCard> {
       backgroundColor: Colors.transparent,
       builder: (sheetContext) => CustomActionBottomSheet(
         options: [
-          // BULUŞMA SAHİBİ İSE
           if (isEventMine) ...[
-            // 1. Buluşma Ayarları
             BottomSheetOption(
               icon: Icons.settings_outlined,
               text: "Buluşma Ayarları'na Git",
               onTap: () {
-                sheetContext.pop(); // Önce bottom sheet'i kapatıyoruz
+                sheetContext.pop();
 
                 final encodedId = Uri.encodeComponent(widget.event.id);
 
@@ -208,16 +175,6 @@ class _EventCardState extends State<EventCard> {
                 );
               },
             ),
-            // 2. Paylaş
-            /* BottomSheetOption(
-              icon: Icons.share_outlined,
-              text: 'Buluşmayı Paylaş',
-              onTap: () {
-                logger.info('Buluşma paylaşıldı: ${widget.event.id}');
-                sheetContext.pop();
-              },
-            ),*/
-            // 3. Ayrıl
             if (amIaParticipant)
               BottomSheetOption(
                 icon: Symbols.move_item,
@@ -245,7 +202,6 @@ class _EventCardState extends State<EventCard> {
                   }
                 },
               ),
-            // 4. İptal Et
             if (amIaParticipant)
               BottomSheetOption(
                 icon: Symbols.cancel,
@@ -253,30 +209,16 @@ class _EventCardState extends State<EventCard> {
                 isDestructive: true,
                 onTap: () async {
                   sheetContext.pop();
-                  // TODO: İptal etme servisini çağır
                   _onCancelEventTap();
-                  if (mounted) setState(() => isVisible = false);
                 },
               ),
-          ]
-          // BAŞKASININ ETKİNLİĞİ İSE
-          else ...[
-            // 1. Paylaş
-            /*
-            BottomSheetOption(
-              icon: Icons.share_outlined,
-              text: 'Buluşmayı Paylaş',
-              onTap: () {
-                sheetContext.pop();
-              },
-            )*/
+          ] else ...[
             if (_amIFollowingCreator)
               BottomSheetOption(
                 icon: Icons.person_remove_outlined,
                 text: 'Buluşma Sahibini Takibi Bırak',
                 onTap: () {
-                  sheetContext.pop(); // Önce bottom sheet'i kapatıyoruz
-
+                  sheetContext.pop();
                   _handleUnfollowUser();
                 },
               ),
@@ -307,8 +249,6 @@ class _EventCardState extends State<EventCard> {
                   }
                 },
               ),
-
-            // 2. Engelle
             BottomSheetOption(
               icon: Icons.person_off_outlined,
               text: 'Buluşma Sahibini Engelle',
@@ -317,7 +257,6 @@ class _EventCardState extends State<EventCard> {
                 await _handleBlockUser(sheetContext);
               },
             ),
-            // 3. Şikayet Et
             BottomSheetOption(
               icon: Icons.error_outline,
               text: 'Şikayet Et',
@@ -354,6 +293,7 @@ class _EventCardState extends State<EventCard> {
         confirmButtonColor: const Color(0xFF1F415B),
         onConfirm: () async {
           if (mounted) context.pop();
+          if (mounted) setState(() => isVisible = false);
 
           await eventRepository.deleteEvent(widget.event.eventID);
         },
@@ -446,8 +386,6 @@ class _EventCardState extends State<EventCard> {
   }
 
   void _showParticipantsBottomSheet() {
-    print('🔥 DEBUG: Bottom sheet açılıyor...'); // Debug için
-
     final creator = CompactUserEntity(
       userID: widget.event.creator.userID,
       username: widget.event.creator.username,
@@ -480,124 +418,6 @@ class _EventCardState extends State<EventCard> {
     );
   }
 
-  Future<void> _handleJoinTap() async {
-    final currentUser = sessionService.currentUser;
-    if (currentUser == null) return; // Güvenlik kontrolü
-
-    if (_joinStatus != _EventJoinStatus.canJoin) return;
-
-    setState(() {
-      _joinStatus = _EventJoinStatus.pending;
-    });
-
-    try {
-      await eventRepository.requestJoin(
-        widget.event.id,
-        CompactUserEntity(
-          userID: currentUser.userID,
-          username: currentUser.username,
-          profileImageUrl: currentUser.profileImageUrl,
-          university: currentUser.university,
-          nameSurname: currentUser.nameSurname,
-          isPrivate: currentUser.isPrivate,
-          bio: currentUser.bio,
-          accountType: currentUser.accountType,
-          communityData: null,
-        ),
-      );
-
-      widget.event.requestPool.add(
-        CompactUserEntity(
-          userID: currentUser.userID,
-          username: currentUser.username,
-          profileImageUrl: currentUser.profileImageUrl,
-          university: currentUser.university,
-          nameSurname: currentUser.nameSurname,
-          isPrivate: currentUser.isPrivate,
-          bio: currentUser.bio,
-          accountType: currentUser.accountType,
-          communityData: null,
-        ),
-      );
-
-      final participants = widget.event.participants
-          .map((p) => p.userID)
-          .toList(growable: true);
-
-      final sameUniversityAsCreator =
-          sessionService.currentUser?.university != null &&
-          sessionService.currentUser!.university ==
-              widget.event.creator.university;
-
-      final numberOfFollowerParticipants = widget.event.participants
-          .where(
-            (p) =>
-                sessionService.stateListenable.value?.followers.any(
-                  (u) => u.userID == p.userID,
-                ) ??
-                false,
-          )
-          .length;
-
-      final numberOfNonFollowerParticipants =
-          widget.event.participants.length - numberOfFollowerParticipants;
-
-      final numberOfFolloweeParticipants = widget.event.participants
-          .where(
-            (p) =>
-                sessionService.stateListenable.value?.followees.any(
-                  (u) => u.userID == p.userID,
-                ) ??
-                false,
-          )
-          .length;
-
-      final numberOfNonFolloweeParticipants =
-          widget.event.participants.length - numberOfFolloweeParticipants;
-
-      final numberOfSameUniversityParticipants = widget.event.participants
-          .where((p) => p.university == sessionService.currentUser?.university)
-          .length;
-
-      getIt<AnalyticsService>().logSendJoinRequestToEvent(
-        SendJoinRequestToEventAnalyticsConfig(
-          eventID: widget.event.id,
-          numberOfParticipants: widget.event.participantCount,
-          numberOfFollowerParticipants: numberOfFollowerParticipants,
-          numberOfNonFollowerParticipants: numberOfNonFollowerParticipants,
-          numberOfFolloweeParticipants: numberOfFolloweeParticipants,
-          numberOfNonFolloweeParticipants: numberOfNonFolloweeParticipants,
-          sameUniversityAsCreator: sameUniversityAsCreator,
-          numberOfSameUniversityParticipants:
-              numberOfSameUniversityParticipants,
-
-          showOnMap: widget.event.showOnMap,
-          remainingTimeToStart: widget.event.startTime.difference(
-            DateTime.now(),
-          ),
-          eventStartTime: widget.event.startTime,
-          eventVisibility: widget.event.visibility.toString(),
-          category: widget.event.hobbies.isNotEmpty
-              ? widget.event.hobbies[0]
-              : 'null',
-          screen: widget.screen,
-        ),
-      );
-    } catch (e) {
-      logger.error('Join request failed: $e');
-
-      if (mounted) {
-        setState(() {
-          _joinStatus = _EventJoinStatus.canJoin;
-        });
-        showErrorPopup(
-          context,
-          message: 'İstek gönderilemedi, tekrar deneyin.',
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final currentUser = sessionService.currentUser;
@@ -612,7 +432,6 @@ class _EventCardState extends State<EventCard> {
     final displayAvatars = <AvatarInfo>[];
 
     if (widget.participants.isNotEmpty) {
-      // 1. Önce creator'ı bul ve ekle
       final creatorEntry = widget.participants
           .where((u) => u.userID == widget.event.creator.userID)
           .map((u) => AvatarInfo(userId: u.userID, imageUrl: u.profileImageUrl))
@@ -622,7 +441,6 @@ class _EventCardState extends State<EventCard> {
         displayAvatars.add(creatorEntry);
       }
 
-      // 2. Creator dışındakileri ekle
       displayAvatars.addAll(
         widget.participants
             .where((u) => u.userID != widget.event.creator.userID)
@@ -634,6 +452,8 @@ class _EventCardState extends State<EventCard> {
     final categoryIcon = widget.event.hobbies.isNotEmpty
         ? categories[widget.event.hobbies[0]] ?? ''
         : '🎉';
+
+    final isCommunity = widget.event.accountType == AccountType.community;
 
     return AnimatedCrossFade(
       duration: const Duration(milliseconds: 500),
@@ -659,12 +479,11 @@ class _EventCardState extends State<EventCard> {
                 bumpOffset: 24.h,
               ),
               child: SizedBox(
-                // İstenilen Kart Gövde Yüksekliği
                 height: 212.h,
                 width: double.infinity,
                 child: Stack(
                   children: [
-                    // 1. ÜST SATIR (Başlık ve İkonlar)
+                    // 1. ÜST SATIR
                     Positioned(
                       top: 30.h,
                       left: 0,
@@ -693,27 +512,25 @@ class _EventCardState extends State<EventCard> {
                           ),
                           SizedBox(width: 7.w),
 
-                          // Katılınabilir durumdaysa (canJoin) kaydet butonunu göster
-                          if (_joinStatus == _EventJoinStatus.canJoin)
-                            SizedBox(
-                              width: 24.w,
-                              height: 24.w,
-                              child: InkWell(
-                                onTap: _toggleSave,
-                                child: Icon(
-                                  isSaved
-                                      ? Icons.bookmark
-                                      : Icons.bookmark_border,
-                                  color: isSaved
-                                      ? AppColors.primaryColor
-                                      : Colors.black54,
-                                  size: 19.sp,
-                                ),
+                          SizedBox(
+                            width: 24.w,
+                            height: 24.w,
+                            child: InkWell(
+                              onTap: _toggleSave,
+                              child: Icon(
+                                isSaved
+                                    ? Icons.bookmark
+                                    : Icons.bookmark_border,
+                                color: isSaved
+                                    ? AppColors.primaryColor
+                                    : Colors.black54,
+                                size: 19.sp,
                               ),
                             ),
+                          ),
+
                           SizedBox(width: 8.w),
 
-                          // 3 NOKTA MENÜ (MORE VERT)
                           SizedBox(
                             width: 19.w,
                             height: 19.w,
@@ -752,19 +569,45 @@ class _EventCardState extends State<EventCard> {
                       ),
                     ),
 
-                    // 3. KATIL BUTONU
+                    // 3. KATIL BUTONU → EventJoinButton
                     if (widget.showJoinButton)
                       Positioned(
                         bottom: 12.h,
-                        right: 13.w,
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: _handleJoinTap,
-                            borderRadius: BorderRadius.circular(20.r),
-                            child: _buildJoinButtonContent(),
-                          ),
-                        ),
+                        right: 12.w,
+                        child: isCommunity
+                            ? GestureDetector(
+                                onTap: () {
+                                  context.push(
+                                    '/community-event-detail-view',
+                                    extra: widget.event,
+                                  );
+                                },
+                                child: Container(
+                                  width: 36.w,
+                                  height: 36.w,
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.secondaryColor,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Color(0x1A000000),
+                                        offset: Offset(0, 4),
+                                        blurRadius: 8,
+                                      ),
+                                    ],
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Icon(
+                                    Symbols.info,
+                                    color: Colors.white,
+                                    size: 20.sp,
+                                  ),
+                                ),
+                              )
+                            : EventJoinButton(
+                                event: widget.event,
+                                screen: widget.screen,
+                              ),
                       ),
                   ],
                 ),
@@ -773,20 +616,69 @@ class _EventCardState extends State<EventCard> {
 
             Positioned(
               top: -24.h,
-              child: SizedBox(
-                width: 50.w,
-                height: 50.w,
-                child: Center(
-                  child: Text(
-                    categoryIcon,
-                    style: TextStyle(
-                      fontFamily: 'SF Pro Display',
-                      fontSize: 24.sp,
-                      fontWeight: FontWeight.bold,
+              child: isCommunity
+                  ? SizedBox(
+                      width: 46.w,
+                      height: 46.w,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        alignment: Alignment.center,
+                        children: [
+                          CircleAvatar(
+                            radius: 16.r,
+                            backgroundColor: AppColors.inputFillColor,
+                            backgroundImage:
+                                widget.event.creator.profileImageUrl.isNotEmpty
+                                ? NetworkImage(
+                                    widget.event.creator.profileImageUrl,
+                                  )
+                                : null,
+                            child: widget.event.creator.profileImageUrl.isEmpty
+                                ? Icon(
+                                    Icons.group,
+                                    size: 16.sp,
+                                    color: AppColors.textGrey,
+                                  )
+                                : null,
+                          ),
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              width: 18.w,
+                              height: 18.h,
+                              decoration: BoxDecoration(
+                                color: AppColors.cardBackgroundColor,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.cardBackgroundColor,
+                                  width: 1.5,
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                categoryIcon,
+                                style: TextStyle(fontSize: 10.sp),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : SizedBox(
+                      width: 50.w,
+                      height: 50.w,
+                      child: Center(
+                        child: Text(
+                          categoryIcon,
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Display',
+                            fontSize: 24.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ),
             ),
 
             // AVATARLAR
@@ -796,13 +688,9 @@ class _EventCardState extends State<EventCard> {
               right: 0,
               child: Center(
                 child: GestureDetector(
-                  behavior: HitTestBehavior
-                      .opaque, // Boş alanlara tıklamayı da yakalar
-                  onTap: () {
-                    _showParticipantsBottomSheet();
-                  },
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _showParticipantsBottomSheet,
                   child: AbsorbPointer(
-                    // Bu widget, altındaki tüm etkileşimi (click, scroll vb.) engeller
                     child: StackedAvatars(
                       avatarDataList: displayAvatars,
                     ),
@@ -814,93 +702,5 @@ class _EventCardState extends State<EventCard> {
         ),
       ),
     );
-  }
-
-  // 3 FARKLI BUTON STİLİ
-  Widget _buildJoinButtonContent() {
-    final width = 72.w;
-    final height = 36.h;
-
-    switch (_joinStatus) {
-      // 1. KATIL (Standart Dolu Renk)
-      case _EventJoinStatus.canJoin:
-        return Container(
-          width: width,
-          height: height,
-          decoration: BoxDecoration(
-            color: AppColors.primaryColor,
-            borderRadius: BorderRadius.circular(20.r),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x26000000),
-                offset: Offset(0, 4),
-                blurRadius: 4,
-              ),
-            ],
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            'katıl',
-            style: TextStyle(
-              fontFamily: 'SF Pro Display',
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
-            ),
-          ),
-        );
-
-      // 2. BEKLİYOR
-      case _EventJoinStatus.pending:
-        return Container(
-          width: width,
-          height: height,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20.r),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x1A000000),
-                offset: Offset(0, 4),
-                blurRadius: 8,
-              ),
-            ],
-          ),
-          alignment: Alignment.center,
-          child: Icon(
-            Icons.hourglass_empty_rounded,
-            color: AppColors.primaryColor,
-            size: 20.sp,
-          ),
-        );
-
-      // 3. KATILDIN
-      case _EventJoinStatus.joined:
-        return Container(
-          width: width,
-          height: height,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20.r),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x1A000000),
-                offset: Offset(0, 4),
-                blurRadius: 8,
-              ),
-            ],
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            'katıldın',
-            style: TextStyle(
-              fontFamily: 'SF Pro Display',
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primaryColor,
-            ),
-          ),
-        );
-    }
   }
 }

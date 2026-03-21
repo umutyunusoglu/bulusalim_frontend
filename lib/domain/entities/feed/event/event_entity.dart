@@ -1,10 +1,12 @@
 import 'package:equatable/equatable.dart';
+import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
 import 'package:outnest/core/utils/types/enums/event_role_enum.dart';
 import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/core/utils/types/enums/feed_entity_type_enum.dart';
 import 'package:outnest/core/utils/types/enums/visibility_enum.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/core/utils/types/types.dart';
+import 'package:outnest/domain/entities/feed/event/event_community_data.dart';
 import 'package:outnest/domain/entities/feed/feed_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 
@@ -31,9 +33,11 @@ class EventEntity extends FeedEntity with EquatableMixin {
     required this.geohash,
     required this.visibility,
     required this.showOnMap,
+    required this.accountType,
     this.visibilityGroupID,
     this.currentUserStatus,
     this.currentUserRole,
+    this.communityData,
   }) : super(feedType: FeedEntityTypeEnum.event, id: eventID);
 
   EventEntity copyWith({
@@ -61,6 +65,8 @@ class EventEntity extends FeedEntity with EquatableMixin {
     VisibilityEnum? visibility,
     String? visibilityGroupID,
     bool? showOnMap,
+    AccountType? accountType,
+    EventCommunityData? communityData,
   }) {
     return EventEntity(
       eventID: eventID ?? this.eventID,
@@ -87,6 +93,8 @@ class EventEntity extends FeedEntity with EquatableMixin {
       visibility: visibility ?? this.visibility,
       visibilityGroupID: visibilityGroupID ?? this.visibilityGroupID,
       showOnMap: showOnMap ?? this.showOnMap,
+      accountType: accountType ?? this.accountType,
+      communityData: communityData ?? this.communityData,
     );
   }
 
@@ -114,9 +122,14 @@ class EventEntity extends FeedEntity with EquatableMixin {
   final VisibilityEnum visibility;
   final String? visibilityGroupID;
   final bool showOnMap;
+  final AccountType accountType;
+  final EventCommunityData? communityData;
 
   @override
-  List<Object?> get props => [eventID];
+  List<Object?> get props => [
+    eventID,
+    communityData,
+  ];
 }
 
 class EventParticipantEntity extends Equatable {
@@ -127,23 +140,20 @@ class EventParticipantEntity extends Equatable {
     required this.role,
     required this.eventScore,
     required this.university,
+    this.accountType,
   });
+
   factory EventParticipantEntity.fromMap(Map<String, dynamic> map) {
     return EventParticipantEntity(
       userID: map['userID'] as Identifier,
-      // String alanları null-safe hale getirdik
       username: map['username'] as String? ?? '',
       profileImageUrl: map['profileImageUrl'] as String? ?? '',
-
-      // Önce nullable String'e cast edip, null ise fromString'e boş bir değer veya varsayılan bir rol (örn: 'participant') gönderiyoruz.
-      // fromString metodunun içinde boş string'i (veya null'ı) handle eden bir default case'in olduğunu varsayıyorum.
       role: EventRoleEnum.fromString(map['role'] as String? ?? ''),
-
-      // Eğer score ileride backend'den gelecekse: (map['eventScore'] as num?)?.toDouble() ?? 0.0 kullanabilirsin.
-      // Şimdilik sadece hardcoded 0.0 yaptık (double beklentisini tam karşılaması için)
       eventScore: 0.0,
-
       university: map['university'] as String?,
+      accountType: AccountType.fromString(
+        map['accountType'] as String? ?? 'personal',
+      ),
     );
   }
 
@@ -154,6 +164,7 @@ class EventParticipantEntity extends Equatable {
     EventRoleEnum? role,
     double? eventScore,
     String? university,
+    AccountType? accountType,
   }) {
     return EventParticipantEntity(
       userID: userID ?? this.userID,
@@ -162,6 +173,7 @@ class EventParticipantEntity extends Equatable {
       role: role ?? this.role,
       eventScore: eventScore ?? this.eventScore,
       university: university ?? this.university,
+      accountType: accountType ?? this.accountType,
     );
   }
 
@@ -173,6 +185,7 @@ class EventParticipantEntity extends Equatable {
       'role': role.toString(),
       'eventScore': eventScore,
       'university': university,
+      'accountType': accountType?.toString(),
     };
   }
 
@@ -185,4 +198,5 @@ class EventParticipantEntity extends Equatable {
   final EventRoleEnum role;
   final double eventScore;
   final String? university;
+  final AccountType? accountType;
 }
