@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fpdart/fpdart.dart' show Left, Right;
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/errors/exceptions/auth_exceptions.dart';
@@ -36,7 +37,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _handleLogin() async {
-    // Herhangi bir işlem sürüyorsa engelle
     if (_authStatus != AuthStatus.none) return;
 
     final rawNumber = _phoneController.text.replaceAll(' ', '');
@@ -61,39 +61,38 @@ class _LoginPageState extends State<LoginPage> {
 
     setState(() => _authStatus = AuthStatus.phone);
 
-    try {
-      final result = await getIt<AuthService>().sendSMS(
-        phoneNumber: '+90$rawNumber',
-      );
+    final result = await getIt<AuthService>()
+        .sendSMS(phoneNumber: '+90$rawNumber')
+        .run();
 
-      if (mounted) {
-        setState(() => _authStatus = AuthStatus.none);
+    if (!mounted) return;
+    setState(() => _authStatus = AuthStatus.none);
 
-        if (result.error != null) {
-          showErrorPopup(
-            context,
-            message:
-                'Hesabınız Doğrulanırken Bir hata oluştu. Lütfen tekrar deneyiniz.',
-          );
-        } else {
-          final verificationID = result.verificationId;
-          final resendToken = result.resendToken;
-          await context.push(
-            '/login-verification',
-            extra: {
-              'verificationID': verificationID,
-              'phoneNumber': '+90$rawNumber',
-              'resendToken': resendToken,
-            },
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _authStatus = AuthStatus.none);
-        showErrorPopup(context, message: 'Beklenmedik bir hata oluştu.');
-      }
-      debugPrint('Beklenmedik hata: $e');
+    switch (result) {
+      case Right(value: final sms):
+        await context.push(
+          '/login-verification',
+          extra: {
+            'verificationID': sms.verificationId,
+            'phoneNumber': '+90$rawNumber',
+            'resendToken': sms.resendToken,
+          },
+        );
+      case Left(value: OTPSendException()):
+        showErrorPopup(
+          context,
+          message: 'SMS gönderilemedi. Lütfen tekrar deneyiniz.',
+        );
+      case Left(value: SMSTimeoutException()):
+        showErrorPopup(
+          context,
+          message: 'SMS zaman aşımına uğradı. Lütfen tekrar deneyiniz.',
+        );
+      case Left(value: final error):
+        showErrorPopup(
+          context,
+          message: 'Beklenmedik bir hata oluştu.',
+        );
     }
   }
 

@@ -1,11 +1,15 @@
-class AuthException implements Exception {
+sealed class AuthException implements Exception {
   AuthException(this.message);
   final String message;
 
   @override
   String toString() {
-    return '$message';
+    return message;
   }
+}
+
+class UnknownAuthException extends AuthException {
+  UnknownAuthException(super.message);
 }
 
 class OTPSendException extends AuthException {
@@ -16,6 +20,35 @@ class OTPVerificationException extends AuthException {
   OTPVerificationException(super.message);
 }
 
-class VerificationTokenError extends OTPVerificationException {
-  VerificationTokenError(super.message);
+class VerificationTokenException extends OTPVerificationException {
+  VerificationTokenException(super.message);
+}
+
+class AuthNotFoundException extends AuthException{
+  AuthNotFoundException(super.message);
+} 
+
+class ExistingUserNotFoundException extends AuthException{
+  ExistingUserNotFoundException(super.message);
+}
+
+class UserAlreadyExistsException extends AuthException{
+  UserAlreadyExistsException(super.message);
+}
+
+class SMSTimeoutException extends AuthException {
+  SMSTimeoutException(super.message);
+}
+
+
+class AuthCancelledException extends AuthException {
+  AuthCancelledException(super.message);
+}
+
+class AppleSignInException extends AuthException {
+  AppleSignInException(super.message);
+}
+
+class GoogleSignInException extends AuthException {
+  GoogleSignInException(super.message);
 }

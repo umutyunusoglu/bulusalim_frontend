@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
@@ -65,10 +66,19 @@ class SessionServiceImpl implements SessionService {
 
   @override
   Future<void> refreshSession() async {
-    final userId = _authService.getCurrentUserID();
-    if (userId != null) {
-      await _onAuthStateChanged(userId);
+    final result = _authService.getCurrentUserID();
+    
+    switch(result){
+      case Right(value: final userID):
+        await _onAuthStateChanged(userID);
+      
+
+      case Left(value: final error):
+        _logger.error('Error refreshing session: $error');
+        await _onAuthStateChanged(null); // Force logout on error
+      
     }
+
   }
 
   // --- LOGIC ---

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:fpdart/fpdart.dart' show Left, Right;
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/service_locators/get_it_init.dart';
@@ -123,47 +124,39 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
     }
   }
 
-  // --- YENİ EKLENEN RESEND METODU ---
-  Future<void> _handleResend() async {
-    if (_countdown > 0 || _isResending) return; // Süre bitmediyse işlem yapma
+Future<void> _handleResend() async {
+  if (_countdown > 0 || _isResending) return;
 
-    setState(() => _isResending = true);
+  final ctx = context;
+  setState(() => _isResending = true);
 
-    try {
-      final result = await getIt<AuthService>().resendSMS(
+  final result = await getIt<AuthService>()
+      .resendSMS(
         phoneNumber: widget.phoneNumber ?? '',
         resendToken: _currentResendToken,
+      )
+      .run();
+
+  if (!mounted) return;
+  setState(() => _isResending = false);
+
+  switch (result) {
+    case Right(value: final sms):
+      setState(() {
+        _currentVerificationId = sms.verificationId;
+        _currentResendToken = sms.resendToken;
+      });
+      _startTimer();
+      showInfoPopup(ctx, message: 'Yeni kod gönderildi!');
+    case Left(value: SMSTimeoutException()):
+      showErrorPopup(ctx, message: 'Zaman aşımı. Lütfen tekrar deneyiniz.');
+    case Left(value: final error):
+      showErrorPopup(
+        ctx,
+        message: 'Kod gönderilemedi. Lütfen tekrar deneyiniz.',
       );
-
-      if (result.error != null) {
-        if (mounted) {
-          showErrorPopup(
-            context,
-            message:
-                'Kod Gönderilirken Bir Hata İle Karşılaşıldı. Lütfen Tekrar Deneyiniz.',
-          );
-        }
-      } else {
-        // Yeni doğrulama verilerini kaydet ve timer'ı baştan başlat
-        setState(() {
-          _currentVerificationId = result.verificationId;
-          _currentResendToken = result.resendToken;
-        });
-        _startTimer();
-
-        if (mounted) {
-          showInfoPopup(
-            context,
-            message: 'Yeni kod gönderildi!',
-          );
-        }
-      }
-    } catch (e) {
-      debugPrint('Resend Hatası: $e');
-    } finally {
-      if (mounted) setState(() => _isResending = false);
-    }
   }
+}
 
   @override
   Widget build(BuildContext context) {
