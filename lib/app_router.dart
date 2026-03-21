@@ -31,6 +31,8 @@ import 'package:outnest/presentation/settings/view/account_settings_page.dart';
 import 'package:outnest/presentation/settings/view/community_account_settings_page.dart';
 import 'package:outnest/presentation/settings/view/edit_profile_page.dart';
 import 'package:outnest/presentation/settings/view/settings_page.dart';
+import 'package:outnest/presentation/shared/event_card/event_preview_screen.dart';
+import 'package:outnest/presentation/shared/post_card/post_preview_screen.dart';
 import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
 import 'package:outnest/scaffold_with_navbar.dart';
 
@@ -413,6 +415,27 @@ final router = GoRouter(
           creatorID: (extra?['creatorID'] as String?) ?? '',
           event: extra?['event'] as EventEntity,
         );
+      },
+    ),
+    GoRoute(
+      path: '/share/event/:eventId',
+      builder: (context, state) {
+        final eventId = state.pathParameters['eventId'] ?? '';
+        return EventPreviewScreen(eventId: eventId);
+      },
+    ),
+    GoRoute(
+      path: '/share/post/:postId',
+      builder: (context, state) {
+        final postId = state.pathParameters['postId'] ?? '';
+        return PostPreviewScreen(postId: postId);
+      },
+    ),
+    GoRoute(
+      path: '/share/profile/:userId',
+      builder: (context, state) {
+        final userId = state.pathParameters['userId'] ?? '';
+        return ProfileDispatcher(profileUserID: userId);
       },
     ),
   ],

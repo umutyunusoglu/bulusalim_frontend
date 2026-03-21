@@ -333,7 +333,6 @@ class _EventCardState extends State<EventCard> {
                 text: 'Buluşmayı Paylaş',
                 onTap: () {
                   // close only the bottom sheet using the provided sheetContext
-                  sheetContext.pop();
                   _handleEventShare();
                 },
               ),
