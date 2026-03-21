@@ -6,7 +6,7 @@ import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/feed_type.dart';
 import 'package:outnest/core/utils/types/enums/visibility_enum.dart';
 import 'package:outnest/data/models/event/event_model.dart';
-import 'package:outnest/data/models/post/post_model.dart' hide getIt;
+import 'package:outnest/data/models/post/post_model.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/feed/feed_entity.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
@@ -527,15 +527,36 @@ class FeedRepositoryImpl implements FeedRepository {
     _logger.info('🚀 Feed warmup: Starting prefetch engine...');
 
     final sessionService = getIt<SessionService>();
-    var attempts = 0;
-    const maxAttempts = 60;
-    while (sessionService.currentState.user == null && attempts < maxAttempts) {
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-      attempts++;
+    var user = sessionService.currentState.user;
+
+    // Ensure auth/session subscriptions are nudged before waiting.
+    if (user == null) {
+      await sessionService.refreshSession();
+      user = sessionService.currentState.user;
     }
 
-    // 2. Kullanıcı bulunduysa veya limit dolduysa durumu kontrol et
-    final user = sessionService.currentState.user;
+    // Wait reactively for session user instead of polling with short attempts.
+    if (user == null) {
+      final completer = Completer<void>();
+      void onSessionChanged() {
+        if (sessionService.currentState.user != null &&
+            !completer.isCompleted) {
+          completer.complete();
+        }
+      }
+
+      sessionService.stateListenable.addListener(onSessionChanged);
+      try {
+        onSessionChanged();
+        await completer.future.timeout(const Duration(seconds: 20));
+      } on TimeoutException {
+        // Keep same warmup behavior below (warn + skip refresh) if still null.
+      } finally {
+        sessionService.stateListenable.removeListener(onSessionChanged);
+      }
+
+      user = sessionService.currentState.user;
+    }
 
     if (user != null) {
       _logger.info('✅ Warmup: User found. Triggering initial refresh...');
