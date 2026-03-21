@@ -1,7 +1,8 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:google_sign_in/google_sign_in.dart' hide GoogleSignInException;
 import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/errors/exceptions/auth_exceptions.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
@@ -21,365 +22,422 @@ class AuthServiceImpl implements AuthService {
   final FirebaseAuth _firebaseAuth;
 
   @override
-  Identifier getCurrentUserID() {
+  Either<AuthNotFoundException, Identifier> getCurrentUserID() {
     _logger.debug('getCurrentUserCredential called');
 
     if (_firebaseAuth.currentUser == null) {
       _logger.warn('getCurrentUserCredential: no current user');
-      throw AuthException('Giriş yapmış bir kullanıcı bulunamadı.');
+      return left(
+        AuthNotFoundException('Giriş yapmış bir kullanıcı bulunamadı.'),
+      );
     }
     final uid = _firebaseAuth.currentUser!.uid;
     _logger.info('getCurrentUserCredential: userId=$uid');
 
-    return uid;
+    return right(uid);
   }
 
   @override
-  Future<PhoneAuthResult> resendSMS({
+  TaskEither<AuthException, PhoneAuthResult> resendSMS({
     required String phoneNumber,
     required int? resendToken,
-  }) async {
-    final completer = Completer<PhoneAuthResult>();
-    _logger.debug(
-      'resendSMS called for phone=${maskPhone(phoneNumber)}'
-      ' resendToken=$resendToken',
-    );
-    try {
-      await _firebaseAuth.verifyPhoneNumber(
-        phoneNumber: phoneNumber,
-        forceResendingToken: resendToken,
-        verificationCompleted: (PhoneAuthCredential credential) async {},
-        verificationFailed: (e) {
-          _logger.error('resendSMS verificationFailed: ${e.message}');
-          completer.complete(
-            PhoneAuthResult(error: e.message, verificationId: null),
-          );
-        },
-        codeSent: (verificationId, newResendToken) {
-          _logger.info(
-            'resendSMS codeSent verificationId=$verificationId'
-            ' resendToken=$newResendToken',
-          );
-          completer.complete(
-            PhoneAuthResult(
-              verificationId: verificationId,
-              resendToken: newResendToken,
-            ),
-          );
-        },
-        codeAutoRetrievalTimeout: (verificationId) {
-          if (!completer.isCompleted) {
+  }) {
+    return TaskEither.tryCatch(
+      () async {
+        final completer = Completer<PhoneAuthResult>();
+        _logger.debug(
+          'resendSMS called for phone=${maskPhone(phoneNumber)}'
+          ' resendToken=$resendToken',
+        );
+
+        await _firebaseAuth.verifyPhoneNumber(
+          phoneNumber: phoneNumber,
+          forceResendingToken: resendToken,
+          verificationCompleted: (credential) async {},
+          verificationFailed: (e) {
+            _logger.error('resendSMS verificationFailed: ${e.message}');
+            if (!completer.isCompleted) {
+              completer.completeError(
+                OTPSendException(
+                  'SMS tekrar gönderilirken bir hata oluştu, lütfen başka bir giriş yöntemi deneyiniz.',
+                ),
+              );
+            }
+          },
+          codeSent: (verificationId, newResendToken) {
+            _logger.info(
+              'resendSMS codeSent verificationId=$verificationId'
+              ' resendToken=$newResendToken',
+            );
+            if (!completer.isCompleted) {
+              completer.complete(
+                PhoneAuthResult(
+                  verificationId: verificationId,
+                  resendToken: newResendToken,
+                ),
+              );
+            }
+          },
+          codeAutoRetrievalTimeout: (verificationId) {
             _logger.info(
               'resendSMS codeAutoRetrievalTimeout'
               ' verificationId=$verificationId',
             );
-            completer.complete(
-              PhoneAuthResult(
-                verificationId: verificationId,
-              ),
-            );
-          }
-        },
-      );
-    } on FirebaseAuthException catch (e) {
-      _logger.error('resendSMS exception: ${e.message}');
-      completer.complete(
-        PhoneAuthResult(
-          verificationId: null,
-          error: e.message,
-        ),
-      );
-    }
-
-    return completer.future;
-  }
-
-  @override
-  Future<PhoneAuthResult> sendSMS({required String phoneNumber}) {
-    final completer = Completer<PhoneAuthResult>();
-    _logger.debug('sendSMS called for phone=${maskPhone(phoneNumber)}');
-
-    try {
-      _firebaseAuth.verifyPhoneNumber(
-        phoneNumber: phoneNumber,
-        timeout: const Duration(seconds: 90),
-
-        verificationCompleted: (PhoneAuthCredential credential) async {},
-
-        verificationFailed: (FirebaseAuthException e) {
-          _logger.error('sendSMS verificationFailed: ${e.message}');
-          if (!completer.isCompleted) {
-            completer.complete(
-              PhoneAuthResult(
-                verificationId: null,
-                error: e.message,
-              ),
-            );
-          }
-        },
-
-        codeSent: (String verificationId, int? resendToken) {
-          _logger.info('sendSMS codeSent verificationId=$verificationId');
-
-          // CRITICAL CHECK
-          if (!completer.isCompleted) {
-            completer.complete(
-              PhoneAuthResult(
-                verificationId: verificationId,
-                resendToken: resendToken,
-              ),
-            );
-          }
-        },
-
-        codeAutoRetrievalTimeout: (String verificationId) {
-          _logger.info('sendSMS codeAutoRetrievalTimeout');
-          if (!completer.isCompleted) {
-            completer.complete(
-              PhoneAuthResult(verificationId: verificationId),
-            );
-          }
-        },
-      );
-    } on FirebaseAuthException catch (e) {
-      _logger.error('sendSMS exception: ${e.message}');
-      if (!completer.isCompleted) {
-        completer.complete(
-          PhoneAuthResult(verificationId: null, error: e.message),
+            if (!completer.isCompleted) {
+              completer.completeError(
+                SMSTimeoutException('SMS zaman aşımına uğradı'),
+              );
+            }
+          },
         );
-      }
-    }
 
-    return completer.future;
+        return completer.future;
+      },
+      (error, stack) {
+        _logger.error('resendSMS exception: $error');
+        if (error is AuthException) return error;
+        return OTPSendException('SMS tekrar gönderilemedi: $error');
+      },
+    );
   }
 
   @override
-  Future<String> signInWithSms({
+  TaskEither<AuthException, PhoneAuthResult> sendSMS({
+    required String phoneNumber,
+  }) {
+    return TaskEither.tryCatch(
+      () async {
+        final completer = Completer<PhoneAuthResult>();
+        _logger.debug('sendSMS called for phone=${maskPhone(phoneNumber)}');
+
+        await _firebaseAuth.verifyPhoneNumber(
+          phoneNumber: phoneNumber,
+          timeout: const Duration(seconds: 90),
+          verificationCompleted: (credential) async {},
+          verificationFailed: (e) {
+            _logger.error('sendSMS verificationFailed: ${e.message}');
+            if (!completer.isCompleted) {
+              completer.completeError(
+                OTPSendException(e.message ?? 'SMS doğrulama başarısız'),
+              );
+            }
+          },
+          codeSent: (verificationId, resendToken) {
+            _logger.info('sendSMS codeSent verificationId=$verificationId');
+            if (!completer.isCompleted) {
+              completer.complete(
+                PhoneAuthResult(
+                  verificationId: verificationId,
+                  resendToken: resendToken,
+                ),
+              );
+            }
+          },
+          codeAutoRetrievalTimeout: (verificationId) {
+            _logger.info('sendSMS codeAutoRetrievalTimeout');
+            if (!completer.isCompleted) {
+              completer.completeError(
+                SMSTimeoutException('SMS zaman aşımına uğradı'),
+              );
+            }
+          },
+        );
+
+        return completer.future;
+      },
+      (error, stack) {
+        _logger.error('sendSMS exception: $error');
+        if (error is AuthException) return error;
+        return OTPSendException(
+          'SMS gönderilirken bilinmeyen bir hata oluştu.',
+        );
+      },
+    );
+  }
+
+  @override
+  TaskEither<AuthException, String> signInWithSms({
     required String verificationId,
     required String smsCode,
     required bool isLogin,
-  }) async {
-    _logger.debug('signInWithSms called (isLogin: $isLogin)');
-    try {
-      final credential = PhoneAuthProvider.credential(
-        verificationId: verificationId,
-        smsCode: smsCode,
-      );
+  }) {
+    return TaskEither.tryCatch(
+      () async {
+        _logger.debug('signInWithSms called (isLogin: $isLogin)');
 
-      final userCredential = await _firebaseAuth.signInWithCredential(
-        credential,
-      );
-      final user = userCredential.user;
+        final credential = PhoneAuthProvider.credential(
+          verificationId: verificationId,
+          smsCode: smsCode,
+        );
 
-      final UserRepository userRepository = getIt<UserRepository>();
+        final userCredential = await _firebaseAuth.signInWithCredential(
+          credential,
+        );
 
-      if (user != null) {
-        final isNewUser = !await userRepository.isUserRegistered(user.uid);
+        final user = userCredential.user;
 
-        // Login'de yeni kullanıcıyı engelle
-        if (isLogin && isNewUser) {
-          await user.delete();
-          throw AuthException('Bu numara ile kayıtlı bir hesap bulunamadı.');
+        if (user == null) {
+          throw VerificationTokenException('Kullanıcı doğrulanamadı.');
         }
 
-        // Kayıtta eski kullanıcıyı engelle
+        final userRepository = getIt<UserRepository>();
+        final isNewUser = !await userRepository.isUserRegistered(user.uid);
+
+        if (isLogin && isNewUser) {
+          await user.delete();
+          throw AuthNotFoundException(
+            'Bu numara ile kayıtlı bir hesap bulunamadı.',
+          );
+        }
+
         if (!isLogin && !isNewUser) {
-          throw AuthException(
+          throw UserAlreadyExistsException(
             'Bu telefon numarası zaten kullanımda. Giriş yapmayı deneyin.',
           );
         }
 
         await user.getIdToken(true);
         return user.uid;
-      }
-      throw AuthException('Kullanıcı doğrulanamadı.');
-    } on FirebaseAuthException catch (e) {
-      _logger.error('signInWithSms error: ${e.message}');
-      throw AuthException(e.message ?? 'Doğrulama hatası.');
-    }
+      },
+      (error, stack) {
+        _logger.error('signInWithSms error: $error');
+        if (error is AuthException) return error;
+        return VerificationTokenException('Doğrulama hatası: $error');
+      },
+    );
   }
 
   @override
-  Future<void> verifyAndChangePhoneNumber({
+  TaskEither<AuthException, void> verifyAndChangePhoneNumber({
     required String verificationId,
     required String smsCode,
-  }) async {
-    _logger.debug('verifyAndChangePhoneNumber called');
-    try {
-      final credential = PhoneAuthProvider.credential(
-        verificationId: verificationId,
-        smsCode: smsCode,
-      );
+  }) {
+    return TaskEither.tryCatch(
+      () async {
+        _logger.debug('verifyAndChangePhoneNumber called');
 
-      final user = _firebaseAuth.currentUser;
-      if (user == null) {
-        throw AuthException('Oturum açmış kullanıcı bulunamadı.');
-      }
+        final credential = PhoneAuthProvider.credential(
+          verificationId: verificationId,
+          smsCode: smsCode,
+        );
 
-      // Bu metod mevcut kullanıcının telefon numarasını Auth üzerinde günceller
-      await user.updatePhoneNumber(credential);
+        final user = _firebaseAuth.currentUser;
 
-      _logger.info('Telefon numarası başarıyla güncellendi: ${user.uid}');
-    } on FirebaseAuthException catch (e) {
-      _logger.error('updatePhoneNumber error: ${e.code} - ${e.message}');
-      // Örn: 'credential-already-in-use' hatası burada yakalanır
-      throw AuthException(e.message ?? 'Numara güncellenirken hata oluştu.');
-    }
+        if (user == null) {
+          throw AuthNotFoundException('Oturum açmış kullanıcı bulunamadı.');
+        }
+
+        await user.updatePhoneNumber(credential);
+        _logger.info('Telefon numarası başarıyla güncellendi: ${user.uid}');
+      },
+      (error, stack) {
+        _logger.error('verifyAndChangePhoneNumber error: $error');
+        if (error is AuthException) return error;
+        return OTPVerificationException('Numara güncellenirken hata: $error');
+      },
+    );
   }
 
   @override
-  Future<void> signOut() {
-    _logger.debug('signOut called');
-    try {
-      if (_firebaseAuth.currentUser == null) {
-        _logger.warn('signOut: no current user');
-        throw AuthException('No user is currently signed in.');
-      }
-    } on FirebaseAuthException catch (e) {
-      _logger.error('signOut error: ${e.message}');
-      throw AuthException(
-        e.message ?? 'An unknown error occurred during sign-out.',
-      );
-    }
-    _logger.info('signOut: signing out user');
-    return _firebaseAuth.signOut();
+  TaskEither<AuthException, void> signOut() {
+    return TaskEither.tryCatch(
+      () async {
+        _logger.debug('signOut called');
+
+        final user = _firebaseAuth.currentUser;
+        if (user == null) {
+          _logger.warn('signOut: no current user');
+          throw AuthNotFoundException('Oturum açmış kullanıcı bulunamadı.');
+        }
+
+        _logger.info('signOut: signing out user');
+        await _firebaseAuth.signOut();
+      },
+      (error, stack) {
+        _logger.error('signOut error: $error');
+        if (error is AuthException) return error;
+        return UnknownAuthException('Çıkış yapılırken bir hata oluştu: $error');
+      },
+    );
   }
 
   @override
-  Future<String> signInWithApple({required bool isLogin}) async {
-    _logger.debug('signInWithApple called (isLogin: $isLogin)');
-    try {
-      final appleProvider = AppleAuthProvider();
+  TaskEither<AuthException, String> signInWithApple({
+    required bool isLogin,
+  }) {
+    return TaskEither.tryCatch(
+      () async {
+        _logger.debug('signInWithApple called (isLogin: $isLogin)');
 
-      // Apple'dan e-posta ve isim izinlerini de isteyelim (İlk kayıtta lazım olur)
-      appleProvider.addScope('email');
-      appleProvider.addScope('name');
+        final appleProvider = AppleAuthProvider()
+          ..addScope('email')
+          ..addScope('name');
 
-      final userCredential = await _firebaseAuth.signInWithProvider(
-        appleProvider,
-      );
-      final user = userCredential.user;
-      final UserRepository userRepository = getIt<UserRepository>();
-      if (user != null) {
+        final userCredential = await _firebaseAuth.signInWithProvider(
+          appleProvider,
+        );
+
+        final user = userCredential.user;
+
+        if (user == null) {
+          throw AppleSignInException(
+            'Apple servisinden kullanıcı verisi alınamadı.',
+          );
+        }
+
+        final userRepository = getIt<UserRepository>();
         final isNewUser = !await userRepository.isUserRegistered(user.uid);
 
-        // 1. Giriş ekranında yeni kullanıcı gelirse:
         if (isLogin && isNewUser) {
           _logger.warn(
             'Login attempt with new Apple account. Deleting user...',
           );
-          try {
-            await user.delete();
-          } catch (e) {
-            _logger.error('Failed to delete temporary Apple user: $e');
-            // Silinemezse bile en azından oturumu kapatıp hata fırlatalım
-            await _firebaseAuth.signOut();
-          }
-          throw AuthException(
+           _cleanupUser(user);
+          throw AuthNotFoundException(
             'Apple hesabınızla ilişkili bir kayıt bulunamadı. Lütfen önce kayıt olun.',
           );
         }
 
-        // 2. Kayıt ekranında mevcut kullanıcı gelirse:
         if (!isLogin && !isNewUser) {
           _logger.info('Register attempt with existing Apple account.');
-          throw AuthException(
+          throw UserAlreadyExistsException(
             'Bu Apple hesabı zaten kullanımda. Lütfen giriş yapın.',
           );
         }
+
         await user.getIdToken(true);
         return user.uid;
-      }
-      throw AuthException('Apple servisinden kullanıcı verisi alınamadı.');
-    } on FirebaseAuthException catch (e) {
-      _logger.error('signInWithApple FirebaseAuthException: ${e.code}');
-
-      // Kullanıcı işlemi iptal ettiyse (Vazgeç'e bastıysa)
-      if (e.code == 'canceled' || e.code == 'user-cancelled') {
-        throw AuthException('İşlem iptal edildi.');
-      }
-
-      throw AuthException(
-        e.message ?? 'Apple girişi sırasında bir hata oluştu.',
-      );
-    } catch (e) {
-      _logger.error('signInWithApple unexpected error: $e');
-      if (e is AuthException) rethrow;
-      throw Exception('Beklenmedik bir hata oluştu.');
-    }
+      },
+      (error, stack) {
+        _logger.error('signInWithApple error: $error');
+        if (error is AuthException) return error;
+        if (error is FirebaseAuthException) {
+          if (error.code == 'canceled' || error.code == 'user-cancelled') {
+            return AuthCancelledException('İşlem iptal edildi.');
+          }
+          return AppleSignInException(
+            error.message ?? 'Apple girişi sırasında bir hata oluştu.',
+          );
+        }
+        return AppleSignInException('Beklenmedik bir hata oluştu: $error');
+      },
+    );
   }
 
+
   @override
-  Future<String> signInWithGoogle({required bool isLogin}) async {
-    _logger.debug('signInWithGoogle called (isLogin: $isLogin)');
-    try {
-      // --- SENİN VERDİĞİN TASLAK ---
-      // Trigger the authentication flow
+  TaskEither<AuthException, String> signInWithGoogle({
+    required bool isLogin,
+  }) {
+    return TaskEither.tryCatch(
+      () async {
+        _logger.debug('signInWithGoogle called (isLogin: $isLogin)');
 
-      final googleUser = await GoogleSignIn.instance.authenticate();
+        final googleUser = await GoogleSignIn.instance.authenticate();
+        final googleAuth = googleUser.authentication;
 
-      // Obtain the auth details from the request
-      final googleAuth = googleUser.authentication;
+        final credential = GoogleAuthProvider.credential(
+          idToken: googleAuth.idToken,
+        );
 
-      // Create a new credential
-      final credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
-      );
+        final userCredential = await _firebaseAuth.signInWithCredential(
+          credential,
+        );
 
-      // Once signed in, get the UserCredential
-      final userCredential = await _firebaseAuth.signInWithCredential(
-        credential,
-      );
-      // --- TASLAK SONU ---
+        final user = userCredential.user;
 
-      final user = userCredential.user;
-      final UserRepository userRepository = getIt<UserRepository>();
-      if (user != null) {
-        final isNewUser = !await userRepository.isUserRegistered(user.uid);
-
-        // 1. Giriş sayfasında yeni kullanıcı engelleme
-        if (isLogin && isNewUser) {
-          _logger.warn('Login attempt with new account. Deleting...');
-          await user.delete();
-          throw AuthException('Hesabınız bulunamadı. Lütfen kayıt olun.');
+        if (user == null) {
+          throw GoogleSignInException(
+            'Google servisinden kullanıcı verisi alınamadı.',
+          );
         }
 
-        // 2. Kayıt sayfasında eski kullanıcı engelleme
-        if (!isLogin && !isNewUser) {
-          _logger.info('Register attempt with existing account.');
-          throw AuthException('Bu hesap zaten kayıtlı. Lütfen giriş yapın.');
-        }
+        await _validateLoginRegister(
+          user: user,
+          isLogin: isLogin,
+          providerName: 'Google',
+        );
 
         _logger.info('signInWithGoogle success: ${user.uid}');
         await user.getIdToken(true);
         return user.uid;
-      }
-      throw AuthException('Kullanıcı verisi alınamadı.');
-    } catch (e) {
-      _logger.error('signInWithGoogle error: $e');
-      if (e is AuthException) rethrow;
-      throw Exception('Google işlemi başarısız.: $e');
-    }
+      },
+      (error, stack) {
+        _logger.error('signInWithGoogle error: $error');
+        if (error is AuthException) return error;
+        if (error is FirebaseAuthException) {
+          if (error.code == 'canceled' || error.code == 'user-cancelled') {
+            return AuthCancelledException('İşlem iptal edildi.');
+          }
+          return GoogleSignInException(
+            error.message ?? 'Google girişi sırasında bir hata oluştu.',
+          );
+        }
+        return GoogleSignInException('Google işlemi başarısız: $error');
+      },
+    );
   }
 
   @override
   Stream<String?> get onAuthStateChanged =>
       _firebaseAuth.authStateChanges().map((user) => user?.uid);
-
   @override
-  String getUserPhoneNumber() {
+  Either<AuthException, String> getUserPhoneNumber() {
     _logger.debug('getUserPhoneNumber called');
 
     final user = _firebaseAuth.currentUser;
+
     if (user == null) {
       _logger.warn('getUserPhoneNumber: no current user');
-      throw AuthException('No user is currently signed in.');
+      return Left(AuthNotFoundException('Oturum açmış kullanıcı bulunamadı.'));
     }
 
-    final phoneNumber = user.phoneNumber;
+    final phoneNumber = user.phoneNumber ?? '';
     _logger.info(
-      'getUserPhoneNumber: phone=${phoneNumber != null ? maskPhone(phoneNumber) : "null"}',
+      'getUserPhoneNumber: phone=${phoneNumber.isNotEmpty ? maskPhone(phoneNumber) : "boş"}',
     );
-    return phoneNumber ?? '';
+    return Right(phoneNumber);
+  }
+
+
+TaskEither<AuthException, void> _cleanupUser(User user) {
+  return TaskEither.tryCatch(
+    () => user.delete(),
+    (error, stack) {
+      _logger.error('Kullanıcı silinemedi: $error');
+      return UnknownAuthException('Geçici kullanıcı temizlenemedi.');
+    },
+  ).orElse(
+    // delete başarısız olursa signOut dene
+    (_) => TaskEither.tryCatch(
+      () => _firebaseAuth.signOut(),
+      (error, stack) {
+        _logger.error('Oturum da kapatılamadı: $error');
+        return UnknownAuthException('Oturum kapatılamadı.');
+      },
+    ),
+  );
+}
+  // ortak kontrol
+  Future<void> _validateLoginRegister({
+    required User user,
+    required bool isLogin,
+    required String providerName,
+  }) async {
+    final userRepository = getIt<UserRepository>();
+    final isNewUser = !await userRepository.isUserRegistered(user.uid);
+
+    if (isLogin && isNewUser) {
+      await _cleanupUser(user).run();
+      throw AuthNotFoundException(
+        '$providerName hesabınızla ilişkili bir kayıt bulunamadı.',
+      );
+    }
+
+    if (!isLogin && !isNewUser) {
+      throw UserAlreadyExistsException(
+        'Bu $providerName hesabı zaten kullanımda. Lütfen giriş yapın.',
+      );
+    }
   }
 }

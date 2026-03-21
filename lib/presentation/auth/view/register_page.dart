@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fpdart/fpdart.dart' show Left, Right;
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/app_router.dart';
 import 'package:outnest/application/service_locators/get_it_init.dart';
@@ -37,13 +38,10 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> _handleSendCode() async {
-    // Herhangi bir işlem sürüyorsa durdur
     if (_authStatus != AuthStatus.none) return;
 
-    // 1. FORMATI TEMİZLE
     final rawNumber = _phoneController.text.replaceAll(' ', '');
 
-    // 2. VALIDASYON KONTROLLERİ
     if (rawNumber.isEmpty) {
       showErrorPopup(context, message: 'Lütfen telefon numaranızı giriniz.');
       return;
@@ -62,42 +60,44 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    // Telefon işlemi başladı
     setState(() => _authStatus = AuthStatus.phone);
 
-    try {
-      final result = await getIt<AuthService>().sendSMS(
-        phoneNumber: '+90$rawNumber',
-      );
+    final result = await getIt<AuthService>()
+        .sendSMS(phoneNumber: '+90$rawNumber')
+        .run();
 
-      if (mounted) {
-        // Sonuç geldi, yüklemeyi durdur
-        setState(() => _authStatus = AuthStatus.none);
+    if (!mounted) return;
+    setState(() => _authStatus = AuthStatus.none);
 
-        if (result.error != null) {
-          showErrorPopup(
-            context,
-            message: 'Bir hata ile karşılaşıldı. Lütfen tekrar deneyiniz.',
-          );
-        } else {
-          final verificationID = result.verificationId;
-          final resendToken = result.resendToken;
-          await context.push(
-            '/verification-code-field',
-            extra: {
-              'verificationID': verificationID,
-              'phoneNumber': '+90$rawNumber',
-              'resendToken': resendToken,
-            },
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _authStatus = AuthStatus.none);
-        showErrorPopup(context, message: 'Beklenmedik bir hata oluştu.');
-      }
-      debugPrint('Beklenmedik hata: $e');
+    switch (result) {
+      case Right(value: final sms):
+        if (!mounted) return;
+        await context.push(
+          '/verification-code-field',
+          extra: {
+            'verificationID': sms.verificationId,
+            'phoneNumber': '+90$rawNumber',
+            'resendToken': sms.resendToken,
+          },
+        );
+      case Left(value: OTPSendException()):
+        if (!mounted) return;
+        showErrorPopup(
+          context,
+          message: 'SMS gönderilemedi. Lütfen tekrar deneyiniz.',
+        );
+      case Left(value: SMSTimeoutException()):
+        if (!mounted) return;
+        showErrorPopup(
+          context,
+          message: 'Zaman aşımına uğradı. Lütfen tekrar deneyiniz.',
+        );
+      case Left(value: final error):
+        if (!mounted) return;
+        showErrorPopup(
+          context,
+          message: 'Beklenmedik bir hata oluştu.',
+        );
     }
   }
 
