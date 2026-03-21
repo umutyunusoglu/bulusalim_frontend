@@ -24,15 +24,15 @@ class VerificationTokenException extends OTPVerificationException {
   VerificationTokenException(super.message);
 }
 
-class AuthNotFoundException extends AuthException{
+class AuthNotFoundException extends AuthException {
   AuthNotFoundException(super.message);
-} 
+}
 
-class ExistingUserNotFoundException extends AuthException{
+class ExistingUserNotFoundException extends AuthException {
   ExistingUserNotFoundException(super.message);
 }
 
-class UserAlreadyExistsException extends AuthException{
+class UserAlreadyExistsException extends AuthException {
   UserAlreadyExistsException(super.message);
 }
 
@@ -40,15 +40,14 @@ class SMSTimeoutException extends AuthException {
   SMSTimeoutException(super.message);
 }
 
-
 class AuthCancelledException extends AuthException {
   AuthCancelledException(super.message);
 }
 
-class AppleSignInException extends AuthException {
-  AppleSignInException(super.message);
+class AppleAuthInException extends AuthException {
+  AppleAuthInException(super.message);
 }
 
-class GoogleSignInException extends AuthException {
-  GoogleSignInException(super.message);
+class GoogleAuthException extends AuthException {
+  GoogleAuthException(super.message);
 }

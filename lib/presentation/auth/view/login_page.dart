@@ -1,16 +1,16 @@
 import 'dart:io';
 
-import 'package:fpdart/fpdart.dart' show Left, Right;
-import 'package:material_symbols_icons/symbols.dart';
-import 'package:outnest/application/service_locators/get_it_init.dart';
-import 'package:outnest/core/errors/exceptions/auth_exceptions.dart';
-import 'package:outnest/presentation/auth/view/components/auth_button.dart';
-import 'package:outnest/presentation/auth/view/components/auth_input.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:fpdart/fpdart.dart' show Left, Right;
 import 'package:go_router/go_router.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:outnest/application/service_locators/get_it_init.dart';
+import 'package:outnest/core/errors/exceptions/auth_exceptions.dart';
 import 'package:outnest/domain/services/auth_service.dart';
+import 'package:outnest/presentation/auth/view/components/auth_button.dart';
+import 'package:outnest/presentation/auth/view/components/auth_input.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/form/formatters/phone_input_formatter.dart';
 
@@ -88,7 +88,7 @@ class _LoginPageState extends State<LoginPage> {
           context,
           message: 'SMS zaman aşımına uğradı. Lütfen tekrar deneyiniz.',
         );
-      case Left(value: final error):
+      case Left(value: final _):
         showErrorPopup(
           context,
           message: 'Beklenmedik bir hata oluştu.',
@@ -208,39 +208,7 @@ class _LoginPageState extends State<LoginPage> {
                 width: double.infinity,
                 height: 48.h,
                 child: OutlinedButton.icon(
-                  onPressed: isAnyLoading
-                      ? null
-                      : () async {
-                          setState(() => _authStatus = AuthStatus.google);
-                          try {
-                            await getIt<AuthService>().signInWithGoogle(
-                              isLogin: true,
-                            );
-
-                            if (mounted) {
-                              context.go('/splash');
-                            }
-                          } on AuthException catch (e) {
-                            if (mounted) {
-                              setState(() => _authStatus = AuthStatus.none);
-
-                              showErrorPopup(
-                                context,
-                                message: e.toString(),
-                              );
-                            }
-                          } catch (e) {
-                            if (mounted) {
-                              setState(() => _authStatus = AuthStatus.none);
-
-                              showErrorPopup(
-                                context,
-                                message:
-                                    'Google ile giriş yapılırken bir hata ile karşılaşıldı. Lütfen tekrar deneyiniz.',
-                              );
-                            }
-                          }
-                        },
+                  onPressed: isAnyLoading ? null : _handleGoogleLogin,
                   // Sadece Google işlemi yapılıyorsa spinner göster
                   icon: _authStatus == AuthStatus.google
                       ? SizedBox(
@@ -269,37 +237,7 @@ class _LoginPageState extends State<LoginPage> {
                   width: double.infinity,
                   height: 48.h,
                   child: ElevatedButton.icon(
-                    onPressed: isAnyLoading
-                        ? null
-                        : () async {
-                            setState(() => _authStatus = AuthStatus.apple);
-                            try {
-                              await getIt<AuthService>().signInWithApple(
-                                isLogin: true,
-                              );
-                              if (mounted) context.go('/splash');
-                            } on AuthException catch (e) {
-                              if (mounted) {
-                                setState(() => _authStatus = AuthStatus.none);
-
-                                showErrorPopup(
-                                  context,
-                                  message: e.toString(),
-                                );
-                              }
-                            } catch (e) {
-                              if (mounted) {
-                                setState(() => _authStatus = AuthStatus.none);
-
-                                showErrorPopup(
-                                  context,
-                                  message:
-                                      'Apple ile giriş yapılırken bir hata ile karşılaşıldı. Lütfen tekrar deneyiniz.',
-                                );
-                              }
-                            }
-                          },
-                    // Sadece Apple işlemi yapılıyorsa spinner (veya siyah üzerine beyaz loading) göster
+                    onPressed: isAnyLoading ? null : _handleAppleSignIn,
                     icon: _authStatus == AuthStatus.apple
                         ? SizedBox(
                             height: 20.h,
@@ -328,5 +266,66 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    if (_authStatus != AuthStatus.none) return;
+
+    setState(() => _authStatus = AuthStatus.google);
+
+    final result = await getIt<AuthService>()
+        .signInWithGoogle(isLogin: true)
+        .run();
+
+    if (!mounted) return;
+
+    switch (result) {
+      case Right():
+        context.go('/splash');
+      case Left(value: AuthCancelledException()):
+        setState(() => _authStatus = AuthStatus.none);
+      case Left(value: AuthNotFoundException(:final message)):
+        setState(() => _authStatus = AuthStatus.none);
+        if (!mounted) return;
+        showErrorPopup(context, message: message);
+      case Left(value: final _):
+        setState(() => _authStatus = AuthStatus.none);
+        if (!mounted) return;
+        showErrorPopup(
+          context,
+          message: 'Google ile giriş yapılamadı. Lütfen tekrar deneyiniz.',
+        );
+    }
+  }
+
+  Future<void> _handleAppleSignIn() async {
+    if (_authStatus != AuthStatus.none) return;
+
+    setState(() => _authStatus = AuthStatus.apple);
+
+    final result = await getIt<AuthService>()
+        .signInWithApple(isLogin: true)
+        .run();
+
+    if (!mounted) return;
+
+    switch (result) {
+      case Right(value: _):
+        context.go('/splash');
+      case Left(value: AuthCancelledException()):
+        setState(() => _authStatus = AuthStatus.none);
+      case Left(value: AuthNotFoundException(:final message)):
+        setState(() => _authStatus = AuthStatus.none);
+        if (!mounted) return;
+        showErrorPopup(context, message: message);
+      case Left(value: final _):
+        setState(() => _authStatus = AuthStatus.none);
+        if (!mounted) return;
+        showErrorPopup(
+          context,
+          message:
+              'Apple ile giriş yapılırken bir hata oluştu. Lütfen tekrar deneyiniz.',
+        );
+    }
   }
 }

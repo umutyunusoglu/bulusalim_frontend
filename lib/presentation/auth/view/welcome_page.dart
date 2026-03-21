@@ -1,8 +1,8 @@
-import 'package:outnest/presentation/shared/login_button.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:outnest/presentation/shared/login_button.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class WelcomePage extends StatelessWidget {
@@ -31,24 +31,6 @@ class WelcomePage extends StatelessWidget {
             ),
           ),
 
-          // // 2. KATMAN: KARARTMA
-          // Positioned.fill(
-          //   child: Container(
-          //     decoration: BoxDecoration(
-          //       gradient: LinearGradient(
-          //         begin: Alignment.topCenter,
-          //         end: Alignment.bottomCenter,
-          //         colors: [
-          //           Colors.black.withOpacity(0.1),
-          //           Colors.black.withOpacity(0.4),
-          //           Colors.black.withOpacity(0.9),
-          //         ],
-          //       ),
-          //     ),
-          //   ),
-          // ),
-
-          // 3. KATMAN: İÇERİK
           SafeArea(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -96,15 +78,6 @@ class WelcomePage extends StatelessWidget {
                     height: 48.h,
                   ),
 
-                  // DEBUG BUTONU
-                  /*
-                  LoginButton(
-                    label: 'Debug',
-                    onPress: () => context.push('/debug'),
-                    width: 205.w,
-                    height: 48.h,
-                    borderRadius: 40.r,
-                  ),*/
                   SizedBox(height: 8.h),
 
                   // YASAL METİNLER

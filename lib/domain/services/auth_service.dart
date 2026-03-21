@@ -40,7 +40,7 @@ abstract class AuthService {
   /// Left: [AuthCancelledException] if user cancels,
   /// [AuthNotFoundException] if login with unregistered account,
   /// [UserAlreadyExistsException] if register with existing account,
-  /// [AppleSignInException] on other failures.
+  /// [AppleAuthInException] on other failures.
   TaskEither<AuthException, String> signInWithApple({
     required bool isLogin,
   });
@@ -49,7 +49,7 @@ abstract class AuthService {
   /// Left: [AuthCancelledException] if user cancels,
   /// [AuthNotFoundException] if login with unregistered account,
   /// [UserAlreadyExistsException] if register with existing account,
-  /// [GoogleSignInException] on other failures.
+  /// [GoogleAuthException] on other failures.
   TaskEither<AuthException, String> signInWithGoogle({
     required bool isLogin,
   });

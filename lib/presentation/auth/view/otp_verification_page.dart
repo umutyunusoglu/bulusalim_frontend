@@ -82,81 +82,87 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
     if (otpCode.length != 6) return;
 
     setState(() => _isVerifying = true);
-    try {
-      final logger = getIt<LoggingService>()
-        ..info(
-          'Doğrulama kodu gönderiliyor: $otpCode, verificationID: $_currentVerificationId',
-        );
-
-      // widget.verificationID YERİNE _currentVerificationId KULLANILIYOR
-      final result = await getIt<AuthService>().signInWithSms(
-        verificationId: _currentVerificationId ?? '',
-        smsCode: otpCode,
-        isLogin: widget.isLogin,
+    final logger = getIt<LoggingService>()
+      ..info(
+        'Doğrulama kodu gönderiliyor: $otpCode, verificationID: $_currentVerificationId',
       );
 
-      logger.info('Kullanıcı doğrulandı: $result');
+    final result = await getIt<AuthService>()
+        .signInWithSms(
+          verificationId: _currentVerificationId ?? '',
+          smsCode: otpCode,
+          isLogin: widget.isLogin,
+        )
+        .run();
 
-      if (!mounted) return;
+    if (!mounted) return;
+    setState(() => _isVerifying = false);
 
-      if (widget.isLogin) {
-        context.go('/splash');
-      } else {
-        await context.push('/register-info');
-      }
-    } on AuthException catch (e) {
-      if (mounted) {
+    switch (result) {
+      case Right(value: final uid):
+        logger.info('Kullanıcı doğrulandı: $uid');
+        if (!mounted) return;
+        if (widget.isLogin) {
+          context.go('/splash');
+        } else {
+          await context.push('/register-info');
+        }
+      case Left(value: AuthNotFoundException(:final message)):
+        if (!mounted) return;
+        showErrorPopup(context, message: message);
+      case Left(value: UserAlreadyExistsException(:final message)):
+        if (!mounted) return;
+        showErrorPopup(context, message: message);
+      case Left(value: VerificationTokenException()):
+        if (!mounted) return;
         showErrorPopup(
           context,
-          message: e.toString(),
+          message: 'Doğrulama başarısız. Lütfen tekrar deneyiniz.',
         );
-      }
-    } catch (e) {
-      if (mounted) {
+      case Left(value: final _):
+        if (!mounted) return;
         showErrorPopup(
           context,
-          message:
-              'Telefon ile giriş yapılırken bir hata ile karşılaşıldı. Lütfen tekrar deneyiniz.',
+          message: 'Giriş yapılırken bir hata oluştu. Lütfen tekrar deneyiniz.',
         );
-      }
-    } finally {
-      if (mounted) setState(() => _isVerifying = false);
     }
   }
 
-Future<void> _handleResend() async {
-  if (_countdown > 0 || _isResending) return;
+  Future<void> _handleResend() async {
+    if (_countdown > 0 || _isResending) return;
 
-  final ctx = context;
-  setState(() => _isResending = true);
+    setState(() => _isResending = true);
 
-  final result = await getIt<AuthService>()
-      .resendSMS(
-        phoneNumber: widget.phoneNumber ?? '',
-        resendToken: _currentResendToken,
-      )
-      .run();
+    final result = await getIt<AuthService>()
+        .resendSMS(
+          phoneNumber: widget.phoneNumber ?? '',
+          resendToken: _currentResendToken,
+        )
+        .run();
 
-  if (!mounted) return;
-  setState(() => _isResending = false);
+    if (!mounted) return;
+    setState(() => _isResending = false);
 
-  switch (result) {
-    case Right(value: final sms):
-      setState(() {
-        _currentVerificationId = sms.verificationId;
-        _currentResendToken = sms.resendToken;
-      });
-      _startTimer();
-      showInfoPopup(ctx, message: 'Yeni kod gönderildi!');
-    case Left(value: SMSTimeoutException()):
-      showErrorPopup(ctx, message: 'Zaman aşımı. Lütfen tekrar deneyiniz.');
-    case Left(value: final error):
-      showErrorPopup(
-        ctx,
-        message: 'Kod gönderilemedi. Lütfen tekrar deneyiniz.',
-      );
+    switch (result) {
+      case Right(value: final sms):
+        setState(() {
+          _currentVerificationId = sms.verificationId;
+          _currentResendToken = sms.resendToken;
+        });
+        _startTimer();
+        showInfoPopup(context, message: 'Yeni kod gönderildi!');
+      case Left(value: SMSTimeoutException()):
+        showErrorPopup(
+          context,
+          message: 'Zaman aşımı. Lütfen tekrar deneyiniz.',
+        );
+      case Left(value: final _):
+        showErrorPopup(
+          context,
+          message: 'Kod gönderilemedi. Lütfen tekrar deneyiniz.',
+        );
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
