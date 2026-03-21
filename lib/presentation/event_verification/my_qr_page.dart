@@ -54,7 +54,7 @@ class _MyQrPageState extends State<MyQrPage> {
         child: Column(
           children: [
             const Text(
-              'Arkadaşın QR kodunu okutsun ve buluşmada olduğunu onaylasın!',
+              'Arkadaşın anlık konumun kullanılarak oluşturulan QR kodunu okutsun ve buluşmada olduğunu onaylasın!',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 18,

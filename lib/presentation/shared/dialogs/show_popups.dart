@@ -6,6 +6,7 @@ void _showCustomToast(
   required Color contentColor,
   required Color backgroundColor,
 }) {
+  if (!context.mounted) return;
   final overlayState = Overlay.of(context);
   late OverlayEntry overlayEntry;
 
