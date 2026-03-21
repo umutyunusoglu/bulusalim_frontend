@@ -280,7 +280,7 @@ class AuthServiceImpl implements AuthService {
         final user = userCredential.user;
 
         if (user == null) {
-          throw AppleAuthInException(
+          throw AppleAuthException(
             'Apple servisinden kullanıcı verisi alınamadı.',
           );
         }
@@ -315,11 +315,11 @@ class AuthServiceImpl implements AuthService {
           if (error.code == 'canceled' || error.code == 'user-cancelled') {
             return AuthCancelledException('İşlem iptal edildi.');
           }
-          return AppleAuthInException(
+          return AppleAuthException(
             'Apple girişi sırasında bir hata oluştu.',
           );
         }
-        return AppleAuthInException('Beklenmedik bir hata oluştu: $error');
+        return AppleAuthException('Beklenmedik bir hata oluştu: $error');
       },
     );
   }

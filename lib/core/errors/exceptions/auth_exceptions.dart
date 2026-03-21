@@ -44,8 +44,8 @@ class AuthCancelledException extends AuthException {
   AuthCancelledException(super.message);
 }
 
-class AppleAuthInException extends AuthException {
-  AppleAuthInException(super.message);
+class AppleAuthException extends AuthException {
+  AppleAuthException(super.message);
 }
 
 class GoogleAuthException extends AuthException {

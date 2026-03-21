@@ -318,6 +318,7 @@ class _LoginPageState extends State<LoginPage> {
         setState(() => _authStatus = AuthStatus.none);
         if (!mounted) return;
         showErrorPopup(context, message: message);
+
       case Left(value: final _):
         setState(() => _authStatus = AuthStatus.none);
         if (!mounted) return;

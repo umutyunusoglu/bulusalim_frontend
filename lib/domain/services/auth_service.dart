@@ -40,7 +40,7 @@ abstract class AuthService {
   /// Left: [AuthCancelledException] if user cancels,
   /// [AuthNotFoundException] if login with unregistered account,
   /// [UserAlreadyExistsException] if register with existing account,
-  /// [AppleAuthInException] on other failures.
+  /// [AppleAuthException] on other failures.
   TaskEither<AuthException, String> signInWithApple({
     required bool isLogin,
   });
