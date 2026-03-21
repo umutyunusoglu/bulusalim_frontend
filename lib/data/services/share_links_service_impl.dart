@@ -1,7 +1,9 @@
 import 'dart:developer' as debug;
 
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:outnest/application/app_state/app_initialization_state.dart';
 import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/data/models/links/deep_link_target.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
@@ -46,34 +48,5 @@ class ShareLinksServiceImpl extends ShareLinksService {
   Future<void> shareUserProfile(String userId) async {
     final link = user(userId);
     await SharePlus.instance.share(ShareParams(text: link.toString()));
-  }
-
-  @override
-  Future<DeepLinkTarget?> parseLink(Uri uri, BuildContext context) async {
-    final isLoggedIn = await authService.isUserLoggedIn();
-    final userId = authService.getCurrentUserID();
-    final isUserRegistered = await userRepository.isUserRegistered(userId);
-    if (!isUserRegistered || !isLoggedIn) {
-      sessionService.init();
-      context.go('/splash');
-      return null;
-    }
-    debug.log('Parsing incoming link: $uri');
-    if (uri.toString().startsWith(shareLinkPrefix)) {
-      final segments = uri.pathSegments;
-      if (segments.length >= 2) {
-        final typeSegment = segments[1];
-        final idSegment = segments.length > 2 ? segments[2] : null;
-        switch (typeSegment) {
-          case 'post':
-            return DeepLinkTarget(type: DeepLinkType.post, id: idSegment);
-          case 'event':
-            return DeepLinkTarget(type: DeepLinkType.event, id: idSegment);
-          case 'profile':
-            return DeepLinkTarget(type: DeepLinkType.profile, id: idSegment);
-        }
-      }
-    }
-    return const DeepLinkTarget.unknown();
   }
 }
