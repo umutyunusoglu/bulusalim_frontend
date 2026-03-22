@@ -17,6 +17,7 @@ import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/feed/post/post_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/entities/user/friend_entity.dart';
+import 'package:outnest/domain/entities/user/user_event_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/analytics/analytics_service.dart';
@@ -216,6 +217,40 @@ class _ProfilePageState extends State<ProfilePage> {
     throw StateError('Unreachable retry state for $label');
   }
 
+  Future<T> _withProfileFallback<T>(
+    Future<T> Function() action, {
+    required String label,
+    required T fallback,
+  }) async {
+    try {
+      return await _withProfileRetry(action, label: label);
+    } catch (e) {
+      getIt<LoggingService>().warn(
+        'Profile fetch fallback used for $label: $e',
+      );
+      return fallback;
+    }
+  }
+
+  Future<dynamic> _getProfileUserWithRetry(
+    UserRepository userRepository,
+  ) async {
+    final myUserId = getIt<SessionService>().currentUser?.userID;
+    if (widget.profileUserID == myUserId) {
+      return getIt<SessionService>().currentUser;
+    }
+
+    return _withProfileRetry(() async {
+      final user = await userRepository.getUserPublicData(widget.profileUserID);
+      if (user == null) {
+        throw StateError(
+          'Public user is null for profileUserID=${widget.profileUserID}',
+        );
+      }
+      return user;
+    }, label: 'getUserPublicData');
+  }
+
   Future<void> _fetchProfileData() async {
     if (!mounted) return;
 
@@ -223,22 +258,14 @@ class _ProfilePageState extends State<ProfilePage> {
       final userRepository = getIt<UserRepository>();
       final eventRepository = getIt<EventRepository>();
 
-      dynamic user;
+      final user = await _getProfileUserWithRetry(userRepository);
 
-      if (widget.profileUserID == getIt<SessionService>().currentUser?.userID) {
-        user = getIt<SessionService>().currentUser;
-      } else {
-        getIt<LoggingService>().debug("Others profi");
-        user = await _withProfileRetry(
-          () => userRepository.getUserPublicData(widget.profileUserID),
-          label: 'getUserPublicData',
-        );
-      }
-
-      final userEventsEnrolled = await _withProfileRetry(
-        () => userRepository.getUserEventLog(widget.profileUserID),
-        label: 'getUserEventLog',
-      );
+      final userEventsEnrolled =
+          await _withProfileFallback<List<UserEventEntity>>(
+            () => userRepository.getUserEventLog(widget.profileUserID),
+            label: 'getUserEventLog',
+            fallback: <UserEventEntity>[],
+          );
 
       final enrolledEventIds = <Identifier>[];
       final savedEventIds = <Identifier>[];
@@ -270,9 +297,13 @@ class _ProfilePageState extends State<ProfilePage> {
 
       if (widget.profileUserID != currentUser?.userID) {
         for (final follower in myFollowers) {
-          final isFollowing = await userRepository.isFollowing(
-            widget.profileUserID,
-            follower.userID,
+          final isFollowing = await _withProfileFallback(
+            () => userRepository.isFollowing(
+              widget.profileUserID,
+              follower.userID,
+            ),
+            label: 'isFollowingCommon:${follower.userID}',
+            fallback: false,
           );
           if (isFollowing) {
             commonFollows.add(follower);
@@ -283,53 +314,60 @@ class _ProfilePageState extends State<ProfilePage> {
       if (user!.userID == currentUser?.userID) {
         isFollowing = true;
       } else {
-        isFollowing = await _withProfileRetry(
+        isFollowing = await _withProfileFallback(
           () => userRepository.isFollowing(
             currentUser!.userID,
             user.userID as Identifier,
           ),
           label: 'isFollowing',
+          fallback: false,
         );
       }
 
       var hasSentFollowRequest = false;
       if (!isFollowing) {
-        hasSentFollowRequest = await _withProfileRetry(
+        hasSentFollowRequest = await _withProfileFallback(
           () => userRepository.hasSentFollowRequest(
             currentUser!.userID,
             user.userID as Identifier,
           ),
           label: 'hasSentFollowRequest',
+          fallback: false,
         );
       }
 
       var enrolledEvents = <EventEntity>[];
       if (enrolledEventIds.isNotEmpty) {
-        enrolledEvents = await _withProfileRetry(
+        enrolledEvents = await _withProfileFallback(
           () => eventRepository.getEventsByIds(enrolledEventIds),
           label: 'getEnrolledEventsByIds',
+          fallback: <EventEntity>[],
         );
       }
 
       var savedEvents = <EventEntity>[];
       if (savedEventIds.isNotEmpty) {
-        savedEvents = await _withProfileRetry(
+        savedEvents = await _withProfileFallback(
           () => eventRepository.getEventsByIds(savedEventIds),
           label: 'getSavedEventsByIds',
+          fallback: <EventEntity>[],
         );
       }
 
-      final followerCount = await _withProfileRetry(
+      final followerCount = await _withProfileFallback(
         () => userRepository.getFollowersCount(widget.profileUserID),
         label: 'getFollowersCount',
+        fallback: numberOfFollowers,
       );
-      final followeeCount = await _withProfileRetry(
+      final followeeCount = await _withProfileFallback(
         () => userRepository.getFolloweesCount(widget.profileUserID),
         label: 'getFolloweesCount',
+        fallback: numberOfFollowing,
       );
-      final completedEventCountFromRepo = await _withProfileRetry(
+      final completedEventCountFromRepo = await _withProfileFallback(
         () => userRepository.getCompletedEventCount(widget.profileUserID),
         label: 'getCompletedEventCount',
+        fallback: numberOfEvents,
       );
 
       final isPrivate = user.isPrivate;
@@ -361,13 +399,13 @@ class _ProfilePageState extends State<ProfilePage> {
         _hasSentFollowRequest = hasSentFollowRequest == true;
 
         // Sayısal verilerde hata almamak için 0'a yuvarlıyoruz
-        numberOfFollowers = followerCount ?? 0;
-        numberOfFollowing = followeeCount ?? 0;
+        numberOfFollowers = followerCount;
+        numberOfFollowing = followeeCount;
         numberOfEvents = completedEventCountFromRepo;
 
-        _commonFollowers = commonFollows ?? [];
-        _currentEvents = enrolledEvents ?? [];
-        _consideredEvents = savedEvents ?? [];
+        _commonFollowers = commonFollows;
+        _currentEvents = enrolledEvents;
+        _consideredEvents = savedEvents;
 
         _isLoadingEvents = false;
       });
