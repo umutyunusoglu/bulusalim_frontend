@@ -10,6 +10,7 @@ import 'package:outnest/presentation/home/view/components/header.dart';
 import 'package:outnest/presentation/home/view/home_content_page.dart';
 import 'package:outnest/presentation/shared/action_buttons_speed_dial.dart';
 import 'package:outnest/presentation/shared/navigation/navigate_to_camera.dart';
+import 'package:outnest/presentation/tutorial/tutorial_overlay.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -21,6 +22,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  bool _showTutorial = true;
   final List<String> _tabs = ['Senlik', 'Arkadaşların', 'Okul'];
 
   final ValueNotifier<bool> isDialOpen = ValueNotifier(false);
@@ -92,21 +94,27 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
+            if (_showTutorial)
+              Positioned.fill(
+                child: TutorialOverlay(
+                  onDismiss: () => setState(() => _showTutorial = false),
+                ),
+              ),
           ],
         ),
       ),
-      floatingActionButton: ValueListenableBuilder(
-        valueListenable: isDialOpen,
-        builder: (context, isOpen, _) {
-          return ActionButtonsSpeedDial(
-            isDialOpen: isDialOpen,
-            onCameraTap: () => navigateToCamera(context),
-            onLocationTap: () {
-              context.go('/map', extra: true);
-            },
-          );
-        },
-      ),
+      floatingActionButton: _showTutorial
+          ? null
+          : ValueListenableBuilder(
+              valueListenable: isDialOpen,
+              builder: (context, isOpen, _) {
+                return ActionButtonsSpeedDial(
+                  isDialOpen: isDialOpen,
+                  onCameraTap: () => navigateToCamera(context),
+                  onLocationTap: () => context.go('/map', extra: true),
+                );
+              },
+            ),
     );
   }
 }
