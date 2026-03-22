@@ -31,6 +31,7 @@ import 'package:outnest/presentation/settings/view/community_account_settings_pa
 import 'package:outnest/presentation/settings/view/edit_profile_page.dart';
 import 'package:outnest/presentation/settings/view/settings_page.dart';
 import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
+import 'package:outnest/presentation/tutorial/tutorial_overlay.dart';
 import 'package:outnest/scaffold_with_navbar.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -64,6 +65,15 @@ final router = GoRouter(
       path: '/splash',
       builder: (context, state) => const InitScreen(),
     ),
+    GoRoute(
+      path: '/tutorial',
+      builder: (context, state) => TutorialOverlay(
+        onDismiss: () {
+          context.go('/home');
+        },
+      ),
+    ),
+
     GoRoute(
       path: '/welcome',
       builder: (context, state) => const WelcomePage(),
