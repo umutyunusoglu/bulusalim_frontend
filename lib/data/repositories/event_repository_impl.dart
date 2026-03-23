@@ -99,7 +99,7 @@ class EventRepositoryImpl implements EventRepository {
         nameSurname: null,
         isPrivate: null,
         bio: null,
-        accountType: null,
+        accountType: event.creator.accountType,
         communityData: null,
       );
 
@@ -486,6 +486,49 @@ class EventRepositoryImpl implements EventRepository {
   }
 
   @override
+  Future<void> withdrawJoinRequest(
+    String eventId,
+    CompactUserEntity user,
+  ) async {
+    try {
+      final eventDoc = await _firestore.collection('events').doc(eventId).get();
+      if (!eventDoc.exists) throw Exception('Buluşma bulunamadı');
+
+      final creatorId = eventDoc.data()?['creator']?['userID'] as String?;
+
+      final batch = _firestore.batch();
+
+      final requestPoolRef = _firestore
+          .collection('events')
+          .doc(eventId)
+          .collection('requestPool')
+          .doc(user.userID);
+
+      final userEventLogRef = _firestore
+          .collection('users')
+          .doc(user.userID)
+          .collection('eventLog')
+          .doc(eventId);
+
+      batch
+        ..delete(requestPoolRef)
+        ..delete(userEventLogRef);
+
+      if (creatorId != null) {
+        _triggerCreatorRefresh(null, batch, creatorId, eventId);
+      }
+
+      await batch.commit();
+
+      _globalCache.removeEntity(eventId);
+      _logger.info('Join request withdrawn for event: $eventId');
+    } catch (e) {
+      _logger.error('Failed to withdraw join request: $e');
+      rethrow;
+    }
+  }
+
+  @override
   Future<void> acceptParticipant(String eventId, CompactUserEntity user) async {
     try {
       final eventRef = _firestore.collection('events').doc(eventId);
@@ -662,6 +705,24 @@ class EventRepositoryImpl implements EventRepository {
     EventParticipantEntity newParticipantData,
   ) async {
     throw UnimplementedError();
+  }
+
+  @override
+  Future<List<CompactUserEntity>> getEventParticipants(String eventId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('events')
+          .doc(eventId)
+          .collection('participants')
+          .get();
+
+      return snapshot.docs
+          .map((doc) => CompactUserEntity.fromMap(doc.data()))
+          .toList();
+    } catch (e) {
+      _logger.error('Failed to get event participants: $e');
+      rethrow;
+    }
   }
 
   // --- MESSAGES SUBCOLLECTION ---

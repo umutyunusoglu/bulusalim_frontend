@@ -18,6 +18,8 @@ abstract class FileService {
   static String defaultProfileImageUrl() =>
       'assets/defaults/default_profile.jpg';
 
+  static String communityEventPhotoPath(String uniqueId, String fileName) =>
+      '$privateEvents/community_photos/$uniqueId/$fileName';
   static String postImagePath(
     String userId,
     String postId,
