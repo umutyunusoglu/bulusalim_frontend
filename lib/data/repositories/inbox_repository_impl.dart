@@ -39,6 +39,7 @@ class InboxRepositoryImpl implements InboxRepository {
   Stream<List<FollowNotificationEntity>> getFollowRequestsStream() {
     if (_userId.isEmpty) return Stream.value([]);
 
+    //todo: add limit and pagination if needed, also consider caching if this becomes a performance issue
     return _firestore
         .collection('users')
         .doc(_userId)
@@ -61,7 +62,7 @@ class InboxRepositoryImpl implements InboxRepository {
 
     // 1. Cihaza kaydedilmiş son ID'yi al
     final lastSavedId = await persistenceService.getString(
-      'lastFollowRequestId',
+      'lastFollowRequestId_$_userId',
     );
 
     final snapshot = await _firestore
@@ -80,7 +81,7 @@ class InboxRepositoryImpl implements InboxRepository {
 
     if (lastSavedId == null) {
       await persistenceService.saveString(
-        'lastFollowRequestId',
+        'lastFollowRequestId_$_userId',
         latestIdFromFirestore,
       );
       return true;

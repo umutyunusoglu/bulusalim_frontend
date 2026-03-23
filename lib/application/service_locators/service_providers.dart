@@ -29,6 +29,7 @@ import 'package:outnest/domain/services/remote_config_service.dart';
 import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/services/share_links_service.dart';
+import 'package:outnest/domain/services/tutorial_persistance_service.dart';
 
 extension ServiceModule on GetIt {
   void registerServices() {
@@ -112,6 +113,9 @@ extension ServiceModule on GetIt {
       )
       ..registerLazySingleton<ShareLinksService>(
         () => ShareLinksServiceImpl(),
+      )
+      ..registerLazySingleton<TutorialPersistenceService>(
+        () => TutorialPersistenceService(persistanceService: this()),
       );
   }
 }

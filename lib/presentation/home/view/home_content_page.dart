@@ -124,8 +124,9 @@ class _HomeContentPageState extends State<HomeContentPage> {
             final SessionService sessionService = getIt<SessionService>();
             final user = sessionService.currentUser;
 
+            //TODO: Bu kontrolü daha merkezi bir yerde yapıp, kullanıcıyı direkt olarak doğrulama sayfasına yönlendirmek daha temiz olabilir. Ancak şimdilik hızlı bir çözüm olarak burada bırakıyorum.
             if (widget.feedType == FeedType.university &&
-                !user!.isUniversityVerified) {
+                !user!.university!.isNotEmpty) {
               return Column(
                 mainAxisAlignment:
                     MainAxisAlignment.center, // Ortalamak isterseniz

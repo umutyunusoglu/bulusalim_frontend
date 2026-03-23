@@ -22,7 +22,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  bool _showTutorial = true;
   final List<String> _tabs = ['Senlik', 'Arkadaşların', 'Okul'];
 
   final ValueNotifier<bool> isDialOpen = ValueNotifier(false);
@@ -94,27 +93,20 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
-            if (_showTutorial)
-              Positioned.fill(
-                child: TutorialOverlay(
-                  onDismiss: () => setState(() => _showTutorial = false),
-                ),
-              ),
           ],
         ),
       ),
-      floatingActionButton: _showTutorial
-          ? null
-          : ValueListenableBuilder(
-              valueListenable: isDialOpen,
-              builder: (context, isOpen, _) {
-                return ActionButtonsSpeedDial(
-                  isDialOpen: isDialOpen,
-                  onCameraTap: () => navigateToCamera(context),
-                  onLocationTap: () => context.go('/map', extra: true),
-                );
-              },
-            ),
+      floatingActionButton: ValueListenableBuilder(
+        valueListenable: isDialOpen,
+        builder: (context, isOpen, _) {
+          return ActionButtonsSpeedDial(
+            isDialOpen: isDialOpen,
+            onCameraTap: () => navigateToCamera(context),
+            onLocationTap: () => context.go('/map', extra: true),
+            onQrTap: () => context.push('/my-qr'),
+          );
+        },
+      ),
     );
   }
 }

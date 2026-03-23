@@ -12,12 +12,14 @@ class ActionButtonsSpeedDial extends StatefulWidget {
     required this.isDialOpen,
     required this.onCameraTap,
     required this.onLocationTap,
+    required this.onQrTap,
     this.forceShowAllButtons = false,
   });
 
   final ValueNotifier<bool> isDialOpen;
   final VoidCallback onCameraTap;
   final VoidCallback onLocationTap;
+  final VoidCallback onQrTap;
   final bool forceShowAllButtons;
 
   @override
@@ -169,7 +171,7 @@ class _ActionButtonsSpeedDialState extends State<ActionButtonsSpeedDial>
           icon: Icons.qr_code_outlined,
           iconColor: AppColors.darkSecondaryColor,
           backgroundColor: AppColors.backgroundColor,
-          onTap: () => context.push('/my-qr'),
+          onTap: () => widget.onQrTap(),
         ),
     ];
   }

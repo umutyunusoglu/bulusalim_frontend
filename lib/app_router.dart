@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
@@ -7,6 +7,7 @@ import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/domain/services/tutorial_persistance_service.dart';
 import 'package:outnest/presentation/auth/view/login_page.dart';
 import 'package:outnest/presentation/auth/view/otp_verification_page.dart';
 import 'package:outnest/presentation/auth/view/register_info_page.dart';
@@ -34,11 +35,10 @@ import 'package:outnest/presentation/settings/view/account_settings_page.dart';
 import 'package:outnest/presentation/settings/view/community_account_settings_page.dart';
 import 'package:outnest/presentation/settings/view/edit_profile_page.dart';
 import 'package:outnest/presentation/settings/view/settings_page.dart';
-import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
-import 'package:outnest/presentation/tutorial/tutorial_overlay.dart';
 import 'package:outnest/presentation/shared/event_card/event_preview_screen.dart';
 import 'package:outnest/presentation/shared/event_card/view/components/stacked_avatars.dart';
 import 'package:outnest/presentation/shared/post_card/post_preview_screen.dart';
+import 'package:outnest/presentation/tutorial/tutorial_overlay.dart';
 import 'package:outnest/scaffold_with_navbar.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -155,14 +155,6 @@ final router = GoRouter(
         return InitScreen(nextPath: nextPath);
       },
     ),
-    GoRoute(
-      path: '/tutorial',
-      builder: (context, state) => TutorialOverlay(
-        onDismiss: () {
-          context.go('/home');
-        },
-      ),
-    ),
 
     GoRoute(
       path: '/welcome',
@@ -203,7 +195,22 @@ final router = GoRouter(
       path: '/register-info',
       builder: (context, state) => const RegisterInfoPage(),
     ),
-
+    GoRoute(
+      path: '/tutorial',
+      builder: (context, state) => TutorialOverlay(
+        onDismiss: () async {
+          // Kullanıcı adını kaydet
+          final userId = getIt<SessionService>().currentUser?.userID;
+          if (userId != null) {
+            await getIt<TutorialPersistenceService>().markAsSeen(userId);
+            debugPrint('Tutorial marked as seen for: $userId'); // kontrol
+          }
+          if (context.mounted) {
+            context.go('/home');
+          }
+        },
+      ),
+    ),
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
         return ScaffoldWithNavbar(navigationShell: navigationShell);

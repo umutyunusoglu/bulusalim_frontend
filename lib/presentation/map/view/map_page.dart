@@ -1188,6 +1188,7 @@ class _MapPageState extends State<MapPage> {
                         _isCreatePopupVisible = true;
                       });
                     },
+                    onQrTap: () => context.push('/my-qr'),
                   ),
                 ),
               ),

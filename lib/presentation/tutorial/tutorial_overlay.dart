@@ -21,9 +21,24 @@ class TutorialOverlay extends HookWidget {
   Widget build(BuildContext context) {
     final pageController = usePageController();
     final currentPage = useState(0);
+    final previousPage = useState(0); // YENİ
+    final hasOpenedDial = useState(false);
+    final dialEverClosed = useState(false);
+
     final isDialOpen = useMemoized(() => ValueNotifier(false));
 
-    useEffect(() => isDialOpen.dispose, []);
+    useEffect(() {
+      void listener() {
+        if (isDialOpen.value) {
+          hasOpenedDial.value = true;
+        } else if (hasOpenedDial.value) {
+          dialEverClosed.value = true;
+        }
+      }
+
+      isDialOpen.addListener(listener);
+      return () => isDialOpen.removeListener(listener);
+    }, []);
 
     return Material(
       color: AppColors.backgroundColor,
@@ -59,28 +74,42 @@ class TutorialOverlay extends HookWidget {
                 ),
               ),
             ),
-
-            if (currentPage.value != 0)
-              Padding(
-                padding: EdgeInsets.only(bottom: 8.h),
-                child: Text(
-                  'Outnest',
-                  style: TextStyle(
-                    fontFamily: 'SF Pro Display',
-                    fontSize: 24.sp,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primaryColor,
+            AnimatedSize(
+              duration: previousPage.value < currentPage.value
+                  ? const Duration(milliseconds: 150)
+                  : Duration.zero, // geri giderken anında
+              curve: Curves.easeInOut,
+              alignment: Alignment.topCenter,
+              child: AnimatedOpacity(
+                duration: previousPage.value < currentPage.value
+                    ? const Duration(milliseconds: 150)
+                    : Duration.zero, // geri giderken anında
+                opacity: currentPage.value != 0 ? 1.0 : 0.0,
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: 8.h),
+                  child: Text(
+                    'Outnest',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Display',
+                      fontSize: 24.sp,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primaryColor,
+                    ),
                   ),
                 ),
               ),
+            ),
 
             // SAYFALAR
             Expanded(
               child: PageView(
                 controller: pageController,
-                onPageChanged: (i) => currentPage.value = i,
+                onPageChanged: (i) {
+                  previousPage.value = currentPage.value; // YENİ
+                  currentPage.value = i;
+                },
                 children: [
-                  _buildPage1(isDialOpen),
+                  _buildPage1(isDialOpen, hasOpenedDial, dialEverClosed),
                   _buildDualFeaturePage(
                     topTitle: 'Buluşmalara Katıl',
                     topDesc:
@@ -145,7 +174,11 @@ class TutorialOverlay extends HookWidget {
   }
 
   // DİNAMİK BUTON EKRANI (Sayfa 1)
-  Widget _buildPage1(ValueNotifier<bool> isDialOpen) {
+  Widget _buildPage1(
+    ValueNotifier<bool> isDialOpen,
+    ValueNotifier<bool> hasOpenedDial,
+    ValueNotifier<bool> dialEverClosed,
+  ) {
     return ValueListenableBuilder<bool>(
       valueListenable: isDialOpen,
       builder: (context, isOpen, _) {
@@ -202,16 +235,37 @@ class TutorialOverlay extends HookWidget {
                       isDialOpen: isDialOpen,
                       onCameraTap: () {},
                       onLocationTap: () {},
+                      onQrTap: () {},
+
                       forceShowAllButtons: true,
                     ),
                     SizedBox(height: 16.h),
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 200),
+                      transitionBuilder: (child, animation) => FadeTransition(
+                        opacity: animation,
+                        child: child,
+                      ),
+                      layoutBuilder: (currentChild, previousChildren) => Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          ...previousChildren,
+                          if (currentChild != null) currentChild,
+                        ],
+                      ),
                       child: Text(
-                        isOpen
-                            ? ' ' // 'kapatmak için tıkla'
+                        dialEverClosed.value
+                            ? 'devam etmek için kaydır'
+                            : isOpen
+                            ? 'butona tekrar basarak kapatabilirsin'
                             : 'başlamak için tıkla',
-                        key: ValueKey(isOpen),
+                        key: ValueKey(
+                          dialEverClosed.value
+                              ? 2
+                              : isOpen
+                              ? 1
+                              : 0,
+                        ),
                         style: TextStyle(
                           fontFamily: 'SF Pro Display',
                           fontSize: 13.sp,

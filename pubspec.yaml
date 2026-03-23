@@ -111,7 +111,6 @@ flutter:
     - assets/badge/
     - assets/data/
     - assets/defaults/
-    - assets/nsfw/
     - .env
 
 flutter_intl:
