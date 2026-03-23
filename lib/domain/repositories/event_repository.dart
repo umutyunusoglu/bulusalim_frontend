@@ -34,6 +34,8 @@ abstract class EventRepository {
 
   /// Participants Subcollection
 
+  Future<void> withdrawJoinRequest(String eventId, CompactUserEntity user);
+
   Future<void> requestJoin(
     Identifier eventId,
     CompactUserEntity participant,
@@ -52,6 +54,8 @@ abstract class EventRepository {
     EventParticipantEntity participant,
   );
   Future<void> removeParticipant(Identifier eventId, CompactUserEntity user);
+
+  Future<List<CompactUserEntity>> getEventParticipants(String eventId);
 
   /// === Query & Search ===
 

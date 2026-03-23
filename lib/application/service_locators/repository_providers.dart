@@ -1,4 +1,4 @@
-// lib/application/providers/repository_providers.dart
+// lib/application/service_locators/repository_providers.dart
 
 import 'package:get_it/get_it.dart';
 import 'package:outnest/data/repositories/chat_repository_impl.dart';
@@ -55,6 +55,7 @@ extension RepositoryModule on GetIt {
           logger: this(),
           globalCache: this(),
           eventRepository: this(),
+          geocodingService: this(),
         ),
       )
       ..registerLazySingleton<ChatRepository>(

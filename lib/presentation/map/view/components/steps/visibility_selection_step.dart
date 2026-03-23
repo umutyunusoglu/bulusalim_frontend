@@ -54,6 +54,7 @@ class _VisibilitySelectionStepState extends State<VisibilitySelectionStep> {
 
   Future<void> _loadOptions() async {
     final groups = await getIt<GroupRepository>().getMyGroups();
+    if (!mounted) return;
     setState(() {
       _myGroups = groups;
     });

@@ -1,5 +1,5 @@
 class Geolocation {
-  Geolocation({
+  const Geolocation({
     required this.latitude,
     required this.longitude,
   });

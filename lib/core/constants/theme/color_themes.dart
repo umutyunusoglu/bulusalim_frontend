@@ -23,7 +23,7 @@ abstract class AppColors {
   static const Color darkSlate = Color(0xFF264653); // Başlık ve Aktif Tab Rengi
   static const Color lightCloud = Color(0xFFF0F3F5); // Tab Arka Plan Rengi
   static const Color salmonPink = Color(0xFFEABFB9); // Empty State ve İkonlar
-  static const Color textGrey = Colors.grey; // Genel gri yazılar
+  static const Color textGrey = Color(0xFF8E8E93); // Genel gri yazılar
 
   // --- POPUP & WIZARD COLORS  ---
   // "İlerle" butonu ve seçim ekranları için

@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/presentation/profile/view/components/empty_profile_screen.dart';
-import 'package:outnest/presentation/shared/event_card/event_card.dart';
+import 'package:outnest/presentation/shared/event_card/view/event_card.dart';
 import 'package:outnest/presentation/shared/post_card/post_card.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/utils/types/enums/feed_type.dart';
@@ -166,6 +166,7 @@ class _HomeContentPageState extends State<HomeContentPage> {
             }
 
             // 4. Veri Geldiğinde Liste Görünümü
+
             return ListView.builder(
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(

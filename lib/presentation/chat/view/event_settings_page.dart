@@ -6,14 +6,10 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/service_locators/get_it_init.dart';
-import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
-import 'package:outnest/domain/services/security_service.dart';
-import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
-import 'package:outnest/presentation/shared/popup.dart';
-import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
+import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/core/utils/types/enums/visibility_enum.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/core/utils/types/types.dart';
@@ -30,7 +26,9 @@ import 'package:outnest/domain/services/analytics/event_configs/update_event_sta
 import 'package:outnest/domain/services/analytics/event_configs/update_event_visibility_analytics_config.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
-import 'package:outnest/presentation/chat/view/components/event_avatar_badge.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
+import 'package:outnest/presentation/shared/event_card/view/components/stacked_avatars.dart';
+import 'package:outnest/presentation/shared/popup.dart';
 
 class EventSettingsPage extends StatefulWidget {
   const EventSettingsPage({
