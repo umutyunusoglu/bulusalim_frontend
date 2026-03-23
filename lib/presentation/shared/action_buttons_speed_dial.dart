@@ -12,11 +12,13 @@ class ActionButtonsSpeedDial extends StatefulWidget {
     required this.isDialOpen,
     required this.onCameraTap,
     required this.onLocationTap,
+    this.forceShowAllButtons = false,
   });
 
   final ValueNotifier<bool> isDialOpen;
   final VoidCallback onCameraTap;
   final VoidCallback onLocationTap;
+  final bool forceShowAllButtons;
 
   @override
   State<ActionButtonsSpeedDial> createState() => _ActionButtonsSpeedDialState();
@@ -62,6 +64,10 @@ class _ActionButtonsSpeedDialState extends State<ActionButtonsSpeedDial>
         final currentState = _sessionService.currentState;
         final isUserInEvent = currentState.ongoingEvents.isNotEmpty;
         // Animasyon kontrolünü burada yapıyoruz ama tasarımı etkilemiyoruz
+
+        // QR Butonunun görünme şartı: Ya event'te olacak ya da zorla göster (Tutorial)
+        final showQrButton = isUserInEvent || widget.forceShowAllButtons;
+
         _handleAnimation(isUserInEvent);
 
         return SpeedDial(
@@ -80,8 +86,8 @@ class _ActionButtonsSpeedDialState extends State<ActionButtonsSpeedDial>
           buttonSize: const Size(64, 64),
           childrenButtonSize: const Size(64, 64),
           childMargin: const EdgeInsets.symmetric(vertical: 5),
-          children: _buildChildren(context, isUserInEvent),
           // Sadece İkon kısmını animasyonlu hale getiriyoruz ki buton iskeleti bozulmasın
+          children: _buildChildren(context, showQrButton),
           child: AnimatedBuilder(
             animation: _shineController,
             builder: (context, _) => _buildShineIcon(isUserInEvent),
@@ -143,7 +149,7 @@ class _ActionButtonsSpeedDialState extends State<ActionButtonsSpeedDial>
 
   List<SpeedDialChild> _buildChildren(
     BuildContext context,
-    bool isUserInEvent,
+    bool showQrButton,
   ) {
     return [
       _buildChild(
@@ -158,7 +164,7 @@ class _ActionButtonsSpeedDialState extends State<ActionButtonsSpeedDial>
         backgroundColor: const Color(0xFFD1E4E8),
         onTap: widget.onCameraTap,
       ),
-      if (isUserInEvent)
+      if (showQrButton) // <-- ŞART GÜNCELLENDİ
         _buildChild(
           icon: Icons.qr_code_outlined,
           iconColor: AppColors.darkSecondaryColor,

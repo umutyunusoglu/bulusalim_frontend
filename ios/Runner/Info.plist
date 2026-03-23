@@ -44,12 +44,16 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-<key>NSCameraUsageDescription</key>
+	<key>NSCameraUsageDescription</key>
 	<string>Profil fotoğrafınızı çekebilmek ve buluşmalerde fotoğraf paylaşabilmek için kameraya erişim izni gerekiyor.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Outnest, anlık buluşmalar oluştururken konumunu haritaya sabitlemen ve çevrendeki etkinliklere katılabilmen için konum erişimine ihtiyaç duyar.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Profil fotoğrafı seçebilmek ve galeriye fotoğraf kaydedebilmek için erişim izni gerekiyor.</string>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>INSendMessageIntent</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -13,7 +13,7 @@ abstract class AppColors {
 
   static const Color inputFillColor = Color(0xFFF2F2F7); // Input Arka Planları
   static const Color iconColor = Color(0xFF1A1A1A);
-  static const Color dividerColor = Color(0xFFEEEEEE); // Liste ayırıcılar için
+  static const Color dividerColor = Color(0xFFE5E5EA); // Liste ayırıcılar için
   static const Color accordionBackground = Color(
     0xFFF3F4F6,
   ); // Accordion zemini
