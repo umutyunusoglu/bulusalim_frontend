@@ -34,6 +34,8 @@ import 'package:outnest/presentation/settings/view/account_settings_page.dart';
 import 'package:outnest/presentation/settings/view/community_account_settings_page.dart';
 import 'package:outnest/presentation/settings/view/edit_profile_page.dart';
 import 'package:outnest/presentation/settings/view/settings_page.dart';
+import 'package:outnest/presentation/shared/event_card/stacked_avatars.dart';
+import 'package:outnest/presentation/tutorial/tutorial_overlay.dart';
 import 'package:outnest/presentation/shared/event_card/event_preview_screen.dart';
 import 'package:outnest/presentation/shared/event_card/view/components/stacked_avatars.dart';
 import 'package:outnest/presentation/shared/post_card/post_preview_screen.dart';
@@ -153,6 +155,15 @@ final router = GoRouter(
         return InitScreen(nextPath: nextPath);
       },
     ),
+    GoRoute(
+      path: '/tutorial',
+      builder: (context, state) => TutorialOverlay(
+        onDismiss: () {
+          context.go('/home');
+        },
+      ),
+    ),
+
     GoRoute(
       path: '/welcome',
       builder: (context, state) => const WelcomePage(),

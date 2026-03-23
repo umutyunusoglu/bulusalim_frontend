@@ -1638,11 +1638,6 @@ PODS:
     - nanopb/encode (= 3.30910.0)
   - nanopb/decode (3.30910.0)
   - nanopb/encode (3.30910.0)
-  - onnxruntime-c (1.22.0)
-  - onnxruntime-objc (1.22.0):
-    - onnxruntime-objc/Core (= 1.22.0)
-  - onnxruntime-objc/Core (1.22.0):
-    - onnxruntime-c (= 1.22.0)
   - package_info_plus (0.4.5):
     - Flutter
   - permission_handler_apple (9.3.0):
@@ -1756,8 +1751,6 @@ SPEC REPOS:
     - MapboxCoreMaps
     - MapboxMaps
     - nanopb
-    - onnxruntime-c
-    - onnxruntime-objc
     - PromisesObjC
     - PromisesSwift
     - RecaptchaEnterprise
@@ -1903,8 +1896,6 @@ SPEC CHECKSUMS:
   MapboxMaps: db05259e1ea68e9a8a4e6f9014027418025f2ebe
   mobile_scanner: 9157936403f5a0644ca3779a38ff8404c5434a93
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
-  onnxruntime-c: 7f778680e96145956c0a31945f260321eed2611a
-  onnxruntime-objc: 83d28b87525bd971259a66e153ea32b5d023de19
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
@@ -1922,6 +1913,6 @@ SPEC CHECKSUMS:
   Turf: c9eb11a65d96af58cac523460fd40fec5061b081
   url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
 
-PODFILE CHECKSUM: b65e65d7ae162892233dee56f186db81156a70d6
+PODFILE CHECKSUM: dadfdb5e4aa59661ee051c87a851dc14b495f7a8
 
 COCOAPODS: 1.16.2
