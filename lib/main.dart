@@ -21,6 +21,7 @@ import 'package:outnest/core/constants/theme/app_theme.dart';
 import 'package:outnest/domain/datasources/university_datasource.dart';
 import 'package:outnest/firebase_options.dart';
 
+// Test comment
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('tr_TR');
