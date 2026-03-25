@@ -18,6 +18,13 @@ final StreamProvider<List<EventEntity>> ongoingEventsProvider =
       return getIt<UserRepository>().watchOngoingEvents(userID);
     });
 
+final Provider<bool> isUserInOngoingEventProvider = Provider.autoDispose<bool>((
+  ref,
+) {
+  final ongoingEvents = ref.watch(ongoingEventsProvider).value ?? [];
+  return ongoingEvents.isNotEmpty;
+});
+
 /// Streams the list of events that are scheduled in the future for the current user.
 ///
 /// Returns an empty list if the user is not authenticated.

@@ -24,8 +24,7 @@ class ActionButtonsSpeedDial extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ongoingEvents = ref.watch(ongoingEventsProvider).value ?? [];
-    final isUserInEvent = ongoingEvents.isNotEmpty;
+    final isUserInEvent = ref.watch(isUserInOngoingEventProvider);
     final showQrButton = isUserInEvent || forceShowAllButtons;
 
     final shineController = useAnimationController(
