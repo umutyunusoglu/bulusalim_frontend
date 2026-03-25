@@ -578,6 +578,47 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
+  Stream<List<EventEntity>> watchUpcomingEvents(Identifier userID) {
+    return _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('eventLog')
+        .where('status', whereIn: ['upcoming']) // Sadece devam edenler
+        .snapshots()
+        .asyncMap((snapshot) async {
+          _logger.info(
+            'UserRepository: Upcoming events snapshot received for user: $userID, doc count: ${snapshot.docs.length}',
+          );
+          if (snapshot.docs.isEmpty) return [];
+
+          // ID'leri alıp detayları çekme (Parallel Fetch)
+          final eventFutures = snapshot.docs.map((doc) async {
+            final historyData = doc.data();
+            final eventId = historyData['eventID'] as Identifier;
+
+            // Event detayını çek
+            final eventDoc = await _firestore
+                .collection('events')
+                .doc(eventId)
+                .get();
+            if (!eventDoc.exists) return null;
+
+            final eventEntity = await eventRepository.getEvent(eventId);
+            if (eventEntity == null) return null;
+            // Status ve Role bilgisini güncelle
+            return eventEntity.copyWith(
+              myStatus: historyData['status'] as String,
+              myRole: historyData['role'].toString(),
+            );
+          });
+
+          // Null olanları temizle ve listeyi döndür
+          final events = await Future.wait(eventFutures);
+          return events.whereType<EventEntity>().toList();
+        });
+  }
+
+  @override
   Stream<List<EventEntity>> watchActiveEvents(Identifier userID) {
     return _firestore
         .collection('users')

@@ -71,6 +71,7 @@ abstract class UserRepository {
 
   Stream<List<EventEntity>> watchActiveEvents(Identifier userID);
   Stream<List<EventEntity>> watchOngoingEvents(Identifier userID);
+  Stream<List<EventEntity>> watchUpcomingEvents(Identifier userID);
 
   Stream<List<CompactUserEntity>> watchFollowees(Identifier userID);
   Stream<List<CompactUserEntity>> watchFollowers(Identifier userID);
