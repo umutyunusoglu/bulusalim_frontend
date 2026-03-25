@@ -138,7 +138,7 @@ class _HomeContentPageState extends State<HomeContentPage> {
 
             //TODO: Bu kontrolü daha merkezi bir yerde yapıp, kullanıcıyı direkt olarak doğrulama sayfasına yönlendirmek daha temiz olabilir. Ancak şimdilik hızlı bir çözüm olarak burada bırakıyorum.
             if (widget.feedType == FeedType.university &&
-                isUniversityVerified) {
+                !isUniversityVerified) {
               return Column(
                 mainAxisAlignment:
                     MainAxisAlignment.center, // Ortalamak isterseniz
@@ -166,7 +166,6 @@ class _HomeContentPageState extends State<HomeContentPage> {
                 ],
               );
             }
-
             // 3. Veri Yok veya Boş Liste Durumu
             final items = snapshot.data;
             if (items == null || items.isEmpty) {
