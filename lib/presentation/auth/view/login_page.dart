@@ -3,19 +3,22 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:fpdart/fpdart.dart' show Left, Right;
+import 'package:fpdart/fpdart.dart' show Left, Right, TaskEither;
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/errors/exceptions/auth_exceptions.dart';
 import 'package:outnest/domain/services/auth_service.dart';
+import 'package:outnest/presentation/auth/controllers/auth_status_enum.dart';
+import 'package:outnest/presentation/auth/controllers/handle_social_login.dart';
+import 'package:outnest/presentation/auth/view/components/apple_auth_button.dart';
 import 'package:outnest/presentation/auth/view/components/auth_button.dart';
 import 'package:outnest/presentation/auth/view/components/auth_input.dart';
+import 'package:outnest/presentation/auth/view/components/google_auth_button.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/form/formatters/phone_input_formatter.dart';
 
 // Yükleme durumlarını ayırt etmek için enum
-enum AuthStatus { none, phone, google, apple }
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -204,60 +207,41 @@ class _LoginPageState extends State<LoginPage> {
               SizedBox(height: 24.h),
 
               // GOOGLE BUTONU
-              SizedBox(
-                width: double.infinity,
-                height: 48.h,
-                child: OutlinedButton.icon(
-                  onPressed: isAnyLoading ? null : _handleGoogleLogin,
-                  // Sadece Google işlemi yapılıyorsa spinner göster
-                  icon: _authStatus == AuthStatus.google
-                      ? SizedBox(
-                          height: 20.h,
-                          width: 20.h,
-                          child: const CircularProgressIndicator(
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Image.asset('assets/google.png', height: 24.h),
-                  label: const Text('Google ile devam et'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.black,
-                    side: const BorderSide(color: Colors.black12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                  ),
-                ),
+              GoogleAuthButton(
+                isLoading: _authStatus == AuthStatus.google,
+                isDisabled: isAnyLoading,
+                onTap: () async {
+                  if (_authStatus != AuthStatus.none) return;
+                  setState(() => _authStatus = AuthStatus.google);
+                  await handleSocialLogin(
+                    context: context,
+                    signIn: () =>
+                        getIt<AuthService>().signInWithGoogle(isLogin: true),
+                    providerName: 'Google',
+                  );
+                  if (mounted) setState(() => _authStatus = AuthStatus.none);
+                },
               ),
 
               if (Platform.isIOS) ...[
                 SizedBox(height: 12.h),
                 // APPLE BUTONU
-                SizedBox(
-                  width: double.infinity,
-                  height: 48.h,
-                  child: ElevatedButton.icon(
-                    onPressed: isAnyLoading ? null : _handleAppleSignIn,
-                    icon: _authStatus == AuthStatus.apple
-                        ? SizedBox(
-                            height: 20.h,
-                            width: 20.h,
-                            child: const CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Icon(Icons.apple, color: Colors.white, size: 24.sp),
-                    label: const Text('Apple ile devam et'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                    ),
-                  ),
+                AppleAuthButton(
+                  isLoading: _authStatus == AuthStatus.apple,
+                  isDisabled: isAnyLoading,
+                  onTap: () async {
+                    if (_authStatus != AuthStatus.none) return;
+                    setState(() => _authStatus = AuthStatus.apple);
+
+                    await handleSocialLogin(
+                      context: context,
+                      signIn: () =>
+                          getIt<AuthService>().signInWithApple(isLogin: true),
+                      providerName: 'Apple',
+                    );
+
+                    if (mounted) setState(() => _authStatus = AuthStatus.none);
+                  },
                 ),
               ],
               SizedBox(height: 60.h),
@@ -266,67 +250,5 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
-  }
-
-  Future<void> _handleGoogleLogin() async {
-    if (_authStatus != AuthStatus.none) return;
-
-    setState(() => _authStatus = AuthStatus.google);
-
-    final result = await getIt<AuthService>()
-        .signInWithGoogle(isLogin: true)
-        .run();
-
-    if (!mounted) return;
-
-    switch (result) {
-      case Right():
-        context.go('/splash');
-      case Left(value: AuthCancelledException()):
-        setState(() => _authStatus = AuthStatus.none);
-      case Left(value: AuthNotFoundException(:final message)):
-        setState(() => _authStatus = AuthStatus.none);
-        if (!mounted) return;
-        showErrorPopup(context, message: message);
-      case Left(value: final _):
-        setState(() => _authStatus = AuthStatus.none);
-        if (!mounted) return;
-        showErrorPopup(
-          context,
-          message: 'Google ile giriş yapılamadı. Lütfen tekrar deneyiniz.',
-        );
-    }
-  }
-
-  Future<void> _handleAppleSignIn() async {
-    if (_authStatus != AuthStatus.none) return;
-
-    setState(() => _authStatus = AuthStatus.apple);
-
-    final result = await getIt<AuthService>()
-        .signInWithApple(isLogin: true)
-        .run();
-
-    if (!mounted) return;
-
-    switch (result) {
-      case Right(value: _):
-        context.go('/splash');
-      case Left(value: AuthCancelledException()):
-        setState(() => _authStatus = AuthStatus.none);
-      case Left(value: AuthNotFoundException(:final message)):
-        setState(() => _authStatus = AuthStatus.none);
-        if (!mounted) return;
-        showErrorPopup(context, message: message);
-
-      case Left(value: final _):
-        setState(() => _authStatus = AuthStatus.none);
-        if (!mounted) return;
-        showErrorPopup(
-          context,
-          message:
-              'Apple ile giriş yapılırken bir hata oluştu. Lütfen tekrar deneyiniz.',
-        );
-    }
   }
 }

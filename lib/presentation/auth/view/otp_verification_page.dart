@@ -1,12 +1,6 @@
 import 'dart:async';
-
-import 'package:outnest/application/service_locators/get_it_init.dart';
-import 'package:outnest/presentation/auth/view/components/auth_button.dart';
-import 'package:outnest/presentation/auth/view/components/otp_row.dart';
-import 'package:outnest/core/constants/theme/color_themes.dart';
-import 'package:outnest/core/utils/logging/logging_service.dart';
-import 'package:outnest/domain/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fpdart/fpdart.dart' show Left, Right;
 import 'package:go_router/go_router.dart';
@@ -18,13 +12,14 @@ import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/presentation/auth/view/components/auth_button.dart';
 import 'package:outnest/presentation/auth/view/components/otp_row.dart';
+import 'package:outnest/presentation/auth/view/components/register_fallback_sheet.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 
-class OtpVerificationPage extends StatefulWidget {
+class OtpVerificationPage extends HookWidget {
   const OtpVerificationPage({
     this.verificationID,
     this.phoneNumber,
-    this.resendToken, // <-- EKLENDİ
+    this.resendToken,
     super.key,
     this.isLogin = false,
   });
@@ -32,146 +27,157 @@ class OtpVerificationPage extends StatefulWidget {
   final bool isLogin;
   final String? phoneNumber;
   final String? verificationID;
-  final int? resendToken; // <-- EKLENDİ
-
-  @override
-  State<OtpVerificationPage> createState() => _OtpVerificationPageState();
-}
-
-class _OtpVerificationPageState extends State<OtpVerificationPage> {
-  final List<TextEditingController> _controllers = List.generate(
-    6,
-    (index) => TextEditingController(),
-  );
-
-  // --- EKLENEN STATE DEĞİŞKENLERİ ---
-  String? _currentVerificationId;
-  int? _currentResendToken;
-
-  bool _isResending = false;
-  bool _isVerifying = false;
-  int _countdown = 30;
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _currentVerificationId = widget.verificationID;
-    _currentResendToken = widget.resendToken;
-    _startTimer();
-  }
-
-  void _startTimer() {
-    setState(() => _countdown = 30);
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_countdown > 0) {
-        setState(() => _countdown--);
-      } else {
-        timer.cancel();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel(); // Memory leak olmaması için Timer'ı iptal et
-    for (final controller in _controllers) {
-      controller.dispose();
-    }
-    super.dispose();
-  }
-
-  Future<void> _handleVerify() async {
-    if (_isVerifying) return;
-    final otpCode = _controllers.map((e) => e.text).join();
-    if (otpCode.length != 6) return;
-
-    setState(() => _isVerifying = true);
-    final logger = getIt<LoggingService>()
-      ..info(
-        'Doğrulama kodu gönderiliyor: $otpCode, verificationID: $_currentVerificationId',
-      );
-
-    final result = await getIt<AuthService>()
-        .signInWithSms(
-          verificationId: _currentVerificationId ?? '',
-          smsCode: otpCode,
-          isLogin: widget.isLogin,
-        )
-        .run();
-
-    if (!mounted) return;
-    setState(() => _isVerifying = false);
-
-    switch (result) {
-      case Right(value: final uid):
-        logger.info('Kullanıcı doğrulandı: $uid');
-        if (!mounted) return;
-        if (widget.isLogin) {
-          context.go('/splash');
-        } else {
-          await context.push('/register-info');
-        }
-      case Left(value: AuthNotFoundException(:final message)):
-        if (!mounted) return;
-        showErrorPopup(context, message: message);
-      case Left(value: UserAlreadyExistsException(:final message)):
-        if (!mounted) return;
-        showErrorPopup(context, message: message);
-      case Left(value: VerificationTokenException()):
-        if (!mounted) return;
-        showErrorPopup(
-          context,
-          message: 'Doğrulama başarısız. Lütfen tekrar deneyiniz.',
-        );
-      case Left(value: final _):
-        if (!mounted) return;
-        showErrorPopup(
-          context,
-          message: 'Giriş yapılırken bir hata oluştu. Lütfen tekrar deneyiniz.',
-        );
-    }
-  }
-
-  Future<void> _handleResend() async {
-    if (_countdown > 0 || _isResending) return;
-
-    setState(() => _isResending = true);
-
-    final result = await getIt<AuthService>()
-        .resendSMS(
-          phoneNumber: widget.phoneNumber ?? '',
-          resendToken: _currentResendToken,
-        )
-        .run();
-
-    if (!mounted) return;
-    setState(() => _isResending = false);
-
-    switch (result) {
-      case Right(value: final sms):
-        setState(() {
-          _currentVerificationId = sms.verificationId;
-          _currentResendToken = sms.resendToken;
-        });
-        _startTimer();
-        showInfoPopup(context, message: 'Yeni kod gönderildi!');
-      case Left(value: SMSTimeoutException()):
-        showErrorPopup(
-          context,
-          message: 'Zaman aşımı. Lütfen tekrar deneyiniz.',
-        );
-      case Left(value: final _):
-        showErrorPopup(
-          context,
-          message: 'Kod gönderilemedi. Lütfen tekrar deneyiniz.',
-        );
-    }
-  }
+  final int? resendToken;
 
   @override
   Widget build(BuildContext context) {
+    final controllers = List.generate(6, (_) => useTextEditingController());
+
+    final currentVerificationId = useState<String?>(verificationID);
+    final currentResendToken = useState<int?>(resendToken);
+    final isResending = useState(false);
+    final isVerifying = useState(false);
+
+    final countdown = useValueNotifier(30);
+    final timerRef = useRef<Timer?>(null);
+
+    final errorCount = useRef(0);
+    final showFallback = useState(false);
+
+    void startTimer({bool afterResend = false}) {
+      countdown.value = 30;
+      timerRef.value?.cancel();
+      timerRef.value = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (countdown.value > 0) {
+          countdown.value--;
+        } else {
+          timer.cancel();
+          if (afterResend && !isLogin) showFallback.value = true;
+        }
+      });
+    }
+
+    useEffect(() {
+      startTimer();
+      return () => timerRef.value?.cancel();
+    }, const []);
+
+    useEffect(() {
+      if (!showFallback.value) return null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        showRegisterFallbackSheet(context).then((_) {
+          if (context.mounted) showFallback.value = false;
+        });
+      });
+      return null;
+    }, [showFallback.value]);
+
+    void triggerFallbackIfNeeded(VoidCallback showError) {
+      if (isLogin) {
+        showError();
+        return;
+      }
+      errorCount.value++;
+      if (errorCount.value >= 2) {
+        showFallback.value = true;
+      } else {
+        showError();
+      }
+    }
+
+    Future<void> handleVerify() async {
+      if (isVerifying.value) return;
+      final otpCode = controllers.map((e) => e.text).join();
+      if (otpCode.length != 6) return;
+
+      isVerifying.value = true;
+
+      final logger = getIt<LoggingService>()
+        ..info(
+          'Doğrulama kodu gönderiliyor: $otpCode, '
+          'verificationID: ${currentVerificationId.value}',
+        );
+
+      final result = await getIt<AuthService>()
+          .signInWithSms(
+            verificationId: currentVerificationId.value ?? '',
+            smsCode: otpCode,
+            isLogin: isLogin,
+          )
+          .run();
+
+      if (!context.mounted) return;
+      isVerifying.value = false;
+
+      switch (result) {
+        case Right(value: final uid):
+          logger.info('Kullanıcı doğrulandı: $uid');
+          if (!context.mounted) return;
+          if (isLogin) {
+            context.go('/splash');
+          } else {
+            await context.push('/register-info');
+          }
+        case Left(value: AuthNotFoundException(:final message)):
+          if (!context.mounted) return;
+          triggerFallbackIfNeeded(
+            () => showErrorPopup(context, message: message),
+          );
+
+        case Left(value: VerificationTokenException()):
+          if (!context.mounted) return;
+          triggerFallbackIfNeeded(
+            () => showErrorPopup(
+              context,
+              message: 'Doğrulama başarısız. Lütfen tekrar deneyiniz.',
+            ),
+          );
+
+        case Left(value: final _):
+          if (!context.mounted) return;
+          triggerFallbackIfNeeded(
+            () => showErrorPopup(
+              context,
+              message:
+                  'Giriş yapılırken bir hata oluştu. Lütfen tekrar deneyiniz.',
+            ),
+          );
+      }
+    }
+
+    Future<void> handleResend() async {
+      if (countdown.value > 0 || isResending.value) return;
+
+      isResending.value = true;
+
+      final result = await getIt<AuthService>()
+          .resendSMS(
+            phoneNumber: phoneNumber ?? '',
+            resendToken: currentResendToken.value,
+          )
+          .run();
+
+      if (!context.mounted) return;
+      isResending.value = false;
+
+      switch (result) {
+        case Right(value: final sms):
+          currentVerificationId.value = sms.verificationId;
+          currentResendToken.value = sms.resendToken;
+          startTimer(afterResend: true);
+          showInfoPopup(context, message: 'Yeni kod gönderildi!');
+        case Left(value: SMSTimeoutException()):
+          if (!isLogin) showFallback.value = true;
+
+        case Left(value: final _):
+          showErrorPopup(
+            context,
+            message: 'Kod gönderilemedi. Lütfen tekrar deneyiniz.',
+          );
+      }
+    }
+
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
@@ -187,7 +193,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
               size: 24.sp,
             ),
             onPressed: () {
-              if (widget.isLogin) {
+              if (isLogin) {
                 context.go('/login');
               } else {
                 context.go('/register');
@@ -218,7 +224,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
               SizedBox(height: 28.h),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 12.w),
-                child: OtpRow(controllers: _controllers),
+                child: OtpRow(controllers: controllers),
               ),
               SizedBox(height: 28.h),
               Text(
@@ -234,47 +240,48 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
               ),
               SizedBox(height: 76.h),
               AuthButton(
-                text: _isVerifying
+                text: isVerifying.value
                     ? 'lütfen bekleyin...'
-                    : (widget.isLogin ? 'giriş yap' : 'gönder'),
-                onPressed: _isVerifying ? null : _handleVerify,
+                    : (isLogin ? 'giriş yap' : 'gönder'),
+                onPressed: isVerifying.value ? null : handleVerify,
               ),
               SizedBox(height: 12.h),
               Center(
-                child: GestureDetector(
-                  onTap: _countdown == 0 && !_isResending
-                      ? _handleResend
-                      : null,
-                  // HitTestBehavior.opaque: Padding ile verdiğimiz şeffaf alanın da tıklanabilir olmasını sağlar.
-                  behavior: HitTestBehavior.opaque,
-                  child: Padding(
-                    // Tıklanabilir alanı (hitbox) dikey ve yatayda genişletiyoruz
-                    padding: EdgeInsets.symmetric(
-                      vertical: 12.h,
-                      horizontal: 20.w,
-                    ),
-                    child: Text(
-                      _isResending
-                          ? 'gönderiliyor...'
-                          : _countdown > 0
-                          ? 'kodu tekrar gönder ($_countdown s)'
-                          : 'kodu tekrar gönder',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: 'SF Pro Display',
-
-                        fontSize: 14.sp, // 10.sp'den 14.sp'ye büyütüldü
-                        fontWeight: FontWeight
-                            .w600, // w400'den w600'e çekilerek daha belirgin yapıldı
-                        color: _countdown > 0
-                            ? Colors.grey
-                            : AppColors.tertiaryColor,
-                        decoration: _countdown > 0
-                            ? null
-                            : TextDecoration.underline,
+                child: ValueListenableBuilder<int>(
+                  valueListenable: countdown,
+                  builder: (context, count, _) {
+                    return GestureDetector(
+                      onTap: count == 0 && !isResending.value
+                          ? handleResend
+                          : null,
+                      behavior: HitTestBehavior.opaque,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: 12.h,
+                          horizontal: 20.w,
+                        ),
+                        child: Text(
+                          isResending.value
+                              ? 'gönderiliyor...'
+                              : count > 0
+                              ? 'kodu tekrar gönder ($count s)'
+                              : 'kodu tekrar gönder',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Display',
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w600,
+                            color: count > 0
+                                ? Colors.grey
+                                : AppColors.tertiaryColor,
+                            decoration: count > 0
+                                ? null
+                                : TextDecoration.underline,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ),
               SizedBox(height: 48.h),
