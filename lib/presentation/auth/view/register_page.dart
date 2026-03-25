@@ -9,12 +9,15 @@ import 'package:outnest/application/service_locators/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/errors/exceptions/auth_exceptions.dart';
 import 'package:outnest/domain/services/auth_service.dart';
+import 'package:outnest/presentation/auth/controllers/auth_status_enum.dart';
+import 'package:outnest/presentation/auth/controllers/handle_social_signin.dart';
+import 'package:outnest/presentation/auth/view/components/apple_auth_button.dart';
 import 'package:outnest/presentation/auth/view/components/auth_button.dart';
 import 'package:outnest/presentation/auth/view/components/auth_input.dart';
+import 'package:outnest/presentation/auth/view/components/google_auth_button.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 
 // Yükleme durumlarını yönetmek için Enum
-enum AuthStatus { none, phone, google, apple }
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -225,85 +228,39 @@ class _RegisterPageState extends State<RegisterPage> {
               SizedBox(height: 24.h),
 
               // GOOGLE İLE KAYIT
-              SizedBox(
-                width: double.infinity,
-                height: 48.h,
-                child: OutlinedButton.icon(
-                  onPressed: isAnyLoading
-                      ? null
-                      : () => _handleSocialSignIn(
-                          status: AuthStatus.google,
-                          signIn: () => getIt<AuthService>().signInWithGoogle(
-                            isLogin: false,
-                          ),
-                          providerName: 'Google',
-                        ),
-                  icon: _authStatus == AuthStatus.google
-                      ? SizedBox(
-                          height: 22.h,
-                          width: 22.h,
-                          child: const CircularProgressIndicator(
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Image.asset('assets/google.png', height: 22.h),
-                  label: const Text(
-                    'Google ile devam et',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.grey.shade300),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.r),
-                    ),
-                  ),
-                ),
+              GoogleAuthButton(
+                isLoading: _authStatus == AuthStatus.google,
+                isDisabled: isAnyLoading,
+                onTap: () async {
+                  if (_authStatus != AuthStatus.none) return;
+                  setState(() => _authStatus = AuthStatus.google);
+                  await handleSocialSignIn(
+                    context: context,
+                    signIn: () =>
+                        getIt<AuthService>().signInWithGoogle(isLogin: false),
+                    providerName: 'Google',
+                  );
+                  if (mounted) setState(() => _authStatus = AuthStatus.none);
+                },
               ),
 
               // APPLE İLE KAYIT (Sadece iOS ise)
               if (Platform.isIOS) ...[
                 SizedBox(height: 12.h),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48.h,
-                  child: ElevatedButton.icon(
-                    onPressed: isAnyLoading
-                        ? null
-                        : () => _handleSocialSignIn(
-                            status: AuthStatus.apple,
-                            signIn: () => getIt<AuthService>().signInWithApple(
-                              isLogin: false,
-                            ),
-                            providerName: 'Apple',
-                          ),
-                    icon: _authStatus == AuthStatus.apple
-                        ? SizedBox(
-                            height: 22.h,
-                            width: 22.h,
-                            child: const CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Icon(Icons.apple, color: Colors.white, size: 24.sp),
-                    label: const Text(
-                      'Apple ile devam et',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10.r),
-                      ),
-                    ),
-                  ),
+                AppleAuthButton(
+                  isLoading: _authStatus == AuthStatus.apple,
+                  isDisabled: isAnyLoading,
+                  onTap: () async {
+                    if (_authStatus != AuthStatus.none) return;
+                    setState(() => _authStatus = AuthStatus.apple);
+                    await handleSocialSignIn(
+                      context: context,
+                      signIn: () =>
+                          getIt<AuthService>().signInWithApple(isLogin: false),
+                      providerName: 'Apple',
+                    );
+                    if (mounted) setState(() => _authStatus = AuthStatus.none);
+                  },
                 ),
               ],
               SizedBox(height: 60.h),
@@ -312,42 +269,6 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       ),
     );
-  }
-
-  Future<void> _handleSocialSignIn({
-    required AuthStatus status,
-    required TaskEither<AuthException, String> Function() signIn,
-    required String providerName,
-  }) async {
-    if (_authStatus != AuthStatus.none) return;
-
-    setState(() => _authStatus = status);
-
-    final result = await signIn().run();
-
-    if (!mounted) return;
-
-    switch (result) {
-      case Right():
-        setState(() => _authStatus = AuthStatus.none);
-        if (!mounted) return;
-        await context.push('/register-info');
-      case Left(value: AuthCancelledException()):
-        setState(() => _authStatus = AuthStatus.none);
-      case Left(value: UserAlreadyExistsException(:final message)):
-        setState(() => _authStatus = AuthStatus.none);
-        if (!mounted) return;
-        showErrorPopup(context, message: message);
-      case Left(value: final _):
-        setState(() => _authStatus = AuthStatus.none);
-        if (!mounted) return;
-        showErrorPopup(
-          context,
-          message:
-              '$providerName ile kayıt olurken bir hata oluştu. '
-              'Lütfen tekrar deneyiniz.',
-        );
-    }
   }
 }
 
