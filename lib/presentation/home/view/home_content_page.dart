@@ -122,11 +122,23 @@ class _HomeContentPageState extends State<HomeContentPage> {
             }
 
             final SessionService sessionService = getIt<SessionService>();
-            final user = sessionService.currentUser;
+
+            bool isUniversityVerified;
+            final isUniversityNull =
+                sessionService.currentUser?.university == null;
+            if (!isUniversityNull) {
+              if (sessionService.currentUser!.university!.isNotEmpty) {
+                isUniversityVerified = true;
+              } else {
+                isUniversityVerified = false;
+              }
+            } else {
+              isUniversityVerified = false;
+            }
 
             //TODO: Bu kontrolü daha merkezi bir yerde yapıp, kullanıcıyı direkt olarak doğrulama sayfasına yönlendirmek daha temiz olabilir. Ancak şimdilik hızlı bir çözüm olarak burada bırakıyorum.
             if (widget.feedType == FeedType.university &&
-                !user!.university!.isNotEmpty) {
+                isUniversityVerified) {
               return Column(
                 mainAxisAlignment:
                     MainAxisAlignment.center, // Ortalamak isterseniz
