@@ -3,7 +3,6 @@ import 'package:outnest/application/app_state/auth_state_provider.dart';
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
-import 'package:outnest/domain/services/auth_service.dart';
 
 final currentUserEntityProvider = StreamProvider<UserEntity?>((ref) {
   final authState = ref.watch(authStateProvider);

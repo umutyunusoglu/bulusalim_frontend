@@ -5,7 +5,6 @@ import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/data/services/event_verification_service_impl.dart';
 import 'package:outnest/domain/services/event_verification_service.dart';
 import 'package:outnest/domain/services/persistance_service.dart';
-// event_verification_service_provider.dart
 
 final eventVerificationServiceProvider = Provider<EventVerificationService>((
   ref,
