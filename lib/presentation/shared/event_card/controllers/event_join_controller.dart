@@ -1,4 +1,4 @@
-import 'package:outnest/application/service_locators/get_it_init.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/screen_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
@@ -12,10 +12,10 @@ enum EventJoinStatus { canJoin, pending, joined }
 
 class EventJoinController {
   EventJoinController({required this.event})
-      : _eventRepository = getIt<EventRepository>(),
-        _sessionService = getIt<SessionService>(),
-        _analyticsService = getIt<AnalyticsService>(),
-        _logger = getIt<LoggingService>();
+    : _eventRepository = getIt<EventRepository>(),
+      _sessionService = getIt<SessionService>(),
+      _analyticsService = getIt<AnalyticsService>(),
+      _logger = getIt<LoggingService>();
 
   final EventEntity event;
   final EventRepository _eventRepository;
@@ -90,13 +90,10 @@ class EventJoinController {
   void _logJoinAnalytics({required ScreenEnum screen}) {
     final sameUniversityAsCreator =
         _sessionService.currentUser?.university != null &&
-        _sessionService.currentUser!.university ==
-            event.creator.university;
+        _sessionService.currentUser!.university == event.creator.university;
 
-    final followers =
-        _sessionService.stateListenable.value?.followers ?? [];
-    final followees =
-        _sessionService.stateListenable.value?.followees ?? [];
+    final followers = _sessionService.stateListenable.value?.followers ?? [];
+    final followees = _sessionService.stateListenable.value?.followees ?? [];
 
     final numberOfFollowerParticipants = event.participants
         .where((p) => followers.any((u) => u.userID == p.userID))
@@ -123,14 +120,12 @@ class EventJoinController {
         numberOfNonFolloweeParticipants:
             event.participants.length - numberOfFolloweeParticipants,
         sameUniversityAsCreator: sameUniversityAsCreator,
-        numberOfSameUniversityParticipants:
-            numberOfSameUniversityParticipants,
+        numberOfSameUniversityParticipants: numberOfSameUniversityParticipants,
         showOnMap: event.showOnMap,
         remainingTimeToStart: event.startTime.difference(DateTime.now()),
         eventStartTime: event.startTime,
         eventVisibility: event.visibility.toString(),
-        category:
-            event.hobbies.isNotEmpty ? event.hobbies[0] : 'null',
+        category: event.hobbies.isNotEmpty ? event.hobbies[0] : 'null',
         screen: screen,
       ),
     );

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:outnest/application/service_locators/get_it_init.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/session_service.dart';

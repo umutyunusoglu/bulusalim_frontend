@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:outnest/application/service_locators/get_it_init.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/domain/services/remote_config_service.dart';
 
 final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();

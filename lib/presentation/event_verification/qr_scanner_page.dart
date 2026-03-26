@@ -1,54 +1,61 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:outnest/application/service_locators/get_it_init.dart';
+import 'package:outnest/application/service_locators/event_verification_service_provider.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
-import 'package:outnest/domain/services/event_verification_service.dart';
 import 'package:outnest/presentation/event_verification/components/build_app_bar.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/utility/get_current_location.dart';
 
-class QRScannerScreen extends StatefulWidget {
+class QRScannerScreen extends HookConsumerWidget {
   const QRScannerScreen(this.event, {super.key});
 
   final EventEntity event;
 
   @override
-  State<QRScannerScreen> createState() => _QRScannerScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scannerController = useMemoized(() => MobileScannerController());
 
-class _QRScannerScreenState extends State<QRScannerScreen> {
-  final MobileScannerController _scannerController = MobileScannerController();
-  final EventVerificationService _verificationService =
-      getIt<EventVerificationService>();
+    // Dispose scanner controller when widget is removed from tree
+    useEffect(() {
+      return scannerController.dispose;
+    }, [scannerController]);
 
-  bool _isVerified = false;
-  bool _isLoading = false;
+    final isVerified = useState(false);
+    final isLoading = useState(false);
 
-  @override
-  void dispose() {
-    _scannerController.dispose();
-    super.dispose();
-  }
+    // Throttle: tarama cooldown flag'i
+    final isCooldown = useRef(false);
 
-  Future<void> _onDetect(BarcodeCapture capture) async {
-    if (_isVerified || _isLoading) return;
+    final verificationService = ref.watch(eventVerificationServiceProvider);
 
-    final List<Barcode> barcodes = capture.barcodes;
-    for (final barcode in barcodes) {
-      if (barcode.rawValue != null) {
-        setState(() {
-          _isLoading = true;
-        });
+    Future<void> onDetect(BarcodeCapture capture) async {
+      if (isVerified.value || isLoading.value) return;
+
+      // Cooldown aktifse bu taramayı atla
+      if (isCooldown.value) return;
+      isCooldown.value = true;
+      Future.delayed(
+        const Duration(seconds: 1),
+        () => isCooldown.value = false,
+      );
+
+      final barcodes = capture.barcodes;
+      for (final barcode in barcodes) {
+        final rawValue = barcode.rawValue;
+        if (rawValue == null) continue;
+
+        isLoading.value = true;
 
         try {
-          // Cihazın gerçek konumunu al
           final position = await getCurrentLocation(context);
 
           if (position == null) {
-            // _getCurrentLocation içinde kullanıcıya zaten hata mesajı gösterdik
+            // getCurrentLocation zaten kullanıcıya hata gösterdi
             return;
           }
 
@@ -57,31 +64,21 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
             longitude: position.longitude,
           );
 
-          // Backend / Servis çağrısı
-          final isVerificationSuccessful = await _verificationService
-              .verifyEvent(
-                widget.event,
-                currentLocation,
-                barcode.rawValue!,
-              );
+          final success = await verificationService.verifyEvent(
+            event,
+            currentLocation,
+            rawValue,
+          );
 
-          if (!mounted) return;
+          if (!context.mounted) return;
 
-          if (isVerificationSuccessful) {
-            setState(() {
-              _isVerified = true;
-            });
-
-            _scannerController.stop();
+          if (success) {
+            isVerified.value = true;
+            scannerController.stop();
 
             Future.delayed(const Duration(seconds: 1), () {
-              if (!mounted) return;
-              context.go(
-                '/camera',
-                extra: {
-                  'event': widget.event,
-                },
-              );
+              if (!context.mounted) return;
+              context.go('/camera', extra: {'event': event});
             });
           } else {
             showErrorPopup(
@@ -91,30 +88,24 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
             );
           }
         } catch (e) {
-          // Ağ hatası, backend hatası veya beklenmeyen herhangi bir Exception durumunda
           debugPrint('QR Doğrulama Hatası: $e');
-          showErrorPopup(
-            context,
-            message:
-                "Kod Doğrulanırken Bir Hata Oluştu, Lütfen QR'ın Doğruluğundan Emin Olun!",
-          );
+          if (context.mounted) {
+            showErrorPopup(
+              context,
+              message:
+                  "Kod Doğrulanırken Bir Hata Oluştu, Lütfen QR'ın Doğruluğundan Emin Olun!",
+            );
+          }
         } finally {
-          // Hata olsa da olmasa da, yönlendirme (başarı) gerçekleşmediği sürece loading'i kapatmalıyız.
-          // mounted kontrolünü yapıp state'i güvenli güncelliyoruz.
-          if (mounted && !_isVerified) {
-            setState(() {
-              _isLoading = false;
-            });
+          if (context.mounted && !isVerified.value) {
+            isLoading.value = false;
           }
         }
 
-        break; // İlk anlamlı QR'ı işledik, döngüyü kır.
+        break; // İlk anlamlı QR'ı işle, döngüden çık
       }
     }
-  }
 
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: buildAppBar(context),
@@ -144,13 +135,13 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                   fit: StackFit.expand,
                   children: [
                     MobileScanner(
-                      controller: _scannerController,
-                      onDetect: _onDetect,
+                      controller: scannerController,
+                      onDetect: onDetect,
                       placeholderBuilder: (context) => const Center(
                         child: CircularProgressIndicator(color: Colors.white),
                       ),
                     ),
-                    if (_isLoading)
+                    if (isLoading.value)
                       Container(
                         color: Colors.black54,
                         child: const Center(
@@ -162,7 +153,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
               ),
             ),
             const Spacer(),
-            if (_isVerified)
+            if (isVerified.value)
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,

@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_geohash/dart_geohash.dart';
-import 'package:outnest/application/service_locators/get_it_init.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
 import 'package:outnest/core/utils/types/enums/event_status_enum.dart';

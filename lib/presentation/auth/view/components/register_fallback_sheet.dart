@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:outnest/application/service_locators/get_it_init.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/presentation/auth/controllers/auth_status_enum.dart';
 import 'package:outnest/presentation/auth/controllers/handle_social_signin.dart';

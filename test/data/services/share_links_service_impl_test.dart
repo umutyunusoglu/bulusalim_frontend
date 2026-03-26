@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/widgets.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:outnest/application/service_locators/get_it_init.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/data/models/links/deep_link_target.dart';
 import 'package:outnest/data/services/share_links_service_impl.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
