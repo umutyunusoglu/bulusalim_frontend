@@ -76,6 +76,7 @@ dependencies:
   share_plus: ^12.0.1
   avatar_glow: ^3.0.1
   fpdart: ^1.2.0
+  flutter_svg: ^2.2.4
 
 
 
@@ -111,6 +112,7 @@ flutter:
     - assets/badge/
     - assets/data/
     - assets/defaults/
+    - assets/outnest/
     - .env
 
 flutter_intl:
