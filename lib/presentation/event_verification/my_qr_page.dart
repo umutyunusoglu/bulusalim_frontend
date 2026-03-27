@@ -3,11 +3,10 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:outnest/application/service_locators/event_verification_service_provider.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
-import 'package:outnest/data/services/event_verification_service_impl.dart';
-import 'package:outnest/presentation/shared/utility/get_current_location.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:outnest/presentation/event_verification/components/build_app_bar.dart';
 import 'package:outnest/presentation/event_verification/components/build_main_button.dart';
+import 'package:outnest/presentation/shared/utility/get_current_location.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class MyQrPage extends HookConsumerWidget {
   const MyQrPage({super.key});

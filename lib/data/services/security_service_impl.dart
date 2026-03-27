@@ -30,8 +30,6 @@ class SecurityServiceImpl implements SecurityService {
     final currentUserID = reportData.requestOwnerId;
     final reportedUserID = reportData.reportedUserId;
 
-    if (currentUserID == null || reportedUserID == null) return;
-
     final userRepository = getIt<UserRepository>();
 
     final blockedUser = await userRepository.getUserPublicData(reportedUserID);
