@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:outnest/application/service_locators/get_it_init.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/utils/types/enums/feed_type.dart';
 import 'package:outnest/domain/services/analytics/analytics_service.dart';
 import 'package:outnest/domain/services/analytics/event_configs/select_feed_analytics_config.dart';
@@ -12,14 +13,14 @@ import 'package:outnest/presentation/shared/action_buttons_speed_dial.dart';
 import 'package:outnest/presentation/shared/navigation/navigate_to_camera.dart';
 import 'package:outnest/presentation/tutorial/tutorial_overlay.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends ConsumerState<HomePage> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   final List<String> _tabs = ['Senlik', 'Arkadaşların', 'Okul'];
@@ -101,7 +102,7 @@ class _HomePageState extends State<HomePage> {
         builder: (context, isOpen, _) {
           return ActionButtonsSpeedDial(
             isDialOpen: isDialOpen,
-            onCameraTap: () => navigateToCamera(context),
+            onCameraTap: () => navigateToCamera(context, ref),
             onLocationTap: () => context.go('/map', extra: true),
             onQrTap: () => context.push('/my-qr'),
           );

@@ -2,7 +2,7 @@
 
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:outnest/application/app_state/app_initialization_state.dart';
-import 'package:outnest/application/service_locators/get_it_init.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/services/tutorial_persistance_service.dart';
 

@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:outnest/application/app_state/current_user_data_providers/current_user_identity_provider.dart';
-import 'package:outnest/application/service_locators/get_it_init.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
@@ -9,7 +9,7 @@ import 'package:outnest/domain/repositories/user_repository.dart';
 /// Emits an empty list if the current user is not authenticated.
 final StreamProvider<List<CompactUserEntity>> currentUserFolloweesProvider =
     StreamProvider.autoDispose<List<CompactUserEntity>>((ref) {
-      final userID = ref.watch(currentUserIDProvider).value;
+      final userID = ref.watch(currentUserIDProvider);
       if (userID == null) return Stream.value([]);
 
       return getIt<UserRepository>().watchFollowees(userID);
@@ -41,7 +41,7 @@ final Provider<int> currentUserFolloweeCountProvider =
 /// Emits an empty list if the current user is not authenticated.
 final StreamProvider<List<CompactUserEntity>> currentUserFollowersProvider =
     StreamProvider.autoDispose<List<CompactUserEntity>>((ref) {
-      final userID = ref.watch(currentUserIDProvider).value;
+      final userID = ref.watch(currentUserIDProvider);
       if (userID == null) return Stream.value([]);
 
       return getIt<UserRepository>().watchFollowers(userID);

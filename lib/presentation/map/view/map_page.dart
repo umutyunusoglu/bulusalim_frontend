@@ -5,12 +5,13 @@ import 'dart:ui' as ui;
 import 'package:dart_geohash/dart_geohash.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart' hide Position;
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
-import 'package:outnest/application/service_locators/get_it_init.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
@@ -52,7 +53,7 @@ import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/event_card/view/event_card.dart';
 import 'package:outnest/presentation/shared/navigation/navigate_to_camera.dart';
 
-class MapPage extends StatefulWidget {
+class MapPage extends ConsumerStatefulWidget {
   const MapPage({
     super.key,
     this.isLocationPicker = false,
@@ -65,10 +66,10 @@ class MapPage extends StatefulWidget {
   final bool openCreateOnLoad;
 
   @override
-  State<MapPage> createState() => _MapPageState();
+  ConsumerState<MapPage> createState() => _MapPageState();
 }
 
-class _MapPageState extends State<MapPage> {
+class _MapPageState extends ConsumerState<MapPage> {
   // --- DEPENDENCIES ---
   final PageController _pageController = PageController();
   final LoggingService _logger = getIt<LoggingService>();
@@ -1182,7 +1183,7 @@ class _MapPageState extends State<MapPage> {
                 child: SafeArea(
                   child: ActionButtonsSpeedDial(
                     isDialOpen: _isDialOpen,
-                    onCameraTap: () => navigateToCamera(context),
+                    onCameraTap: () => navigateToCamera(context, ref),
                     onLocationTap: () {
                       setState(() {
                         _isCreatePopupVisible = true;
