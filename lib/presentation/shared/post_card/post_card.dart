@@ -672,13 +672,14 @@ class _PostCardState extends State<PostCard> {
                           _togglePinStatus();
                         },
                       ),
-                    /* BottomSheetOption(
+                    BottomSheetOption(
                       icon: Icons.share_outlined,
                       text: 'Gönderiyi Paylaş',
                       onTap: () {
                         sheetContext.pop();
+                        _handleSharePost();
                       },
-                    ),*/
+                    ),
                     BottomSheetOption(
                       icon: Symbols.delete,
                       text: 'Gönderiyi Sil',
