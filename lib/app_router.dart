@@ -8,6 +8,7 @@ import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/services/tutorial_persistance_service.dart';
+import 'package:outnest/presentation/auth/registration_loading_screen.dart';
 import 'package:outnest/presentation/auth/view/login_page.dart';
 import 'package:outnest/presentation/auth/view/otp_verification_page.dart';
 import 'package:outnest/presentation/auth/view/register_info_page.dart';
@@ -194,6 +195,12 @@ final router = GoRouter(
     GoRoute(
       path: '/register-info',
       builder: (context, state) => const RegisterInfoPage(),
+      routes: [
+        GoRoute(
+          path: 'loading',
+          builder: (context, state) => const RegistrationLoadingScreen(),
+        ),
+      ],
     ),
     GoRoute(
       path: '/tutorial',
