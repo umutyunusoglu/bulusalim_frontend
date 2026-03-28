@@ -23,7 +23,7 @@ class _WelcomePageState extends State<WelcomePage> {
     _videoController = VideoPlayerController.asset('assets/welcomepage.mp4')
       ..initialize()
           .then((_) async {
-            await _videoController.setVolume(0.0);
+            await _videoController.setVolume(0);
             await _videoController.setLooping(true);
             await _videoController.play();
             setState(() {});
