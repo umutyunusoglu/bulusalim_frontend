@@ -78,6 +78,7 @@ dependencies:
   fpdart: ^1.2.0
   video_player: ^2.11.1
   volume_controller: ^3.4.4
+  flutter_svg: ^2.2.4
 
 
 
@@ -113,6 +114,7 @@ flutter:
     - assets/badge/
     - assets/data/
     - assets/defaults/
+    - assets/outnest/
     - .env
   fonts:
     - family: Agrandir

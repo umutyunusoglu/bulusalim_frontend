@@ -1,5 +1,5 @@
 import 'package:fpdart/fpdart.dart' hide State;
-import 'package:outnest/application/service_locators/get_it_init.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/errors/exceptions/auth_exceptions.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';

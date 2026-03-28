@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 // Diğer yerlerde kullanmıyorsan silebilirsin, yeni paket assetleri kendi okuyor
-import 'package:outnest/application/service_locators/get_it_init.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
@@ -29,8 +29,6 @@ class SecurityServiceImpl implements SecurityService {
   Future<void> blockUser(ReportData reportData) async {
     final currentUserID = reportData.requestOwnerId;
     final reportedUserID = reportData.reportedUserId;
-
-    if (currentUserID == null || reportedUserID == null) return;
 
     final userRepository = getIt<UserRepository>();
 

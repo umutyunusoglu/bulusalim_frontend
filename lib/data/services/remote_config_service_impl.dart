@@ -1,7 +1,7 @@
 // lib/data/services/remote_config_service_impl.dart
 
 import 'dart:convert';
-import 'package:outnest/application/service_locators/get_it_init.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/domain/services/remote_config_service.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';

@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
@@ -11,6 +12,7 @@ import 'package:outnest/presentation/shared/navigation/dispatch_photo_intent.dar
 void showMultipleEventsSelectionDialog(
   BuildContext context,
   List<dynamic> activeEvents,
+  WidgetRef ref,
 ) {
   var selectedIndex = 0;
 
@@ -166,6 +168,7 @@ void showMultipleEventsSelectionDialog(
                             dispatchPhotoIntent(
                               context,
                               activeEvents[selectedIndex] as EventEntity,
+                              ref,
                             );
                           },
                           style: TextButton.styleFrom(

@@ -2,7 +2,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:outnest/application/service_locators/get_it_init.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/presentation/profile/view/components/empty_profile_screen.dart';
 import 'package:outnest/presentation/shared/event_card/view/event_card.dart';
@@ -122,11 +122,23 @@ class _HomeContentPageState extends State<HomeContentPage> {
             }
 
             final SessionService sessionService = getIt<SessionService>();
-            final user = sessionService.currentUser;
+
+            bool isUniversityVerified;
+            final isUniversityNull =
+                sessionService.currentUser?.university == null;
+            if (!isUniversityNull) {
+              if (sessionService.currentUser!.university!.isNotEmpty) {
+                isUniversityVerified = true;
+              } else {
+                isUniversityVerified = false;
+              }
+            } else {
+              isUniversityVerified = false;
+            }
 
             //TODO: Bu kontrolü daha merkezi bir yerde yapıp, kullanıcıyı direkt olarak doğrulama sayfasına yönlendirmek daha temiz olabilir. Ancak şimdilik hızlı bir çözüm olarak burada bırakıyorum.
             if (widget.feedType == FeedType.university &&
-                !user!.university!.isNotEmpty) {
+                !isUniversityVerified) {
               return Column(
                 mainAxisAlignment:
                     MainAxisAlignment.center, // Ortalamak isterseniz
@@ -154,7 +166,6 @@ class _HomeContentPageState extends State<HomeContentPage> {
                 ],
               );
             }
-
             // 3. Veri Yok veya Boş Liste Durumu
             final items = snapshot.data;
             if (items == null || items.isEmpty) {

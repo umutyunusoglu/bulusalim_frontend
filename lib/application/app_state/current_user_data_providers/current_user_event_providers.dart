@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:outnest/application/app_state/current_user_data_providers/current_user_identity_provider.dart';
-import 'package:outnest/application/service_locators/get_it_init.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 
@@ -12,7 +12,7 @@ final StreamProvider<List<EventEntity>> ongoingEventsProvider =
     StreamProvider.autoDispose<List<EventEntity>>((
       ref,
     ) {
-      final userID = ref.watch(currentUserIDProvider).value;
+      final userID = ref.watch(currentUserIDProvider);
       if (userID == null) return Stream.value([]);
 
       return getIt<UserRepository>().watchOngoingEvents(userID);
@@ -31,7 +31,7 @@ final Provider<bool> isUserInOngoingEventProvider = Provider.autoDispose<bool>((
 /// Auto-disposes when no longer listened to.
 final StreamProvider<List<EventEntity>> upcomingEventsProvider =
     StreamProvider.autoDispose<List<EventEntity>>((ref) {
-      final userID = ref.watch(currentUserIDProvider).value;
+      final userID = ref.watch(currentUserIDProvider);
       if (userID == null) return Stream.value([]);
 
       return getIt<UserRepository>().watchUpcomingEvents(userID);

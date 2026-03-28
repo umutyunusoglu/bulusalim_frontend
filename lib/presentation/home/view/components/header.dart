@@ -1,7 +1,11 @@
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:outnest/domain/services/remote_config_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class Header extends StatelessWidget {
   const Header({
@@ -26,12 +30,22 @@ class Header extends StatelessWidget {
         child: Row(
           children: [
             // 1. LOGO
-            SizedBox(
-              width: 30.w,
-              height: 30.w,
-              child: Image.asset(
-                'assets/logo.png',
-                fit: BoxFit.contain,
+            GestureDetector(
+              onTap: () async {
+                final url = await getIt<RemoteConfigService>().getValue<String>(
+                  'outnest_logo_url',
+                );
+                await launchUrl(
+                  Uri.parse(url),
+                  mode: LaunchMode.externalApplication,
+                );
+              },
+              child: SizedBox(
+                width: 30.w,
+                height: 30.w,
+                child: SvgPicture.asset(
+                  'assets/outnest/logo.svg',
+                ),
               ),
             ),
 

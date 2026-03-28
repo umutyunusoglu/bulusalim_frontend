@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:outnest/application/service_locators/get_it_init.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/core/utils/types/enums/emote_enum.dart';
 import 'package:outnest/domain/entities/feed/post/post_entity.dart';
@@ -672,13 +672,14 @@ class _PostCardState extends State<PostCard> {
                           _togglePinStatus();
                         },
                       ),
-                    /* BottomSheetOption(
+                    BottomSheetOption(
                       icon: Icons.share_outlined,
                       text: 'Gönderiyi Paylaş',
                       onTap: () {
                         sheetContext.pop();
+                        _handleSharePost();
                       },
-                    ),*/
+                    ),
                     BottomSheetOption(
                       icon: Symbols.delete,
                       text: 'Gönderiyi Sil',

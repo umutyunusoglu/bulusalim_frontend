@@ -7,7 +7,6 @@ import 'package:outnest/data/repositories/analytics_service_impl.dart';
 import 'package:outnest/data/repositories/global_content_cache_impl.dart';
 import 'package:outnest/data/repositories/inbox_repository_impl.dart';
 import 'package:outnest/data/services/auth_service_impl.dart';
-import 'package:outnest/data/services/event_verification_service_impl.dart';
 import 'package:outnest/data/services/file_service_impl.dart';
 import 'package:outnest/data/services/geocoding_service_impl.dart';
 import 'package:outnest/data/services/persistance_service_impl.dart';
@@ -19,7 +18,6 @@ import 'package:outnest/data/services/share_links_service_impl.dart';
 import 'package:outnest/domain/repositories/inbox_repository.dart';
 import 'package:outnest/domain/services/analytics/analytics_service.dart';
 import 'package:outnest/domain/services/auth_service.dart';
-import 'package:outnest/domain/services/event_verification_service.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/geocoding_service.dart';
 import 'package:outnest/domain/services/global_content_cache.dart';
@@ -93,13 +91,6 @@ extension ServiceModule on GetIt {
       ..registerLazySingleton<AnalyticsService>(
         () => AnalyticsServiceImpl(
           analytics: this(),
-          logger: this(),
-        ),
-      )
-      ..registerLazySingleton<EventVerificationService>(
-        () => EventVerificationServiceImpl(
-          sessionService: this(),
-          persistanceService: this(),
           logger: this(),
         ),
       )

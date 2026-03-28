@@ -1,3 +1,5 @@
+// event_verification_service_impl.dart
+
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
@@ -10,27 +12,26 @@ import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/services/event_verification_service.dart';
 import 'package:outnest/domain/services/persistance_service.dart';
-import 'package:outnest/domain/services/session_service.dart';
 
 class EventVerificationServiceImpl implements EventVerificationService {
   EventVerificationServiceImpl({
-    required SessionService sessionService,
+    required this.currentUserId,
     required PersistanceService persistanceService,
     required LoggingService logger,
-  }) : _sessionService = sessionService,
-       _persistanceService = persistanceService,
+  }) : _persistanceService = persistanceService,
        _loggingService = logger;
 
-  final SessionService _sessionService;
+  final String? currentUserId;
   final PersistanceService _persistanceService;
   final LoggingService _loggingService;
+
   static const String _verifiedEventsKey = 'verified_events_list';
 
   @override
   EventVerificationSecret createEventVerificationSecret(
     Geolocation currentLocation,
   ) {
-    if (_sessionService.currentUser == null) {
+    if (currentUserId == null) {
       _loggingService.error('Secret creation failed: User not logged in');
       throw AuthorizationException('User not logged in');
     }
@@ -43,21 +44,18 @@ class EventVerificationServiceImpl implements EventVerificationService {
         precision: 6,
       );
 
-      final currentUserID = _sessionService.currentUser!.userID;
-      final key = _generateKey(currentUserID, geohash);
-      final encryptionResult = _encryptMessage(currentUserID, key);
+      final key = _generateKey(currentUserId!, geohash);
+      final encryptionResult = _encryptMessage(currentUserId!, key);
 
       final secret =
           '${encryptionResult['encrypted']}-${encryptionResult['iv']}';
 
       _loggingService.info(
-        'Verification secret created for user: $currentUserID at geohash: $geohash',
+        'Verification secret created for user: $currentUserId at geohash: $geohash',
       );
       return secret;
-    } catch (e, stackTrace) {
-      _loggingService.error(
-        'Failed to create event verification secret',
-      );
+    } catch (e) {
+      _loggingService.error('Failed to create event verification secret');
       throw Exception('Failed to create event verification secret: $e');
     }
   }
@@ -113,7 +111,6 @@ class EventVerificationServiceImpl implements EventVerificationService {
         precision: 6,
       );
 
-      // Komşu geohash'leri ve ana geohash'i alıyoruz (3x3 grid)
       final allCandidateGeohashes = geohasher.neighbors(myGeohash).values;
 
       final possibleUserIDs = event.participants
@@ -132,11 +129,10 @@ class EventVerificationServiceImpl implements EventVerificationService {
             candidateKey,
             iv,
           );
-          final myUserID = _sessionService.currentUser?.userID;
 
           if (decryptedMessage != null &&
               decryptedMessage == userID &&
-              userID != myUserID) {
+              userID != currentUserId) {
             _loggingService.info(
               'Event ${event.id} successfully verified by matching user $userID at geohash $geohash',
             );
@@ -150,18 +146,14 @@ class EventVerificationServiceImpl implements EventVerificationService {
         'Verification failed for event ${event.id}: No matching key found in 3x3 grid.',
       );
       return false;
-    } on FormatException catch (e) {
+    } on FormatException {
       _loggingService.error('Format error during verification');
       rethrow;
-    } catch (e, stackTrace) {
-      _loggingService.error(
-        'Unexpected error during event verification',
-      );
+    } catch (e) {
+      _loggingService.error('Unexpected error during event verification');
       throw Exception('An error occurred during event verification: $e');
     }
   }
-
-  // --- Private Helpers with Logging ---
 
   String _generateKey(Identifier userID, String geohash) {
     try {
@@ -169,9 +161,7 @@ class EventVerificationServiceImpl implements EventVerificationService {
       final keyBytes = utf8.encode(keyString);
       return sha256.convert(keyBytes).toString();
     } catch (e) {
-      _loggingService.error(
-        'Key generation failed',
-      );
+      _loggingService.error('Key generation failed');
       throw Exception('Failed to generate encryption key');
     }
   }
@@ -179,12 +169,9 @@ class EventVerificationServiceImpl implements EventVerificationService {
   Map<String, String> _encryptMessage(String message, String keyString) {
     try {
       final key = Key.fromBase16(keyString);
-      final iv = IV.fromLength(
-        16,
-      ); // Rastgele IV üretimi (Güvenlik için önemli)
+      final iv = IV.fromLength(16);
       final encrypter = Encrypter(AES(key));
       final encrypted = encrypter.encrypt(message, iv: iv);
-
       return {
         'encrypted': encrypted.base64,
         'iv': iv.base64,
@@ -206,17 +193,14 @@ class EventVerificationServiceImpl implements EventVerificationService {
       final encrypter = Encrypter(AES(key));
       return encrypter.decrypt(Encrypted.fromBase64(encryptedMessage), iv: iv);
     } catch (_) {
-      // Brute-force denemelerinde bu hata beklenen bir durumdur, loglamaya gerek yok.
       return null;
     }
   }
 
   Future<void> _saveVerifiedEvent(EventEntity event) async {
-    //TODO: Migrate to secure storage
     try {
       final data = await _persistanceService.getJson(_verifiedEventsKey);
-
-      List<String> verifiedIds = (data != null && data.containsKey('ids'))
+      final verifiedIds = (data != null && data.containsKey('ids'))
           ? List<String>.from(data['ids'] as List)
           : [];
 
