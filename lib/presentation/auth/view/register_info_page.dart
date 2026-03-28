@@ -24,6 +24,7 @@ import 'package:outnest/domain/services/analytics/event_configs/select_gender_an
 import 'package:outnest/domain/services/analytics/event_configs/select_hobbies_analytics_config.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/usecases/upload_profile_picture_usecase.dart';
+import 'package:outnest/presentation/auth/registration_loading_screen.dart';
 import 'package:outnest/presentation/auth/view/components/otp_row.dart';
 import 'package:outnest/presentation/auth/view/components/register_step_view.dart';
 import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
@@ -223,6 +224,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
     if (_isRegistering) return; // Çift tıklamayı önle
 
     setState(() => _isRegistering = true);
+    //await Future.delayed(const Duration(seconds: 10));
 
     try {
       final username = _usernameController.text.trim();
@@ -447,307 +449,328 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: _currentIndex == 0
-              ? null
-              : IconButton(
-                  icon: Icon(Symbols.reply, color: Colors.black, size: 24.sp),
-                  onPressed: _prevPage,
-                ),
-        ),
-        body: PageView(
-          controller: _pageController,
-          physics: const NeverScrollableScrollPhysics(),
-          onPageChanged: (index) => setState(() => _currentIndex = index),
-          children: [
-            // 1. KULLANICI ADI
-            RegisterStepView(
-              title: 'Kullanıcı Adı',
-              controller: _usernameController,
-              onNext: () async {
-                final username = _usernameController.text.trim();
-
-                // 2. Async kontrolü burada yap
-                final exists = await getIt<UserRepository>().doesUsernameExist(
-                  username,
-                );
-                FocusScope.of(context).unfocus();
-
-                getIt<LoggingService>().warn(exists.toString());
-
-                if (exists) {
-                  showErrorPopup(
-                    context,
-                    message: 'Bu kullanıcı adı zaten alınmış!',
-                  );
-                } else {
-                  // 3. Her şey yolundaysa genel _nextPage fonksiyonunu çağır
-                  _nextPage();
-                }
-              },
-              description:
-                  'Uygulama içerisinde insanlar sizi bu isimle görecek.',
-              hintText: '@kullaniciadi',
-              inputFormatters: [UsernameFormatter()],
-              validator: () =>
-                  validateUsername(_usernameController.text.trim()),
+    return Stack(
+      children: [
+        // KAYIT FORMU
+        GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Scaffold(
+            backgroundColor: Colors.white,
+            appBar: AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: _currentIndex == 0
+                  ? null
+                  : IconButton(
+                      icon: Icon(
+                        Symbols.reply,
+                        color: Colors.black,
+                        size: 24.sp,
+                      ),
+                      onPressed: _prevPage,
+                    ),
             ),
+            body: PageView(
+              controller: _pageController,
+              physics: const NeverScrollableScrollPhysics(),
+              onPageChanged: (index) => setState(() => _currentIndex = index),
+              children: [
+                // 1. KULLANICI ADI
+                RegisterStepView(
+                  title: 'Kullanıcı Adı',
+                  controller: _usernameController,
+                  onNext: () async {
+                    final username = _usernameController.text.trim();
 
-            // 2. AD SOYAD
-            RegisterStepView(
-              title: 'Ad - Soyad',
-              controller: _nameController,
-              onNext: _nextPage,
-              hintText: 'Adınız ve Soyadınız',
-              description:
-                  'Gerçek adınızı kullanmanızı öneririz, böylece arkadaşlarınız sizi daha kolay bulabilir.',
-              inputFormatters: [NameSurnameFormatter()],
-              validator: () => validateNameSurname(_nameController.text.trim()),
-            ),
+                    // 2. Async kontrolü burada yap
+                    final exists = await getIt<UserRepository>()
+                        .doesUsernameExist(
+                          username,
+                        );
+                    FocusScope.of(context).unfocus();
 
-            // 3. DOĞUM TARİHİ
-            RegisterStepView(
-              title: 'Doğum Tarihi',
-              controller: _dobController,
-              onNext: _nextPage,
-              hintText: 'GG/AA/YYYY',
-              description:
-                  'Outnest topluluğuna katılabilmek için 18 yaşını doldurmuş olman gerekmektedir.',
-              readOnly: true,
-              onTapInput: _showDatePicker,
-              validator: () => validateDateOfBirth(_selectedDate),
-            ),
+                    getIt<LoggingService>().warn(exists.toString());
 
-            // 4. ÜNİVERSİTE MAİL
-            RegisterStepView(
-              title: 'Üniversite Doğrulama',
-              controller: _universityController,
-              hintText: '@edu.tr',
-              enabled: !_isSendingEmail,
-              buttonText: _isSendingEmail ? 'gönderiliyor...' : 'kod gönder',
-              // Kullanıcı maili yazarken anlık kontrol:
-              onChanged: _onUniversityEmailChanged,
-              description: _detectedUniversity != null
-                  ? 'Tespit Edilen: $_detectedUniversity'
-                  : "Üniversiteni doğruladığında, üniversite bilgin profilinde otomatik olarak görünür. Yalnızca Türkiye'deki üniversiteler desteklenmektedir.",
-
-              validator: () => validateUniversityMail(
-                _universityController.text.trim(),
-                _detectedUniversity,
-              ),
-
-              onNext: () async {
-                if (_isSendingEmail) return;
-                setState(() => _isSendingEmail = true);
-                FocusScope.of(context).unfocus();
-
-                try {
-                  print(FirebaseAuth.instance.currentUser?.uid);
-                  await getIt<UserRepository>().sendVerificationEmail(
-                    _universityController.text.trim(),
-                  );
-                  if (!mounted) return;
-                  _nextPage(); // Başarılıysa OTP sayfasına geç
-                } on FirebaseFunctionsException catch (error) {
-                  if (mounted) {
-                    if (error.code == 'resource-exhausted') {
+                    if (exists) {
                       showErrorPopup(
                         context,
-                        message:
-                            'Çok fazla mail yollama isteği gönderdiniz. Lütfen 1 dakika sonra tekrar deneyin!',
-                      );
-
-                      _logger.error(
-                        'FirebaseAuthException: ${error.code} - ${error.message}',
+                        message: 'Bu kullanıcı adı zaten alınmış!',
                       );
                     } else {
-                      _logger.error(
-                        'Bir hata oluştu: ${error.code} - ${error.message}',
-                      );
+                      // 3. Her şey yolundaysa genel _nextPage fonksiyonunu çağır
+                      _nextPage();
                     }
-                    _logger.error('Verification email gönderilemedi: $error');
-                  }
-                } finally {
-                  if (mounted) setState(() => _isSendingEmail = false);
-                }
-              },
-              onSkip: !_isSendingEmail
-                  ? () => _pageController.jumpToPage(RegisterStep.gender.index)
-                  : null,
-
-              footerWidget: TextButton(
-                onPressed: () async {
-                  final Uri url = Uri.parse(
-                    'https://forms.gle/KfpyB3Y2SeiX28R47',
-                  );
-                  launchUrl(url, mode: LaunchMode.inAppWebView);
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.grey.shade600, // Silik, tatlı bir gri
+                  },
+                  description:
+                      'Uygulama içerisinde insanlar sizi bu isimle görecek.',
+                  hintText: '@kullaniciadi',
+                  inputFormatters: [UsernameFormatter()],
+                  validator: () =>
+                      validateUsername(_usernameController.text.trim()),
                 ),
-                child: Text(
-                  'Üniversitenizi bulamıyor musunuz? Bize bildirin.',
-                  style: TextStyle(
-                    fontFamily: 'SF Pro Display',
-                    fontSize: 12.sp,
-                    decoration:
-                        TextDecoration.underline, // Tıklanabilir hissi verir
+
+                // 2. AD SOYAD
+                RegisterStepView(
+                  title: 'Ad - Soyad',
+                  controller: _nameController,
+                  onNext: _nextPage,
+                  hintText: 'Adınız ve Soyadınız',
+                  description:
+                      'Gerçek adınızı kullanmanızı öneririz, böylece arkadaşlarınız sizi daha kolay bulabilir.',
+                  inputFormatters: [NameSurnameFormatter()],
+                  validator: () =>
+                      validateNameSurname(_nameController.text.trim()),
+                ),
+
+                // 3. DOĞUM TARİHİ
+                RegisterStepView(
+                  title: 'Doğum Tarihi',
+                  controller: _dobController,
+                  onNext: _nextPage,
+                  hintText: 'GG/AA/YYYY',
+                  description:
+                      'Outnest topluluğuna katılabilmek için 18 yaşını doldurmuş olman gerekmektedir.',
+                  readOnly: true,
+                  onTapInput: _showDatePicker,
+                  validator: () => validateDateOfBirth(_selectedDate),
+                ),
+
+                // 4. ÜNİVERSİTE MAİL
+                RegisterStepView(
+                  title: 'Üniversite Doğrulama',
+                  controller: _universityController,
+                  hintText: '@edu.tr',
+                  enabled: !_isSendingEmail,
+                  buttonText: _isSendingEmail
+                      ? 'gönderiliyor...'
+                      : 'kod gönder',
+                  // Kullanıcı maili yazarken anlık kontrol:
+                  onChanged: _onUniversityEmailChanged,
+                  description: _detectedUniversity != null
+                      ? 'Tespit Edilen: $_detectedUniversity'
+                      : "Üniversiteni doğruladığında, üniversite bilgin profilinde otomatik olarak görünür. Yalnızca Türkiye'deki üniversiteler desteklenmektedir.",
+
+                  validator: () => validateUniversityMail(
+                    _universityController.text.trim(),
+                    _detectedUniversity,
+                  ),
+
+                  onNext: () async {
+                    if (_isSendingEmail) return;
+                    setState(() => _isSendingEmail = true);
+                    FocusScope.of(context).unfocus();
+
+                    try {
+                      print(FirebaseAuth.instance.currentUser?.uid);
+                      await getIt<UserRepository>().sendVerificationEmail(
+                        _universityController.text.trim(),
+                      );
+                      if (!mounted) return;
+                      _nextPage(); // Başarılıysa OTP sayfasına geç
+                    } on FirebaseFunctionsException catch (error) {
+                      if (mounted) {
+                        if (error.code == 'resource-exhausted') {
+                          showErrorPopup(
+                            context,
+                            message:
+                                'Çok fazla mail yollama isteği gönderdiniz. Lütfen 1 dakika sonra tekrar deneyin!',
+                          );
+
+                          _logger.error(
+                            'FirebaseAuthException: ${error.code} - ${error.message}',
+                          );
+                        } else {
+                          _logger.error(
+                            'Bir hata oluştu: ${error.code} - ${error.message}',
+                          );
+                        }
+                        _logger.error(
+                          'Verification email gönderilemedi: $error',
+                        );
+                      }
+                    } finally {
+                      if (mounted) setState(() => _isSendingEmail = false);
+                    }
+                  },
+                  onSkip: !_isSendingEmail
+                      ? () => _pageController.jumpToPage(
+                          RegisterStep.gender.index,
+                        )
+                      : null,
+
+                  footerWidget: TextButton(
+                    onPressed: () async {
+                      final Uri url = Uri.parse(
+                        'https://forms.gle/KfpyB3Y2SeiX28R47',
+                      );
+                      launchUrl(url, mode: LaunchMode.inAppWebView);
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor:
+                          Colors.grey.shade600, // Silik, tatlı bir gri
+                    ),
+                    child: Text(
+                      'Üniversitenizi bulamıyor musunuz? Bize bildirin.',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Display',
+                        fontSize: 12.sp,
+                        decoration: TextDecoration
+                            .underline, // Tıklanabilir hissi verir
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
 
-            RegisterStepView(
-              title: 'Doğrulama Kodu',
-              buttonText: 'onayla',
-              enabled: !_isVerifyingEmail,
-              description:
-                  '${_universityController.text} adresine gelen kodu giriniz.',
-              customContent: OtpRow(controllers: _eduOtpControllers),
+                RegisterStepView(
+                  title: 'Doğrulama Kodu',
+                  buttonText: 'onayla',
+                  enabled: !_isVerifyingEmail,
+                  description:
+                      '${_universityController.text} adresine gelen kodu giriniz.',
+                  customContent: OtpRow(controllers: _eduOtpControllers),
 
-              onNext: () async {
-                FocusScope.of(context).unfocus();
+                  onNext: () async {
+                    FocusScope.of(context).unfocus();
 
-                if (_isVerifyingEmail) return;
-                setState(() => _isVerifyingEmail = true);
-                final otpCode = _eduOtpControllers.map((c) => c.text).join();
-                try {
-                  // Debug ekranındaki verifyEmail logic'i:
-                  print('otpCode: $otpCode');
-                  await getIt<UserRepository>().verifyEmail(
-                    _universityController.text.trim(),
-                    _detectedUniversity!,
-                    otpCode,
-                  );
-
-                  if (!mounted) return;
-                  setState(() => _isVerifyingEmail = false);
-                  _nextPage(); // Başarılıysa devam et
-                } catch (e) {
-                  if (mounted) {
-                    showErrorPopup(
-                      context,
-                      message: 'Kod hatalı veya geçersiz',
-                    );
+                    if (_isVerifyingEmail) return;
                     setState(() => _isVerifyingEmail = true);
-                  }
-                }
-              },
-            ),
+                    final otpCode = _eduOtpControllers
+                        .map((c) => c.text)
+                        .join();
+                    try {
+                      // Debug ekranındaki verifyEmail logic'i:
+                      print('otpCode: $otpCode');
+                      await getIt<UserRepository>().verifyEmail(
+                        _universityController.text.trim(),
+                        _detectedUniversity!,
+                        otpCode,
+                      );
 
-            // 6. CİNSİYET
-            RegisterStepView(
-              title: 'Cinsiyet',
-              controller: _genderDisplayController,
-              hintText: 'lütfen seçiniz',
-              onNext: _nextPage,
-              readOnly: true,
-              onTapInput: _showGenderPicker,
-              onSkip: _nextPage,
-            ),
-
-            RegisterStepView(
-              title: 'Profil Fotoğrafı',
-              onNext: _nextPage,
-              customContent: GestureDetector(
-                onTap: _showPhotoPicker, // Mevcut modalını kullanacağız
-                child: Stack(
-                  alignment: Alignment.bottomRight,
-                  children: [
-                    Container(
-                      width: 140.w,
-                      height: 140.w,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F1F5),
-                        shape: BoxShape.circle,
-                        image: _selectedImage != null
-                            ? DecorationImage(
-                                image: FileImage(_selectedImage!),
-                                fit: BoxFit.cover,
-                              )
-                            : null,
-                        border: Border.all(
-                          color: Colors.grey.shade200,
-                          width: 2,
-                        ),
-                      ),
-                      child: _selectedImage == null
-                          ? Icon(
-                              Icons.camera_alt_outlined,
-                              size: 45.sp,
-                              color: Colors.grey.shade400,
-                            )
-                          : null,
-                    ),
-                    if (_selectedImage != null)
-                      Container(
-                        padding: EdgeInsets.all(8.r),
-                        decoration: const BoxDecoration(
-                          color: AppColors.primaryColor,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.edit,
-                          color: Colors.white,
-                          size: 18.sp,
-                        ),
-                      ),
-                  ],
+                      if (!mounted) return;
+                      setState(() => _isVerifyingEmail = false);
+                      _nextPage(); // Başarılıysa devam et
+                    } catch (e) {
+                      if (mounted) {
+                        showErrorPopup(
+                          context,
+                          message: 'Kod hatalı veya geçersiz',
+                        );
+                        setState(() => _isVerifyingEmail = true);
+                      }
+                    }
+                  },
                 ),
-              ),
-            ),
-            // 8. İLGİ ALANLARI
-            RegisterStepView(
-              title: 'İlgi Alanların',
-              description: 'En az 3 adet seçmenizi öneririz.',
-              onNext: _nextPage,
-              onSkip: _nextPage,
-              customContent: _isLoadingConfig
-                  ? SizedBox(
-                      height: 100.h,
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.primaryColor,
+
+                // 6. CİNSİYET
+                RegisterStepView(
+                  title: 'Cinsiyet',
+                  controller: _genderDisplayController,
+                  hintText: 'lütfen seçiniz',
+                  onNext: _nextPage,
+                  readOnly: true,
+                  onTapInput: _showGenderPicker,
+                  onSkip: _nextPage,
+                ),
+
+                RegisterStepView(
+                  title: 'Profil Fotoğrafı',
+                  onNext: _nextPage,
+                  customContent: GestureDetector(
+                    onTap: _showPhotoPicker, // Mevcut modalını kullanacağız
+                    child: Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        Container(
+                          width: 140.w,
+                          height: 140.w,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F1F5),
+                            shape: BoxShape.circle,
+                            image: _selectedImage != null
+                                ? DecorationImage(
+                                    image: FileImage(_selectedImage!),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
+                            border: Border.all(
+                              color: Colors.grey.shade200,
+                              width: 2,
+                            ),
+                          ),
+                          child: _selectedImage == null
+                              ? Icon(
+                                  Icons.camera_alt_outlined,
+                                  size: 45.sp,
+                                  color: Colors.grey.shade400,
+                                )
+                              : null,
                         ),
-                      ),
-                    )
-                  : _categories.isEmpty
-                  ? Center(
-                      child: Text(
-                        'Kategoriler yüklenemedi.\nLütfen internet bağlantınızı kontrol edin.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 14.sp, color: Colors.grey),
-                      ),
-                    )
-                  : Wrap(
-                      spacing: 12.w,
-                      runSpacing: 12.h,
-                      alignment: WrapAlignment.center,
-                      children: _categories.entries.map((entry) {
-                        final categoryName = entry.key;
-                        final categoryEmoji = entry.value;
-                        final isSelected = _selectedInterests.contains(
-                          categoryName,
-                        );
-
-                        return CategoryFilterChip(
-                          label: categoryName.toLowerCase(),
-                          emoji: categoryEmoji,
-                          isSelected: isSelected,
-                          onTap: () => _toggleInterest(categoryName),
-                        );
-                      }).toList(),
+                        if (_selectedImage != null)
+                          Container(
+                            padding: EdgeInsets.all(8.r),
+                            decoration: const BoxDecoration(
+                              color: AppColors.primaryColor,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.edit,
+                              color: Colors.white,
+                              size: 18.sp,
+                            ),
+                          ),
+                      ],
                     ),
-            ),
+                  ),
+                ),
+                // 8. İLGİ ALANLARI
+                RegisterStepView(
+                  title: 'İlgi Alanların',
+                  description: 'En az 3 adet seçmenizi öneririz.',
+                  onNext: _nextPage,
+                  onSkip: _nextPage,
+                  customContent: _isLoadingConfig
+                      ? SizedBox(
+                          height: 100.h,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.primaryColor,
+                            ),
+                          ),
+                        )
+                      : _categories.isEmpty
+                      ? Center(
+                          child: Text(
+                            'Kategoriler yüklenemedi.\nLütfen internet bağlantınızı kontrol edin.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        )
+                      : Wrap(
+                          spacing: 12.w,
+                          runSpacing: 12.h,
+                          alignment: WrapAlignment.center,
+                          children: _categories.entries.map((entry) {
+                            final categoryName = entry.key;
+                            final categoryEmoji = entry.value;
+                            final isSelected = _selectedInterests.contains(
+                              categoryName,
+                            );
 
-            // 9. ARKADAŞLARINI EKLE
-            /*
+                            return CategoryFilterChip(
+                              label: categoryName.toLowerCase(),
+                              emoji: categoryEmoji,
+                              isSelected: isSelected,
+                              onTap: () => _toggleInterest(categoryName),
+                            );
+                          }).toList(),
+                        ),
+                ),
+
+                // 9. ARKADAŞLARINI EKLE
+                /*
             RegisterStepView(
               title: 'Arkadaşlarını Ekle',
               onNext: _nextPage,
@@ -775,22 +798,22 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
               ),
             ),
             */
-            // 10. CİHAZ İZİNLERİ
-            RegisterStepView(
-              title: 'Cihaz İzinleri',
-              onNext: _finishRegistration,
-              buttonText: 'bitir',
-              customContent: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildPermissionTile(
-                    title: 'Bildirimler',
-                    description:
-                        'Outnest uygulamasına bu cihaza güncellemeler ve önemli bildirimler göndermesine izin verilir.',
-                    permission: Permission.notification,
-                    value: _permNotifications,
-                  ),
-                  /*
+                // 10. CİHAZ İZİNLERİ
+                RegisterStepView(
+                  title: 'Cihaz İzinleri',
+                  onNext: _finishRegistration,
+                  buttonText: 'bitir',
+                  customContent: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildPermissionTile(
+                        title: 'Bildirimler',
+                        description:
+                            'Outnest uygulamasına bu cihaza güncellemeler ve önemli bildirimler göndermesine izin verilir.',
+                        permission: Permission.notification,
+                        value: _permNotifications,
+                      ),
+                      /*
                   _buildPermissionTile(
                     title: 'Bluetooth',
                     description:
@@ -798,64 +821,71 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                     permission: Permission.bluetooth,
                     value: _permBluetooth,
                   ),*/
-                  _buildPermissionTile(
-                    title: 'Konum Servisleri',
-                    description:
-                        'Bulunduğun konuma göre içerik sunabilmemiz için konum bilgine erişilir.',
-                    permission: Permission.locationWhenInUse,
-                    value: _permLocation,
-                  ),
-
-                  _buildPermissionTile(
-                    title: 'Kamera',
-                    description:
-                        'Fotoğraf ve video çekebilmek için kameraya erişim gerekir.',
-                    permission: Permission.camera,
-                    value: _permCamera,
-                  ),
-
-                  _buildPermissionTile(
-                    title: 'Fotoğraflar',
-                    description:
-                        'Galerinden içerik seçebilmek için fotoğraflara erişim gerekir.',
-                    permission: Permission.photos,
-                    value: _permPhotos,
-                  ),
-
-                  // ALT BİLGİLENDİRME METİNLERİ
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'Gizlilik ve veri kullanımı hakkında daha fazla bilgi al',
-                        textAlign: TextAlign.left,
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Display',
-                          fontSize: 12.sp,
-                          color: AppColors.tertiaryColor,
-                          fontWeight: FontWeight.w400,
-                        ),
+                      _buildPermissionTile(
+                        title: 'Konum Servisleri',
+                        description:
+                            'Bulunduğun konuma göre içerik sunabilmemiz için konum bilgine erişilir.',
+                        permission: Permission.locationWhenInUse,
+                        value: _permLocation,
                       ),
-                      SizedBox(height: 12.h),
-                      Text(
-                        'Cihaz izinlerinizi daha sonra Ayarlar sayfasından düzenleyebilirsiniz.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Display',
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.w400,
-                          color: const Color(0xFF8E8E93),
-                          height: 1.5,
-                        ),
+
+                      _buildPermissionTile(
+                        title: 'Kamera',
+                        description:
+                            'Fotoğraf ve video çekebilmek için kameraya erişim gerekir.',
+                        permission: Permission.camera,
+                        value: _permCamera,
+                      ),
+
+                      _buildPermissionTile(
+                        title: 'Fotoğraflar',
+                        description:
+                            'Galerinden içerik seçebilmek için fotoğraflara erişim gerekir.',
+                        permission: Permission.photos,
+                        value: _permPhotos,
+                      ),
+
+                      // ALT BİLGİLENDİRME METİNLERİ
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Gizlilik ve veri kullanımı hakkında daha fazla bilgi al',
+                            textAlign: TextAlign.left,
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Display',
+                              fontSize: 12.sp,
+                              color: AppColors.tertiaryColor,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          SizedBox(height: 12.h),
+                          Text(
+                            'Cihaz izinlerinizi daha sonra Ayarlar sayfasından düzenleyebilirsiniz.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Display',
+                              fontSize: 10.sp,
+                              fontWeight: FontWeight.w400,
+                              color: const Color(0xFF8E8E93),
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+        // YÜKLEME EKRANI
+        if (_isRegistering)
+          const Positioned.fill(
+            child: RegistrationLoadingScreen(),
+          ),
+      ],
     );
   }
 

@@ -2,11 +2,42 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/presentation/shared/login_button.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
 
-class WelcomePage extends StatelessWidget {
+class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
+
+  @override
+  State<WelcomePage> createState() => _WelcomePageState();
+}
+
+class _WelcomePageState extends State<WelcomePage> {
+  late VideoPlayerController _videoController;
+
+  @override
+  void initState() {
+    super.initState();
+    _videoController = VideoPlayerController.asset('assets/welcomepage.mp4')
+      ..initialize()
+          .then((_) async {
+            await _videoController.setVolume(0);
+            await _videoController.setLooping(true);
+            await _videoController.play();
+            setState(() {});
+          })
+          .catchError((error) {
+            debugPrint('Video yüklenirken hata oluştu: $error');
+          });
+  }
+
+  @override
+  void dispose() {
+    _videoController.dispose();
+    super.dispose();
+  }
 
   Future<void> _launchURL(String urlString) async {
     final url = Uri.parse(urlString);
@@ -21,51 +52,74 @@ class WelcomePage extends StatelessWidget {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // 1. KATMAN: ARKA PLAN RESMİ
+          // 1. KATMAN: ARKA PLAN VİDEOSU
           Positioned.fill(
-            child: Image.asset(
-              'assets/image2.png',
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-                  Container(color: Colors.black),
+            child: _videoController.value.isInitialized
+                ? SizedBox.expand(
+                    child: FittedBox(
+                      fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: _videoController.value.size.width,
+                        height: _videoController.value.size.height,
+                        child: VideoPlayer(_videoController),
+                      ),
+                    ),
+                  )
+                : Container(color: Colors.black),
+          ),
+
+          // VİDEO ÜZERİNE HAFİF KARARTMA
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withOpacity(0.3),
             ),
           ),
 
+          // 2. KATMAN: ARAYÜZ (LOGOLAR VE BUTONLAR)
           SafeArea(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24.w),
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Spacer(flex: 3),
+                  SizedBox(height: 140.h),
 
                   // LOGO
-                  Image.asset(
-                    'assets/outnest.png',
-                    height: 60.h,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Text(
-                        'outnest',
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Display',
-                          fontSize: 40.sp,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      );
-                    },
+                  Text(
+                    'OUTNEST',
+                    style: TextStyle(
+                      fontFamily: 'Agrandir',
+                      fontSize: 40.sp,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      height: 1,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+                  // ALT METİN
+                  Text(
+                    'Sosyalleşmeye hazırlan!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Grift',
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      height: 1,
+                      letterSpacing: 0,
+                    ),
                   ),
 
-                  const Spacer(flex: 4),
+                  const Spacer(),
 
                   // --- GİRİŞ YAP BUTONU ---
-                  // İstenilen boyutlar: 205w, 48h, 40r
                   LoginButton(
                     label: 'Giriş Yap',
                     onPress: () => context.push('/login'),
-                    width: 205.w,
+                    width: double.infinity,
                     height: 48.h,
+                    backgroundColor: Colors.white,
+                    textColor: AppColors.primaryColor,
                   ),
 
                   SizedBox(height: 16.h),
@@ -74,50 +128,47 @@ class WelcomePage extends StatelessWidget {
                   LoginButton(
                     label: 'Kayıt Ol',
                     onPress: () => context.push('/register'),
-                    width: 205.w,
+                    width: double.infinity,
                     height: 48.h,
+                    backgroundColor: AppColors.primaryColor,
+                    textColor: Colors.white,
                   ),
 
                   SizedBox(height: 8.h),
 
                   // YASAL METİNLER
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10.w),
-                    child: RichText(
-                      textAlign: TextAlign.center,
-                      text: TextSpan(
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Display',
-                          fontSize: 11.sp,
-                          color: Colors.white.withOpacity(0.9),
-                          height: 1.4,
-                        ),
-                        children: [
-                          const TextSpan(text: 'Devam ederek Outnest’in '),
-                          _buildLinkSpan(
-                            text: 'Kullanıcı Sözleşmesi',
-                            url:
-                                'https://outnest.app/yasal/kullanici-sozlesmesi',
-                          ),
-                          const TextSpan(text: ', '),
-                          _buildLinkSpan(
-                            text: 'Hizmet Koşulları',
-                            url: 'https://outnest.app/yasal/hizmet-kosullari',
-                          ),
-                          const TextSpan(text: ', '),
-                          _buildLinkSpan(
-                            text: 'Gizlilik Politikası',
-                            url:
-                                'https://outnest.app/yasal/gizlilik-politikasi',
-                          ),
-                          const TextSpan(text: ' ve '),
-                          _buildLinkSpan(
-                            text: 'Aydınlatma Metni',
-                            url: 'https://outnest.app/yasal/aydinlatma-metni',
-                          ),
-                          const TextSpan(text: '’ni kabul etmiş oluyorsunuz.'),
-                        ],
+                  RichText(
+                    textAlign: TextAlign.center,
+                    text: TextSpan(
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Display',
+                        fontSize: 11.sp,
+                        color: Colors.white.withOpacity(0.9),
+                        height: 1.4,
                       ),
+                      children: [
+                        const TextSpan(text: 'Devam ederek Outnest’in '),
+                        _buildLinkSpan(
+                          text: 'Kullanıcı Sözleşmesi',
+                          url: 'https://outnest.app/yasal/kullanici-sozlesmesi',
+                        ),
+                        const TextSpan(text: ', '),
+                        _buildLinkSpan(
+                          text: 'Hizmet Koşulları',
+                          url: 'https://outnest.app/yasal/hizmet-kosullari',
+                        ),
+                        const TextSpan(text: ', '),
+                        _buildLinkSpan(
+                          text: 'Gizlilik Politikası',
+                          url: 'https://outnest.app/yasal/gizlilik-politikasi',
+                        ),
+                        const TextSpan(text: ' ve '),
+                        _buildLinkSpan(
+                          text: 'Aydınlatma Metni',
+                          url: 'https://outnest.app/yasal/aydinlatma-metni',
+                        ),
+                        const TextSpan(text: '’ni kabul etmiş oluyorsunuz.'),
+                      ],
                     ),
                   ),
 

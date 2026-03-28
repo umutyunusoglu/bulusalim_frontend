@@ -76,6 +76,8 @@ dependencies:
   share_plus: ^12.0.1
   avatar_glow: ^3.0.1
   fpdart: ^1.2.0
+  video_player: ^2.11.1
+  volume_controller: ^3.4.4
   flutter_svg: ^2.2.4
 
 
@@ -114,6 +116,17 @@ flutter:
     - assets/defaults/
     - assets/outnest/
     - .env
+  fonts:
+    - family: Agrandir
+      fonts:
+        - asset: fonts/Agrandir-Grand-Heavy-800.otf
+          weight: 800
+    - family: Grift
+      fonts:
+        - asset: fonts/Grift-Bold.ttf
+          weight: 700
+
+
 
 flutter_intl:
   enabled: true
