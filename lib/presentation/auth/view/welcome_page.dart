@@ -88,7 +88,7 @@ class _WelcomePageState extends State<WelcomePage> {
                     'OUTNEST',
                     style: TextStyle(
                       fontFamily: 'Agrandir',
-                      fontSize: 60.sp,
+                      fontSize: 40.sp,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
                       height: 1,

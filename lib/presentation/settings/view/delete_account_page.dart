@@ -45,9 +45,10 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
 
       // Silme işlemini bekle
       await userRepository.deleteUser(_selectedReason);
+      getIt<AuthService>().signOut();
 
       if (mounted) {
-        router.go("/welcome");
+        router.go('/welcome');
       }
     } catch (e) {
       // Hata olursa yüklemeyi durdur ve logla

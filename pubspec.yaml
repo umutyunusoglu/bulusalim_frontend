@@ -115,8 +115,15 @@ flutter:
     - assets/defaults/
     - .env
   fonts:
-    - family: Agrandir      
+    - family: Agrandir
+      fonts:
+        - asset: fonts/Agrandir-Grand-Heavy-800.otf
+          weight: 800
     - family: Grift
+      fonts:
+        - asset: fonts/Grift-Bold.ttf
+          weight: 700
+
 
 
 flutter_intl:

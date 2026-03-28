@@ -1,42 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:video_player/video_player.dart';
 
-class RegistrationLoadingScreen extends StatefulWidget {
+class RegistrationLoadingScreen extends HookWidget {
   const RegistrationLoadingScreen({super.key});
 
   @override
-  State<RegistrationLoadingScreen> createState() =>
-      _RegistrationLoadingScreenState();
-}
+  Widget build(BuildContext context) {
+    final videoController = useRef<VideoPlayerController?>(null);
+    final isVideoInitialized = useState(false);
 
-class _RegistrationLoadingScreenState extends State<RegistrationLoadingScreen> {
-  late VideoPlayerController _videoController;
+    useEffect(() {
+      final controller = VideoPlayerController.asset('assets/welcomepage.mp4');
+      videoController.value = controller;
 
-  @override
-  void initState() {
-    super.initState();
-    _videoController = VideoPlayerController.asset('assets/welcomepage.mp4')
-      ..initialize()
+      controller
+          .initialize()
           .then((_) async {
-            await _videoController.setVolume(0.0);
-            await _videoController.setLooping(true);
-            await _videoController.play();
-            setState(() {});
+            await controller.setVolume(0.0);
+            await controller.setLooping(true);
+            await controller.play();
+            isVideoInitialized.value = true;
           })
           .catchError((error) {
             debugPrint('Video yüklenirken hata oluştu: $error');
           });
-  }
 
-  @override
-  void dispose() {
-    _videoController.dispose();
-    super.dispose();
-  }
+      return () => controller.dispose();
+    }, []);
 
-  @override
-  Widget build(BuildContext context) {
+    final controller = videoController.value;
+
     return PopScope(
       canPop: false,
       child: Scaffold(
@@ -45,14 +40,14 @@ class _RegistrationLoadingScreenState extends State<RegistrationLoadingScreen> {
           children: [
             // 1. ARKA PLAN VİDEOSU
             Positioned.fill(
-              child: _videoController.value.isInitialized
+              child: isVideoInitialized.value && controller != null
                   ? SizedBox.expand(
                       child: FittedBox(
                         fit: BoxFit.cover,
                         child: SizedBox(
-                          width: _videoController.value.size.width,
-                          height: _videoController.value.size.height,
-                          child: VideoPlayer(_videoController),
+                          width: controller.value.size.width,
+                          height: controller.value.size.height,
+                          child: VideoPlayer(controller),
                         ),
                       ),
                     )
@@ -79,7 +74,7 @@ class _RegistrationLoadingScreenState extends State<RegistrationLoadingScreen> {
                       'OUTNEST',
                       style: TextStyle(
                         fontFamily: 'Agrandir',
-                        fontSize: 60.sp,
+                        fontSize: 40.sp,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
                         height: 1,
@@ -116,7 +111,7 @@ class _RegistrationLoadingScreenState extends State<RegistrationLoadingScreen> {
                         height: 1,
                       ),
                     ),
-                    SizedBox(height: 16.h), // Yazı ile ikon arası boşluk
+                    SizedBox(height: 16.h),
 
                     const CircularProgressIndicator(
                       color: Colors.white,
