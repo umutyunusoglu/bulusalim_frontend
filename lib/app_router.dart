@@ -18,6 +18,7 @@ import 'package:outnest/presentation/camera/view/camera_page.dart';
 import 'package:outnest/presentation/chat/view/chat_page.dart';
 import 'package:outnest/presentation/chat/view/event_settings_page.dart';
 import 'package:outnest/presentation/chat/view/my_events_page.dart';
+import 'package:outnest/presentation/debug/debug_camera_screen.dart';
 import 'package:outnest/presentation/event_verification/my_qr_page.dart';
 import 'package:outnest/presentation/event_verification/qr_scanner_page.dart';
 import 'package:outnest/presentation/event_verification/verification_splash_screen.dart';
@@ -218,6 +219,11 @@ final router = GoRouter(
         },
       ),
     ),
+    GoRoute(
+      path: '/debug',
+      builder: (context, state) => const DebugCameraScreen(),
+    ),
+
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
         return ScaffoldWithNavbar(navigationShell: navigationShell);

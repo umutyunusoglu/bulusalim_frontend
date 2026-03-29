@@ -10,6 +10,7 @@ import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 
 class DeleteAccountPage extends StatefulWidget {
   const DeleteAccountPage({super.key});
@@ -45,7 +46,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
 
       // Silme işlemini bekle
       await userRepository.deleteUser(_selectedReason);
-      getIt<AuthService>().signOut();
+      await getIt<AuthService>().signOut().run();
 
       if (mounted) {
         router.go('/welcome');
@@ -57,7 +58,11 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
         setState(() {
           _isLoading = false;
         });
-
+        showErrorPopup(
+          context,
+          message:
+              'Hesabınızı silerken bir hata oluştu. Lütfen tekrar deneyin.',
+        );
         // İsterseniz burada bir SnackBar ile hata mesajı gösterebilirsiniz.
       }
     }
