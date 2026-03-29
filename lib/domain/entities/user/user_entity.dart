@@ -14,7 +14,6 @@ class UserEntity extends Equatable {
     required this.gender,
     required this.university,
     required this.universityEmail,
-    required this.isUniversityVerified,
     required this.profileImageUrl,
     required this.bio,
     required this.createdAt,
@@ -42,7 +41,6 @@ class UserEntity extends Equatable {
     GenderEnum? gender,
     String? university,
     String? universityEmail,
-    bool? isUniversityVerified,
     String? profileImageUrl,
     String? bio,
     String? phoneNumber,
@@ -81,7 +79,6 @@ class UserEntity extends Equatable {
       followerCount: followerCount ?? this.followerCount,
       isPrivate: isPrivate ?? this.isPrivate,
       universityEmail: universityEmail ?? this.universityEmail,
-      isUniversityVerified: isUniversityVerified ?? this.isUniversityVerified,
       hideSavedEvents: hideSavedEvents ?? this.hideSavedEvents,
       followerIds: followerIds ?? this.followerIds,
       followeeIds: followeeIds ?? this.followeeIds,
@@ -96,7 +93,6 @@ class UserEntity extends Equatable {
   final GenderEnum gender;
   final String? university;
   final String? universityEmail;
-  final bool isUniversityVerified;
   final String profileImageUrl;
   final String? bio;
   final AccountType accountType;
@@ -130,6 +126,15 @@ class UserEntity extends Equatable {
 }
 
 class CommunityData extends Equatable {
+  const CommunityData({
+    required this.communityBio,
+    required this.communityPhotoUrl,
+    required this.communityTeamMembers,
+    required this.instagramUrl,
+    required this.whatsappUrl,
+    required this.websiteUrl,
+    required this.contactEmail,
+  });
   factory CommunityData.fromMap(Map<String, dynamic> data) {
     final communityBio = data['communityBio'] as String? ?? '';
     final communityPhotoUrl = data['communityPhotoUrl'] as String? ?? '';
@@ -161,16 +166,6 @@ class CommunityData extends Equatable {
       contactEmail: contactEmail,
     );
   }
-
-  CommunityData({
-    required this.communityBio,
-    required this.communityPhotoUrl,
-    required this.communityTeamMembers,
-    required this.instagramUrl,
-    required this.whatsappUrl,
-    required this.websiteUrl,
-    required this.contactEmail,
-  });
 
   CommunityData copyWith({
     String? communityBio,

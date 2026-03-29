@@ -260,7 +260,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
         gender: gender,
         university: university,
         universityEmail: universityEmail,
-        isUniversityVerified: isEmailVerified,
         profileImageUrl: profileImageUrl,
         bio: '',
         createdAt: DateTime.now(),

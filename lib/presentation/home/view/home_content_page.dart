@@ -1,7 +1,9 @@
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:outnest/application/app_state/current_user_data_providers/current_user_university_verified.dart';
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/presentation/profile/view/components/empty_profile_screen.dart';
@@ -15,21 +17,36 @@ import 'package:outnest/domain/entities/feed/feed_entity.dart';
 import 'package:outnest/domain/entities/feed/post/post_entity.dart';
 import 'package:outnest/domain/repositories/feed_repository.dart';
 
-class HomeContentPage extends StatefulWidget {
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
+import 'package:outnest/presentation/profile/view/components/empty_profile_screen.dart';
+import 'package:outnest/presentation/shared/event_card/view/event_card.dart';
+import 'package:outnest/presentation/shared/post_card/post_card.dart';
+import 'package:outnest/core/constants/configs/app_config.dart';
+import 'package:outnest/core/utils/types/enums/feed_type.dart';
+import 'package:outnest/core/utils/types/enums/screen_enum.dart';
+import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/entities/feed/feed_entity.dart';
+import 'package:outnest/domain/entities/feed/post/post_entity.dart';
+import 'package:outnest/domain/repositories/feed_repository.dart';
+// Provider import
+import 'package:outnest/application/app_state/current_user_data_providers/current_user_identity_provider.dart';
+
+class HomeContentPage extends ConsumerStatefulWidget {
   const HomeContentPage({required this.feedType, super.key});
   final FeedType feedType;
 
   @override
-  State<HomeContentPage> createState() => _HomeContentPageState();
+  ConsumerState<HomeContentPage> createState() => _HomeContentPageState();
 }
 
-class _HomeContentPageState extends State<HomeContentPage> {
+class _HomeContentPageState extends ConsumerState<HomeContentPage> {
   final ScrollController _scrollController = ScrollController();
-
-  // Interface'imiz
   final FeedRepository _feedRepository = getIt<FeedRepository>();
-
-  // Fetch eşiği
 
   bool _isInitialLoading = false;
 
@@ -37,13 +54,9 @@ class _HomeContentPageState extends State<HomeContentPage> {
   void initState() {
     super.initState();
     _feedRepository.switchFeedType(widget.feedType);
-
     _initFeed();
-
-    // 2. Scroll dinleyicisi (Pagination için)
     _scrollController.addListener(_onScroll);
 
-    // Home butonuna basıldığında tetiklenen sinyali dinliyoruz
     if (getIt.isRegistered<ValueNotifier<int>>(
       instanceName: 'homeScrollTrigger',
     )) {
@@ -53,13 +66,10 @@ class _HomeContentPageState extends State<HomeContentPage> {
     }
   }
 
-  // YUKARI SARMA
   void _scrollToTopIfActive() {
-    // 1. Sayfa o an ekranda mı (mounted)?
-    // 2. Controller listeye bağlı mı (hasClients)?
     if (mounted && _scrollController.hasClients) {
       _scrollController.animateTo(
-        0, // En başa git
+        0,
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
       );
@@ -82,14 +92,12 @@ class _HomeContentPageState extends State<HomeContentPage> {
     if (_scrollController.hasClients &&
         _scrollController.position.pixels >=
             _scrollController.position.maxScrollExtent - 200) {
-      // 200px kala yükle
       _feedRepository.loadMore();
     }
   }
 
   @override
   void dispose() {
-    // Sayfadan çıkarken dinlemeyi bırakıyoruz (Memory leak olmasın)
     if (getIt.isRegistered<ValueNotifier<int>>(
       instanceName: 'homeScrollTrigger',
     )) {
@@ -97,20 +105,23 @@ class _HomeContentPageState extends State<HomeContentPage> {
         instanceName: 'homeScrollTrigger',
       ).removeListener(_scrollToTopIfActive);
     }
-
     _scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Provider ile üniversite doğrulama kontrolü
+    final isUniversityVerified = ref.watch(
+      currentUserUniversityVerifiedProvider,
+    );
+
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: () async => _feedRepository.refresh(),
         child: StreamBuilder<List<FeedEntity>>(
           stream: _feedRepository.feedStream,
           builder: (context, snapshot) {
-            // 1. Manuel kontrol veya Stream'in ilk bekleme anı
             if (_isInitialLoading ||
                 snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
@@ -121,44 +132,23 @@ class _HomeContentPageState extends State<HomeContentPage> {
               );
             }
 
-            final SessionService sessionService = getIt<SessionService>();
-
-            bool isUniversityVerified;
-            final isUniversityNull =
-                sessionService.currentUser?.university == null;
-            if (!isUniversityNull) {
-              if (sessionService.currentUser!.university!.isNotEmpty) {
-                isUniversityVerified = true;
-              } else {
-                isUniversityVerified = false;
-              }
-            } else {
-              isUniversityVerified = false;
-            }
-
-            //TODO: Bu kontrolü daha merkezi bir yerde yapıp, kullanıcıyı direkt olarak doğrulama sayfasına yönlendirmek daha temiz olabilir. Ancak şimdilik hızlı bir çözüm olarak burada bırakıyorum.
+            // Provider'dan gelen değer ile kontrol
             if (widget.feedType == FeedType.university &&
                 !isUniversityVerified) {
               return Column(
-                mainAxisAlignment:
-                    MainAxisAlignment.center, // Ortalamak isterseniz
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
                     'Henüz Üniversiteni Doğrulamadın',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(
-                    height: 16,
-                  ), // Padding yerine SizedBox daha yaygındır
-
+                  const SizedBox(height: 16),
                   const EmptyProfileScreen(
                     text:
                         'Üniversiteni Doğrulama İçin Aşağıdaki Butona Tıklayın.',
                     icon: Icon(Icons.school),
                   ),
-
                   const SizedBox(height: 16),
-
                   ElevatedButton(
                     onPressed: () => context.go('/settings/edit-account'),
                     child: const Text('Üniversiteni Doğrula'),
@@ -166,28 +156,23 @@ class _HomeContentPageState extends State<HomeContentPage> {
                 ],
               );
             }
-            // 3. Veri Yok veya Boş Liste Durumu
+
             final items = snapshot.data;
             if (items == null || items.isEmpty) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
-
-              // Sadece gerçekten "bekleme" bitmiş ve hala veri yoksa empty state göster
               return _buildEmptyState();
             }
-
-            // 4. Veri Geldiğinde Liste Görünümü
 
             return ListView.builder(
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(
                 parent: SlowFeedPhysics(),
-              ), // RefreshIndicator için AlwaysScrollable önemli
+              ),
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final item = items[index];
-
                 if (item is PostEntity) {
                   return PostCard(
                     key: ValueKey('post_${item.postID}'),
@@ -201,7 +186,6 @@ class _HomeContentPageState extends State<HomeContentPage> {
                     repository: _feedRepository,
                   );
                 }
-
                 return const SizedBox.shrink();
               },
             );
@@ -217,12 +201,9 @@ class _HomeContentPageState extends State<HomeContentPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const SizedBox(height: 16),
-
           const Text('Henüz içerik yok.'),
-
           ElevatedButton(
             onPressed: () => _feedRepository.refresh(),
-            //loading
             child: const Text('Yenile'),
           ),
         ],

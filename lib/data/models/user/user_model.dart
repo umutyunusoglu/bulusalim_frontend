@@ -16,7 +16,6 @@ class UserModel extends Model<UserEntity> {
     required this.gender,
     required this.university,
     required this.universityEmail,
-    required this.isUniversityVerified,
     required this.profileImageUrl,
     required this.bio,
     required this.createdAt,
@@ -42,7 +41,6 @@ class UserModel extends Model<UserEntity> {
       gender: entity.gender,
       university: entity.university,
       universityEmail: entity.universityEmail,
-      isUniversityVerified: entity.isUniversityVerified,
       profileImageUrl: entity.profileImageUrl,
       bio: entity.bio,
       createdAt: entity.createdAt,
@@ -87,7 +85,6 @@ class UserModel extends Model<UserEntity> {
       gender: gender,
       university: doc['universityName'] as String?,
       universityEmail: doc['universityEmail'] as String?,
-      isUniversityVerified: doc['isUniversityVerified'] as bool? ?? false,
       profileImageUrl: doc['profileImageUrl'] as String? ?? '',
       bio: doc['bio'] as String?,
       createdAt: createdAt,
@@ -124,7 +121,6 @@ class UserModel extends Model<UserEntity> {
       'gender': gender.toString(),
       'universityName': university,
       'universityEmail': universityEmail,
-      'isUniversityVerified': isUniversityVerified,
       'profileImageUrl': profileImageUrlFirestore,
       'bio': bio,
       'createdAt': Timestamp.fromDate(createdAt),
@@ -151,7 +147,6 @@ class UserModel extends Model<UserEntity> {
       gender: gender,
       university: university,
       universityEmail: universityEmail,
-      isUniversityVerified: isUniversityVerified,
       profileImageUrl: profileImageUrl,
       bio: bio,
       createdAt: createdAt,
@@ -175,7 +170,6 @@ class UserModel extends Model<UserEntity> {
   final GenderEnum gender;
   final String? university;
   final String? universityEmail;
-  final bool isUniversityVerified;
   final String profileImageUrl;
   final String? bio;
   final DateTime createdAt;
