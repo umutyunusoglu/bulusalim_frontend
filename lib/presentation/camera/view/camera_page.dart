@@ -1,20 +1,20 @@
 import 'dart:io';
 import 'package:camera/camera.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image/image.dart' as img;
-import 'package:image_cropper/image_cropper.dart';
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/services/draft_post_service.dart';
+import 'package:outnest/presentation/camera/controllers/image_cropper.dart';
+import 'package:outnest/presentation/camera/view/components/hole_overlay_painter.dart';
 import 'package:outnest/presentation/camera/view/new_post_page.dart';
 import 'package:volume_controller/volume_controller.dart';
 
-// Ön Kamera Aynalama
 Future<String> processFlippedImage(String path) async {
   final file = File(path);
   final bytes = await file.readAsBytes();
@@ -31,178 +31,176 @@ Future<String> processFlippedImage(String path) async {
   return path;
 }
 
-class CameraPage extends StatefulWidget {
+class CameraPage extends HookWidget {
   const CameraPage({required this.event, super.key});
 
   final EventEntity event;
 
   @override
-  State<CameraPage> createState() => _CameraPageState();
-}
+  Widget build(BuildContext context) {
+    final takenPhotos = useState<List<File>>([]);
+    final isCameraInitialized = useState(false);
+    final selectedCameraIndex = useState(0);
+    final isProcessing = useState(false);
 
-class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
-  CameraController? _controller;
-  List<File> _takenPhotos = [];
-  bool _isCameraInitialized = false;
-  int _selectedCameraIndex = 0;
-  bool _isProcessing = false;
+    final controllerRef = useRef<CameraController?>(null);
+    final initialVolume = useRef<double>(0.5);
+    final isRestoringVolume = useRef(false);
 
-  // Ses tuşu sabitleme
-  double _initialVolume = 0.5;
-  bool _isRestoringVolume = false;
+    // Her initializeCamera çağrısına unique token verir.
+    // Async işlem biterken token değişmişse o init iptal sayılır.
+    final initToken = useRef<int>(0);
 
-  bool get _isFrontCamera =>
-      _controller?.description.lensDirection == CameraLensDirection.front;
+    final isFrontCamera =
+        controllerRef.value?.description.lensDirection ==
+        CameraLensDirection.front;
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
+    // ── Kamera başlatma ──────────────────────────────────────────────────────
+    Future<void> initializeCamera() async {
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) return;
 
-    _initializeCamera();
-    _loadDrafts();
-    _setupVolumeListener();
-  }
+      final myToken = ++initToken.value;
 
-  Future<void> _setupVolumeListener() async {
-    _initialVolume = await VolumeController.instance.getVolume();
-    VolumeController.instance.showSystemUI = false;
+      final oldController = controllerRef.value;
+      controllerRef.value = null;
+      isCameraInitialized.value = false;
 
-    VolumeController.instance.addListener((volume) async {
-      if (!mounted ||
-          WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
-        return;
-      }
+      try {
+        await oldController?.dispose();
+      } catch (_) {}
 
-      if (_isRestoringVolume) {
-        _isRestoringVolume = false;
-        return;
-      }
+      if (initToken.value != myToken) return;
 
-      _isRestoringVolume = true;
-      await VolumeController.instance.setVolume(_initialVolume);
-
-      if (!_isProcessing) {
-        await _takePhoto();
-      }
-    });
-  }
-
-  Future<void> _initializeCamera() async {
-    final cameras = await availableCameras();
-    if (cameras.isEmpty) return;
-
-    final oldController = _controller;
-    if (mounted) setState(() => _isCameraInitialized = false);
-
-    // Eski kamerayı güvenlice arka planda kapat
-    await oldController?.dispose();
-
-    _controller = CameraController(
-      cameras[_selectedCameraIndex],
-      ResolutionPreset.high,
-      enableAudio: false,
-      imageFormatGroup: Platform.isIOS
-          ? ImageFormatGroup.bgra8888
-          : ImageFormatGroup.jpeg,
-    );
-
-    try {
-      await _controller!.initialize();
-      await _controller!.lockCaptureOrientation(DeviceOrientation.portraitUp);
-
-      if (mounted) setState(() => _isCameraInitialized = true);
-    } catch (e) {
-      debugPrint('Kamera Hatası: $e');
-    }
-  }
-
-  Future<void> _toggleCamera() async {
-    if (_isProcessing) return;
-
-    _selectedCameraIndex = _selectedCameraIndex == 0 ? 1 : 0;
-    await _initializeCamera();
-  }
-
-  Future<void> _loadDrafts() async {
-    final savedPhotos = await getIt<DraftPostService>().getDraft(
-      widget.event.eventID,
-    );
-    if (mounted && savedPhotos.isNotEmpty) {
-      setState(() => _takenPhotos = List.from(savedPhotos));
-    }
-  }
-
-  Future<void> _takePhoto() async {
-    if (!mounted ||
-        _controller == null ||
-        !_controller!.value.isInitialized ||
-        _takenPhotos.length >= 3 ||
-        _isProcessing) {
-      return;
-    }
-
-    setState(() => _isProcessing = true);
-
-    try {
-      final photo = await _controller!.takePicture();
-      var currentPhotoPath = photo.path;
-
-      if (_isFrontCamera) {
-        currentPhotoPath = await compute(processFlippedImage, currentPhotoPath);
-      }
-
-      final croppedFile = await ImageCropper().cropImage(
-        sourcePath: currentPhotoPath,
-        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
-        compressQuality: 80,
-        uiSettings: [
-          IOSUiSettings(
-            title: 'Kırp',
-            aspectRatioLockEnabled: true,
-            resetAspectRatioEnabled: false,
-          ),
-          AndroidUiSettings(
-            toolbarTitle: 'Kırp',
-            lockAspectRatio: true,
-            hideBottomControls: true,
-          ),
-        ],
+      final newController = CameraController(
+        cameras[selectedCameraIndex.value],
+        ResolutionPreset.high,
+        enableAudio: false,
+        imageFormatGroup: Platform.isIOS
+            ? ImageFormatGroup.bgra8888
+            : ImageFormatGroup.jpeg,
       );
 
-      if (croppedFile != null && mounted) {
-        setState(() => _takenPhotos.add(File(croppedFile.path)));
-        await getIt<DraftPostService>().saveDraft(
-          widget.event.id,
-          _takenPhotos,
+      try {
+        await newController.initialize();
+        await newController.lockCaptureOrientation(
+          DeviceOrientation.portraitUp,
         );
+      } catch (e) {
+        debugPrint('Kamera Hatası: $e');
+        try {
+          await newController.dispose();
+        } catch (_) {}
+        return;
       }
-    } catch (e) {
-      debugPrint('Fotoğraf çekim hatası: $e');
-    } finally {
-      if (mounted) setState(() => _isProcessing = false);
+
+      if (initToken.value != myToken) {
+        try {
+          await newController.dispose();
+        } catch (_) {}
+        return;
+      }
+
+      controllerRef.value = newController;
+      isCameraInitialized.value = true;
     }
-  }
 
-  void _removePhoto(int index) {
-    if (_isProcessing) return;
+    // ── Kamera geçişi ────────────────────────────────────────────────────────
+    Future<void> toggleCamera() async {
+      if (isProcessing.value) return;
+      selectedCameraIndex.value = selectedCameraIndex.value == 0 ? 1 : 0;
+      await initializeCamera();
+    }
 
-    setState(() => _takenPhotos.removeAt(index));
-    getIt<DraftPostService>().saveDraft(widget.event.id, _takenPhotos);
-  }
+    // ── Fotoğraf çekme ───────────────────────────────────────────────────────
+    Future<void> takePhoto() async {
+      final controller = controllerRef.value;
 
-  @override
-  void dispose() {
-    VolumeController.instance.removeListener();
-    VolumeController.instance.showSystemUI = true;
-    WidgetsBinding.instance.removeObserver(this);
+      if (controller == null ||
+          !controller.value.isInitialized ||
+          takenPhotos.value.length >= 3 ||
+          isProcessing.value) {
+        return;
+      }
 
-    _controller?.dispose();
-    super.dispose();
-  }
+      isProcessing.value = true;
 
-  @override
-  Widget build(BuildContext context) {
+      try {
+        final photo = await controller.takePicture();
+        var currentPhotoPath = photo.path;
+
+        if (isFrontCamera) {
+          currentPhotoPath = await processFlippedImage(currentPhotoPath);
+        }
+
+        final croppedFile = await cropToSquare(currentPhotoPath);
+
+        if (croppedFile != null) {
+          takenPhotos.value = [...takenPhotos.value, File(croppedFile.path)];
+          await getIt<DraftPostService>().saveDraft(
+            event.id,
+            takenPhotos.value,
+          );
+        }
+      } catch (e) {
+        debugPrint('Fotoğraf çekim hatası: $e');
+      } finally {
+        isProcessing.value = false;
+      }
+    }
+
+    // ── Effect: İlk kamera açılışı — sadece mount/unmount ───────────────────
+    useEffect(() {
+      initializeCamera();
+      return () {
+        initToken.value++; // devam eden init'leri iptal et
+        final controller = controllerRef.value;
+        controllerRef.value = null;
+        isCameraInitialized.value = false;
+        controller?.dispose();
+      };
+    }, const []);
+
+    // ── Effect: Volume listener ──────────────────────────────────────────────
+    useEffect(() {
+      Future<void> setup() async {
+        initialVolume.value = await VolumeController.instance.getVolume();
+        VolumeController.instance.showSystemUI = false;
+
+        VolumeController.instance.addListener((volume) async {
+          if (isRestoringVolume.value) {
+            isRestoringVolume.value = false;
+            return;
+          }
+
+          isRestoringVolume.value = true;
+          await VolumeController.instance.setVolume(initialVolume.value);
+
+          if (!isProcessing.value) {
+            await takePhoto();
+          }
+        });
+      }
+
+      setup();
+
+      return () {
+        VolumeController.instance.removeListener();
+        VolumeController.instance.showSystemUI = true;
+      };
+    }, const []);
+
+    // ── Effect: Draft yükleme ────────────────────────────────────────────────
+    useEffect(() {
+      getIt<DraftPostService>().getDraft(event.eventID).then((savedPhotos) {
+        if (savedPhotos.isNotEmpty) {
+          takenPhotos.value = List.from(savedPhotos);
+        }
+      });
+      return null;
+    }, const []);
+
+    // ── Layout sabitleri ─────────────────────────────────────────────────────
     const primaryColor = AppColors.primaryColor;
     const sfPro = 'SF Pro Display';
 
@@ -211,12 +209,13 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     final bottomBlackAreaHeight = 261.h;
     final focusSize = MediaQuery.of(context).size.width - (sidePadding * 2);
 
+    // ── Build ────────────────────────────────────────────────────────────────
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
           // 1. KATMAN: KAMERA ÖNİZLEME
-          if (_isCameraInitialized && _controller != null)
+          if (isCameraInitialized.value && controllerRef.value != null)
             Positioned(
               top: 0,
               left: 0,
@@ -226,15 +225,15 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                 child: FittedBox(
                   fit: BoxFit.cover,
                   child: SizedBox(
-                    width: _controller!.value.previewSize!.height,
-                    height: _controller!.value.previewSize!.width,
-                    child: CameraPreview(_controller!),
+                    width: controllerRef.value!.value.previewSize!.height,
+                    height: controllerRef.value!.value.previewSize!.width,
+                    child: CameraPreview(controllerRef.value!),
                   ),
                 ),
               ),
             ),
 
-          // 2. KATMAN: SAYDAM OVERLAY (Kamera üzerindeki maske)
+          // 2. KATMAN: SAYDAM OVERLAY
           Positioned(
             top: 0,
             left: 0,
@@ -257,7 +256,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
           SafeArea(
             child: Stack(
               children: [
-                // Üst Kapat Butonu
+                // Kapat Butonu
                 Positioned(
                   top: 10.h,
                   right: 10.w,
@@ -290,15 +289,20 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                   ),
                 ),
 
-                // KAMERA BUTONLARI (SAYDAM KISIMDA - Siyah panelin hemen üstünde)
+                // Kamera Butonları
                 Positioned(
                   bottom: bottomBlackAreaHeight + 10.h,
                   left: 0,
                   right: 0,
-                  child: _buildActionButtons(primaryColor),
+                  child: _ActionButtons(
+                    primaryColor: primaryColor,
+                    isProcessing: isProcessing.value,
+                    onTakePhoto: takePhoto,
+                    onToggleCamera: toggleCamera,
+                  ),
                 ),
 
-                // ALT SİYAH PANEL (Sadece Slotlar ve Alt Butonlar)
+                // Alt Siyah Panel
                 Align(
                   alignment: Alignment.bottomCenter,
                   child: Container(
@@ -309,8 +313,39 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        _buildPhotoSlots(),
-                        _buildBottomActionButtons(primaryColor, sfPro),
+                        _PhotoSlots(
+                          photos: takenPhotos.value,
+                          onRemove: (index) {
+                            if (!isProcessing.value) {
+                              final updated = [...takenPhotos.value]
+                                ..removeAt(index);
+                              takenPhotos.value = updated;
+                              getIt<DraftPostService>().saveDraft(
+                                event.id,
+                                updated,
+                              );
+                            }
+                          },
+                        ),
+                        _BottomActionButtons(
+                          primaryColor: primaryColor,
+                          sfPro: sfPro,
+                          hasPhotos: takenPhotos.value.isNotEmpty,
+                          onReturn: () => context.go('/home'),
+                          onShare: () {
+                            if (takenPhotos.value.isNotEmpty) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => NewPostPage(
+                                    takenPhotos: takenPhotos.value,
+                                    event: event,
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                        ),
                       ],
                     ),
                   ),
@@ -322,8 +357,27 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       ),
     );
   }
+}
 
-  Widget _buildActionButtons(Color primaryColor) {
+// ---------------------------------------------------------------------------
+// Alt Widget'lar
+// ---------------------------------------------------------------------------
+
+class _ActionButtons extends StatelessWidget {
+  const _ActionButtons({
+    required this.primaryColor,
+    required this.isProcessing,
+    required this.onTakePhoto,
+    required this.onToggleCamera,
+  });
+
+  final Color primaryColor;
+  final bool isProcessing;
+  final VoidCallback onTakePhoto;
+  final VoidCallback onToggleCamera;
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 40.w),
       child: Row(
@@ -334,22 +388,22 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
             onPressed: () {},
           ),
           GestureDetector(
-            onTap: _takePhoto,
+            onTap: onTakePhoto,
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 15),
+              duration: const Duration(milliseconds: 150),
               width: 75.w,
               height: 75.w,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: _isProcessing ? Colors.grey : primaryColor,
+                  color: isProcessing ? Colors.grey : primaryColor,
                   width: 4.w,
                 ),
               ),
               padding: EdgeInsets.all(4.w),
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: _isProcessing ? Colors.grey.shade400 : Colors.white,
+                  color: isProcessing ? Colors.grey.shade400 : Colors.white,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -357,18 +411,26 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
           ),
           IconButton(
             icon: const Icon(Icons.flip_camera_ios, color: Colors.white),
-            onPressed: _toggleCamera,
+            onPressed: onToggleCamera,
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildPhotoSlots() {
+class _PhotoSlots extends StatelessWidget {
+  const _PhotoSlots({required this.photos, required this.onRemove});
+
+  final List<File> photos;
+  final void Function(int index) onRemove;
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(3, (index) {
-        final hasPhoto = index < _takenPhotos.length;
+        final hasPhoto = index < photos.length;
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: 10.w),
           child: Column(
@@ -381,7 +443,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                   border: Border.all(color: Colors.white24),
                   image: hasPhoto
                       ? DecorationImage(
-                          image: FileImage(_takenPhotos[index]),
+                          image: FileImage(photos[index]),
                           fit: BoxFit.cover,
                         )
                       : null,
@@ -389,7 +451,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
               ),
               if (hasPhoto)
                 GestureDetector(
-                  onTap: () => _removePhoto(index),
+                  onTap: () => onRemove(index),
                   child: Padding(
                     padding: EdgeInsets.only(top: 12.h),
                     child: const Icon(
@@ -407,15 +469,32 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       }),
     );
   }
+}
 
-  Widget _buildBottomActionButtons(Color primaryColor, String sfPro) {
+class _BottomActionButtons extends StatelessWidget {
+  const _BottomActionButtons({
+    required this.primaryColor,
+    required this.sfPro,
+    required this.hasPhotos,
+    required this.onReturn,
+    required this.onShare,
+  });
+
+  final Color primaryColor;
+  final String sfPro;
+  final bool hasPhotos;
+  final VoidCallback onReturn;
+  final VoidCallback onShare;
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w),
       child: Row(
         children: [
           Expanded(
             child: OutlinedButton(
-              onPressed: () => context.go('/home'),
+              onPressed: onReturn,
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: primaryColor),
                 padding: EdgeInsets.symmetric(vertical: 10.h),
@@ -426,6 +505,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 16.sp,
+                  fontFamily: sfPro,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -434,21 +514,10 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
           SizedBox(width: 15.w),
           Expanded(
             child: ElevatedButton(
-              onPressed: () {
-                if (_takenPhotos.isNotEmpty) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => NewPostPage(
-                        takenPhotos: _takenPhotos,
-                        event: widget.event,
-                      ),
-                    ),
-                  );
-                }
-              },
+              onPressed: hasPhotos ? onShare : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
+                disabledBackgroundColor: primaryColor.withOpacity(0.4),
                 padding: EdgeInsets.symmetric(vertical: 10.h),
                 shape: const StadiumBorder(),
               ),
@@ -456,6 +525,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                 'paylaş',
                 style: TextStyle(
                   color: Colors.white,
+                  fontFamily: sfPro,
                   fontWeight: FontWeight.w500,
                   fontSize: 16.sp,
                 ),
@@ -466,40 +536,4 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       ),
     );
   }
-}
-
-class HoleOverlayPainter extends CustomPainter {
-  final double holeSize;
-  final double topOffset;
-  final double sideOffset;
-  final double borderRadius;
-  final Color overlayColor;
-
-  HoleOverlayPainter({
-    required this.holeSize,
-    required this.topOffset,
-    required this.sideOffset,
-    required this.borderRadius,
-    required this.overlayColor,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final backgroundPath = Path()
-      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
-    final holePath = Path()
-      ..addRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(sideOffset, topOffset, holeSize, holeSize),
-          Radius.circular(borderRadius),
-        ),
-      );
-    canvas.drawPath(
-      Path.combine(PathOperation.difference, backgroundPath, holePath),
-      Paint()..color = overlayColor,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

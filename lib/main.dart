@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -76,45 +77,7 @@ Future<void> main() async {
       androidProvider: AndroidProvider.debug,
       appleProvider: AppleProvider.debug,
     );
-
-    /*
-    FirebaseFirestore.instance.useFirestoreEmulator(
-      AppConfig.host,
-      8080,
-    );
-    await FirebaseStorage.instance.useStorageEmulator(
-      AppConfig.host,
-      9199,
-      automaticHostMapping: false,
-    );.
-    FirebaseFunctions.instance.useFunctionsEmulator(AppConfig.host, 5001);
-    FirebaseFirestore.instance.useFirestoreEmulator(AppConfig.host, 8080);
-
-    final authInstance = FirebaseAuth.instance;
-    await authInstance.useAuthEmulator(AppConfig.host, 9099);
-
-    if (authInstance.currentUser != null) {
-      debugPrint('Geliştirme modu: Eski oturum temizleniyor...');
-      await authInstance.signOut();
-    }
-
-    const testUserId = 'user1@test.com';
-""
-    if (testUserId == 'A') {
-      if (authInstance.currentUser != null) {
-        await authInstance.signOut();
-      }
-
-      await authInstance.signInAnonymously();
-    } else {
-      await authInstance.signInWithEmailAndPassword(
-        email: testUserId,
-        password: 'password123',
-      );
-    }
-    */
   } else {
-    // Release Modu (Production)
     await FirebaseAppCheck.instance.activate(
       appleProvider: AppleProvider.appAttest, // iOS için standart
     );

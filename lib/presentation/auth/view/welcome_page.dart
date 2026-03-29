@@ -133,7 +133,16 @@ class _WelcomePageState extends State<WelcomePage> {
                     backgroundColor: AppColors.primaryColor,
                     textColor: Colors.white,
                   ),
-
+                  /*
+                  LoginButton(
+                    label: 'Debug',
+                    onPress: () => context.push('/debug'),
+                    width: double.infinity,
+                    height: 48.h,
+                    backgroundColor: AppColors.primaryColor,
+                    textColor: Colors.white,
+                  ),
+                    */
                   SizedBox(height: 8.h),
 
                   // YASAL METİNLER
