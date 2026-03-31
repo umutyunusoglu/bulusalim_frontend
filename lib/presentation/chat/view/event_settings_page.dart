@@ -27,6 +27,8 @@ import 'package:outnest/domain/services/analytics/event_configs/update_event_vis
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
+import 'package:outnest/presentation/shared/form/sanitizer.dart';
+import 'package:outnest/presentation/shared/form/validators/validate_event_name.dart';
 import 'package:outnest/presentation/shared/event_card/view/components/stacked_avatars.dart';
 import 'package:outnest/presentation/shared/popup.dart';
 
@@ -376,7 +378,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                 ),
               ),
             ),
-            maxLength: 50,
+            maxLength: 128,
           ),
           actions: [
             TextButton(
@@ -391,7 +393,13 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
             ),
             TextButton(
               onPressed: () {
-                Navigator.pop(context, titleController.text.trim());
+                final text = titleController.text.trim();
+                final error = validateEventName(text);
+                if (error != null) {
+                  showErrorPopup(context, message: error);
+                  return;
+                }
+                Navigator.pop(context, sanitizeInput(text));
               },
               child: const Text(
                 'Kaydet',

@@ -5,6 +5,9 @@ import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/presentation/map/view/components/popup_next_button.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/services/remote_config_service.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
+import 'package:outnest/presentation/shared/form/sanitizer.dart';
+import 'package:outnest/presentation/shared/form/validators/validate_event_name.dart';
 
 class EventNameStep extends StatefulWidget {
   const EventNameStep({
@@ -223,8 +226,13 @@ class _EventNameStepState extends State<EventNameStep> {
         // 5. İLERLE BUTONU
         PopupNextButton(
           onPressed: () {
-            // Boş kontrolü yapılabilir
-            widget.onNext(_controller.text, _isNameSuggestionUsed);
+            final error = validateEventName(_controller.text);
+            if (error != null) {
+              showErrorPopup(context, message: error);
+              return;
+            }
+            widget.onNext(
+                sanitizeInput(_controller.text), _isNameSuggestionUsed);
           },
         ),
       ],

@@ -9,6 +9,8 @@ import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/services/draft_post_service.dart';
 import 'package:outnest/domain/usecases/upload_post_usecase.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
+import 'package:outnest/presentation/shared/form/sanitizer.dart';
+import 'package:outnest/presentation/shared/form/validators/validate_post_caption.dart';
 
 class NewPostPage extends StatefulWidget {
   const NewPostPage({
@@ -147,7 +149,7 @@ class _NewPostPageState extends State<NewPostPage> {
                   children: [
                     TextField(
                       controller: _captionController,
-                      maxLength: 50,
+                      maxLength: 64,
                       maxLines: 2,
                       cursorColor: Colors.grey,
                       style: TextStyle(
@@ -175,7 +177,7 @@ class _NewPostPageState extends State<NewPostPage> {
                       bottom: 0,
                       right: 0,
                       child: Text(
-                        '${_captionController.text.length}/50',
+                        '${_captionController.text.length}/64',
                         style: TextStyle(
                           color: Colors.grey.shade500,
                           fontSize: 12.sp,
@@ -300,7 +302,13 @@ class _NewPostPageState extends State<NewPostPage> {
     // Widget dispose olmadan önce messenger'ı ve verileri kopyala
     final event = widget.event;
     final media = List<File>.from(_selectedMedia);
-    final caption = _captionController.text.trim();
+    final rawCaption = _captionController.text.trim();
+    final captionError = validatePostCaption(rawCaption);
+    if (captionError != null) {
+      showErrorPopup(context, message: captionError);
+      return;
+    }
+    final caption = sanitizeInput(rawCaption);
 
     // 1. Kullanıcıya "Başlıyoruz" bilgisi ver
     showInfoPopup(context, message: 'Gönderiniz paylaşılıyor...');

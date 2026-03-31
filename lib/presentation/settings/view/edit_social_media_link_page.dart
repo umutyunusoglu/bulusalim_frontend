@@ -4,6 +4,7 @@ import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/presentation/shared/form/sanitizer.dart';
 
 enum SocialLinkType { instagram, whatsapp, website, email }
 
@@ -101,7 +102,9 @@ class _EditSocialMediaLinkPageState extends State<EditSocialMediaLinkPage> {
   }
 
   Future<void> _handleSave() async {
-    final newValue = _linkController.text.trim();
+    final newValue = widget.linkType == SocialLinkType.email
+        ? sanitizeEmail(_linkController.text)
+        : sanitizeUrl(_linkController.text);
 
     // 1. Değişiklik kontrolü: Eğer değer değişmediyse boşuna işlem yapma
     if (newValue == widget.initialValue) {

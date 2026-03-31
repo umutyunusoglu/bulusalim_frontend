@@ -13,6 +13,7 @@ import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/usecases/upload_community_picture_usecase.dart';
 import 'package:outnest/presentation/settings/view/components/add_authority.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
+import 'package:outnest/presentation/shared/form/sanitizer.dart';
 
 class AboutCommunityPage extends StatefulWidget {
   const AboutCommunityPage({super.key});
@@ -343,12 +344,12 @@ class _AboutCommunityPageState extends State<AboutCommunityPage> {
 
       final communityData = currentCommunityData != null
           ? currentCommunityData.copyWith(
-              communityBio: _bioController.text,
+              communityBio: sanitizeInput(_bioController.text),
               communityTeamMembers: List.from(_selectedAuthorities),
               communityPhotoUrl: _imagePath,
             )
           : CommunityData(
-              communityBio: _bioController.text,
+              communityBio: sanitizeInput(_bioController.text),
               communityTeamMembers: List.from(_selectedAuthorities),
               communityPhotoUrl: _imagePath ?? '',
               instagramUrl: '',
