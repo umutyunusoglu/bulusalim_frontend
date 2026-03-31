@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/presentation/map/view/components/popup_next_button.dart';
+import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/form/sanitizer.dart';
 
 class CommunityEventDetailPage extends HookWidget {
@@ -58,13 +59,24 @@ class CommunityEventDetailPage extends HookWidget {
     Future<void> onNext() async {
       if (!context.mounted) return;
 
+      final linkRaw = linkController.text.trim();
+      String linkValue = '';
+      if (linkRaw.isNotEmpty) {
+        final sanitized = sanitizeUrl(linkRaw);
+        if (sanitized == null) {
+          showErrorPopup(context, message: 'Geçersiz bağlantı adresi');
+          return;
+        }
+        linkValue = sanitized;
+      }
+
       await context.push(
         '/community-event-detail-preview',
         extra: {
           'description': sanitizeInput(descController.text),
           'rules': sanitizeInput(rulesController.text),
           'venueInfo': sanitizeInput(venueController.text),
-          'link': sanitizeUrl(linkController.text),
+          'link': linkValue,
           'maxParticipants': maxParticipants.value ?? 0,
           'requiresDocument': requiresDocument.value,
           'coverImage': coverImage.value,

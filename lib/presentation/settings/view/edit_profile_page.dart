@@ -695,7 +695,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       final analytics = getIt<AnalyticsService>();
       if (_nameController.text != _previousName) {
-        updatedData['nameSurname'] = _nameController.text;
+        updatedData['nameSurname'] = sanitizeName(_nameController.text);
       }
       if (_bioController.text != _previousBio) {
         updatedData['bio'] = sanitizeInput(_bioController.text);

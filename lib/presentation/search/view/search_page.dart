@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/presentation/profile/view/profile_page.dart';
-import 'package:outnest/presentation/shared/form/sanitizer.dart';
+
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -53,7 +53,7 @@ class _SearchPageState extends State<SearchPage> {
 
     // DİKKAT: Veritabanında 'search_name' veya 'name' alanının küçük harfli hali olmalı.
     // Case sensitivity sorununu aşmak için query'yi küçültüyoruz.
-    final searchTerm = sanitizeInput(query.toLowerCase());
+    final searchTerm = query.trim().toLowerCase();
 
     try {
       final userRef = FirebaseFirestore.instance.collection('public_users');
