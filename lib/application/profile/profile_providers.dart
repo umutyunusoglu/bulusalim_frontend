@@ -106,7 +106,12 @@ profileFollowStatusProvider = FutureProvider.autoDispose
       profileUserID,
     ) async {
       final myUserId = ref.watch(currentUserIDProvider);
-      if (myUserId == null || profileUserID == myUserId) {
+      if (myUserId == null) {
+        // Unauthenticated users are not following and have no pending follow request
+        return (isFollowing: false, hasSentFollowRequest: false);
+      }
+      if (profileUserID == myUserId) {
+        // Viewing own profile: always treated as following, no follow request
         return (isFollowing: true, hasSentFollowRequest: false);
       }
 
