@@ -12,8 +12,6 @@ import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/entities/user/user_event_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
-import 'package:riverpod/src/providers/future_provider.dart';
-import 'package:riverpod/src/providers/stream_provider.dart';
 
 // ─── Helpers ────────────────────────────────────────────────
 
