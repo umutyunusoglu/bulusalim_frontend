@@ -190,8 +190,10 @@ profileEventsProvider = FutureProvider.autoDispose
           case UserEventStatusEnum.upcoming:
           case UserEventStatusEnum.ongoing:
             enrolledIds.add(event.eventId);
+            break;
           case UserEventStatusEnum.saved:
             savedIds.add(event.eventId);
+            break;
           default:
             break;
         }
