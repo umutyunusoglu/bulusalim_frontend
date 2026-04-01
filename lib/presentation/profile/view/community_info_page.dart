@@ -9,26 +9,45 @@ import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/presentation/profile/view/components/empty_profile_screen.dart';
 
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/domain/entities/user/compact_user_entity.dart';
+import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/presentation/profile/view/components/empty_profile_screen.dart';
+
+// CommunityData modelinin importu eksikse eklemeyi unutma
+// import 'package:outnest/domain/entities/community/community_data.dart';
+
 class CommunityInfoPage extends StatelessWidget {
   CommunityInfoPage({
-    required this.communityUser,
+    required this.communityData,
+    required this.nameSurname,
     super.key,
   });
 
   final SessionService _sessionService = getIt<SessionService>();
 
-  final CompactUserEntity? communityUser;
+  final CommunityData?
+  communityData; // Null gelebilir dediğin için böyle bıraktım
+  final String nameSurname; // Required olduğu için null olmamalı
+
   @override
   Widget build(BuildContext context) {
+    // Type promotion için yerel bir değişkene atıyoruz
+    final data = communityData;
+
     return ValueListenableBuilder(
       valueListenable: _sessionService.stateListenable,
       builder: (context, state, child) {
-        final communityData = communityUser?.communityData;
-        if (communityData == null) {
+        // Null kontrolü artık 'data' üzerinden yapılıyor
+        if (data == null) {
           return const Scaffold(
             body: Center(
               child: EmptyProfileScreen(
-                text: 'Topluluk Bilgileri Daha Girilmemiş!',
+                text: 'Topluluk Bilgileri Mevcut Değil',
                 icon: Icon(Icons.people),
               ),
             ),
@@ -53,7 +72,7 @@ class CommunityInfoPage extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  communityUser?.nameSurname ?? '',
+                  nameSurname, // Artık boş gelme ihtimali yok
                   style: TextStyle(
                     fontFamily: 'SF Pro Display',
                     fontSize: 16.sp,
@@ -71,9 +90,7 @@ class CommunityInfoPage extends StatelessWidget {
             ),
           ),
           body: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: 16.w,
-            ),
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -84,16 +101,16 @@ class CommunityInfoPage extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppColors.dividerColor,
                     borderRadius: BorderRadius.circular(16.r),
-                    image: communityData.communityPhotoUrl.isNotEmpty
+                    image: data.communityPhotoUrl.isNotEmpty
                         ? DecorationImage(
                             image: CachedNetworkImageProvider(
-                              communityData.communityPhotoUrl,
+                              data.communityPhotoUrl,
                             ),
                             fit: BoxFit.cover,
                           )
                         : null,
                   ),
-                  child: communityData.communityPhotoUrl.isEmpty
+                  child: data.communityPhotoUrl.isEmpty
                       ? Center(
                           child: Icon(
                             Icons.groups,
@@ -118,8 +135,8 @@ class CommunityInfoPage extends StatelessWidget {
                 ),
                 SizedBox(height: 8.h),
                 Text(
-                  communityData.communityBio.isNotEmpty
-                      ? communityData.communityBio
+                  data.communityBio.isNotEmpty
+                      ? data.communityBio
                       : 'Biyografi bulunmuyor.',
                   style: TextStyle(
                     fontFamily: 'SF Pro Display',
@@ -133,7 +150,7 @@ class CommunityInfoPage extends StatelessWidget {
                 SizedBox(height: 16.h),
 
                 // 3. EKİP ÜYELERİ BÖLÜMÜ
-                if (communityData.communityTeamMembers.isNotEmpty) ...[
+                if (data.communityTeamMembers.isNotEmpty) ...[
                   Text(
                     'Ekip Üyeleri',
                     style: TextStyle(
@@ -145,11 +162,10 @@ class CommunityInfoPage extends StatelessWidget {
                   ),
                   SizedBox(height: 12.h),
 
-                  // Ekip üyeleri grid'i
                   Wrap(
                     spacing: 12.w,
                     runSpacing: 12.h,
-                    children: communityData.communityTeamMembers
+                    children: data.communityTeamMembers
                         .map((user) => _buildTeamMember(user))
                         .toList(),
                   ),
@@ -163,7 +179,6 @@ class CommunityInfoPage extends StatelessWidget {
     );
   }
 
-  // Ekip üyesi avatar ve isim bileşeni
   Widget _buildTeamMember(CompactUserEntity user) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -171,7 +186,13 @@ class CommunityInfoPage extends StatelessWidget {
         CircleAvatar(
           radius: 25.r,
           backgroundColor: AppColors.dividerColor,
-          backgroundImage: CachedNetworkImageProvider(user.profileImageUrl),
+          // Profil resmi boş gelirse hata vermemesi için kontrol
+          backgroundImage: user.profileImageUrl.isNotEmpty
+              ? CachedNetworkImageProvider(user.profileImageUrl)
+              : null,
+          child: user.profileImageUrl.isEmpty
+              ? Icon(Icons.person, size: 20.sp)
+              : null,
         ),
         SizedBox(height: 4.h),
         SizedBox(
