@@ -1,4 +1,4 @@
-// This file uses user entity and user compact entity for the same variable for convenişe
+// This file intentionally uses both UserEntity and UserCompactEntity (sometimes via dynamic calls) for convenience when sharing the same variable.
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 

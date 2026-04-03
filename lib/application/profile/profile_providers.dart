@@ -12,8 +12,6 @@ import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/entities/user/user_event_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
-import 'package:riverpod/src/providers/future_provider.dart';
-import 'package:riverpod/src/providers/stream_provider.dart';
 
 // ─── Helpers ────────────────────────────────────────────────
 
@@ -109,7 +107,12 @@ profileFollowStatusProvider = FutureProvider.autoDispose
       profileUserID,
     ) async {
       final myUserId = ref.watch(currentUserIDProvider);
-      if (myUserId == null || profileUserID == myUserId) {
+      if (myUserId == null) {
+        // Unauthenticated users are not following and have no pending follow request
+        return (isFollowing: false, hasSentFollowRequest: false);
+      }
+      if (profileUserID == myUserId) {
+        // Viewing own profile: always treated as following, no follow request
         return (isFollowing: true, hasSentFollowRequest: false);
       }
 
@@ -194,8 +197,10 @@ profileEventsProvider = FutureProvider.autoDispose
           case UserEventStatusEnum.upcoming:
           case UserEventStatusEnum.ongoing:
             enrolledIds.add(event.eventId);
+            break;
           case UserEventStatusEnum.saved:
             savedIds.add(event.eventId);
+            break;
           default:
             break;
         }
