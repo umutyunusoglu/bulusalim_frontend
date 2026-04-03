@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:outnest/presentation/shared/form/sanitizer.dart';
 
 void main() {
   group('sanitizeInput', () {
@@ -41,10 +42,8 @@ void main() {
     });
 
     test('allows https URLs', () {
-      expect(
-        sanitizeUrl('https://example.com/path?q=1&b=2'),
-        'https://example.com/path?q=1&b=2',
-      );
+      expect(sanitizeUrl('https://example.com/path?q=1&b=2'),
+          'https://example.com/path?q=1&b=2');
     });
 
     test('blocks javascript scheme', () {
@@ -94,10 +93,8 @@ void main() {
     });
 
     test('preserves valid email characters', () {
-      expect(
-        sanitizeEmail('user.name+tag@uni.edu.tr'),
-        'user.name+tag@uni.edu.tr',
-      );
+      expect(sanitizeEmail('user.name+tag@uni.edu.tr'),
+          'user.name+tag@uni.edu.tr');
     });
   });
 

@@ -5,6 +5,7 @@ import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
+import 'package:outnest/presentation/shared/form/sanitizer.dart';
 import 'package:outnest/presentation/shared/form/validators/validate_university_mail.dart';
 import 'package:pinput/pinput.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -73,7 +74,7 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
 
     try {
       await getIt<UserRepository>().sendVerificationEmail(
-        _emailController.text.trim(),
+        sanitizeEmail(_emailController.text),
       );
       setState(() => _isCodeSent = true);
       _pinFocusNode.requestFocus();
@@ -96,7 +97,7 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
 
     try {
       await getIt<UserRepository>().verifyEmail(
-        _emailController.text.trim(),
+        sanitizeEmail(_emailController.text),
         _detectedUniversity!,
         _pinController.text.trim(),
       );

@@ -19,6 +19,7 @@ import 'package:outnest/domain/usecases/upload_profile_picture_usecase.dart';
 import 'package:outnest/presentation/settings/view/components/profile_input_row.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/form/formatters/name_surname_formatter.dart';
+import 'package:outnest/presentation/shared/form/sanitizer.dart';
 import 'package:outnest/presentation/shared/form/validators/validate_bio.dart';
 import 'package:outnest/presentation/shared/form/validators/validate_date_of_birth.dart';
 import 'package:outnest/presentation/shared/form/validators/validate_name_surname.dart';
@@ -694,10 +695,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       final analytics = getIt<AnalyticsService>();
       if (_nameController.text != _previousName) {
-        updatedData['nameSurname'] = _nameController.text;
+        updatedData['nameSurname'] = sanitizeName(_nameController.text);
       }
       if (_bioController.text != _previousBio) {
-        updatedData['bio'] = _bioController.text;
+        updatedData['bio'] = sanitizeInput(_bioController.text);
       }
       if (_genderController.text != _previousGender) {
         getIt<LoggingService>().info('Yeni cinsiyet seçildi: $_selectedGender');
