@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
+import 'package:outnest/presentation/shared/form/sanitizer.dart';
 import 'package:pinput/pinput.dart';
 
 class ChangePhoneNumberPage extends StatefulWidget {
@@ -122,10 +123,11 @@ class _ChangePhoneNumberPageState extends State<ChangePhoneNumberPage> {
             _buildButton(
               text: 'gönder',
               onPressed: () async {
-                final fullPhone = _phoneController.text.replaceAll(' ', '');
+                final fullPhone = sanitizePhone(_phoneController.text.replaceAll(' ', '').replaceFirst('+90', ''));
+                final fullPhoneFormatted = '+90$fullPhone';
 
                 final result = await _authService
-                    .sendSMS(phoneNumber: fullPhone)
+                    .sendSMS(phoneNumber: fullPhoneFormatted)
                     .run();
 
                 if (!mounted) return;
@@ -203,7 +205,7 @@ class _ChangePhoneNumberPageState extends State<ChangePhoneNumberPage> {
                     await _userRepository.updateUser(
                       userId,
                       {
-                        'phoneNumber': _phoneController.text,
+                        'phoneNumber': '+90${sanitizePhone(_phoneController.text.replaceAll(' ', '').replaceFirst('+90', ''))}',
                       },
                     );
                   case Left(value: final error):

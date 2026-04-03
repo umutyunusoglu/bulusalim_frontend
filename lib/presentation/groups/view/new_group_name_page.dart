@@ -6,6 +6,8 @@ import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/group_repository.dart';
 import 'package:outnest/presentation/groups/view/new_group_page.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
+import 'package:outnest/presentation/shared/form/sanitizer.dart';
+import 'package:outnest/presentation/shared/form/validators/validate_group_name.dart';
 
 class NewGroupNamePage extends StatefulWidget {
   const NewGroupNamePage({super.key, required this.selectedUsers});
@@ -27,14 +29,16 @@ class _NewGroupNamePageState extends State<NewGroupNamePage> {
   bool _isProcessing = false;
 
   void _createGroup() async {
-    final groupName = _groupNameController.text.trim();
+    final rawName = _groupNameController.text.trim();
 
     // 1. Validasyon
-    if (groupName.isEmpty) {
-      showErrorPopup(context, message: 'Lütfen kümenize bir isim verin');
-
+    final error = validateGroupName(rawName);
+    if (error != null) {
+      showErrorPopup(context, message: error);
       return;
     }
+
+    final groupName = sanitizeInput(rawName);
 
     if (_isProcessing) return; // Çift tıklamayı engelle
 
