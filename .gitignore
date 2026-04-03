@@ -47,4 +47,6 @@ app.*.map.json
 *.env
 *.jks
 *.keystore
+pubspec.lock
+
 *.lock
