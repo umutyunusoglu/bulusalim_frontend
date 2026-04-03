@@ -69,6 +69,7 @@ final FutureProviderFamily<dynamic, String> profileUserProvider = FutureProvider
         return ref.watch(currentUserEntityProvider).value;
       }
       return _withRetry(() async {
+        //stale
         final user = await getIt<UserRepository>().getUserPublicData(
           profileUserID,
         );
@@ -165,6 +166,7 @@ profileStatsProvider = FutureProvider.autoDispose
       return (followers: results[0], following: results[1], events: results[2]);
     });
 
+//TODO: Eğer benim profilimse, kendi streamlerime göre getir!
 /// Etkinlikler (kayıtlı + kaydedilenler)
 final FutureProviderFamily<
   ({List<EventEntity> considered, List<EventEntity> current}),
