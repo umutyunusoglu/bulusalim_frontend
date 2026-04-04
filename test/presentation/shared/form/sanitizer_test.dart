@@ -20,8 +20,10 @@ void main() {
 
     test('preserves special characters without encoding', () {
       expect(sanitizeInput('Tom & Jerry'), 'Tom & Jerry');
-      expect(sanitizeInput('<script>alert("xss")</script>'),
-          '<script>alert("xss")</script>');
+      expect(
+        sanitizeInput('<script>alert("xss")</script>'),
+        '<script>alert("xss")</script>',
+      );
       expect(sanitizeInput("it's a test"), "it's a test");
     });
 
