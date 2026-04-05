@@ -38,7 +38,7 @@ class EventJoinButton extends HookConsumerWidget {
     );
 
     // State hook'ları
-    final activeEvents = ref.watch(activeEventsProvider);
+    final activeEvents = ref.watch(upcomingAndOngoingEventsProvider);
     final isInActiveEvents = activeEvents.any(
       (e) => e.eventID == event.eventID,
     );
