@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/domain/entities/notification/follow_notification_entity.dart'; // <--- 1. YENİ ENTITY IMPORT
 import 'package:outnest/domain/entities/notification/notification_entity.dart';
 import 'package:outnest/domain/repositories/inbox_repository.dart';
@@ -10,6 +11,7 @@ import 'package:outnest/domain/services/persistance_service.dart';
 class InboxRepositoryImpl implements InboxRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final LoggingService _logger = getIt<LoggingService>();
 
   String get _userId => _auth.currentUser?.uid ?? '';
 
@@ -80,7 +82,7 @@ class InboxRepositoryImpl implements InboxRepository {
     return _firestore
         .collection('users')
         .doc(_userId)
-        .collection('followRequests')
+      .collection('followNotifications')
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
@@ -113,22 +115,22 @@ class InboxRepositoryImpl implements InboxRepository {
       }
     }
 
-    print(
+    _logger.info(
       '[REPO] hasUnreadFollowRequest: saved ${seenStates.length} seen states',
     );
 
     final snapshot = await _firestore
         .collection('users')
         .doc(_userId)
-        .collection('followRequests')
+      .collection('followNotifications')
         .get();
 
-    print(
+    _logger.info(
       '[REPO] hasUnreadFollowRequest: Firestore query returned ${snapshot.docs.length} docs',
     );
 
     if (snapshot.docs.isEmpty) {
-      print('[REPO] hasUnreadFollowRequest: empty, returning false');
+      _logger.info('[REPO] hasUnreadFollowRequest: empty, returning false');
       return false;
     }
 
@@ -137,18 +139,18 @@ class InboxRepositoryImpl implements InboxRepository {
       final currentMillis = currentTimestamp.millisecondsSinceEpoch;
       final seenMillis = seenStates[doc.id];
       final isNew = seenMillis == null || currentMillis > seenMillis;
-      print(
+      _logger.info(
         '[REPO] hasUnreadFollowRequest: doc ${doc.id} -> currentMillis=$currentMillis seenMillis=$seenMillis isNew=$isNew',
       );
       if (isNew) {
-        print(
+        _logger.info(
           '[REPO] hasUnreadFollowRequest: found unread doc ${doc.id}, returning true',
         );
         return true;
       }
     }
 
-    print('[REPO] hasUnreadFollowRequest: all docs seen, returning false');
+    _logger.info('[REPO] hasUnreadFollowRequest: all docs seen, returning false');
     return false;
   }
 
@@ -156,15 +158,15 @@ class InboxRepositoryImpl implements InboxRepository {
   Future<void> markFollowRequestsAsSeen(String followRequestId) async {
     if (_userId.isEmpty) return;
     try {
-      print('[REPO] markFollowRequestsAsSeen START for $followRequestId');
+      _logger.info('[REPO] markFollowRequestsAsSeen START for $followRequestId');
       final persistenceService = getIt<PersistanceService>();
       final snapshot = await _firestore
           .collection('users')
           .doc(_userId)
-          .collection('followRequests')
+          .collection('followNotifications')
           .get();
 
-      print(
+      _logger.info(
         '[REPO] markFollowRequestsAsSeen: found ${snapshot.docs.length} docs to mark',
       );
 
@@ -174,7 +176,7 @@ class InboxRepositoryImpl implements InboxRepository {
           doc.data(),
         ).millisecondsSinceEpoch;
         seenStates[doc.id] = timestamp;
-        print(
+        _logger.info(
           '[REPO] markFollowRequestsAsSeen: marked ${doc.id} -> $timestamp',
         );
       }
@@ -190,11 +192,11 @@ class InboxRepositoryImpl implements InboxRepository {
         },
       );
 
-      print(
-        "[REPO] markFollowRequestsAsSeen COMPLETE: saved ${seenStates.length} states",
+      _logger.info(
+        '[REPO] markFollowRequestsAsSeen COMPLETE: saved ${seenStates.length} states',
       );
     } catch (e) {
-      print("Takip isteği güncellenirken hata oluştu: $e");
+      _logger.error('Takip isteği güncellenirken hata oluştu: $e');
     }
   }
 
