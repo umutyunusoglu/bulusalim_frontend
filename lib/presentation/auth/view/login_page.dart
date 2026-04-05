@@ -17,6 +17,7 @@ import 'package:outnest/presentation/auth/view/components/auth_input.dart';
 import 'package:outnest/presentation/auth/view/components/google_auth_button.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/form/formatters/phone_input_formatter.dart';
+import 'package:outnest/presentation/shared/form/sanitizer.dart';
 
 // Yükleme durumlarını ayırt etmek için enum
 
@@ -42,7 +43,7 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _handleLogin() async {
     if (_authStatus != AuthStatus.none) return;
 
-    final rawNumber = _phoneController.text.replaceAll(' ', '');
+    final rawNumber = sanitizePhone(_phoneController.text.replaceAll(' ', ''));
 
     if (rawNumber.isEmpty) {
       showErrorPopup(context, message: 'Lütfen telefon numaranızı giriniz.');

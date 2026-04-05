@@ -619,12 +619,44 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
+  Stream<List<EventEntity>> watchCompletedAndActiveEvents(Identifier userID) {
+    return _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('eventLog')
+        .where('status', isEqualTo: 'completed')
+        .where('isActive', isEqualTo: true)
+        .snapshots()
+        .asyncMap((snapshot) async {
+          if (snapshot.docs.isEmpty) return [];
+
+          final eventFutures = snapshot.docs.map((doc) async {
+            final historyData = doc.data();
+            final eventId = historyData['eventID'] as Identifier;
+
+            final eventEntity = await eventRepository.getEvent(eventId);
+            if (eventEntity == null) return null;
+
+            return eventEntity.copyWith(
+              myStatus: historyData['status'] as String,
+              myRole: historyData['role'].toString(),
+            );
+          });
+
+          final events = await Future.wait(eventFutures);
+          return events.whereType<EventEntity>().toList();
+        });
+  }
+
+  //TODO: Deprecate this after session service becomes deprecated
+  @override
   Stream<List<EventEntity>> watchActiveEvents(Identifier userID) {
     return _firestore
         .collection('users')
         .doc(userID)
         .collection('eventLog')
-        .where('status', whereIn: ['upcoming', 'ongoing'])
+        .where('status', whereIn: ['upcoming', 'ongoing', 'completed'])
+        .where('isActive', isEqualTo: true)
         .orderBy('updatedAt', descending: true)
         .snapshots()
         .asyncMap((snapshot) async {

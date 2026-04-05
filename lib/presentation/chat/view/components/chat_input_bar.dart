@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/presentation/shared/form/sanitizer.dart';
 
 class ChatInputBar extends StatefulWidget {
   const ChatInputBar({
@@ -18,8 +19,10 @@ class _ChatInputBarState extends State<ChatInputBar> {
   final TextEditingController _textController = TextEditingController();
 
   void _handleSend() {
-    final text = _textController.text.trim();
+    var text = _textController.text.trim();
     if (text.isEmpty) return;
+
+    text = sanitizeInput(text);
 
     widget.onSend(text);
     _textController.clear();
