@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:outnest/application/app_state/app_initialization_state.dart';
 import 'package:outnest/application/app_state/tutorial_providers.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
+import 'package:outnest/domain/services/share_links_service.dart';
 
 class InitScreen extends HookConsumerWidget {
   const InitScreen({
@@ -39,7 +41,15 @@ class InitScreen extends HookConsumerWidget {
           if (!seenAuthLoading.value) return null;
           hasNavigated.value = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (context.mounted) context.go('/welcome');
+            if (context.mounted) {
+              // Store pending deep link for after auth completes
+              if (nextPath != null && nextPath!.isNotEmpty) {
+                getIt<ShareLinksService>().setPendingDeepLink(nextPath);
+                context.go('/welcome');
+              } else {
+                context.go('/welcome');
+              }
+            }
           });
           return null;
         }
@@ -64,6 +74,14 @@ class InitScreen extends HookConsumerWidget {
         hasNavigated.value = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!context.mounted) return;
+
+          // Check for pending deep links (set during auth flow)
+          final pendingDeepLink = getIt<ShareLinksService>()
+              .getPendingDeepLink();
+          if (pendingDeepLink != null && pendingDeepLink.isNotEmpty) {
+            context.go(pendingDeepLink);
+            return;
+          }
 
           // Deep link varsa tutorial'ı atla, direkt hedefe git
           if (nextPath != null &&

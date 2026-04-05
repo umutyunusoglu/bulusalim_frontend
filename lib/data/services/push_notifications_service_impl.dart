@@ -30,8 +30,7 @@ class PushNotificationsServiceImpl implements PushNotificationsService {
   @override
   Future<void> initialize() async {
     _logger.info('Initializing Push Notifications Service');
-    NotificationSettings settings = await _firebaseMessaging
-        .requestPermission();
+    await _firebaseMessaging.requestPermission();
 
     // 2. SessionState'i Dinle (Login/Logout takibi için)
     _sessionService.stateListenable.removeListener(
@@ -55,7 +54,9 @@ class PushNotificationsServiceImpl implements PushNotificationsService {
 
     // Foreground mesajlarını dinle
     FirebaseMessaging.onMessage.listen(
-      (message) => _logger.info('Foreground msg: ${message.messageId}'),
+      (message) {
+        _logger.info('Foreground msg: ${message.messageId}');
+      },
     );
   }
 

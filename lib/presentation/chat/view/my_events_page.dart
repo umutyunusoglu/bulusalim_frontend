@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:outnest/application/providers/navbar_badge_provider.dart';
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
@@ -25,18 +27,32 @@ class MyEventItemData {
   final int pendingRequestCount;
 }
 
-class MyEventsPage extends StatefulWidget {
+class MyEventsPage extends ConsumerStatefulWidget {
   const MyEventsPage({super.key});
 
   @override
-  State<MyEventsPage> createState() => _MyEventsPageState();
+  ConsumerState<MyEventsPage> createState() => _MyEventsPageState();
 }
 
-class _MyEventsPageState extends State<MyEventsPage> {
+class _MyEventsPageState extends ConsumerState<MyEventsPage> {
   late final String currentUserId;
   late final Stream<List<MyEventItemData>> _enrichedEventsStream;
 
   int _selectedTabIndex = 0;
+  bool? _lastHasUnreadChat;
+
+  void _syncChatBadge(bool hasUnreadChat) {
+    if (_lastHasUnreadChat == hasUnreadChat) return;
+    _lastHasUnreadChat = hasUnreadChat;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(navBarBadgeProvider).setBadge(
+        tabIndex: 3,
+        visible: hasUnreadChat,
+      );
+    });
+  }
 
   @override
   void initState() {
@@ -83,6 +99,11 @@ class _MyEventsPageState extends State<MyEventsPage> {
           }
 
           final allEnrichedEvents = snapshot.data ?? [];
+
+          final hasUnreadChat = allEnrichedEvents.any(
+            (item) => item.unreadChatCount > 0,
+          );
+          _syncChatBadge(hasUnreadChat);
 
           // Filtreleme (Kurucu / Katılımcı)
           final filteredItems = allEnrichedEvents.where((item) {

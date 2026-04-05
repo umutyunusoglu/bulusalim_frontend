@@ -5,8 +5,11 @@ abstract class InboxRepository {
   // Bildirimleri canlı dinlemek için Stream
   Stream<List<NotificationEntity>> getNotificationsStream();
 
-  // Bildirimi okundu işaretlemek için
-  Future<void> updateFollowNotificationRead(String notificationId);
+  // Genel bildirimleri okunduya çekmek için (üstteki kırmızı nokta temizliği)
+  Future<void> markAllNotificationsRead();
+
+  // Takip isteğini görüldü işaretlemek için
+  Future<void> markFollowRequestsAsSeen(String followRequestId);
 
   // Okunmamış bildirim sayısı (Badge için)
   Future<bool> hasUnreadFollowRequest();

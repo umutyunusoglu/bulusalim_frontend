@@ -1,30 +1,62 @@
-import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:outnest/application/providers/inbox_notification_providers.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/notification/follow_notification_entity.dart';
-import 'package:outnest/domain/repositories/inbox_repository.dart';
 import 'package:outnest/presentation/notification/view/components/follow_request_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
-class FollowRequestsPage extends StatefulWidget {
+class FollowRequestsPage extends ConsumerStatefulWidget {
   const FollowRequestsPage({super.key});
 
   @override
-  State<FollowRequestsPage> createState() => _FollowRequestsPageState();
+  ConsumerState<FollowRequestsPage> createState() =>
+      _FollowRequestsPageState();
 }
 
-class _FollowRequestsPageState extends State<FollowRequestsPage> {
-  late final InboxRepository _inboxRepository;
+class _FollowRequestsPageState extends ConsumerState<FollowRequestsPage> {
+  bool _didInitialMark = false;
+  bool _isMarkingSeen = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _inboxRepository = getIt<InboxRepository>();
+  Future<void> _markAsSeen(List<FollowNotificationEntity> items) async {
+    if (_isMarkingSeen || items.isEmpty) return;
+    _isMarkingSeen = true;
+    try {
+      final repository = ref.read(inboxRepositoryProvider);
+      await repository.markFollowRequestsAsSeen(items.first.userID);
+      await ref.read(unreadFollowRequestsProvider.notifier).refresh();
+    } finally {
+      _isMarkingSeen = false;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final followRequestsAsync = ref.watch(followRequestsStreamProvider);
+
+    ref.listen<AsyncValue<List<FollowNotificationEntity>>>(
+      followRequestsStreamProvider,
+      (previous, next) {
+        final items = next.asData?.value;
+        if (items == null || items.isEmpty) return;
+        unawaited(_markAsSeen(items));
+      },
+    );
+
+    if (!_didInitialMark) {
+      final items = followRequestsAsync.asData?.value;
+      if (items != null && items.isNotEmpty) {
+        _didInitialMark = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          unawaited(_markAsSeen(items));
+        });
+      }
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -46,20 +78,8 @@ class _FollowRequestsPageState extends State<FollowRequestsPage> {
           ),
         ),
       ),
-      body: StreamBuilder<List<FollowNotificationEntity>>(
-        stream: _inboxRepository.getFollowRequestsStream(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          // En güncel ID'yi al ve okunmamışları "okundu" yap
-          if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-            final latestId = snapshot.data!.first.userID;
-
-            _inboxRepository.updateFollowNotificationRead(latestId);
-          }
-          final items = snapshot.data ?? [];
+      body: followRequestsAsync.when(
+        data: (items) {
           if (items.isEmpty) {
             return const Center(child: Text('Takip isteği yok'));
           }
@@ -93,7 +113,6 @@ class _FollowRequestsPageState extends State<FollowRequestsPage> {
               }
             }
           }
-
           return ListView(
             padding: EdgeInsets.zero,
             children: [
@@ -116,10 +135,10 @@ class _FollowRequestsPageState extends State<FollowRequestsPage> {
                 ...today.map((item) => FollowRequestTile(item: item)),
               ],
 
-              if (older.isNotEmpty) ...[
+              if (lastWeek.isNotEmpty) ...[
                 SizedBox(height: 10.h),
                 _buildSectionHeader('Son 7 Gün'),
-                ...older.map((item) => FollowRequestTile(item: item)),
+                ...lastWeek.map((item) => FollowRequestTile(item: item)),
               ],
 
               if (older.isNotEmpty) ...[
@@ -132,6 +151,9 @@ class _FollowRequestsPageState extends State<FollowRequestsPage> {
             ],
           );
         },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, __) =>
+            const Center(child: Text('Takip istekleri yüklenemedi')),
       ),
     );
   }
