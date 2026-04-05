@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:outnest/application/app_state/current_user_data_providers/current_user_event_providers.dart';
+import 'package:outnest/application/app_state/current_user_data_providers/current_user_identity_provider.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/types/enums/screen_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
@@ -11,12 +14,10 @@ import 'package:outnest/presentation/shared/popup.dart';
 enum EventJoinButtonStyle {
   /// EventCard içindeki küçük buton (72x36)
   compact,
-
-  /// CommunityDetailView'daki geniş buton (full-width, icon + text)
   expanded,
 }
 
-class EventJoinButton extends HookWidget {
+class EventJoinButton extends HookConsumerWidget {
   const EventJoinButton({
     required this.event,
     required this.screen,
@@ -29,7 +30,7 @@ class EventJoinButton extends HookWidget {
   final EventJoinButtonStyle style;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // Controller'ı event başına bir kez oluştur, widget ağacından çıkınca temizle
     final controller = useMemoized(
       () => EventJoinController(event: event),
@@ -37,8 +38,25 @@ class EventJoinButton extends HookWidget {
     );
 
     // State hook'ları
-    final status = useState(controller.resolveInitialStatus());
+    final activeEvents = ref.watch(activeEventsProvider);
+    final isInActiveEvents = activeEvents.any(
+      (e) => e.eventID == event.eventID,
+    );
+    final uid = ref.watch(currentUserIDProvider)!;
+
+    final externalStatus = isInActiveEvents
+        ? EventJoinStatus.joined
+        : _resolveStatusFromEvent(event, uid);
+
+    final status = useState(externalStatus);
     final isProcessing = useState(false);
+
+    useEffect(() {
+      if (!isProcessing.value) {
+        status.value = externalStatus;
+      }
+      return null;
+    }, [externalStatus, isProcessing.value]);
 
     // ─── AKSIYON HANDLERLARı ───
 
@@ -178,7 +196,7 @@ class EventJoinButton extends HookWidget {
               ? SizedBox(
                   width: 18.w,
                   height: 18.w,
-                  child: CircularProgressIndicator(
+                  child: const CircularProgressIndicator(
                     strokeWidth: 2,
                     color: AppColors.primaryColor,
                   ),
@@ -265,7 +283,7 @@ class EventJoinButton extends HookWidget {
               ? SizedBox(
                   width: 22.w,
                   height: 22.w,
-                  child: CircularProgressIndicator(
+                  child: const CircularProgressIndicator(
                     strokeWidth: 2.5,
                     color: AppColors.primaryColor,
                   ),
@@ -343,4 +361,15 @@ class EventJoinButton extends HookWidget {
       child: child,
     );
   }
+}
+
+EventJoinStatus _resolveStatusFromEvent(EventEntity event, String uid) {
+  if (uid.isEmpty) return EventJoinStatus.canJoin;
+  if (event.participants.any((p) => p.userID == uid)) {
+    return EventJoinStatus.joined;
+  }
+  if (event.requestPool.any((p) => p.userID == uid)) {
+    return EventJoinStatus.pending;
+  }
+  return EventJoinStatus.canJoin;
 }

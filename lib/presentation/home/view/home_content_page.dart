@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outnest/application/app_state/current_user_data_providers/current_user_university_verified.dart';
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
-import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/presentation/profile/view/components/empty_profile_screen.dart';
 import 'package:outnest/presentation/shared/event_card/view/event_card.dart';
 import 'package:outnest/presentation/shared/post_card/post_card.dart';
@@ -17,22 +16,6 @@ import 'package:outnest/domain/entities/feed/feed_entity.dart';
 import 'package:outnest/domain/entities/feed/post/post_entity.dart';
 import 'package:outnest/domain/repositories/feed_repository.dart';
 
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
-import 'package:outnest/presentation/profile/view/components/empty_profile_screen.dart';
-import 'package:outnest/presentation/shared/event_card/view/event_card.dart';
-import 'package:outnest/presentation/shared/post_card/post_card.dart';
-import 'package:outnest/core/constants/configs/app_config.dart';
-import 'package:outnest/core/utils/types/enums/feed_type.dart';
-import 'package:outnest/core/utils/types/enums/screen_enum.dart';
-import 'package:outnest/domain/entities/feed/event/event_entity.dart';
-import 'package:outnest/domain/entities/feed/feed_entity.dart';
-import 'package:outnest/domain/entities/feed/post/post_entity.dart';
-import 'package:outnest/domain/repositories/feed_repository.dart';
 // Provider import
 import 'package:outnest/application/app_state/current_user_data_providers/current_user_identity_provider.dart';
 

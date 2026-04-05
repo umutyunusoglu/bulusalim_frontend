@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:outnest/application/app_state/current_user_data_providers/current_user_friend_providers.dart';
 import 'package:outnest/application/app_state/current_user_data_providers/current_user_identity_provider.dart';
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
