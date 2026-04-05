@@ -15,8 +15,8 @@ class EventChatCard extends StatelessWidget {
   const EventChatCard({
     required this.event,
     required this.isCreator,
+    this.isPending = false,
     required this.onTapChat,
-    this.participantStatus = 'approved',
     super.key,
     this.chatNotificationCount = 0,
     this.pendingRequestCount = 0,
@@ -24,7 +24,7 @@ class EventChatCard extends StatelessWidget {
 
   final EventEntity event;
   final bool isCreator;
-  final String participantStatus;
+  final bool isPending;
   final int chatNotificationCount;
   final int pendingRequestCount;
   final VoidCallback onTapChat;
@@ -68,6 +68,11 @@ class EventChatCard extends StatelessWidget {
 
         final categoryIcon = _getCategoryIcon();
 
+        bool isOngoing = false;
+        if (displayDate is DateTime) {
+          isOngoing = DateTime.now().isAfter(displayDate);
+        }
+
         return Container(
           color: Colors.transparent,
           margin: EdgeInsets.zero,
@@ -92,16 +97,48 @@ class EventChatCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            displayName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontFamily: 'SF Pro Display',
-                              fontSize: 15.sp,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.darkSlate,
-                            ),
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  displayName,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontFamily: 'SF Pro Display',
+                                    fontSize: 15.sp,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.darkSlate,
+                                  ),
+                                ),
+                              ),
+                              if (isOngoing) ...[
+                                SizedBox(width: 8.w),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 6.w,
+                                    vertical: 2.h,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: AppColors.primaryColor,
+                                      width: 1,
+                                    ),
+                                    borderRadius: BorderRadius.circular(6.r),
+                                  ),
+                                  child: Text(
+                                    'şu anda',
+                                    style: TextStyle(
+                                      color: AppColors.primaryColor,
+                                      fontSize: 10.sp,
+                                      fontWeight: FontWeight.w500,
+                                      fontFamily: 'SF Pro Display',
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                           SizedBox(height: 4.h),
 
@@ -120,7 +157,7 @@ class EventChatCard extends StatelessWidget {
 
                     if (isCreator)
                       _buildChatIcon()
-                    else if (participantStatus == 'pending')
+                    else if (isPending)
                       _buildPendingIcon()
                     else
                       _buildChatIcon(),

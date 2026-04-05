@@ -87,7 +87,20 @@ class _MyEventsPageState extends State<MyEventsPage> {
           // Filtreleme (Kurucu / Katılımcı)
           final filteredItems = allEnrichedEvents.where((item) {
             final isCreator = item.event.creator.userID == currentUserId;
-            return _selectedTabIndex == 0 ? isCreator : !isCreator;
+
+            if (_selectedTabIndex == 0) {
+              return isCreator; // Kurucu sekmesi
+            } else {
+              // Katılımcı sekmesi: Hem katılımcıları hem beklemede olanları listele
+              final isParticipant = item.event.participants.any(
+                (p) => p.userID == currentUserId,
+              );
+              final isPending = item.event.requestPool.any(
+                (req) => req.userID == currentUserId,
+              );
+
+              return !isCreator && (isParticipant || isPending);
+            }
           }).toList();
 
           // Header'daki Toplam Bildirim Sayısı
@@ -158,13 +171,31 @@ class _MyEventsPageState extends State<MyEventsPage> {
                                 ? rawImage
                                 : FileService.defaultProfileImageUrl();
 
+                            // Bekleme durumunu nesne üzerinden ID ile kontrol et
+                            final isPending = item.event.requestPool.any(
+                              (u) => u.userID == currentUserId,
+                            );
+
                             return EventChatCard(
                               event: item.event,
                               isCreator: _selectedTabIndex == 0,
+                              isPending: isPending,
                               pendingRequestCount: item.pendingRequestCount,
                               chatNotificationCount: item.unreadChatCount,
 
                               onTapChat: () {
+                                // Beklemedeyse sohbete gitmesini engelle
+                                if (isPending) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Katılım isteğiniz onay bekliyor.',
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+
                                 context.push(
                                   '/chat/room/${item.event.eventID}',
                                   extra: {
