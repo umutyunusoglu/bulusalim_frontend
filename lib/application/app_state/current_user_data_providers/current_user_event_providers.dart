@@ -37,13 +37,36 @@ final StreamProvider<List<EventEntity>> upcomingEventsProvider =
       return getIt<UserRepository>().watchUpcomingEvents(userID);
     });
 
+/// Streams the list of events that are completed and still should be shown in the chat page.
+///
+/// Returns an empty list if the user is not authenticated.
+/// Auto-disposes when no longer listened to.
+final StreamProvider<List<EventEntity>> completedAndActiveEventsProvider =
+    StreamProvider.autoDispose<List<EventEntity>>((ref) {
+      final userID = ref.watch(currentUserIDProvider);
+      if (userID == null) return Stream.value([]);
+
+      return getIt<UserRepository>().watchCompletedAndActiveEvents(userID);
+    });
+
 /// Combines [ongoingEventsProvider] and [upcomingEventsProvider] into a single
 /// flat list of all active events (ongoing + upcoming) for the current user.
 ///
 /// Auto-disposes when no longer listened to.
-final Provider<List<EventEntity>> activeEventsProvider =
+final Provider<List<EventEntity>> upcomingAndOngoingEventsProvider =
     Provider.autoDispose<List<EventEntity>>((ref) {
       final ongoing = ref.watch(ongoingEventsProvider).value ?? [];
       final upcoming = ref.watch(upcomingEventsProvider).value ?? [];
       return [...ongoing, ...upcoming];
+    });
+
+/// Combines [ongoingEventsProvider], [upcomingEventsProvider] and [completedAndActiveEventsProvider] into a single
+/// flat list of all active events (ongoing + upcoming + completed but still active)
+final Provider<List<EventEntity>> activeEventsProvider =
+    Provider.autoDispose<List<EventEntity>>((ref) {
+      final ongoing = ref.watch(ongoingEventsProvider).value ?? [];
+      final upcoming = ref.watch(upcomingEventsProvider).value ?? [];
+      final completedAndActive =
+          ref.watch(completedAndActiveEventsProvider).value ?? [];
+      return [...ongoing, ...upcoming, ...completedAndActive];
     });

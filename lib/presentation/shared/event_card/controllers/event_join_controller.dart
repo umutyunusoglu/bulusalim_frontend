@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/screen_enum.dart';
@@ -22,20 +24,6 @@ class EventJoinController {
   final SessionService _sessionService;
   final AnalyticsService _analyticsService;
   final LoggingService _logger;
-
-  /// Mevcut kullanıcıya göre başlangıç durumunu hesaplar.
-  EventJoinStatus resolveInitialStatus() {
-    final uid = _sessionService.currentUser?.userID ?? '';
-    if (uid.isEmpty) return EventJoinStatus.canJoin;
-
-    if (event.participants.any((p) => p.userID == uid)) {
-      return EventJoinStatus.joined;
-    }
-    if (event.requestPool.any((p) => p.userID == uid)) {
-      return EventJoinStatus.pending;
-    }
-    return EventJoinStatus.canJoin;
-  }
 
   CompactUserEntity _currentUserCompact() {
     final u = _sessionService.currentUser!;
@@ -109,24 +97,27 @@ class EventJoinController {
         )
         .length;
 
-    _analyticsService.logSendJoinRequestToEvent(
-      SendJoinRequestToEventAnalyticsConfig(
-        eventID: event.id,
-        numberOfParticipants: event.participantCount,
-        numberOfFollowerParticipants: numberOfFollowerParticipants,
-        numberOfNonFollowerParticipants:
-            event.participants.length - numberOfFollowerParticipants,
-        numberOfFolloweeParticipants: numberOfFolloweeParticipants,
-        numberOfNonFolloweeParticipants:
-            event.participants.length - numberOfFolloweeParticipants,
-        sameUniversityAsCreator: sameUniversityAsCreator,
-        numberOfSameUniversityParticipants: numberOfSameUniversityParticipants,
-        showOnMap: event.showOnMap,
-        remainingTimeToStart: event.startTime.difference(DateTime.now()),
-        eventStartTime: event.startTime,
-        eventVisibility: event.visibility.toString(),
-        category: event.hobbies.isNotEmpty ? event.hobbies[0] : 'null',
-        screen: screen,
+    unawaited(
+      _analyticsService.logSendJoinRequestToEvent(
+        SendJoinRequestToEventAnalyticsConfig(
+          eventID: event.id,
+          numberOfParticipants: event.participantCount,
+          numberOfFollowerParticipants: numberOfFollowerParticipants,
+          numberOfNonFollowerParticipants:
+              event.participants.length - numberOfFollowerParticipants,
+          numberOfFolloweeParticipants: numberOfFolloweeParticipants,
+          numberOfNonFolloweeParticipants:
+              event.participants.length - numberOfFolloweeParticipants,
+          sameUniversityAsCreator: sameUniversityAsCreator,
+          numberOfSameUniversityParticipants:
+              numberOfSameUniversityParticipants,
+          showOnMap: event.showOnMap,
+          remainingTimeToStart: event.startTime.difference(DateTime.now()),
+          eventStartTime: event.startTime,
+          eventVisibility: event.visibility.toString(),
+          category: event.hobbies.isNotEmpty ? event.hobbies[0] : 'null',
+          screen: screen,
+        ),
       ),
     );
   }

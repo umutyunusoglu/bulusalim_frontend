@@ -71,7 +71,7 @@ class ProfilePage extends HookConsumerWidget {
     final myFollowees = ref.watch(currentUserFolloweesProvider).value ?? [];
     final myFollowerCount = ref.watch(currentUserFollowerCountProvider);
     final myFolloweeCount = ref.watch(currentUserFolloweeCountProvider);
-    final activeEvents = ref.watch(activeEventsProvider);
+    final activeEvents = ref.watch(upcomingAndOngoingEventsProvider);
 
     // ─── Action notifier ─────────────────────────────────────
     final actionState = ref.watch(profileActionProvider(profileUserID));
