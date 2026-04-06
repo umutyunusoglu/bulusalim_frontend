@@ -7,6 +7,10 @@ import 'package:outnest/application/app_state/current_user_data_providers/curren
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/application/providers/nav_bar_active_index_provider.dart';
 import 'package:outnest/application/providers/navbar_badge_provider.dart';
+import 'package:outnest/presentation/profile/view/components/empty_profile_screen.dart';
+import 'package:outnest/presentation/shared/event_card/view/event_card.dart';
+import 'package:outnest/presentation/shared/post_card/post_card.dart';
+import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/utils/types/enums/feed_type.dart';
 import 'package:outnest/core/utils/types/enums/screen_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
@@ -19,6 +23,9 @@ import 'package:outnest/domain/services/navbar_badge_service.dart';
 import 'package:outnest/presentation/profile/view/components/empty_profile_screen.dart';
 import 'package:outnest/presentation/shared/event_card/view/event_card.dart';
 import 'package:outnest/presentation/shared/post_card/post_card.dart';
+
+// Provider import
+import 'package:outnest/application/app_state/current_user_data_providers/current_user_identity_provider.dart';
 
 class HomeContentPage extends ConsumerStatefulWidget {
   const HomeContentPage({required this.feedType, super.key});

@@ -41,6 +41,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "10.0.1"
+  animated_button:
+    dependency: "direct main"
+    description:
+      name: animated_button
+      sha256: "238e093023955b3a21b14d230baeecb94fc796379e3dd8ee534c158838f24024"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.1"
   antlr4:
     dependency: transitive
     description:
@@ -1151,6 +1159,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.3"
+  glowy_borders:
+    dependency: "direct main"
+    description:
+      name: glowy_borders
+      sha256: a0ace5b193047deab00ed2646065b0ef91bf1efef5b3579851bcc6bc7e0748b4
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.2"
   go_router:
     dependency: "direct main"
     description:
@@ -1584,10 +1600,10 @@ packages:
     dependency: "direct main"
     description:
       name: material_symbols_icons
-      sha256: c62b15f2b3de98d72cbff0148812f5ef5159f05e61fc9f9a089ec2bb234df082
+      sha256: "10a74aaa9e566c92f8aa14809d2dd78156fb93743348ebffec0345c38eb35706"
       url: "https://pub.dev"
     source: hosted
-    version: "4.2906.0"
+    version: "4.2928.1"
   meta:
     dependency: transitive
     description:
@@ -1932,8 +1948,16 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "18.8.2"
+  ripple_wave:
+    dependency: "direct main"
+    description:
+      name: ripple_wave
+      sha256: "96f522a178e96aec10d2a27171e79d20745d163f5cf7947c77d18b93bfb313f4"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.5"
   riverpod:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: riverpod
       sha256: "8c22216be8ad3ef2b44af3a329693558c98eca7b8bd4ef495c92db0bba279f83"

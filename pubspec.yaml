@@ -79,6 +79,10 @@ dependencies:
   video_player: ^2.11.1
   volume_controller: ^3.4.4
   flutter_svg: ^2.2.4
+  animated_button: ^0.3.1
+  ripple_wave: ^0.1.5
+  glowy_borders: ^1.0.2
+  riverpod: ^3.2.1
 
 
 

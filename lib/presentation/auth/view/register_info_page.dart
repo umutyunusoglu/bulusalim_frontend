@@ -35,6 +35,7 @@ import 'package:outnest/presentation/shared/form/formatters/username_formatter.d
 import 'package:outnest/presentation/shared/form/validators/validate_date_of_birth.dart';
 import 'package:outnest/presentation/shared/form/validators/validate_name_surname.dart';
 import 'package:outnest/presentation/shared/form/validators/validate_university_mail.dart';
+import 'package:outnest/presentation/shared/form/sanitizer.dart';
 import 'package:outnest/presentation/shared/form/validators/validate_username.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -227,8 +228,8 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
     //await Future.delayed(const Duration(seconds: 10));
 
     try {
-      final username = _usernameController.text.trim();
-      final name = _nameController.text.trim();
+      final username = sanitizeUsername(_usernameController.text);
+      final name = sanitizeName(_nameController.text);
       final dob = _selectedDate!;
       GenderEnum gender;
       gender = GenderEnum.fromString(_genderDisplayController.text);
@@ -247,7 +248,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
       final isEmailVerified = _detectedUniversity != null;
       final university = isEmailVerified ? _detectedUniversity! : null;
       final universityEmail = isEmailVerified
-          ? _universityController.text.trim()
+          ? sanitizeEmail(_universityController.text)
           : null;
 
       final userRepository = getIt<UserRepository>();
@@ -562,7 +563,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                     try {
                       print(FirebaseAuth.instance.currentUser?.uid);
                       await getIt<UserRepository>().sendVerificationEmail(
-                        _universityController.text.trim(),
+                        sanitizeEmail(_universityController.text),
                       );
                       if (!mounted) return;
                       _nextPage(); // Başarılıysa OTP sayfasına geç
@@ -640,7 +641,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                       // Debug ekranındaki verifyEmail logic'i:
                       print('otpCode: $otpCode');
                       await getIt<UserRepository>().verifyEmail(
-                        _universityController.text.trim(),
+                        sanitizeEmail(_universityController.text),
                         _detectedUniversity!,
                         otpCode,
                       );

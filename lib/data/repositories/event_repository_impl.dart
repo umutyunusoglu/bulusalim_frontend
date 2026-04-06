@@ -299,7 +299,10 @@ class EventRepositoryImpl implements EventRepository {
         .collection('users')
         .doc(userId)
         .collection('eventLog')
-        .where('status', whereIn: ['upcoming', 'ongoing', 'completed'])
+        .where(
+          'status',
+          whereIn: ['upcoming', 'ongoing', 'completed', 'pending'],
+        )
         .where('isActive', isEqualTo: true)
         .snapshots()
         .asyncMap((snapshot) async {

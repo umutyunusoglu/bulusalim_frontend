@@ -1,20 +1,19 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/providers/navbar_badge_provider.dart';
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
+import 'package:outnest/application/app_state/current_user_data_providers/current_user_event_providers.dart';
+import 'package:outnest/application/app_state/current_user_data_providers/current_user_identity_provider.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
-import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/services/file_service.dart';
-import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/presentation/chat/view/components/event_chat_card.dart';
-
 @immutable
 class MyEventItemData {
   const MyEventItemData({
@@ -27,199 +26,179 @@ class MyEventItemData {
   final int pendingRequestCount;
 }
 
-class MyEventsPage extends ConsumerStatefulWidget {
+class MyEventsPage extends HookConsumerWidget {
   const MyEventsPage({super.key});
 
   @override
-  ConsumerState<MyEventsPage> createState() => _MyEventsPageState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    // --- HOOKS ---
+    useMemoized(() => initializeDateFormatting('tr_TR'));
+    final selectedTab = useState(0);
 
-class _MyEventsPageState extends ConsumerState<MyEventsPage> {
-  late final String currentUserId;
-  late final Stream<List<MyEventItemData>> _enrichedEventsStream;
+    // --- PROVIDERS ---
+    final currentUserId = ref.watch(currentUserIDProvider);
+    final activeEvents = ref.watch(activeEventsProvider);
 
-  int _selectedTabIndex = 0;
-  bool? _lastHasUnreadChat;
-
-  void _syncChatBadge(bool hasUnreadChat) {
-    if (_lastHasUnreadChat == hasUnreadChat) return;
-    _lastHasUnreadChat = hasUnreadChat;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      ref.read(navBarBadgeProvider).setBadge(
-        tabIndex: 3,
-        visible: hasUnreadChat,
+    // --- VERİ DÖNÜŞÜMÜ ---
+    final chatEvents = activeEvents.map((event) {
+      return MyEventItemData(
+        event: event,
+        pendingRequestCount: event.requestPool.length,
+        unreadChatCount: 0, // TODO: gerçek unread count
       );
-    });
-  }
+    }).toList();
 
-  @override
-  void initState() {
-    super.initState();
+    // --- BADGE SYNC (notifications branch'inden) ---
+    final hasUnreadChat = chatEvents.any((item) => item.unreadChatCount > 0);
+    useEffect(() {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(navBarBadgeProvider).setBadge(
+          tabIndex: 3,
+          visible: hasUnreadChat,
+        );
+      });
+      return null;
+    }, [hasUnreadChat]); // sadece hasUnreadChat değişince çalışır
 
-    initializeDateFormatting('tr_TR');
+    // --- FİLTRELEME ---
+    final filteredItems = chatEvents.where((item) {
+      final isCreator = item.event.creator.userID == currentUserId;
+      if (selectedTab.value == 0) {
+        return isCreator;
+      } else {
+        final isParticipant = item.event.participants.any(
+          (p) => p.userID == currentUserId,
+        );
+        final isPending = item.event.requestPool.any(
+          (req) => req.userID == currentUserId,
+        );
+        return !isCreator && (isParticipant || isPending);
+      }
+    }).toList();
 
-    final sessionService = getIt<SessionService>();
-    currentUserId = sessionService.currentUser!.userID;
-    final eventRepository = getIt<EventRepository>();
+    // --- HEADER BİLDİRİM SAYISI ---
+    final totalCreatorNotifications = chatEvents
+        .where((item) => item.event.creator.userID == currentUserId)
+        .fold(0, (sum, item) => sum + item.pendingRequestCount);
 
-    _enrichedEventsStream = eventRepository
-        .getEnrichedEventsOfUserStream(currentUserId)
-        .asyncMap((events) async {
-          return Future.wait(
-            events.map((event) async {
-              final pendingCount = event.requestPool.length;
-              const unreadCount = 0;
-
-              return MyEventItemData(
-                event: event,
-                pendingRequestCount: pendingCount,
-                unreadChatCount: unreadCount,
-              );
-            }),
-          );
-        });
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: StreamBuilder<List<MyEventItemData>>(
-        stream: _enrichedEventsStream,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          //Todo: tame the monkey
-          if (snapshot.hasError) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final allEnrichedEvents = snapshot.data ?? [];
-
-          final hasUnreadChat = allEnrichedEvents.any(
-            (item) => item.unreadChatCount > 0,
-          );
-          _syncChatBadge(hasUnreadChat);
-
-          // Filtreleme (Kurucu / Katılımcı)
-          final filteredItems = allEnrichedEvents.where((item) {
-            final isCreator = item.event.creator.userID == currentUserId;
-            return _selectedTabIndex == 0 ? isCreator : !isCreator;
-          }).toList();
-
-          // Header'daki Toplam Bildirim Sayısı
-          final totalCreatorNotifications = allEnrichedEvents
-              .where((item) => item.event.creator.userID == currentUserId)
-              .fold(0, (sum, item) => sum + item.pendingRequestCount);
-
-          return SafeArea(
-            child: Column(
-              children: [
-                // 1. HEADER
-                Padding(
-                  padding: EdgeInsets.only(
-                    left: 24.w,
-                    right: 24.w,
-                    top: 24.h,
-                    bottom: 13.h,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // HEADER
+            Padding(
+              padding: EdgeInsets.only(
+                left: 24.w,
+                right: 24.w,
+                top: 24.h,
+                bottom: 13.h,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Buluşmalarım',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Display',
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16.sp,
+                      height: 1,
+                      letterSpacing: 0,
+                      color: AppColors.darkSlate,
+                    ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Buluşmalarım',
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Display',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16.sp,
+                  _buildCustomToggle(
+                    selectedTab: selectedTab,
+                    creatorNotificationCount: totalCreatorNotifications,
+                  ),
+                ],
+              ),
+            ),
+            Divider(height: 1, color: Colors.grey.withOpacity(0.2)),
+
+            // LİSTE
+            Expanded(
+              child: filteredItems.isEmpty
+                  ? (selectedTab.value == 0
+                      ? _buildEmptyCreatorState(context)
+                      : _buildEmptyParticipantState(context))
+                  : ListView.separated(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 24.w,
+                        vertical: 24.h,
+                      ),
+                      itemCount: filteredItems.length,
+                      separatorBuilder: (c, i) => Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20.h),
+                        child: const Divider(
                           height: 1,
-                          letterSpacing: 0,
-                          color: AppColors.darkSlate,
+                          thickness: 1,
+                          color: AppColors.dividerColor,
                         ),
                       ),
-                      _buildCustomToggle(
-                        creatorNotificationCount: totalCreatorNotifications,
-                      ),
-                    ],
-                  ),
-                ),
-                Divider(
-                  height: 1,
-                  color: Colors.grey.withOpacity(0.2),
-                ),
+                      itemBuilder: (context, index) {
+                        final item = filteredItems[index];
+                        final rawImage = item.event.creator.profileImageUrl;
+                        final safeCreatorImage = rawImage.isNotEmpty
+                            ? rawImage
+                            : FileService.defaultProfileImageUrl();
+                        final isPending = item.event.requestPool.any(
+                          (u) => u.userID == currentUserId,
+                        );
 
-                // 2. İÇERİK LİSTESİ
-                Expanded(
-                  child: filteredItems.isEmpty
-                      ? (_selectedTabIndex == 0
-                            ? _buildEmptyCreatorState()
-                            : _buildEmptyParticipantState())
-                      : ListView.separated(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 24.w,
-                            vertical: 24.h,
-                          ),
-                          itemCount: filteredItems.length,
-                          separatorBuilder: (c, i) => Padding(
-                            padding: EdgeInsets.symmetric(vertical: 20.h),
-                            child: const Divider(
-                              height: 1,
-                              thickness: 1,
-                              color: AppColors.dividerColor,
-                            ),
-                          ),
-                          itemBuilder: (context, index) {
-                            final item = filteredItems[index];
-                            final rawImage = item.event.creator.profileImageUrl;
-                            final safeCreatorImage = (rawImage.isNotEmpty)
-                                ? rawImage
-                                : FileService.defaultProfileImageUrl();
-
-                            return EventChatCard(
-                              event: item.event,
-                              isCreator: _selectedTabIndex == 0,
-                              pendingRequestCount: item.pendingRequestCount,
-                              chatNotificationCount: item.unreadChatCount,
-
-                              onTapChat: () {
-                                context.push(
-                                  '/chat/room/${item.event.eventID}',
-                                  extra: {
-                                    'title': item.event.name,
-                                    'location':
-                                        item.event.displayAddress.isNotEmpty
-                                        ? item.event.displayAddress
-                                        : 'Konum Yok',
-                                    'participants':
-                                        '${item.event.participants.length}/${item.event.capacity}',
-                                    'startTime': item.event.startTime,
-                                    'creatorID': item.event.creator.userID,
-                                    'creatorProfileImage': safeCreatorImage,
-                                    'avatars': item.event.participants,
-                                    'event': item.event,
-                                  },
-                                );
+                        return EventChatCard(
+                          event: item.event,
+                          isCreator: selectedTab.value == 0,
+                          isPending: isPending,
+                          pendingRequestCount: item.pendingRequestCount,
+                          chatNotificationCount: item.unreadChatCount,
+                          onTapChat: () {
+                            if (isPending) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Katılım isteğiniz onay bekliyor.',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+                            context.push(
+                              '/chat/room/${item.event.eventID}',
+                              extra: {
+                                'title': item.event.name,
+                                'location':
+                                    item.event.displayAddress.isNotEmpty
+                                    ? item.event.displayAddress
+                                    : 'Konum Yok',
+                                'participants':
+                                    '${item.event.participants.length}/${item.event.capacity}',
+                                'startTime': item.event.startTime,
+                                'creatorID': item.event.creator.userID,
+                                'creatorProfileImage': safeCreatorImage,
+                                'avatars': item.event.participants,
+                                'event': item.event,
                               },
                             );
                           },
-                        ),
-                ),
-                SizedBox(height: 10.h),
-              ],
+                        );
+                      },
+                    ),
             ),
-          );
-        },
+            SizedBox(height: 10.h),
+          ],
+        ),
       ),
     );
   }
 
-  // --- WIDGETLAR ---
+  // --- TOGGLE ---
 
-  Widget _buildCustomToggle({int creatorNotificationCount = 0}) {
+  Widget _buildCustomToggle({
+    required ValueNotifier<int> selectedTab,
+    int creatorNotificationCount = 0,
+  }) {
     return Container(
       width: 114.w,
       height: 30.h,
@@ -233,22 +212,30 @@ class _MyEventsPageState extends ConsumerState<MyEventsPage> {
             child: _buildToggleItem(
               'kurucu',
               0,
+              selectedTab: selectedTab,
               notificationCount: creatorNotificationCount,
             ),
           ),
-          Expanded(child: _buildToggleItem('katılımcı', 1)),
+          Expanded(
+            child: _buildToggleItem('katılımcı', 1, selectedTab: selectedTab),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildToggleItem(String text, int index, {int notificationCount = 0}) {
-    final isSelected = _selectedTabIndex == index;
+  Widget _buildToggleItem(
+    String text,
+    int index, {
+    required ValueNotifier<int> selectedTab,
+    int notificationCount = 0,
+  }) {
+    final isSelected = selectedTab.value == index;
 
     return GestureDetector(
       onTap: () {
-        if (_selectedTabIndex != index) {
-          setState(() => _selectedTabIndex = index);
+        if (selectedTab.value != index) {
+          selectedTab.value = index;
         }
       },
       child: Container(
@@ -289,7 +276,6 @@ class _MyEventsPageState extends ConsumerState<MyEventsPage> {
                 ),
               ),
             ),
-
             if (notificationCount > 0)
               Positioned(
                 top: -6.h,
@@ -320,7 +306,7 @@ class _MyEventsPageState extends ConsumerState<MyEventsPage> {
 
   // --- EMPTY STATES ---
 
-  Widget _buildEmptyCreatorState() {
+  Widget _buildEmptyCreatorState(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -339,11 +325,8 @@ class _MyEventsPageState extends ConsumerState<MyEventsPage> {
             ),
           ),
           SizedBox(height: 20.5.h),
-
           GestureDetector(
-            onTap: () {
-              context.go('/map');
-            },
+            onTap: () => context.go('/map'),
             child: Column(
               children: [
                 Container(
@@ -352,10 +335,7 @@ class _MyEventsPageState extends ConsumerState<MyEventsPage> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: AppColors.salmonPink.withOpacity(0.2),
-                    border: Border.all(
-                      color: AppColors.salmonPink,
-                      width: 2,
-                    ),
+                    border: Border.all(color: AppColors.salmonPink, width: 2),
                   ),
                   child: Icon(
                     Icons.add,
@@ -382,12 +362,11 @@ class _MyEventsPageState extends ConsumerState<MyEventsPage> {
     );
   }
 
-  Widget _buildEmptyParticipantState() {
+  Widget _buildEmptyParticipantState(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // 1. Üstteki Açıklama Metni
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 40.w),
             child: Text(
@@ -402,14 +381,9 @@ class _MyEventsPageState extends ConsumerState<MyEventsPage> {
               ),
             ),
           ),
-
           SizedBox(height: 16.h),
-          // 2. İkon ve Keşfet Butonu
           GestureDetector(
-            onTap: () {
-              // Harita veya Keşfet sayfasına yönlendir
-              context.go('/home');
-            },
+            onTap: () => context.go('/home'),
             child: Column(
               children: [
                 Icon(

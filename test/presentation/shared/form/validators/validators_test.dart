@@ -3,6 +3,9 @@ import 'package:outnest/presentation/shared/form/validators/validate_bio.dart';
 import 'package:outnest/presentation/shared/form/validators/validate_date_of_birth.dart';
 import 'package:outnest/presentation/shared/form/validators/validate_name_surname.dart';
 import 'package:outnest/presentation/shared/form/validators/validate_university_mail.dart';
+import 'package:outnest/presentation/shared/form/validators/validate_event_name.dart';
+import 'package:outnest/presentation/shared/form/validators/validate_group_name.dart';
+import 'package:outnest/presentation/shared/form/validators/validate_post_caption.dart';
 import 'package:outnest/presentation/shared/form/validators/validate_username.dart';
 import '../../../../test_helpers/test_helpers.dart';
 
@@ -113,6 +116,79 @@ void main() {
       final result = validateUsername('ilke.demir_01');
 
       expect(result, isNull);
+    });
+  });
+
+  group('validateEventName', () {
+    test('returns error for null input', () {
+      expect(validateEventName(null), 'Buluşma adı boş olamaz');
+    });
+
+    test('returns error for empty input', () {
+      expect(validateEventName(''), 'Buluşma adı boş olamaz');
+    });
+
+    test('returns error for whitespace-only input', () {
+      expect(validateEventName('   '), 'Buluşma adı boş olamaz');
+    });
+
+    test('returns error when trimmed length exceeds 128', () {
+      final longName = 'a' * 129;
+      expect(validateEventName(longName), 'En fazla 128 karakter olmalı');
+    });
+
+    test('returns null for valid event name', () {
+      expect(validateEventName('Kahve Buluşması'), isNull);
+    });
+
+    test('returns null for exactly 128 chars', () {
+      expect(validateEventName('a' * 128), isNull);
+    });
+  });
+
+  group('validateGroupName', () {
+    test('returns error for null input', () {
+      expect(validateGroupName(null), 'Küme adı boş olamaz');
+    });
+
+    test('returns error for empty input', () {
+      expect(validateGroupName(''), 'Küme adı boş olamaz');
+    });
+
+    test('returns error when trimmed length exceeds 32', () {
+      final longName = 'a' * 33;
+      expect(validateGroupName(longName), 'En fazla 32 karakter olmalı');
+    });
+
+    test('returns null for valid group name', () {
+      expect(validateGroupName('Liseden Çocuklar'), isNull);
+    });
+
+    test('returns null for exactly 32 chars', () {
+      expect(validateGroupName('a' * 32), isNull);
+    });
+  });
+
+  group('validatePostCaption', () {
+    test('returns null for null input', () {
+      expect(validatePostCaption(null), isNull);
+    });
+
+    test('returns null for empty input', () {
+      expect(validatePostCaption(''), isNull);
+    });
+
+    test('returns error when trimmed length exceeds 64', () {
+      final longCaption = 'a' * 65;
+      expect(validatePostCaption(longCaption), 'En fazla 64 karakter olmalı');
+    });
+
+    test('returns null for valid caption', () {
+      expect(validatePostCaption('Güzel bir gün!'), isNull);
+    });
+
+    test('returns null for exactly 64 chars', () {
+      expect(validatePostCaption('a' * 64), isNull);
     });
   });
 }
