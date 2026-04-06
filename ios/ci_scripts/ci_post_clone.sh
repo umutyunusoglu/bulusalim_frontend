@@ -1,10 +1,29 @@
-#!/bin/sh
-set -e
+#!/bin/bash
+set -euo pipefail
 
-echo "Running Flutter setup..."
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-# Install Flutter dependencies
+cd "$PROJECT_ROOT"
+
+echo "Running Flutter iOS CI setup..."
+echo "Project root: $PROJECT_ROOT"
+
+if ! command -v flutter >/dev/null 2>&1; then
+	echo "flutter is not available on PATH"
+	exit 1
+fi
+
+flutter --version
+
+echo "Fetching Flutter dependencies..."
 flutter pub get
 
-# Generate iOS build files (this is the KEY part)
-flutter build ios --release --no-codesign
+if [ -d "ios" ] && [ -f "ios/Podfile" ]; then
+	echo "Installing CocoaPods dependencies..."
+	cd ios
+	pod install --repo-update
+	cd "$PROJECT_ROOT"
+fi
+
+echo "iOS post-clone setup complete. Build will be handled by Xcode Cloud."
