@@ -945,17 +945,19 @@ class UserRepositoryImpl implements UserRepository {
     _logger.info(
       'Follow request sent from user: $fromUserID to user: $toUserID',
     );
-    if (fromNotification) {
-      _firestore
-          .collection('users')
-          .doc(fromUserID)
-          .collection('followNotifications')
-          .doc(toUserID)
-          .set({
-            'status': 'sent',
-            'updatedAt': FieldValue.serverTimestamp(),
-          }, SetOptions(merge: true));
-    }
+
+    // Keep the sender-side followNotifications entry in sync so the badge
+    // system can observe follow request activity regardless of entry point.
+    _firestore
+        .collection('users')
+        .doc(fromUserID)
+        .collection('followNotifications')
+        .doc(toUserID)
+        .set({
+          'status': 'sent',
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
   }
 
   @override
