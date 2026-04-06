@@ -224,7 +224,7 @@ class SearchPage extends HookConsumerWidget {
                     const Padding(
                       padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
                       child: Text(
-                        'ETKİNLİKLER',
+                        'BULUŞMALAR',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.grey,
