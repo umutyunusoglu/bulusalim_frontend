@@ -212,6 +212,16 @@ class _EventCardState extends State<EventCard> {
                   _onCancelEventTap();
                 },
               ),
+
+            if (widget.event.visibility == VisibilityEnum.everyone)
+              BottomSheetOption(
+                icon: Icons.share,
+                text: 'Buluşmayı Paylaş',
+                onTap: () {
+                  // close only the bottom sheet using the provided sheetContext
+                  _handleEventShare();
+                },
+              ),
           ] else ...[
             if (_amIFollowingCreator)
               BottomSheetOption(
@@ -266,6 +276,7 @@ class _EventCardState extends State<EventCard> {
                 await _handleReportEvent(sheetContext);
               },
             ),
+
             if (widget.event.visibility == VisibilityEnum.everyone)
               BottomSheetOption(
                 icon: Icons.share,
