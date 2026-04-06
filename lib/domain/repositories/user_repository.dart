@@ -133,6 +133,11 @@ abstract class UserRepository {
   Future<List<Follower>> getFollowers(Identifier userID);
   Future<List<Followee>> getFollowees(Identifier userID);
 
+  Future<List<Identifier>> getCommonFollowerIds(
+    Identifier userID,
+    List<Identifier> candidateIds,
+  );
+
   Future<bool> isFollowRequestPending(String fromUserID, String toUserID);
 
   Future<void> sendFollowRequest(

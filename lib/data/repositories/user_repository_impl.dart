@@ -864,6 +864,32 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
+  Future<List<Identifier>> getCommonFollowerIds(
+    Identifier userID,
+    List<Identifier> candidateIds,
+  ) async {
+    if (candidateIds.isEmpty) return [];
+
+    final commonIds = <String>[];
+
+    for (var i = 0; i < candidateIds.length; i += 10) {
+      final chunk = candidateIds.sublist(
+        i,
+        (i + 10).clamp(0, candidateIds.length),
+      );
+      final snap = await _firestore
+          .collection('users')
+          .doc(userID)
+          .collection('followers')
+          .where(FieldPath.documentId, whereIn: chunk)
+          .get();
+      commonIds.addAll(snap.docs.map((d) => d.id));
+    }
+
+    return commonIds;
+  }
+
+  @override
   Future<int> getFollowersCount(Identifier userID) async {
     _logger.info('Getting followers count for user: $userID');
 

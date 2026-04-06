@@ -235,18 +235,16 @@ profileCommonFollowersProvider = FutureProvider.autoDispose
       final myUserId = ref.watch(currentUserIDProvider);
       if (myUserId == null || profileUserID == myUserId) return [];
 
-      final myFollowers = ref.watch(currentUserFollowersProvider).value ?? [];
+      final myFolloweeIds = ref.watch(currentUserFolloweeIDsProvider);
+      final myFollowees = await ref.watch(currentUserFolloweesProvider.future);
+      if (myFolloweeIds.isEmpty) return [];
+
       final userRepo = getIt<UserRepository>();
-      final commonFollows = <CompactUserEntity>[];
+      final commonIds = await userRepo.getCommonFollowerIds(
+        profileUserID,
+        myFolloweeIds,
+      );
 
-      for (final follower in myFollowers) {
-        final follows = await _withFallback(
-          () => userRepo.isFollowing(profileUserID, follower.userID),
-          label: 'isFollowingCommon:${follower.userID}',
-          fallback: false,
-        );
-        if (follows) commonFollows.add(follower);
-      }
-
-      return commonFollows;
+      final commonIdSet = commonIds.toSet();
+      return myFollowees.where((f) => commonIdSet.contains(f.userID)).toList();
     });
