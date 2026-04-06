@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/presentation/shared/form/sanitizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class CommunityBottomSheet extends StatelessWidget {
@@ -20,18 +21,26 @@ class CommunityBottomSheet extends StatelessWidget {
   // --- Ortak Launch Fonksiyonu (URL ve Email için) ---
   Future<void> _handleLaunch(String value, bool isEmail) async {
     if (value.isEmpty) return;
-    Uri url = isEmail
-        ? Uri(scheme: 'mailto', path: value)
-        : Uri.parse(value.startsWith('http') ? value : 'https://$value');
+
+    final Uri? url = isEmail
+        ? Uri(scheme: 'mailto', path: sanitizeEmail(value))
+        : (() {
+            final sanitizedUrl = sanitizeUrl(
+              value.startsWith('http') ? value : 'https://$value',
+            );
+            if (sanitizedUrl == null) return null;
+            return Uri.parse(sanitizedUrl);
+          })();
+
+    if (url == null) return;
+
     try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(
-          url,
-          mode: isEmail
-              ? LaunchMode.platformDefault
-              : LaunchMode.externalApplication,
-        );
-      }
+      await launchUrl(
+        url,
+        mode: isEmail
+            ? LaunchMode.platformDefault
+            : LaunchMode.externalApplication,
+      );
     } catch (e) {
       debugPrint('Launch Hatası: $e');
     }
