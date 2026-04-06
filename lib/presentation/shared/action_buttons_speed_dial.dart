@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
+import 'package:glowy_borders/glowy_borders.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:outnest/application/app_state/current_user_data_providers/current_user_event_providers.dart';
 
@@ -27,18 +28,11 @@ class ActionButtonsSpeedDial extends HookConsumerWidget {
     final isUserInEvent = ref.watch(isUserInOngoingEventProvider);
     final showQrButton = isUserInEvent || forceShowAllButtons;
 
-    final shineController = useAnimationController(
-      duration: const Duration(seconds: 2),
-    );
+    final isDialOpenValue = useValueListenable(isDialOpen);
 
-    // isUserInEvent değiştiğinde animasyonu başlat/durdur
-    if (isUserInEvent) {
-      if (!shineController.isAnimating) shineController.repeat();
-    } else {
-      if (shineController.isAnimating) shineController.stop();
-    }
+    final showGlow = isUserInEvent && !isDialOpenValue;
 
-    return SpeedDial(
+    final Widget speedDialWidget = SpeedDial(
       openCloseDial: isDialOpen,
       activeChild: const Icon(Icons.close, color: Colors.white),
       backgroundColor: AppColors.primaryColor,
@@ -54,46 +48,35 @@ class ActionButtonsSpeedDial extends HookConsumerWidget {
       childrenButtonSize: const Size(64, 64),
       childMargin: const EdgeInsets.symmetric(vertical: 5),
       children: _buildChildren(context, showQrButton),
-      child: AnimatedBuilder(
-        animation: shineController,
-        builder: (context, _) =>
-            _buildShineIcon(isUserInEvent, shineController),
-      ),
+      child: const Icon(Icons.add, color: Colors.white, size: 28),
     );
-  }
-
-  Widget _buildShineIcon(bool showShine, AnimationController controller) {
     return SizedBox(
       width: 64,
       height: 64,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          const Icon(Icons.add, color: Colors.white, size: 28),
-          if (showShine)
-            Positioned.fill(
-              child: ClipOval(
-                child: Transform.rotate(
-                  angle: 0.5,
-                  child: Transform.translate(
-                    offset: Offset(-100 + (controller.value * 200), 0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.white.withOpacity(0.0),
-                            Colors.white.withOpacity(0.4),
-                            Colors.white.withOpacity(0.0),
-                          ],
-                          stops: const [0.3, 0.5, 0.7],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+      child: OverflowBox(
+        maxWidth: 220,
+        maxHeight: 220,
+        child: Stack(
+          alignment: Alignment.center,
+          clipBehavior: Clip.none,
+          children: [
+            if (showGlow)
+              AnimatedGradientBorder(
+                borderSize: 4.5,
+                glowSize: 1,
+                animationTime: 6,
+                gradientColors: [
+                  AppColors.primaryColor.withOpacity(0.5),
+                  AppColors.primaryColor.withOpacity(0.2),
+                  AppColors.primaryColor.withOpacity(0.5),
+                ],
+                borderRadius: BorderRadius.circular(110),
+                child: const SizedBox(width: 64, height: 64),
               ),
-            ),
-        ],
+
+            speedDialWidget,
+          ],
+        ),
       ),
     );
   }

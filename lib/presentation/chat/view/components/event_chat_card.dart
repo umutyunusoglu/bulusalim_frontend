@@ -1,5 +1,8 @@
-import 'package:go_router/go_router.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:outnest/application/app_state/current_user_data_providers/current_user_event_providers.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
@@ -7,16 +10,13 @@ import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/presentation/chat/view/components/chat_event_info_chip.dart';
 import 'package:outnest/presentation/chat/view/components/event_avatar_badge.dart';
 import 'package:outnest/presentation/chat/view/components/event_status_according.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-class EventChatCard extends StatelessWidget {
+class EventChatCard extends ConsumerWidget {
   const EventChatCard({
     required this.event,
     required this.isCreator,
+    this.isPending = false,
     required this.onTapChat,
-    this.participantStatus = 'approved',
     super.key,
     this.chatNotificationCount = 0,
     this.pendingRequestCount = 0,
@@ -24,119 +24,116 @@ class EventChatCard extends StatelessWidget {
 
   final EventEntity event;
   final bool isCreator;
-  final String participantStatus;
+  final bool isPending;
   final int chatNotificationCount;
   final int pendingRequestCount;
   final VoidCallback onTapChat;
 
   @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('events')
-          .doc(event.eventID)
-          .snapshots(),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ongoingEvents = ref.watch(ongoingEventsProvider).value ?? [];
+    final displayName = event.name;
+    final displayLocation = event.displayAddress.isNotEmpty
+        ? event.displayAddress
+        : 'Konum Yok';
+    final displayDate = event.startTime;
+    final categoryIcon = _getCategoryIcon();
+    final isOngoing = ongoingEvents.any((e) => e.eventID == event.eventID);
 
-      builder: (context, snapshot) {
-        var displayName = event.name;
-        var displayLocation = event.displayAddress.isNotEmpty
-            ? event.displayAddress
-            : 'Konum Yok';
-        var displayDate = event.startTime;
-
-        if (snapshot.hasData &&
-            snapshot.data != null &&
-            snapshot.data!.exists) {
-          final data = snapshot.data!.data()! as Map<String, dynamic>;
-
-          if (data.containsKey('name')) {
-            displayName = data['name'] as String;
-          }
-          if (data.containsKey('displayAddress')) {
-            final addr = data['displayAddress'] as String?;
-            if (addr != null && addr.isNotEmpty) {
-              displayLocation = addr;
-            }
-          }
-          if (data.containsKey('startTime')) {
-            final ts = data['startTime'] as Timestamp?;
-            if (ts != null) {
-              displayDate = ts.toDate();
-            }
-          }
-        }
-
-        final categoryIcon = _getCategoryIcon();
-
-        return Container(
-          color: Colors.transparent,
-          margin: EdgeInsets.zero,
-          child: Column(
-            children: [
-              GestureDetector(
-                onTap: onTapChat,
-                behavior: HitTestBehavior.translucent,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    EventAvatarBadge(
-                      imageUrl: event.creator.profileImageUrl.isNotEmpty
-                          ? event.creator.profileImageUrl
-                          : FileService.defaultProfileImageUrl(),
-                      categoryIcon: categoryIcon,
-                    ),
-
-                    SizedBox(width: 10.w),
-
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      color: Colors.transparent,
+      margin: EdgeInsets.zero,
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: onTapChat,
+            behavior: HitTestBehavior.translucent,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                EventAvatarBadge(
+                  imageUrl: event.creator.profileImageUrl.isNotEmpty
+                      ? event.creator.profileImageUrl
+                      : FileService.defaultProfileImageUrl(),
+                  categoryIcon: categoryIcon,
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          Text(
-                            displayName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontFamily: 'SF Pro Display',
-                              fontSize: 15.sp,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.darkSlate,
+                          Flexible(
+                            child: Text(
+                              displayName,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'SF Pro Display',
+                                fontSize: 15.sp,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.darkSlate,
+                              ),
                             ),
                           ),
-                          SizedBox(height: 4.h),
-
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: ChatEventInfoChip(
-                              location: displayLocation,
-                              startTime: displayDate,
-                              participantCount: event.participants.length,
+                          if (isOngoing) ...[
+                            SizedBox(width: 8.w),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 6.w,
+                                vertical: 2.h,
+                              ),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: AppColors.primaryColor,
+                                  width: 1,
+                                ),
+                                borderRadius: BorderRadius.circular(6.r),
+                              ),
+                              child: Text(
+                                'şu anda',
+                                style: TextStyle(
+                                  color: AppColors.primaryColor,
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.w500,
+                                  fontFamily: 'SF Pro Display',
+                                  height: 1.2,
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
-                    ),
-
-                    if (isCreator)
-                      _buildChatIcon()
-                    else if (participantStatus == 'pending')
-                      _buildPendingIcon()
-                    else
-                      _buildChatIcon(),
-                  ],
+                      SizedBox(height: 4.h),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: ChatEventInfoChip(
+                          location: displayLocation,
+                          startTime: displayDate,
+                          participantCount: event.participants.length,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-
-              if (isCreator)
-                EventStatusAccordion(
-                  event: event,
-                  pendingCount: pendingRequestCount,
-                ),
-            ],
+                if (isCreator)
+                  _buildChatIcon()
+                else if (isPending)
+                  _buildPendingIcon()
+                else
+                  _buildChatIcon(),
+              ],
+            ),
           ),
-        );
-      },
+          if (isCreator)
+            EventStatusAccordion(
+              event: event,
+              pendingCount: pendingRequestCount,
+            ),
+        ],
+      ),
     );
   }
 
