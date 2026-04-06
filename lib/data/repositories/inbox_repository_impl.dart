@@ -82,7 +82,7 @@ class InboxRepositoryImpl implements InboxRepository {
     return _firestore
         .collection('users')
         .doc(_userId)
-      .collection('followNotifications')
+        .collection('followNotifications')
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
@@ -122,7 +122,7 @@ class InboxRepositoryImpl implements InboxRepository {
     final snapshot = await _firestore
         .collection('users')
         .doc(_userId)
-      .collection('followNotifications')
+        .collection('followNotifications')
         .get();
 
     _logger.info(
