@@ -108,7 +108,7 @@ class EventRepositoryImpl implements EventRepository {
 
       // Eğer haritada gösterilmesin denmişse (false),
       // Location verisini NULL yapıyoruz. Böylece harita render edemez.
-      if (event.showOnMap == true && event.location != null) {
+      if (event.showOnMap && event.location != null) {
         publicLocation = event.location;
         publicGeohash = event.geohash;
       } else {
@@ -350,7 +350,7 @@ class EventRepositoryImpl implements EventRepository {
       (p) => p.userID == currentUserId,
     );
     // 3. buluşma Herkese Açık mı? (Kurallardaki showOnMap şartı)
-    final isPublicOnMap = event.showOnMap == true;
+    final isPublicOnMap = event.showOnMap;
 
     final hasAccess = isCreator || isParticipant || isPublicOnMap;
 

@@ -1,72 +1,55 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:outnest/application/app_state/current_user_data_providers/current_user_identity_provider.dart';
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/application/providers/event_stream_provider.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/chat/message_entity.dart';
-import 'package:outnest/domain/entities/feed/event/event_entity.dart';
-import 'package:outnest/domain/entities/user/index.dart';
 import 'package:outnest/domain/repositories/chat_repository.dart';
 import 'package:outnest/domain/services/file_service.dart';
-import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/presentation/chat/view/components/chat_input_bar.dart';
 import 'package:outnest/presentation/chat/view/components/chat_message_buble.dart';
 import 'package:outnest/presentation/chat/view/components/chat_page_header.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:intl/intl.dart';
 
-class ChatPage extends ConsumerStatefulWidget {
+class ChatPage extends HookConsumerWidget {
   const ChatPage({required this.eventID, super.key});
   final String eventID;
 
   @override
-  ConsumerState<ChatPage> createState() => _ChatPageState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final chatRepository = useMemoized(() => getIt<ChatRepository>());
+    final scrollController = useScrollController();
+    final currentUserId = ref.watch(currentUserIDProvider);
+    final currentUser = ref.watch(currentUserEntityProvider).value;
 
-class _ChatPageState extends ConsumerState<ChatPage> {
-  late final ChatRepository _chatRepository;
-  final ScrollController _scrollController = ScrollController();
-  final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
-  UserEntity? currentUser = getIt<SessionService>().currentUser;
+    final eventAsync = ref.watch(eventStreamProvider(eventID));
 
-  @override
-  void initState() {
-    super.initState();
-    _chatRepository = getIt<ChatRepository>();
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _handleSendMessage(String text) async {
-    if (currentUser == null) return;
-    final message = MessageEntity(
-      content: text,
-      senderID: currentUser!.userID,
-      username: currentUser!.username,
-      profileImageUrl: currentUser!.profileImageUrl,
-      createdAt: DateTime.now(),
-    );
-    await _chatRepository.sendMessage(widget.eventID, message).then((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          0,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
+    Future<void> handleSendMessage(String text) async {
+      if (currentUser == null) return;
+      final message = MessageEntity(
+        content: text,
+        senderID: currentUser.userID,
+        username: currentUser.username,
+        profileImageUrl: currentUser.profileImageUrl,
+        createdAt: DateTime.now(),
+      );
+      await chatRepository.sendMessage(eventID, message);
+      if (scrollController.hasClients) {
+        unawaited(
+          scrollController.animateTo(
+            0,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          ),
         );
       }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // --- LIVE EVENT VERİSİ ---
-    final eventAsync = ref.watch(eventStreamProvider(widget.eventID));
+    }
 
     return eventAsync.when(
       loading: () => const Scaffold(
@@ -94,7 +77,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           body: Column(
             children: [
               ChatPageHeader(
-                eventID: widget.eventID,
+                eventID: eventID,
                 event: event,
                 creatorID: event.creator.userID,
                 chatTitle: event.name,
@@ -110,7 +93,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               ),
               Expanded(
                 child: StreamBuilder<List<MessageEntity>>(
-                  stream: _chatRepository.getChatMessagesStream(widget.eventID),
+                  stream: chatRepository.getChatMessagesStream(eventID),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
@@ -129,7 +112,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                       );
                     }
                     return ListView.builder(
-                      controller: _scrollController,
+                      controller: scrollController,
                       reverse: true,
                       padding: EdgeInsets.only(
                         left: 16.w,
@@ -141,7 +124,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                         final message = messages[index];
                         final isMe = message.senderID == currentUserId;
 
-                        bool showDateDivider = false;
+                        var showDateDivider = false;
                         if (index == messages.length - 1) {
                           showDateDivider = true;
                         } else {
@@ -177,7 +160,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   },
                 ),
               ),
-              ChatInputBar(onSend: _handleSendMessage),
+              ChatInputBar(onSend: handleSendMessage),
             ],
           ),
         );
@@ -185,23 +168,16 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     );
   }
 
-  // Tarihi "Bugün", "Dün" veya "11 Şubat" şeklinde formatlar
   String _getFormattedDate(DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = DateTime(now.year, now.month, now.day - 1);
     final dateToCheck = DateTime(date.year, date.month, date.day);
-
-    if (dateToCheck == today) {
-      return 'Bugün';
-    } else if (dateToCheck == yesterday) {
-      return 'Dün';
-    } else {
-      return DateFormat('d MMMM yyyy', 'tr_TR').format(date);
-    }
+    if (dateToCheck == today) return 'Bugün';
+    if (dateToCheck == yesterday) return 'Dün';
+    return DateFormat('d MMMM yyyy', 'tr_TR').format(date);
   }
 
-  // Tarih ayracı tasarımı
   Widget _buildDateDivider(String date) {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 20.h),
