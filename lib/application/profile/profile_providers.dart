@@ -148,9 +148,10 @@ profileStatsProvider = FutureProvider.autoDispose
       profileUserID,
     ) async {
       final userRepo = getIt<UserRepository>();
-      final currentUser = ref.watch(currentUserEntityProvider).value;
+      final myUserId = ref.watch(currentUserIDProvider);
+      final isOwnProfile = profileUserID == myUserId;
 
-      final results = await Future.wait([
+      final futures = <Future<dynamic>>[
         _withFallback(
           () => userRepo.getFollowersCount(profileUserID),
           label: 'getFollowersCount',
@@ -161,12 +162,29 @@ profileStatsProvider = FutureProvider.autoDispose
           label: 'getFolloweesCount',
           fallback: 0,
         ),
-      ]);
+        if (!isOwnProfile)
+          _withFallback<CompactUserEntity?>(
+            () => userRepo.getUserPublicData(profileUserID),
+            label: 'getUserPublicData',
+            fallback: null,
+          ),
+      ];
+
+      final results = await Future.wait(futures);
+
+      final int verifiedEventCount;
+      if (isOwnProfile) {
+        verifiedEventCount =
+            ref.read(currentUserEntityProvider).value?.verifiedEventCount ?? 0;
+      } else {
+        final profileUser = results[2] as CompactUserEntity?;
+        verifiedEventCount = profileUser?.verifiedEventCount ?? 0;
+      }
 
       return (
-        followers: results[0],
-        following: results[1],
-        events: currentUser?.verifiedEventCount ?? 0,
+        followers: results[0] as int,
+        following: results[1] as int,
+        events: verifiedEventCount,
       );
     });
 
