@@ -21,7 +21,7 @@ flutter --version
 flutter precache --ios
 
 # Install Dart/Flutter packages
-flutter pub get
+flutter pub get --enforce-lockfile
 
 # Install CocoaPods
 HOMEBREW_NO_AUTO_UPDATE=1 brew install cocoapods || true
