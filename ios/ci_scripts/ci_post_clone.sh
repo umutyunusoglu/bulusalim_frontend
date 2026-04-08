@@ -6,6 +6,11 @@ cd "$CI_PRIMARY_REPOSITORY_PATH"
 echo "Running Flutter iOS CI setup..."
 echo "Project root: $CI_PRIMARY_REPOSITORY_PATH"
 
+cat > .env <<EOF
+MAPBOX_ACCESS_TOKEN=$MAPBOX_ACCESS_TOKEN
+EOF
+
+echo ".env created"
 # Install Flutter in the Xcode Cloud worker
 git clone https://github.com/flutter/flutter.git --depth 1 -b stable "$HOME/flutter"
 export PATH="$PATH:$HOME/flutter/bin"
