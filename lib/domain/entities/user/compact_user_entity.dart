@@ -14,6 +14,7 @@ class CompactUserEntity extends Equatable {
     required this.bio,
     required this.accountType,
     required this.communityData,
+    this.verifiedEventCount = 0,
   });
   factory CompactUserEntity.fromMap(Map<String, dynamic> map) {
     return CompactUserEntity(
@@ -38,6 +39,7 @@ class CompactUserEntity extends Equatable {
               map['communityData'] as Map<String, dynamic>,
             )
           : null,
+      verifiedEventCount: map['verifiedEventCount'] as int? ?? 0,
     );
   }
 
@@ -51,6 +53,7 @@ class CompactUserEntity extends Equatable {
     String? bio,
     AccountType? accountType,
     CommunityData? communityData,
+    int? verifiedEventCount,
   }) {
     return CompactUserEntity(
       userID: userID ?? this.userID,
@@ -62,6 +65,7 @@ class CompactUserEntity extends Equatable {
       bio: bio ?? this.bio,
       accountType: accountType ?? this.accountType,
       communityData: communityData ?? this.communityData,
+      verifiedEventCount: verifiedEventCount ?? this.verifiedEventCount,
     );
   }
 
@@ -75,6 +79,7 @@ class CompactUserEntity extends Equatable {
       'isPrivate': isPrivate,
       'bio': bio ?? '',
       'accountType': accountType.toString(),
+      'verifiedEventCount': verifiedEventCount,
     };
   }
 
@@ -105,4 +110,5 @@ class CompactUserEntity extends Equatable {
 
   final AccountType? accountType;
   final CommunityData? communityData;
+  final int verifiedEventCount;
 }

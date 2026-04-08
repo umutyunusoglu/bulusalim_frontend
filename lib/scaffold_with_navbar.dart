@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart'; // GetIt'i import etmeyi unutma!
 import 'package:outnest/application/providers/nav_bar_active_index_provider.dart';
 import 'package:outnest/application/providers/navbar_badge_provider.dart';
+import 'package:outnest/presentation/debug/debug_panel.dart';
 
 class ScaffoldWithNavbar extends ConsumerStatefulWidget {
   const ScaffoldWithNavbar({
@@ -34,8 +35,9 @@ class _ScaffoldWithNavbarState extends ConsumerState<ScaffoldWithNavbar> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final NavBarActiveIndexNotifier navBarActiveIndexNotifier =
-          ref.read(navBarActiveIndexProvider.notifier);
+      final NavBarActiveIndexNotifier navBarActiveIndexNotifier = ref.read(
+        navBarActiveIndexProvider.notifier,
+      );
       navBarActiveIndexNotifier.setIndex(widget.navigationShell.currentIndex);
     });
     _foregroundMessageSubscription = FirebaseMessaging.onMessage.listen((
@@ -66,10 +68,12 @@ class _ScaffoldWithNavbarState extends ConsumerState<ScaffoldWithNavbar> {
 
   void _handleNotificationPayload(Map<String, dynamic> payload) {
     if (_isChatRelatedPayload(payload)) {
-      ref.read(navBarBadgeProvider).setBadge(
-        tabIndex: _chatTabIndex,
-        visible: true,
-      );
+      ref
+          .read(navBarBadgeProvider)
+          .setBadge(
+            tabIndex: _chatTabIndex,
+            visible: true,
+          );
     }
   }
 
@@ -229,10 +233,12 @@ class _ScaffoldWithNavbarState extends ConsumerState<ScaffoldWithNavbar> {
   }
 
   void _markFeedBadgeForDebug() {
-    ref.read(navBarBadgeProvider).setBadge(
-      tabIndex: _feedTabIndex,
-      visible: true,
-    );
+    ref
+        .read(navBarBadgeProvider)
+        .setBadge(
+          tabIndex: _feedTabIndex,
+          visible: true,
+        );
   }
 
   Future<void> _seedNotificationDoc({
@@ -300,7 +306,9 @@ class _ScaffoldWithNavbarState extends ConsumerState<ScaffoldWithNavbar> {
       return;
     }
 
-    final userDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final userDoc = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid);
 
     await userDoc.collection('notifications').add({
       'type': 'join',
@@ -339,12 +347,13 @@ class _ScaffoldWithNavbarState extends ConsumerState<ScaffoldWithNavbar> {
         index,
         initialLocation: index == widget.navigationShell.currentIndex,
       );
-              final NavBarActiveIndexNotifier navBarActiveIndexNotifier =
-              ref.read(navBarActiveIndexProvider.notifier);
-              navBarActiveIndexNotifier.setIndex(index);
+      final NavBarActiveIndexNotifier navBarActiveIndexNotifier = ref.read(
+        navBarActiveIndexProvider.notifier,
+      );
+      navBarActiveIndexNotifier.setIndex(index);
 
       // User opened the tab, so we can clear its red-dot indicator.
-          ref.read(navBarBadgeProvider).clearBadge(index);
+      ref.read(navBarBadgeProvider).clearBadge(index);
     }
   }
 
@@ -371,19 +380,11 @@ class _ScaffoldWithNavbarState extends ConsumerState<ScaffoldWithNavbar> {
     return Scaffold(
       body: widget.navigationShell,
       floatingActionButton: kDebugMode
-          ? Padding(
-              padding: const EdgeInsets.only(top: 56),
-              child: FloatingActionButton.small(
-                heroTag: 'debugNotificationPanel',
-                tooltip: 'Open notification test panel',
-                onPressed: () => _openDebugNotificationPanel(context),
-                child: const Icon(Icons.bug_report_outlined, size: 18),
-              ),
+          ? const Padding(
+              padding: EdgeInsets.only(top: 56),
+              child: DebugPanel(),
             )
           : null,
-      floatingActionButtonLocation: kDebugMode
-          ? FloatingActionButtonLocation.miniEndTop
-          : FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: theme.scaffoldBackgroundColor,

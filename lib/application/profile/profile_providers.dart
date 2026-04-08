@@ -148,6 +148,7 @@ profileStatsProvider = FutureProvider.autoDispose
       profileUserID,
     ) async {
       final userRepo = getIt<UserRepository>();
+      final currentUser = ref.watch(currentUserEntityProvider).value;
 
       final results = await Future.wait([
         _withFallback(
@@ -160,14 +161,13 @@ profileStatsProvider = FutureProvider.autoDispose
           label: 'getFolloweesCount',
           fallback: 0,
         ),
-        _withFallback(
-          () => userRepo.getCompletedEventCount(profileUserID),
-          label: 'getCompletedEventCount',
-          fallback: 0,
-        ),
       ]);
 
-      return (followers: results[0], following: results[1], events: results[2]);
+      return (
+        followers: results[0],
+        following: results[1],
+        events: currentUser?.verifiedEventCount ?? 0,
+      );
     });
 
 //TODO: Eğer benim profilimse, kendi streamlerime göre getir!

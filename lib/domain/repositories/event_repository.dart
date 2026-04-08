@@ -83,4 +83,9 @@ abstract class EventRepository {
   Future<List<EventEntity>> getEventsByHobby(
     List<HobbyEntity> categories,
   );
+
+  Future<void> markEventAsVerified({
+    required String eventId,
+    required String userId,
+  });
 }

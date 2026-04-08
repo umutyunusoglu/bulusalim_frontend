@@ -29,6 +29,7 @@ class UserModel extends Model<UserEntity> {
     required this.phoneNumber,
     required this.accountType,
     required this.communityData,
+    this.verifiedEventCount = 0,
   });
 
   @override
@@ -54,6 +55,7 @@ class UserModel extends Model<UserEntity> {
       phoneNumber: entity.phoneNumber,
       accountType: entity.accountType,
       communityData: entity.communityData,
+      verifiedEventCount: entity.verifiedEventCount,
     );
   }
 
@@ -104,6 +106,7 @@ class UserModel extends Model<UserEntity> {
       communityData: doc['communityData'] != null
           ? CommunityData.fromMap(doc['communityData'] as Map<String, dynamic>)
           : null,
+      verifiedEventCount: doc['verifiedEventCount'] as int? ?? 0,
     );
   }
 
@@ -134,6 +137,7 @@ class UserModel extends Model<UserEntity> {
       'phoneNumber': phoneNumber,
       'accountType': accountType.toString(),
       'communityData': communityData?.toMap(),
+      'verifiedEventCount': verifiedEventCount,
     };
   }
 
@@ -160,6 +164,7 @@ class UserModel extends Model<UserEntity> {
       phoneNumber: phoneNumber,
       accountType: accountType,
       communityData: communityData,
+      verifiedEventCount: verifiedEventCount,
     );
   }
 
@@ -182,6 +187,7 @@ class UserModel extends Model<UserEntity> {
   final String? phoneNumber;
   final AccountType accountType;
   final CommunityData? communityData;
+  final int verifiedEventCount;
 
   final List<String> hobbies;
 }

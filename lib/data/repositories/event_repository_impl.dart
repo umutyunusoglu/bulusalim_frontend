@@ -152,6 +152,7 @@ class EventRepositoryImpl implements EventRepository {
         status: UserEventStatusEnum.upcoming,
         isActive: true,
         updatedAt: DateTime.now(),
+        category: event.hobbies.isNotEmpty ? event.hobbies[0] : null,
       );
       batch.set(
         userEventLogRef,
@@ -455,6 +456,11 @@ class EventRepositoryImpl implements EventRepository {
           .doc(user.userID)
           .collection('eventLog')
           .doc(eventId);
+      final hobbies =
+          (eventDoc.data()?['hobbies'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [];
 
       final userEvent = UserEventEntity(
         eventId: eventId,
@@ -462,6 +468,7 @@ class EventRepositoryImpl implements EventRepository {
         status: UserEventStatusEnum.pending,
         isActive: true,
         updatedAt: DateTime.now(),
+        category: hobbies.isNotEmpty ? hobbies[0] : null,
       );
 
       batch
@@ -560,6 +567,11 @@ class EventRepositoryImpl implements EventRepository {
       await _firestore.runTransaction((transaction) async {
         final eventDoc = await transaction.get(eventRef);
         if (!eventDoc.exists) throw Exception('buluşma bulunamadı');
+        final hobbies =
+            (eventDoc.data()?['hobbies'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            [];
 
         final currentCount = (eventDoc.data()?['participantCount'] ?? 0) as int;
         const maxParticipants = AppConfig.eventCapacity;
@@ -577,6 +589,7 @@ class EventRepositoryImpl implements EventRepository {
           })
           ..set(userEventLogRef, {
             'status': eventDoc.data()?['status'],
+            'category': hobbies.isNotEmpty ? hobbies[0] : null,
             'updatedAt': FieldValue.serverTimestamp(),
           }, SetOptions(merge: true));
 
@@ -935,6 +948,28 @@ class EventRepositoryImpl implements EventRepository {
     } catch (e) {
       _logger.error('Davet kontrolü başarısız: $e');
       return false;
+    }
+  }
+
+  @override
+  Future<void> markEventAsVerified({
+    required String eventId,
+    required String userId,
+  }) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('eventLog')
+          .doc(eventId)
+          .update({
+            'isVerified': true,
+            'verifiedAt': FieldValue.serverTimestamp(),
+          });
+      _logger.info('Event $eventId marked as verified for user $userId');
+    } catch (e) {
+      _logger.error('Failed to mark event as verified: $e');
+      rethrow;
     }
   }
 }
