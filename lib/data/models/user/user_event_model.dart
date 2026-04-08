@@ -21,17 +21,26 @@ class UserEventModel extends Model<UserEventEntity> {
   }
   @override
   factory UserEventModel.fromFirestore(Map<String, dynamic> doc) {
+    final eventID =
+        (doc['eventID'] ?? doc['eventId']) as String?;
+    if (eventID == null || eventID.isEmpty) {
+      throw ArgumentError(
+        'UserEventModel.fromFirestore: missing required field "eventID"',
+      );
+    }
     return UserEventModel(
-      eventID: (doc['eventID'] ?? doc['eventId'] ?? '') as String,
+      eventID: eventID,
       role: EventRoleEnum.fromString(doc['role'] as String? ?? 'participant'),
       status: UserEventStatusEnum.fromString(
         doc['status'] as String? ?? 'upcoming',
       ),
       isActive: doc['isActive'] as bool? ?? true,
-      updatedAt: (doc['updatedAt'] as Timestamp).toDate(),
+      updatedAt: doc['updatedAt'] is Timestamp
+          ? (doc['updatedAt'] as Timestamp).toDate()
+          : DateTime.now(),
       category: doc['category']?.toString(),
       isVerified: doc['isVerified'] as bool? ?? false,
-      verifiedAt: doc['verifiedAt'] != null
+      verifiedAt: doc['verifiedAt'] is Timestamp
           ? (doc['verifiedAt'] as Timestamp).toDate()
           : null,
     );

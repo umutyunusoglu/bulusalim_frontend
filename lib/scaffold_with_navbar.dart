@@ -379,11 +379,9 @@ class _ScaffoldWithNavbarState extends ConsumerState<ScaffoldWithNavbar> {
     final navBadgeService = ref.read(navBarBadgeProvider);
     return Scaffold(
       body: widget.navigationShell,
-      floatingActionButton: kDebugMode
-          ? const Padding(
-              padding: EdgeInsets.only(top: 56),
-              child: DebugPanel(),
-            )
+      floatingActionButton: kDebugMode ? const DebugPanel() : null,
+      floatingActionButtonLocation: kDebugMode
+          ? FloatingActionButtonLocation.miniEndTop
           : null,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
