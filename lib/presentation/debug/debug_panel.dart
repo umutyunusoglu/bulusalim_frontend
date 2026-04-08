@@ -12,8 +12,6 @@ import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 class DebugPanel extends ConsumerWidget {
   const DebugPanel({super.key});
 
-  static const int _feedTabIndex = 0;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (!kDebugMode) return const SizedBox.shrink();
