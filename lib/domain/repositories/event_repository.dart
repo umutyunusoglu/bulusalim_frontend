@@ -11,6 +11,7 @@ abstract class EventRepository {
   Future<void> updateEvent(String eventId, Map<String, dynamic> changes);
   Future<void> deleteEvent(Identifier eventId);
   Future<EventEntity?> getEvent(Identifier eventId);
+  Stream<EventEntity?> getEventStream(Identifier eventId);
   Future<List<EventEntity>> getEventsByIds(
     List<Identifier> eventIds,
   );

@@ -229,15 +229,20 @@ class EventRepositoryImpl implements EventRepository {
     // 1. CACHE KONTROLÜ
     if (!forceRefresh) {
       final cachedItem = _globalCache.getEntity(event.eventID);
-
       if (cachedItem is EventEntity) {
-        // Veri tutarlılığını kontrol et (Örn: katılımcı listesi boş mu değil mi?)
         final isDataComplete =
             cachedItem.participants.isNotEmpty ||
             cachedItem.participantCount == 0;
-
         if (isDataComplete) {
-          return cachedItem;
+          // Root-level alanları güncel snapshot'tan al,
+          // subcollection verilerini cache'den koru
+          return cachedItem.copyWith(
+            status: event.status,
+            name: event.name,
+            startTime: event.startTime,
+            displayAddress: event.displayAddress,
+            // diğer root-level alanlar...
+          );
         }
       }
     }
@@ -429,6 +434,30 @@ class EventRepositoryImpl implements EventRepository {
       _logger.error('Failed to fetch event: $e');
       rethrow;
     }
+  }
+
+  @override
+  Stream<EventEntity?> getEventStream(Identifier eventId) {
+    return _firestore.collection('events').doc(eventId).snapshots().asyncMap((
+      snapshot,
+    ) async {
+      try {
+        _logger.debug('🔥 snapshot status: ${snapshot.data()?['status']}');
+        if (!snapshot.exists || snapshot.data() == null) return null;
+        final eventModel = EventModel.fromFirestore(snapshot.data()!);
+        final eventEntity = eventModel.toEntity();
+        final enrichedEvent = await enrichEventWithDetails(eventEntity);
+        final finalEvent = await injectSensitiveDataIfAuthorized(
+          enrichedEvent,
+          getIt<SessionService>().currentUser?.userID,
+        );
+        _logger.debug('✅ emit edilen status: ${finalEvent.status}');
+        return finalEvent;
+      } catch (e, s) {
+        _logger.error('❌ asyncMap HATA: $e\n$s');
+        rethrow; // veya return null;
+      }
+    });
   }
 
   // --- PARTICIPANTS SUBCOLLECTION (TRIGGER LOGIC) ---

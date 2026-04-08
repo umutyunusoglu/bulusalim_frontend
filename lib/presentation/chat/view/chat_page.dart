@@ -1,4 +1,6 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
+import 'package:outnest/application/providers/event_stream_provider.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/chat/message_entity.dart';
@@ -15,35 +17,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 
-class ChatPage extends StatefulWidget {
-  const ChatPage({
-    required this.eventID,
-    required this.event,
-    required this.creatorID,
-    required this.chatTitle,
-    required this.participantAvatars,
-    required this.location,
-    required this.participantStatus,
-    required this.eventDate,
-    required this.creatorProfileImage,
-    super.key,
-  });
-
+class ChatPage extends ConsumerStatefulWidget {
+  const ChatPage({required this.eventID, super.key});
   final String eventID;
-  final EventEntity event;
-  final String creatorID;
-  final String chatTitle;
-  final List<dynamic> participantAvatars;
-  final String location;
-  final String participantStatus;
-  final DateTime eventDate;
-  final String creatorProfileImage;
 
   @override
-  State<ChatPage> createState() => _ChatPageState();
+  ConsumerState<ChatPage> createState() => _ChatPageState();
 }
 
-class _ChatPageState extends State<ChatPage> {
+class _ChatPageState extends ConsumerState<ChatPage> {
   late final ChatRepository _chatRepository;
   final ScrollController _scrollController = ScrollController();
   final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
@@ -70,7 +52,6 @@ class _ChatPageState extends State<ChatPage> {
       profileImageUrl: currentUser!.profileImageUrl,
       createdAt: DateTime.now(),
     );
-
     await _chatRepository.sendMessage(widget.eventID, message).then((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -82,177 +63,125 @@ class _ChatPageState extends State<ChatPage> {
     });
   }
 
-  String _getCategoryIcon() {
-    var categoryIcon = '🎉';
-    if (widget.event.hobbies.isNotEmpty) {
-      final category = widget.event.hobbies.first;
-      categoryIcon = AppConfig.categories[category] ?? '🎉';
-    }
-    return categoryIcon;
-  }
-
-  Map<String, String> _getSenderDetails(String senderID) {
-    // Bu metod mantığına dokunulmadı, mevcut haliyle bırakıldı.
-    var imagePath = '';
-    var name = 'Bilinmeyen Kullanıcı';
-
-    if (senderID == widget.creatorID) {
-      name = 'Buluşma Sahibi';
-      imagePath = widget.creatorProfileImage.isNotEmpty
-          ? widget.creatorProfileImage
-          : FileService.defaultProfileImageUrl();
-    } else {
-      try {
-        final user = widget.participantAvatars.firstWhere(
-          (u) {
-            final uid = (u is Map) ? u['userID'] : u.userID;
-            return uid == senderID;
-          },
-          orElse: () => null,
-        );
-
-        if (user != null) {
-          if (user is Map) {
-            name = (user['username'] as String?) ?? 'İsimsiz';
-            imagePath =
-                (user['profileImageUrl'] as String?) ??
-                FileService.defaultProfileImageUrl();
-          } else {
-            // Eğer user bir Entity ise
-            name = (user.username as String?) ?? 'İsimsiz';
-            imagePath =
-                (user.profileImageUrl as String?) ??
-                FileService.defaultProfileImageUrl();
-          }
-        } else {
-          imagePath = FileService.defaultProfileImageUrl();
-        }
-      } catch (e) {
-        imagePath = FileService.defaultProfileImageUrl();
-      }
-    }
-
-    return {
-      'name': name,
-      'image': imagePath,
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
-      body: Column(
-        children: [
-          ChatPageHeader(
-            eventID: widget.eventID,
-            event: widget.event,
-            creatorID: widget.creatorID,
-            chatTitle: widget.chatTitle,
-            creatorProfileImage: widget.creatorProfileImage,
-            location: widget.location,
-            eventDate: widget.eventDate,
-            participantStatus: widget.participantStatus,
-            participantAvatars: widget.participantAvatars,
-            categoryIcon: _getCategoryIcon(), // Helper metoddan geliyor
-          ),
+    // --- LIVE EVENT VERİSİ ---
+    final eventAsync = ref.watch(eventStreamProvider(widget.eventID));
 
-          // 2. MESAJ LİSTESİ (Burası Clean Architecture'a uygun Repository Stream'i)
-          Expanded(
-            child: StreamBuilder<List<MessageEntity>>(
-              stream: _chatRepository.getChatMessagesStream(
-                widget.eventID,
-              ), // Dokunulmadı
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final messages = snapshot.data ?? [];
-                if (messages.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'Sohbeti başlat...',
-                      style: TextStyle(
-                        color: AppColors.textGrey,
-                        fontSize: 14.sp,
-                        fontFamily: 'SF Pro Display',
-                      ),
-                    ),
-                  );
-                }
-                return ListView.builder(
-                  controller: _scrollController,
-                  reverse: true,
-                  padding: EdgeInsets.only(
-                    left: 16.w,
-                    right: 16.w,
-                    bottom: 0.h,
-                    top: 10.h,
-                  ),
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final message = messages[index];
-                    final isMe = message.senderID == currentUserId;
+    return eventAsync.when(
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, s) => Scaffold(
+        body: Center(child: Text('Hata: $e')),
+      ),
+      data: (event) {
+        if (event == null) {
+          return const Scaffold(
+            body: Center(child: Text('Buluşma bulunamadı')),
+          );
+        }
 
-                    // --- Tarih Ayracı Mantığı Başlangıç ---
-                    bool showDateDivider = false;
+        final categoryIcon = event.hobbies.isNotEmpty
+            ? (AppConfig.categories[event.hobbies.first] ?? '🎉')
+            : '🎉';
+        final creatorImage = event.creator.profileImageUrl.isNotEmpty
+            ? event.creator.profileImageUrl
+            : FileService.defaultProfileImageUrl();
 
-                    if (index == messages.length - 1) {
-                      showDateDivider = true;
-                    } else {
-                      final prevMessage = messages[index + 1];
-                      final currentMsgDate = message.createdAt;
-                      final prevMsgDate = prevMessage.createdAt;
-
-                      if (currentMsgDate.year != prevMsgDate.year ||
-                          currentMsgDate.month != prevMsgDate.month ||
-                          currentMsgDate.day != prevMsgDate.day) {
-                        showDateDivider = true;
-                      }
+        return Scaffold(
+          backgroundColor: AppColors.backgroundColor,
+          body: Column(
+            children: [
+              ChatPageHeader(
+                eventID: widget.eventID,
+                event: event,
+                creatorID: event.creator.userID,
+                chatTitle: event.name,
+                creatorProfileImage: creatorImage,
+                location: event.displayAddress.isNotEmpty
+                    ? event.displayAddress
+                    : 'Konum Yok',
+                eventDate: event.startTime,
+                participantStatus:
+                    '${event.participants.length}/${event.capacity}',
+                participantAvatars: event.participants,
+                categoryIcon: categoryIcon,
+              ),
+              Expanded(
+                child: StreamBuilder<List<MessageEntity>>(
+                  stream: _chatRepository.getChatMessagesStream(widget.eventID),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
                     }
-
-                    final String dateDividerString = _getFormattedDate(
-                      message.createdAt,
-                    );
-                    // --- Tarih Ayracı Mantığı Bitiş ---
-
-                    final timeString = DateFormat(
-                      'HH:mm',
-                    ).format(message.createdAt);
-
-                    String? username;
-                    String? profileImageUrl;
-
-                    if (!isMe) {
-                      username = message.username;
-                      profileImageUrl = message.profileImageUrl;
-                    }
-
-                    return Column(
-                      children: [
-                        if (showDateDivider)
-                          _buildDateDivider(dateDividerString),
-                        ChatMessageBubble(
-                          message: message.content,
-                          time: timeString,
-                          isCurrentUser: isMe,
-                          username: username,
-                          userprofileImageUrl: profileImageUrl,
+                    final messages = snapshot.data ?? [];
+                    if (messages.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'Sohbeti başlat...',
+                          style: TextStyle(
+                            color: AppColors.textGrey,
+                            fontSize: 14.sp,
+                            fontFamily: 'SF Pro Display',
+                          ),
                         ),
-                      ],
+                      );
+                    }
+                    return ListView.builder(
+                      controller: _scrollController,
+                      reverse: true,
+                      padding: EdgeInsets.only(
+                        left: 16.w,
+                        right: 16.w,
+                        top: 10.h,
+                      ),
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        final message = messages[index];
+                        final isMe = message.senderID == currentUserId;
+
+                        bool showDateDivider = false;
+                        if (index == messages.length - 1) {
+                          showDateDivider = true;
+                        } else {
+                          final prev = messages[index + 1];
+                          if (message.createdAt.day != prev.createdAt.day ||
+                              message.createdAt.month != prev.createdAt.month ||
+                              message.createdAt.year != prev.createdAt.year) {
+                            showDateDivider = true;
+                          }
+                        }
+
+                        return Column(
+                          children: [
+                            if (showDateDivider)
+                              _buildDateDivider(
+                                _getFormattedDate(message.createdAt),
+                              ),
+                            ChatMessageBubble(
+                              message: message.content,
+                              time: DateFormat(
+                                'HH:mm',
+                              ).format(message.createdAt),
+                              isCurrentUser: isMe,
+                              username: isMe ? null : message.username,
+                              userprofileImageUrl: isMe
+                                  ? null
+                                  : message.profileImageUrl,
+                            ),
+                          ],
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
+                ),
+              ),
+              ChatInputBar(onSend: _handleSendMessage),
+            ],
           ),
-
-          // 3. INPUT ALANI
-          ChatInputBar(
-            onSend: (text) => _handleSendMessage(text),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
