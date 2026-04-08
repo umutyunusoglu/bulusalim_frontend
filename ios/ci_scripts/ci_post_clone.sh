@@ -25,6 +25,7 @@ flutter pub get
 
 # Install CocoaPods
 HOMEBREW_NO_AUTO_UPDATE=1 brew install cocoapods || true
+dart pub global activate flutterfire_cli
 
 cd ios
 pod install
