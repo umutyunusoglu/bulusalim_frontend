@@ -1,6 +1,7 @@
 // This file intentionally uses both UserEntity and UserCompactEntity (sometimes via dynamic calls) for convenience when sharing the same variable.
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -174,185 +175,251 @@ class ProfilePage extends HookConsumerWidget {
       }
     }
 
+    Future<void> showFullScreenImage(
+      BuildContext context,
+      String imageUrl,
+    ) async {
+      await showGeneralDialog(
+        context: context,
+        barrierDismissible: true, // Arka plana tıklayınca kapansın
+        barrierLabel: 'Close',
+        barrierColor: Colors.black.withOpacity(0.5), // Arka plan karartma
+        transitionDuration: const Duration(milliseconds: 200),
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return GestureDetector(
+            onTap: () => Navigator.of(context).pop(), // Kapatmak için dokun
+            child: Scaffold(
+              backgroundColor: Colors.transparent,
+              body: Stack(
+                children: [
+                  // Full Screen Blur
+                  Positioned.fill(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(color: Colors.black26),
+                    ),
+                  ),
+                  // Ortalanmış Resim
+                  Center(
+                    child: Hero(
+                      tag: 'profile_pic',
+                      child: Container(
+                        width: 264.w,
+                        height: 264.w,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.5),
+                            ),
+                          ],
+                          image: DecorationImage(
+                            image: NetworkImage(imageUrl),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    }
+
     // ─── BUILD ───────────────────────────────────────────────
     final theme = Theme.of(context);
 
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: theme.colorScheme.surface,
-        appBar: isCurrentUser
-            ? null
-            : AppBar(
-                backgroundColor: theme.colorScheme.surface,
-                surfaceTintColor: Colors.transparent,
-                elevation: 0,
-                leading: IconButton(
-                  icon: Icon(
-                    Symbols.reply,
-                    weight: 400,
-                    color: theme.colorScheme.onSurface,
-                    size: 20.sp,
-                  ),
-                  onPressed: () {
-                    if (Navigator.of(context).canPop()) {
-                      context.pop();
-                    } else {
-                      context.go('/home');
-                    }
-                  },
-                ),
-                title: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      username,
-                      style: TextStyle(
-                        fontFamily: 'SF Pro Display',
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.bold,
+    return Stack(
+      children: [
+        SafeArea(
+          child: Scaffold(
+            backgroundColor: theme.colorScheme.surface,
+            appBar: isCurrentUser
+                ? null
+                : AppBar(
+                    backgroundColor: theme.colorScheme.surface,
+                    surfaceTintColor: Colors.transparent,
+                    elevation: 0,
+                    leading: IconButton(
+                      icon: Icon(
+                        Symbols.reply,
+                        weight: 400,
                         color: theme.colorScheme.onSurface,
+                        size: 20.sp,
                       ),
+                      onPressed: () {
+                        if (Navigator.of(context).canPop()) {
+                          context.pop();
+                        } else {
+                          context.go('/home');
+                        }
+                      },
                     ),
-                  ],
-                ),
-                centerTitle: true,
-              ),
-        body: NestedScrollView(
-          headerSliverBuilder: (context, innerBoxIsScrolled) {
-            return [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: 16.w,
-                    right: 16.w,
-                    top: isCurrentUser ? 30.h : 0.h,
-                    bottom: 20.h,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // PROFİL FOTO VE İSİM
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.only(top: 12.h),
-                            child: ProfilePhoto(
-                              profileImageUrl: profileImageUrl,
-                              badgeUrls: _badges,
-                            ),
+                    title: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          username,
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Display',
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurface,
                           ),
-                          SizedBox(width: 21.w),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                ProfileHeader(
-                                  fullName: fullName,
-                                  username: username,
-
-                                  isCurrentUser: isCurrentUser,
-                                  onShareTap: () => actionNotifier.shareProfile(
-                                    context,
-                                    profileUserID,
-                                  ),
-                                ),
-                                SizedBox(height: 9.h),
-                                // İSTATİSTİKLER
-                                ProfileStatsRow(
-                                  profileUserID: profileUserID,
-                                  username: username,
-                                  numberOfEvents: numberOfEvents,
-                                  followerCount: displayFollowerCount,
-                                  followingCount: displayFollowingCount,
-                                ),
-                                SizedBox(height: 13.h),
-                                // BIO
-                                ProfileBioSection(
-                                  bio: bio,
-                                  school: school,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      // TAKİP ET BUTONLARI
-                      if (!isCurrentUser) ...[
-                        SizedBox(height: 12.h),
-                        ProfileFollowButton(
-                          isCurrentlyFollowing: isCurrentlyFollowing,
-                          isPrivateAccount: isPrivateAccount,
-                          hasSentFollowRequest: hasSentFollowRequest,
-                          isFollowing: isFollowing,
-                          onFollowTap: () => actionNotifier.toggleFollow(
-                            context,
-                            username: username,
-                            profileImageUrl: profileImageUrl,
-                          ),
-                          onUnfollowTap: () => showUnfollowDialog(
-                            context,
-                            username: username,
-                            profileImageUrl: profileImageUrl,
-                            onConfirm: () => actionNotifier.toggleFollow(
-                              context,
-                              username: username,
-                              profileImageUrl: profileImageUrl,
-                            ),
-                          ),
-                          onSendRequestTap: () =>
-                              actionNotifier.sendFollowRequest(),
-                          onAnnouncementTap: handleAnnouncementPress,
                         ),
                       ],
-                      if (commonFollowers.isNotEmpty) SizedBox(height: 12.h),
-                      FollowedBySection(commonFollowers: commonFollowers),
-                    ],
+                    ),
+                    centerTitle: true,
                   ),
-                ),
+            body: NestedScrollView(
+              headerSliverBuilder: (context, innerBoxIsScrolled) {
+                return [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        left: 16.w,
+                        right: 16.w,
+                        top: isCurrentUser ? 30.h : 0.h,
+                        bottom: 20.h,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // PROFİL FOTO VE İSİM
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: EdgeInsets.only(top: 12.h),
+                                child: GestureDetector(
+                                  onTap: () => showFullScreenImage(
+                                    context,
+                                    profileImageUrl,
+                                  ),
+                                  child: ProfilePhoto(
+                                    profileImageUrl: profileImageUrl,
+                                    badgeUrls: _badges,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 21.w),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    ProfileHeader(
+                                      fullName: fullName,
+                                      username: username,
+
+                                      isCurrentUser: isCurrentUser,
+                                      onShareTap: () =>
+                                          actionNotifier.shareProfile(
+                                            context,
+                                            profileUserID,
+                                          ),
+                                    ),
+                                    SizedBox(height: 9.h),
+                                    // İSTATİSTİKLER
+                                    ProfileStatsRow(
+                                      profileUserID: profileUserID,
+                                      username: username,
+                                      numberOfEvents: numberOfEvents,
+                                      followerCount: displayFollowerCount,
+                                      followingCount: displayFollowingCount,
+                                    ),
+                                    SizedBox(height: 13.h),
+                                    // BIO
+                                    ProfileBioSection(
+                                      bio: bio,
+                                      school: school,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          // TAKİP ET BUTONLARI
+                          if (!isCurrentUser) ...[
+                            SizedBox(height: 12.h),
+                            ProfileFollowButton(
+                              isCurrentlyFollowing: isCurrentlyFollowing,
+                              isPrivateAccount: isPrivateAccount,
+                              hasSentFollowRequest: hasSentFollowRequest,
+                              isFollowing: isFollowing,
+                              onFollowTap: () => actionNotifier.toggleFollow(
+                                context,
+                                username: username,
+                                profileImageUrl: profileImageUrl,
+                              ),
+                              onUnfollowTap: () => showUnfollowDialog(
+                                context,
+                                username: username,
+                                profileImageUrl: profileImageUrl,
+                                onConfirm: () => actionNotifier.toggleFollow(
+                                  context,
+                                  username: username,
+                                  profileImageUrl: profileImageUrl,
+                                ),
+                              ),
+                              onSendRequestTap: () =>
+                                  actionNotifier.sendFollowRequest(),
+                              onAnnouncementTap: handleAnnouncementPress,
+                            ),
+                          ],
+                          if (commonFollowers.isNotEmpty)
+                            SizedBox(height: 12.h),
+                          FollowedBySection(commonFollowers: commonFollowers),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SliverPersistentHeader(
+                    delegate: ProfileSectionHeaderDelegate(
+                      child: ProfileTabBar(
+                        currentIndex: selectedTabIndex.value,
+                        onTabSelected: onTabSelected,
+                      ),
+                    ),
+                    pinned: true,
+                  ),
+                ];
+              },
+              body: PageView(
+                controller: pageController,
+                onPageChanged: (index) {
+                  selectedTabIndex.value = index;
+                  unawaited(
+                    getIt<AnalyticsService>().logSelectProfileSegment(
+                      SelectProfileSegmentAnalyticsConfig(
+                        segment: ProfileSegmentEnum.values[index],
+                      ),
+                    ),
+                  );
+                },
+                children: [
+                  if (!isPrivateAccount || isFollowing) ...[
+                    ProfileGridTab(
+                      pinnedPosts: pinnedPosts,
+                      activePosts: activePosts,
+                      onPinChanged: (postId, isPinned) {},
+                    ),
+                    ProfileEventsTab(
+                      currentEvents: currentEvents,
+                      consideredEvents: consideredEvents,
+                      isLoading: isLoadingEvents,
+                    ),
+                    const ProfileDumpTab(),
+                  ] else
+                    const PrivateAccountView(),
+                ],
               ),
-              SliverPersistentHeader(
-                delegate: ProfileSectionHeaderDelegate(
-                  child: ProfileTabBar(
-                    currentIndex: selectedTabIndex.value,
-                    onTabSelected: onTabSelected,
-                  ),
-                ),
-                pinned: true,
-              ),
-            ];
-          },
-          body: PageView(
-            controller: pageController,
-            onPageChanged: (index) {
-              selectedTabIndex.value = index;
-              unawaited(
-                getIt<AnalyticsService>().logSelectProfileSegment(
-                  SelectProfileSegmentAnalyticsConfig(
-                    segment: ProfileSegmentEnum.values[index],
-                  ),
-                ),
-              );
-            },
-            children: [
-              if (!isPrivateAccount || isFollowing) ...[
-                ProfileGridTab(
-                  pinnedPosts: pinnedPosts,
-                  activePosts: activePosts,
-                  onPinChanged: (postId, isPinned) {},
-                ),
-                ProfileEventsTab(
-                  currentEvents: currentEvents,
-                  consideredEvents: consideredEvents,
-                  isLoading: isLoadingEvents,
-                ),
-                const ProfileDumpTab(),
-              ] else
-                const PrivateAccountView(),
-            ],
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
