@@ -34,6 +34,15 @@ fi
 # Install Dart/Flutter packages
 flutter pub get --enforce-lockfile
 
+# Ensure FlutterFire CLI is available when Crashlytics symbol upload build phase is enabled.
+export PATH="$PATH:$HOME/.pub-cache/bin"
+if grep -q 'flutterfire upload-crashlytics-symbols' ios/Runner.xcodeproj/project.pbxproj; then
+	if ! command -v flutterfire >/dev/null 2>&1; then
+		echo "Installing flutterfire_cli for Crashlytics symbols upload..."
+		dart pub global activate flutterfire_cli
+	fi
+fi
+
 # Install CocoaPods only if it is not preinstalled in the runner image.
 if ! command -v pod >/dev/null 2>&1; then
 	HOMEBREW_NO_AUTO_UPDATE=1 brew install cocoapods
