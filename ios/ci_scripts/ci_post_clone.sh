@@ -1,6 +1,28 @@
 #!/bin/sh
 set -e
 
+export COCOAPODS_DISABLE_STATS=1
+
+SCRIPT_START_TS=$(date +%s)
+
+start_step() {
+	STEP_NAME="$1"
+	STEP_START_TS=$(date +%s)
+	echo "[CI TIMER] START: $STEP_NAME"
+}
+
+end_step() {
+	STEP_END_TS=$(date +%s)
+	STEP_DURATION=$((STEP_END_TS - STEP_START_TS))
+	echo "[CI TIMER] END: $STEP_NAME (${STEP_DURATION}s)"
+}
+
+print_total_duration() {
+	SCRIPT_END_TS=$(date +%s)
+	SCRIPT_DURATION=$((SCRIPT_END_TS - SCRIPT_START_TS))
+	echo "[CI TIMER] TOTAL: iOS post-clone setup (${SCRIPT_DURATION}s)"
+}
+
 cd "$CI_PRIMARY_REPOSITORY_PATH"
 
 echo "Running Flutter iOS CI setup..."
@@ -13,6 +35,7 @@ EOF
 echo ".env created"
 
 # Reuse existing Flutter if available; otherwise install the pinned SDK version.
+start_step "Flutter SDK resolution"
 if command -v flutter >/dev/null 2>&1; then
 	echo "Using preinstalled Flutter: $(command -v flutter)"
 elif [ -x "$HOME/flutter/bin/flutter" ]; then
@@ -23,32 +46,63 @@ else
 	git clone https://github.com/flutter/flutter.git --depth 1 -b 3.41.6 "$HOME/flutter"
 	export PATH="$PATH:$HOME/flutter/bin"
 fi
+end_step
 
+start_step "Flutter version check"
 flutter --version
+end_step
 
 # Download iOS artifacts only when needed by a fresh worker.
+start_step "Flutter iOS precache"
 if [ ! -d "$HOME/flutter/bin/cache/artifacts/engine/ios" ]; then
 	flutter precache --ios
+else
+	echo "iOS engine artifacts already cached; skipping precache."
 fi
+end_step
 
-# Install Dart/Flutter packages
-flutter pub get --enforce-lockfile
+# Install Dart/Flutter packages (offline-first when cache is warm).
+start_step "Flutter pub get"
+if ! flutter pub get --enforce-lockfile --offline; then
+	echo "Offline pub get cache miss, falling back to network..."
+	flutter pub get --enforce-lockfile
+fi
+end_step
 
 # Ensure FlutterFire CLI is available when Crashlytics symbol upload build phase is enabled.
+start_step "FlutterFire CLI availability"
 export PATH="$PATH:$HOME/.pub-cache/bin"
 if grep -q 'flutterfire upload-crashlytics-symbols' ios/Runner.xcodeproj/project.pbxproj; then
 	if ! command -v flutterfire >/dev/null 2>&1; then
 		echo "Installing flutterfire_cli for Crashlytics symbols upload..."
 		dart pub global activate flutterfire_cli
+	else
+		echo "flutterfire already available; skipping install."
 	fi
+else
+	echo "Crashlytics upload phase not found; skipping flutterfire check."
 fi
+end_step
 
 # Install CocoaPods only if it is not preinstalled in the runner image.
+start_step "CocoaPods availability"
 if ! command -v pod >/dev/null 2>&1; then
 	HOMEBREW_NO_AUTO_UPDATE=1 brew install cocoapods
+else
+	echo "CocoaPods already installed; skipping brew install."
 fi
+end_step
 
+start_step "pod install"
 cd ios
-pod install --deployment
+# Skip pod install when pods already match lockfile on a warm worker.
+if [ -f "Pods/Manifest.lock" ] && cmp -s "Pods/Manifest.lock" "Podfile.lock"; then
+	echo "Pods are already in sync with Podfile.lock; skipping pod install."
+else
+	pod install --deployment --no-repo-update
+fi
+end_step
+
+print_total_duration
 
 echo "iOS post-clone setup complete."
