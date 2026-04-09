@@ -24,16 +24,18 @@ Future<void> handleSocialLogin({
     case Left(value: AuthNotFoundException(:final message)):
       _logger.error(
         '$providerName ile giriş yapılamadı: ${result.value.message}',
+        error: result.value,
       );
       showErrorPopup(context, message: message);
     case Left(value: final _):
       _logger.error(
         '$providerName ile giriş yapılamadı: ${result.value.message}',
+        error: result.value,
       );
 
       showErrorPopup(
         context,
-        message: '$providerName ile giriş yapılamadı: ${result.value.message}',
+        message: '$providerName ile giriş yapılamadı.',
       );
   }
 }

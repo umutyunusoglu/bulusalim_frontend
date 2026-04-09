@@ -24,11 +24,13 @@ Future<void> handleSocialSignIn({
     case Left(value: UserAlreadyExistsException(:final message)):
       _logger.error(
         '$providerName ile kayıt olunamadı: ${result.value.message}',
+        error: result.value,
       );
       showErrorPopup(context, message: message);
     case Left(value: final _):
       _logger.error(
         '$providerName ile kayıt olunamadı: ${result.value.message}',
+        error: result.value,
       );
       showErrorPopup(
         context,
