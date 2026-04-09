@@ -41,25 +41,31 @@ Future<void> main() async {
     debugPrint('Firebase başlatma hatası: $e');
   }
 
+  // Firebase init bloğunun hemen altına
+  FirebaseAuth.instance.authStateChanges().listen((user) {
+    if (user != null) {
+      FirebaseCrashlytics.instance.setUserIdentifier(user.uid);
+    } else {
+      FirebaseCrashlytics.instance.setUserIdentifier('');
+    }
+  });
+
   FlutterError.onError = (details) {
     if (kDebugMode) {
-      FlutterError.dumpErrorToConsole(details);
+      FlutterError.dumpErrorToConsole(details); // ✅ atama değil, çağırma
     } else {
-      FirebaseCrashlytics.instance.recordFlutterError(details);
+      FirebaseCrashlytics.instance.recordFlutterFatalError(details);
     }
   };
 
   PlatformDispatcher.instance.onError = (error, stack) {
     if (kDebugMode) {
-      print('Asenkron Hata: $error');
+      debugPrint('Asenkron Hata: $error\n$stack');
       return false;
     }
-
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     return true;
   };
-
-  FirebaseAnalytics analytics = FirebaseAnalytics.instance;
 
   await dotenv.load();
 

@@ -59,7 +59,7 @@ class AuthServiceImpl implements AuthService {
             if (!completer.isCompleted) {
               completer.completeError(
                 OTPSendException(
-                  'SMS tekrar gönderilirken bir hata oluştu, lütfen başka bir giriş yöntemi deneyiniz.',
+                  '${e.code}: ${e.message}',
                 ),
               );
             }
