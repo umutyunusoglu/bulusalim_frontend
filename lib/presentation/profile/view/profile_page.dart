@@ -30,11 +30,13 @@ import 'package:outnest/presentation/profile/view/components/profile_follow_butt
 import 'package:outnest/presentation/profile/view/components/profile_header.dart';
 import 'package:outnest/presentation/profile/view/components/profile_photo.dart';
 import 'package:outnest/presentation/profile/view/components/profile_section_header_delegate.dart';
+import 'package:outnest/presentation/profile/view/components/profile_share_bottom_sheet.dart';
 import 'package:outnest/presentation/profile/view/components/profile_stats_row.dart';
 import 'package:outnest/presentation/profile/view/components/profile_tab_bar.dart';
 import 'package:outnest/presentation/profile/view/dialogs/show_no_shareable_event_dialog.dart';
 import 'package:outnest/presentation/profile/view/dialogs/show_share_selection_dialog.dart';
 import 'package:outnest/presentation/profile/view/dialogs/show_unfollow_dialog.dart';
+import 'package:share_plus/share_plus.dart';
 
 class ProfilePage extends HookConsumerWidget {
   const ProfilePage({required this.profileUserID, super.key});
@@ -229,6 +231,27 @@ class ProfilePage extends HookConsumerWidget {
       );
     }
 
+    void openCustomShareMenu() {
+      final shareUrl = 'https://outnest.app/share/profile/$profileUserID';
+
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        useRootNavigator: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => ProfileShareBottomSheet(
+          username: username,
+          profileImageUrl: profileImageUrl,
+          profileUrl: shareUrl,
+          onSharePressed: () async {
+            await SharePlus.instance.share(
+              ShareParams(text: shareUrl),
+            );
+          },
+        ),
+      );
+    }
+
     // ─── BUILD ───────────────────────────────────────────────
     final theme = Theme.of(context);
 
@@ -315,11 +338,7 @@ class ProfilePage extends HookConsumerWidget {
                                       username: username,
 
                                       isCurrentUser: isCurrentUser,
-                                      onShareTap: () =>
-                                          actionNotifier.shareProfile(
-                                            context,
-                                            profileUserID,
-                                          ),
+                                      onShareTap: openCustomShareMenu,
                                     ),
                                     SizedBox(height: 9.h),
                                     // İSTATİSTİKLER
