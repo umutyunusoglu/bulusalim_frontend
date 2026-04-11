@@ -3,27 +3,31 @@ import 'package:outnest/data/models/model.dart';
 import 'package:outnest/domain/entities/badges/badge_entity.dart';
 
 class BadgeModel implements Model<BadgeEntity> {
-  factory BadgeModel.fromFirestore(Map<String, dynamic> data) {
-    return BadgeModel(
-      category: data['category'] as String,
-      tier: data['tier'] as int,
-      label: data['label'] as String,
-      info: data['info'] as String,
-      iconURL: data['iconURL'] as String,
-    );
-  }
   BadgeModel({
     required this.category,
     required this.tier,
+    required this.threshold,
     required this.label,
     required this.info,
     required this.iconURL,
   });
 
+  factory BadgeModel.fromFirestore(Map<String, dynamic> data) {
+    return BadgeModel(
+      category: data['category'] as String,
+      tier: data['tier'] as int,
+      threshold: data['threshold'] as int,
+      label: data['label'] as String,
+      info: data['info'] as String,
+      iconURL: data['iconURL'] as String,
+    );
+  }
+
   factory BadgeModel.fromEntity(BadgeEntity entity) {
     return BadgeModel(
       category: entity.category,
       tier: entity.tier,
+      threshold: entity.threshold,
       label: entity.label,
       info: entity.info,
       iconURL: entity.iconURL,
@@ -35,6 +39,7 @@ class BadgeModel implements Model<BadgeEntity> {
     return BadgeEntity(
       category: category,
       tier: tier,
+      threshold: threshold,
       label: label,
       info: info,
       iconURL: iconURL,
@@ -52,6 +57,7 @@ class BadgeModel implements Model<BadgeEntity> {
 
   final String category;
   final int tier;
+  final int threshold;
   final String label;
   final String info;
   final String iconURL;
