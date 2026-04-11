@@ -1,68 +1,108 @@
-#!/bin/bash
-set -euo pipefail
+#!/bin/sh
+set -e
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+export COCOAPODS_DISABLE_STATS=1
 
-cd "$PROJECT_ROOT"
+SCRIPT_START_TS=$(date +%s)
 
-echo "Running Flutter iOS CI setup..."
-echo "Project root: $PROJECT_ROOT"
-
-resolve_flutter() {
-	if command -v flutter >/dev/null 2>&1; then
-		return 0
-	fi
-
-	# Preferred: FLUTTER_ROOT provided by CI environment.
-	if [ -n "${FLUTTER_ROOT:-}" ] && [ -x "$FLUTTER_ROOT/bin/flutter" ]; then
-		export PATH="$FLUTTER_ROOT/bin:$PATH"
-		return 0
-	fi
-
-	# Fallback common install locations.
-	for candidate in \
-		"$HOME/flutter/bin/flutter" \
-		"/opt/homebrew/Caskroom/flutter/latest/flutter/bin/flutter" \
-		"/usr/local/Caskroom/flutter/latest/flutter/bin/flutter" \
-		"/Applications/flutter/bin/flutter"
-	do
-		if [ -x "$candidate" ]; then
-			export PATH="$(dirname "$candidate"):$PATH"
-			return 0
-		fi
-	done
-
-	return 1
+start_step() {
+	STEP_NAME="$1"
+	STEP_START_TS=$(date +%s)
+	echo "[CI TIMER] START: $STEP_NAME"
 }
 
-if ! resolve_flutter; then
-	echo "flutter is not available on PATH"
-	echo "Set FLUTTER_ROOT in Xcode Cloud Environment Variables, e.g.:"
-	echo "  FLUTTER_ROOT=/Applications/flutter"
-	exit 1
-fi
+end_step() {
+	STEP_END_TS=$(date +%s)
+	STEP_DURATION=$((STEP_END_TS - STEP_START_TS))
+	echo "[CI TIMER] END: $STEP_NAME (${STEP_DURATION}s)"
+}
 
-flutter --version
+print_total_duration() {
+	SCRIPT_END_TS=$(date +%s)
+	SCRIPT_DURATION=$((SCRIPT_END_TS - SCRIPT_START_TS))
+	echo "[CI TIMER] TOTAL: iOS post-clone setup (${SCRIPT_DURATION}s)"
+}
 
-echo "Fetching Flutter dependencies (lockfile-enforced)..."
-if flutter pub get --help 2>/dev/null | grep -q -- "--enforce-lockfile"; then
-	flutter pub get --enforce-lockfile
+cd "$CI_PRIMARY_REPOSITORY_PATH"
+
+echo "Running Flutter iOS CI setup..."
+echo "Project root: $CI_PRIMARY_REPOSITORY_PATH"
+
+cat > .env <<EOF
+MAPBOX_ACCESS_TOKEN=$MAPBOX_ACCESS_TOKEN
+EOF
+
+echo ".env created"
+
+# Reuse existing Flutter if available; otherwise install the pinned SDK version.
+start_step "Flutter SDK resolution"
+if command -v flutter >/dev/null 2>&1; then
+	echo "Using preinstalled Flutter: $(command -v flutter)"
+elif [ -x "$HOME/flutter/bin/flutter" ]; then
+	export PATH="$PATH:$HOME/flutter/bin"
+	echo "Using cached Flutter from $HOME/flutter"
 else
-	echo "WARNING: This Flutter version does not support --enforce-lockfile; falling back to flutter pub get"
-	flutter pub get
+	echo "Installing Flutter 3.41.6..."
+	git clone https://github.com/flutter/flutter.git --depth 1 -b 3.41.6 "$HOME/flutter"
+	export PATH="$PATH:$HOME/flutter/bin"
 fi
+end_step
 
-if [ -d "ios" ] && [ -f "ios/Podfile" ]; then
-	echo "Installing CocoaPods dependencies (deployment mode)..."
-	cd ios
-	pod install --deployment
-	if ! diff -q Podfile.lock Pods/Manifest.lock >/dev/null 2>&1; then
-		echo "ERROR: CocoaPods lockfiles are out of sync after install."
-		echo "Run 'cd ios && pod install' locally and commit Podfile.lock."
-		exit 1
+start_step "Flutter version check"
+flutter --version
+end_step
+
+# Download iOS artifacts only when needed by a fresh worker.
+start_step "Flutter iOS precache"
+if [ ! -d "$HOME/flutter/bin/cache/artifacts/engine/ios" ]; then
+	flutter precache --ios
+else
+	echo "iOS engine artifacts already cached; skipping precache."
+fi
+end_step
+
+# Install Dart/Flutter packages (offline-first when cache is warm).
+start_step "Flutter pub get"
+if ! flutter pub get --enforce-lockfile --offline; then
+	echo "Offline pub get cache miss, falling back to network..."
+	flutter pub get --enforce-lockfile
+fi
+end_step
+
+# Ensure FlutterFire CLI is available when Crashlytics symbol upload build phase is enabled.
+start_step "FlutterFire CLI availability"
+export PATH="$PATH:$HOME/.pub-cache/bin"
+if grep -q 'flutterfire upload-crashlytics-symbols' ios/Runner.xcodeproj/project.pbxproj; then
+	if ! command -v flutterfire >/dev/null 2>&1; then
+		echo "Installing flutterfire_cli for Crashlytics symbols upload..."
+		dart pub global activate flutterfire_cli
+	else
+		echo "flutterfire already available; skipping install."
 	fi
-	cd "$PROJECT_ROOT"
+else
+	echo "Crashlytics upload phase not found; skipping flutterfire check."
 fi
+end_step
 
-echo "iOS post-clone setup complete. Build will be handled by Xcode Cloud."
+# Install CocoaPods only if it is not preinstalled in the runner image.
+start_step "CocoaPods availability"
+if ! command -v pod >/dev/null 2>&1; then
+	HOMEBREW_NO_AUTO_UPDATE=1 brew install cocoapods
+else
+	echo "CocoaPods already installed; skipping brew install."
+fi
+end_step
+
+start_step "pod install"
+cd ios
+# Skip pod install when pods already match lockfile on a warm worker.
+if [ -f "Pods/Manifest.lock" ] && cmp -s "Pods/Manifest.lock" "Podfile.lock"; then
+	echo "Pods are already in sync with Podfile.lock; skipping pod install."
+else
+	pod install --deployment --no-repo-update
+fi
+end_step
+
+print_total_duration
+
+echo "iOS post-clone setup complete."

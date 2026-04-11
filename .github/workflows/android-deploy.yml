@@ -1,0 +1,200 @@
+name: Android Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: Deploy to Google Play after build
+        required: true
+        type: boolean
+        default: true
+      track:
+        description: Google Play track
+        required: true
+        type: choice
+        default: internal
+        options:
+          - internal
+          - beta
+          - production
+  push:
+    branches:
+      - ci-config
+      - main
+      - release
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.41.6"
+          channel: stable
+          cache: true
+
+      - name: Cache Pub
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: |
+            pub-${{ runner.os }}-
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Create .env
+        run: |
+          printf "MAPBOX_ACCESS_TOKEN=%s\n" "${{ secrets.MAPBOX_ACCESS_TOKEN }}" > .env
+
+      - name: Install Dart dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Runner diagnostics (pre-build)
+        run: |
+          echo "CPU info"
+          nproc || true
+          echo "Memory"
+          free -h || true
+          echo "Disk"
+          df -h || true
+
+      - name: Validate signing secrets (safe preflight)
+        run: |
+          set -e
+
+          missing=false
+
+          if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "Missing secret: ANDROID_KEYSTORE_BASE64"
+            missing=true
+          fi
+          if [ -z "${{ secrets.ANDROID_KEY_ALIAS }}" ]; then
+            echo "Missing secret: ANDROID_KEY_ALIAS"
+            missing=true
+          fi
+          if [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ]; then
+            echo "Missing secret: ANDROID_KEYSTORE_PASSWORD"
+            missing=true
+          fi
+          if [ -z "${{ secrets.ANDROID_KEY_PASSWORD }}" ]; then
+            echo "Missing secret: ANDROID_KEY_PASSWORD"
+            missing=true
+          fi
+          if [ -z "${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}" ]; then
+            echo "Missing secret: PLAY_SERVICE_ACCOUNT_JSON"
+            missing=true
+          fi
+
+          if [ "$missing" = true ]; then
+            exit 1
+          fi
+
+          mkdir -p android/app
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+
+          if [ ! -s android/app/upload-keystore.jks ]; then
+            echo "Decoded keystore file is empty. Check ANDROID_KEYSTORE_BASE64."
+            exit 1
+          fi
+
+          keytool -list \
+            -keystore android/app/upload-keystore.jks \
+            -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            -alias "${{ secrets.ANDROID_KEY_ALIAS }}" >/dev/null
+
+          echo "Signing preflight passed: keystore decoded and alias validated."
+
+      - name: Prepare Android signing files
+        run: |
+          if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ] || [ -z "${{ secrets.ANDROID_KEY_ALIAS }}" ] || [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ] || [ -z "${{ secrets.ANDROID_KEY_PASSWORD }}" ]; then
+            echo "Missing Android signing secrets."
+            echo "Required: ANDROID_KEYSTORE_BASE64, ANDROID_KEY_ALIAS, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_PASSWORD"
+            exit 1
+          fi
+
+          mkdir -p android/app
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+
+          cat > android/key.properties <<EOF
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          storeFile=upload-keystore.jks
+          EOF
+
+      - name: Build release AAB
+        run: |
+          PUBSPEC_VERSION=$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}')
+          BUILD_NUMBER=$(echo "${PUBSPEC_VERSION}" | sed -nE 's/^[^+]+\+([0-9]+)$/\1/p')
+          BUILD_NAME=${PUBSPEC_VERSION%%+*}
+
+          if [ -z "${BUILD_NUMBER}" ]; then
+            echo "Invalid pubspec version format: ${PUBSPEC_VERSION}"
+            echo "Expected format: x.y.z+N (for example 1.1.6+32)."
+            exit 1
+          fi
+
+          echo "Using build name: ${BUILD_NAME}"
+          echo "Using build number from pubspec.yaml: ${BUILD_NUMBER}"
+          cat >> android/gradle.properties <<'EOF'
+          org.gradle.daemon=false
+          org.gradle.workers.max=2
+          org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8
+          kotlin.daemon.jvmargs=-Xmx1g
+          EOF
+          flutter build appbundle --release --no-tree-shake-icons --build-name "${BUILD_NAME}" --build-number "${BUILD_NUMBER}"
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+
+      - name: Determine Google Play track
+        id: track
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/release" ]; then
+            echo "value=production" >> $GITHUB_OUTPUT
+          else
+            echo "value=internal" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy to Google Play
+        if: ${{ github.event_name == 'push' || inputs.deploy }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: app.outnest
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          track: ${{ inputs.track || steps.track.outputs.value }}
+          status: completed
