@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -181,6 +182,10 @@ class ProfilePage extends HookConsumerWidget {
       BuildContext context,
       String imageUrl,
     ) async {
+      // Url boş değilse ve geçerli bir web adresi (http) içeriyorsa true döner
+      final bool hasValidImage =
+          imageUrl.trim().isNotEmpty && imageUrl.startsWith('http');
+
       await showGeneralDialog(
         context: context,
         barrierDismissible: true, // Arka plana tıklayınca kapansın
@@ -215,10 +220,28 @@ class ProfilePage extends HookConsumerWidget {
                               color: Colors.black.withOpacity(0.5),
                             ),
                           ],
-                          image: DecorationImage(
-                            image: NetworkImage(imageUrl),
-                            fit: BoxFit.cover,
-                          ),
+                        ),
+                        child: ClipOval(
+                          child: hasValidImage
+                              // 1. DURUM: Kullanıcının resim linki var
+                              ? CachedNetworkImage(
+                                  imageUrl: imageUrl,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => Container(
+                                    color: Colors.black, // Siyah zemin
+                                  ),
+                                  // Link kırık çıkar veya yükleme başarısız olursa default asset
+                                  errorWidget: (context, url, error) =>
+                                      Image.asset(
+                                        'assets/defaults/default_profile.jpg',
+                                        fit: BoxFit.cover,
+                                      ),
+                                )
+                              // 2. DURUM: Kullanıcının hiç resmi yok (veya link değil)
+                              : Image.asset(
+                                  'assets/defaults/default_profile.jpg',
+                                  fit: BoxFit.cover,
+                                ),
                         ),
                       ),
                     ),

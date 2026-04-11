@@ -120,12 +120,10 @@ flutter:
     - assets/defaults/
     - assets/outnest/
     - .env
-  fonts:
+fonts:
     - family: SF Pro Display
       fonts:
-        - asset: assets/fonts/SFProDisplay-Regular.ttf
-        - asset: assets/fonts/SFProDisplay-Bold.ttf
-          weight: 700
+        - asset: fonts/SF-Pro-Display-Regular.otf
     - family: Agrandir
       fonts:
         - asset: fonts/Agrandir-Grand-Heavy-800.otf

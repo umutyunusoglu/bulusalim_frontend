@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:outnest/app_router.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -128,16 +129,47 @@ class ProfileShareBottomSheet extends HookConsumerWidget {
                 ),
                 SizedBox(width: 40.w),
                 GestureDetector(
-                  onTap: () {
-                    Clipboard.setData(ClipboardData(text: profileUrl));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Bağlantı kopyalandı!')),
-                    );
+                  onTap: () async {
+                    await Clipboard.setData(ClipboardData(text: profileUrl));
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).clearSnackBars();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Bağlantı kopyalandı!',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: 'SF Pro Display',
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white,
+                            ),
+                          ),
+                          backgroundColor: AppColors.primaryColor,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16.r),
+                          ),
+                          margin: EdgeInsets.only(
+                            bottom: 24.h,
+                            left: 40.w,
+                            right: 40.w,
+                          ),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
                   },
-                  child: Icon(
-                    Symbols.content_copy,
-                    size: 20.sp,
-                    color: AppColors.secondaryColor,
+                  child: Container(
+                    padding: EdgeInsets.all(
+                      4.r,
+                    ),
+                    color: Colors.transparent,
+                    child: Icon(
+                      Symbols.content_copy,
+                      size: 20.sp,
+                      color: AppColors.secondaryColor,
+                    ),
                   ),
                 ),
               ],
@@ -178,7 +210,10 @@ class ProfileShareBottomSheet extends HookConsumerWidget {
           // QR Okut Butonu
           TextButton.icon(
             onPressed: () {
-              // Yönlendirme eklenecek
+              Navigator.pop(context);
+              Future.delayed(const Duration(milliseconds: 150), () async {
+                await router.push('/profile-scanner');
+              });
             },
             icon: Icon(
               Symbols.qr_code_scanner,
