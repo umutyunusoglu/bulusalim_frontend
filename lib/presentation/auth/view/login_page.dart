@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/errors/exceptions/auth_exceptions.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/presentation/auth/controllers/auth_status_enum.dart';
 import 'package:outnest/presentation/auth/controllers/handle_social_login.dart';
@@ -33,6 +34,7 @@ class _LoginPageState extends State<LoginPage> {
 
   // Hangi yöntemin işlemde olduğunu tutan değişken
   AuthStatus _authStatus = AuthStatus.none;
+  final LoggingService _logger = getIt<LoggingService>();
 
   @override
   void dispose() {
@@ -83,16 +85,19 @@ class _LoginPageState extends State<LoginPage> {
           },
         );
       case Left(value: OTPSendException()):
+        _logger.error('SMS gönderilemedi:${result.value.message}');
         showErrorPopup(
           context,
           message: 'SMS gönderilemedi. Lütfen tekrar deneyiniz.',
         );
       case Left(value: SMSTimeoutException()):
+        _logger.error('SMS zaman aşımına uğradı:${result.value.message}');
         showErrorPopup(
           context,
           message: 'SMS zaman aşımına uğradı. Lütfen tekrar deneyiniz.',
         );
       case Left(value: final _):
+        _logger.error('Beklenmedik bir hata oluştu:${result.value.message}');
         showErrorPopup(
           context,
           message: 'Beklenmedik bir hata oluştu.',

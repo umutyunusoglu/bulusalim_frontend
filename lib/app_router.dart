@@ -31,6 +31,7 @@ import 'package:outnest/presentation/map/view/components/steps/community_event_d
 import 'package:outnest/presentation/map/view/map_page.dart';
 import 'package:outnest/presentation/notification/view/follow_request_page.dart';
 import 'package:outnest/presentation/notification/view/notification_page.dart';
+import 'package:outnest/presentation/profile/view/components/profile_scanner.dart'; // Senin importun
 import 'package:outnest/presentation/profile/view/profile_dispatcher.dart';
 import 'package:outnest/presentation/search/view/search_page.dart';
 import 'package:outnest/presentation/settings/view/account_settings_page.dart';
@@ -349,6 +350,12 @@ final router = GoRouter(
       ],
     ),
     GoRoute(
+      path: '/profile-scanner',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const ProfileScannerScreen(),
+    ),
+
+    GoRoute(
       path: '/groups',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const GroupsPage(),
@@ -421,14 +428,6 @@ final router = GoRouter(
 
         return ChatPage(
           eventID: eventID,
-          event: extra?['event'] as EventEntity,
-          chatTitle: (extra?['title'] as String?) ?? 'Sohbet',
-          participantAvatars: safeAvatars,
-          location: (extra?['location'] as String?) ?? '',
-          participantStatus: (extra?['participants'] as String?) ?? '',
-          eventDate: extra?['startTime'] as DateTime? ?? DateTime.now(),
-          creatorID: (extra?['creatorID'] as String?) ?? '',
-          creatorProfileImage: (extra?['creatorProfileImage'] as String?) ?? '',
         );
       },
       routes: [
@@ -488,6 +487,7 @@ final router = GoRouter(
     ),
     GoRoute(
       path: '/share/profile/:userId',
+      parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
         final userId = state.pathParameters['userId'] ?? '';
         return ProfileDispatcher(profileUserID: userId);

@@ -1,24 +1,24 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
-import 'package:outnest/domain/services/security_service.dart';
-import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
-import 'package:outnest/presentation/shared/popup.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/event_status_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
+import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/usecases/force_start_event_usecase.dart';
 import 'package:outnest/domain/usecases/force_stop_event_usecase.dart';
 import 'package:outnest/presentation/chat/view/components/chat_event_info_chip.dart';
 import 'package:outnest/presentation/chat/view/components/event_avatar_badge.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 import 'package:outnest/presentation/home/view/components/event/participant_bottom_sheet.dart';
+import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
+import 'package:outnest/presentation/shared/popup.dart';
 
 class ChatPageHeader extends StatefulWidget {
   const ChatPageHeader({

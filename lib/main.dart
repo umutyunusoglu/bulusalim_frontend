@@ -1,4 +1,5 @@
 import 'dart:ui';
+
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,6 +9,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -41,25 +43,31 @@ Future<void> main() async {
     debugPrint('Firebase başlatma hatası: $e');
   }
 
+  // Firebase init bloğunun hemen altına
+  FirebaseAuth.instance.authStateChanges().listen((user) {
+    if (user != null) {
+      FirebaseCrashlytics.instance.setUserIdentifier(user.uid);
+    } else {
+      FirebaseCrashlytics.instance.setUserIdentifier('');
+    }
+  });
+
   FlutterError.onError = (details) {
     if (kDebugMode) {
-      FlutterError.dumpErrorToConsole(details);
+      FlutterError.dumpErrorToConsole(details); // ✅ atama değil, çağırma
     } else {
-      FirebaseCrashlytics.instance.recordFlutterError(details);
+      FirebaseCrashlytics.instance.recordFlutterFatalError(details);
     }
   };
 
   PlatformDispatcher.instance.onError = (error, stack) {
     if (kDebugMode) {
-      print('Asenkron Hata: $error');
+      debugPrint('Asenkron Hata: $error\n$stack');
       return false;
     }
-
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     return true;
   };
-
-  FirebaseAnalytics analytics = FirebaseAnalytics.instance;
 
   await dotenv.load();
 
@@ -118,7 +126,19 @@ class MainApp extends StatelessWidget {
               dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse},
             ),
             theme: AppTheme.lightTheme,
-            locale: const Locale('tr'),
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('tr', 'TR'),
+              Locale('en', 'US'),
+            ],
+            locale: const Locale(
+              'tr',
+              'TR',
+            ),
             title: 'Buluşalım',
             builder: (context, widget) {
               return MediaQuery(

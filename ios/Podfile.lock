@@ -1208,11 +1208,11 @@ PODS:
   - BoringSSL-GRPC/Interface (0.0.37)
   - camera_avfoundation (0.0.1):
     - Flutter
-  - cloud_firestore (6.1.3):
+  - cloud_firestore (6.2.0):
     - Firebase/Firestore (= 12.9.0)
     - firebase_core
     - Flutter
-  - cloud_functions (6.0.7):
+  - cloud_functions (6.1.0):
     - Firebase/Functions (= 12.9.0)
     - firebase_core
     - Flutter
@@ -1244,39 +1244,39 @@ PODS:
   - Firebase/Storage (12.9.0):
     - Firebase/CoreOnly
     - FirebaseStorage (~> 12.9.0)
-  - firebase_analytics (12.1.3):
+  - firebase_analytics (12.2.0):
     - firebase_core
     - FirebaseAnalytics (= 12.9.0)
     - Flutter
-  - firebase_app_check (0.4.1-5):
+  - firebase_app_check (0.4.2):
     - Firebase/CoreOnly (~> 12.9.0)
     - firebase_core
     - FirebaseAppCheck (~> 12.9.0)
     - Flutter
-  - firebase_auth (6.2.0):
+  - firebase_auth (6.3.0):
     - Firebase/Auth (= 12.9.0)
     - firebase_core
     - Flutter
-  - firebase_core (4.5.0):
+  - firebase_core (4.6.0):
     - Firebase/CoreOnly (= 12.9.0)
     - Flutter
-  - firebase_crashlytics (5.0.8):
+  - firebase_crashlytics (5.1.0):
     - Firebase/Crashlytics (= 12.9.0)
     - firebase_core
     - Flutter
-  - firebase_messaging (16.1.2):
+  - firebase_messaging (16.1.3):
     - Firebase/Messaging (= 12.9.0)
     - firebase_core
     - Flutter
-  - firebase_performance (0.11.1-5):
+  - firebase_performance (0.11.2):
     - Firebase/Performance (= 12.9.0)
     - firebase_core
     - Flutter
-  - firebase_remote_config (6.2.0):
+  - firebase_remote_config (6.3.0):
     - Firebase/RemoteConfig (= 12.9.0)
     - firebase_core
     - Flutter
-  - firebase_storage (13.1.0):
+  - firebase_storage (13.2.0):
     - Firebase/Storage (= 12.9.0)
     - firebase_core
     - Flutter
@@ -1615,17 +1615,17 @@ PODS:
   - Mantle (2.2.0):
     - Mantle/extobjc (= 2.2.0)
   - Mantle/extobjc (2.2.0)
-  - mapbox_maps_flutter (2.20.0):
+  - mapbox_maps_flutter (2.21.1):
     - Flutter
-    - MapboxMaps (= 11.20.0)
+    - MapboxMaps (= 11.21.1)
     - Turf (= 4.0.0)
-  - MapboxCommon (24.20.0):
+  - MapboxCommon (24.21.1):
     - Turf (= 4.0.0)
-  - MapboxCoreMaps (11.20.0):
-    - MapboxCommon (= 24.20.0)
-  - MapboxMaps (11.20.0):
-    - MapboxCommon (= 24.20.0)
-    - MapboxCoreMaps (= 11.20.0)
+  - MapboxCoreMaps (11.21.1):
+    - MapboxCommon (= 24.21.1)
+  - MapboxMaps (11.21.1):
+    - MapboxCommon (= 24.21.1)
+    - MapboxCoreMaps (= 11.21.1)
     - Turf (= 4.0.0)
   - mobile_scanner (7.0.0):
     - Flutter
