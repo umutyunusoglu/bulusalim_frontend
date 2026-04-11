@@ -32,7 +32,8 @@ concurrency:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
 
     steps:
       - name: Checkout
@@ -78,6 +79,15 @@ jobs:
       - name: Install Dart dependencies
         run: flutter pub get --enforce-lockfile
 
+      - name: Runner diagnostics (pre-build)
+        run: |
+          echo "CPU info"
+          nproc || true
+          echo "Memory"
+          free -h || true
+          echo "Disk"
+          df -h || true
+
       - name: Prepare Android signing files
         run: |
           if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ] || [ -z "${{ secrets.ANDROID_KEY_ALIAS }}" ] || [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ] || [ -z "${{ secrets.ANDROID_KEY_PASSWORD }}" ]; then
@@ -97,7 +107,14 @@ jobs:
           EOF
 
       - name: Build release AAB
-        run: flutter build appbundle --release
+        run: |
+          cat >> android/gradle.properties <<'EOF'
+          org.gradle.daemon=false
+          org.gradle.workers.max=2
+          org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8
+          kotlin.daemon.jvmargs=-Xmx1g
+          EOF
+          flutter build appbundle --release --no-tree-shake-icons
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
