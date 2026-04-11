@@ -317,10 +317,9 @@ class _DebugPanelSheet extends ConsumerWidget {
               onTap: () async {
                 Navigator.pop(context);
                 final result = await ref.read(allBadgesProvider.future);
-
-                for (final badge in result) {
-                  _logger.debug('  • $badge');
-                }
+                _logger.debug(
+                  'allBadgesProvider (${result.length} items): ${result.map((b) => b.toString()).join(', ')}',
+                );
                 _showDebugSnack('allBadges: ${result.length} badge loglandı.');
               },
             ),
@@ -332,11 +331,8 @@ class _DebugPanelSheet extends ConsumerWidget {
                 Navigator.pop(context);
                 final result = await ref.read(currentUserBadgesProvider.future);
                 _logger.debug(
-                  '[DEBUG] currentUserBadgesProvider (${result.length} items):',
+                  'currentUserBadgesProvider (${result.length} items): ${result.map((b) => b.toString()).join(', ')}',
                 );
-                for (final badge in result) {
-                  _logger.debug('  • $badge');
-                }
                 _showDebugSnack(
                   'currentUserBadges: ${result.length} badge loglandı.',
                 );
