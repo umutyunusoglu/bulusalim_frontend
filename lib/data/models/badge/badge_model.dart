@@ -3,20 +3,29 @@ import 'package:outnest/data/models/model.dart';
 import 'package:outnest/domain/entities/badges/badge_entity.dart';
 
 class BadgeModel implements Model<BadgeEntity> {
+  factory BadgeModel.fromFirestore(Map<String, dynamic> data) {
+    return BadgeModel(
+      category: data['category'] as String,
+      tier: data['tier'] as int,
+      label: data['label'] as String,
+      info: data['info'] as String,
+      iconURL: data['iconURL'] as String,
+    );
+  }
   BadgeModel({
-    required this.badgeID,
     required this.category,
     required this.tier,
     required this.label,
+    required this.info,
     required this.iconURL,
   });
 
   factory BadgeModel.fromEntity(BadgeEntity entity) {
     return BadgeModel(
-      badgeID: entity.badgeID,
       category: entity.category,
       tier: entity.tier,
       label: entity.label,
+      info: entity.info,
       iconURL: entity.iconURL,
     );
   }
@@ -24,21 +33,11 @@ class BadgeModel implements Model<BadgeEntity> {
   @override
   BadgeEntity toEntity() {
     return BadgeEntity(
-      badgeID: badgeID,
       category: category,
       tier: tier,
       label: label,
+      info: info,
       iconURL: iconURL,
-    );
-  }
-
-  factory BadgeModel.fromFirestore(Map<String, dynamic> data) {
-    return BadgeModel(
-      badgeID: data['badgeID'] as Identifier,
-      category: data['category'] as String,
-      tier: data['tier'] as int,
-      label: data['label'] as String,
-      iconURL: data['iconURL'] as String,
     );
   }
 
@@ -51,9 +50,9 @@ class BadgeModel implements Model<BadgeEntity> {
     throw UnimplementedError();
   }
 
-  final String badgeID;
   final String category;
   final int tier;
   final String label;
+  final String info;
   final String iconURL;
 }
