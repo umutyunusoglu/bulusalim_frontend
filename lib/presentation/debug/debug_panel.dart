@@ -4,9 +4,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:outnest/application/app_state/current_user_data_providers/current_user_badges_provider.dart';
 import 'package:outnest/application/app_state/current_user_data_providers/current_user_event_providers.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
+import 'package:outnest/application/providers/badges/all_badges_provider.dart';
 import 'package:outnest/application/providers/navbar_badge_provider.dart';
 import 'package:outnest/application/service_locators/event_verification_service_provider.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 
 class DebugPanel extends ConsumerWidget {
@@ -37,7 +41,7 @@ class DebugPanel extends ConsumerWidget {
 }
 
 class _DebugPanelSheet extends ConsumerWidget {
-  const _DebugPanelSheet({
+  _DebugPanelSheet({
     required this.parentContext,
     required this.ref,
   });
@@ -47,6 +51,7 @@ class _DebugPanelSheet extends ConsumerWidget {
 
   static const int _feedTabIndex = 0;
 
+  final LoggingService _logger = getIt<LoggingService>();
   void _showDebugSnack(String text) {
     if (!parentContext.mounted) return;
     ScaffoldMessenger.of(parentContext).showSnackBar(
@@ -302,6 +307,39 @@ class _DebugPanelSheet extends ConsumerWidget {
               onTap: () {
                 Navigator.pop(context);
                 _showEventPickerDialog(parentContext);
+              },
+            ),
+            const Divider(height: 24),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.emoji_events_outlined),
+              title: const Text('Log: allBadgesProvider'),
+              onTap: () async {
+                Navigator.pop(context);
+                final result = await ref.read(allBadgesProvider.future);
+
+                for (final badge in result) {
+                  _logger.debug('  • $badge');
+                }
+                _showDebugSnack('allBadges: ${result.length} badge loglandı.');
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.workspace_premium_outlined),
+              title: const Text('Log: currentUserBadgesProvider'),
+              onTap: () async {
+                Navigator.pop(context);
+                final result = await ref.read(currentUserBadgesProvider.future);
+                _logger.debug(
+                  '[DEBUG] currentUserBadgesProvider (${result.length} items):',
+                );
+                for (final badge in result) {
+                  _logger.debug('  • $badge');
+                }
+                _showDebugSnack(
+                  'currentUserBadges: ${result.length} badge loglandı.',
+                );
               },
             ),
           ],
