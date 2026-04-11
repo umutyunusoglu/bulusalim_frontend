@@ -19,7 +19,6 @@ on:
           - production
   push:
     branches:
-      - ci-config
       - main
       - release
 
