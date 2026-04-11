@@ -154,13 +154,25 @@ jobs:
 
       - name: Build release AAB
         run: |
+          PUBSPEC_VERSION=$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}')
+          BUILD_NUMBER=$(echo "${PUBSPEC_VERSION}" | sed -nE 's/^[^+]+\+([0-9]+)$/\1/p')
+          BUILD_NAME=${PUBSPEC_VERSION%%+*}
+
+          if [ -z "${BUILD_NUMBER}" ]; then
+            echo "Invalid pubspec version format: ${PUBSPEC_VERSION}"
+            echo "Expected format: x.y.z+N (for example 1.1.6+32)."
+            exit 1
+          fi
+
+          echo "Using build name: ${BUILD_NAME}"
+          echo "Using build number from pubspec.yaml: ${BUILD_NUMBER}"
           cat >> android/gradle.properties <<'EOF'
           org.gradle.daemon=false
           org.gradle.workers.max=2
           org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8
           kotlin.daemon.jvmargs=-Xmx1g
           EOF
-          flutter build appbundle --release --no-tree-shake-icons
+          flutter build appbundle --release --no-tree-shake-icons --build-name "${BUILD_NAME}" --build-number "${BUILD_NUMBER}"
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
