@@ -1,4 +1,4 @@
-import 'package:outnest/core/constants/Configs/app_store_redirect_config.dart';
+import 'package:outnest/core/constants/configs/app_store_redirect_config.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/domain/services/share_links_service.dart';
