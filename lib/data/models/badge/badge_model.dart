@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/data/models/model.dart';
 import 'package:outnest/domain/entities/badges/badge_entity.dart';
@@ -10,8 +11,8 @@ class BadgeModel implements Model<BadgeEntity> {
     required this.label,
     required this.info,
     required this.iconURL,
+    required this.earnedAt,
   });
-
   factory BadgeModel.fromFirestore(Map<String, dynamic> data) {
     return BadgeModel(
       category: data['category'] as String,
@@ -20,6 +21,7 @@ class BadgeModel implements Model<BadgeEntity> {
       label: data['label'] as String,
       info: data['info'] as String,
       iconURL: data['iconURL'] as String,
+      earnedAt: (data['earnedAt'] as Timestamp).toDate(),
     );
   }
 
@@ -31,6 +33,7 @@ class BadgeModel implements Model<BadgeEntity> {
       label: entity.label,
       info: entity.info,
       iconURL: entity.iconURL,
+      earnedAt: entity.earnedAt,
     );
   }
 
@@ -43,6 +46,7 @@ class BadgeModel implements Model<BadgeEntity> {
       label: label,
       info: info,
       iconURL: iconURL,
+      earnedAt: earnedAt,
     );
   }
 
@@ -61,4 +65,5 @@ class BadgeModel implements Model<BadgeEntity> {
   final String label;
   final String info;
   final String iconURL;
+  final DateTime earnedAt;
 }
