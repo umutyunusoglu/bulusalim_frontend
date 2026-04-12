@@ -1,7 +1,7 @@
 name: outnest
 description: "A social Media App For Future of Socialising."
 publish_to: "none"
-version: 0.1.1
+version: 1.1.6+36
 
 environment:
   sdk: ^3.8.1
@@ -64,7 +64,7 @@ dependencies:
   google_sign_in: ^7.2.0
   rxdart: ^0.28.0
   flutter_image_compress: ^2.4.0
-  image_cropper: ^11.0.0
+  image_cropper: ^12.2.0
   recaptcha_enterprise_flutter: ^18.8.2
   geolocator: ^14.0.2
   flutter_speed_dial: ^7.0.0
@@ -95,7 +95,7 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   json_serializable: ^6.10.0
-  lint_hard: ^6.1.1
+  lint_hard: ^7.1.2
   mocktail: ^1.0.4
   test: ^1.26.2
   very_good_analysis: ^10.2.0

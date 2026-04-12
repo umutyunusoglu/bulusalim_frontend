@@ -1,0 +1,281 @@
+name: Android Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: Deploy to Google Play after build
+        required: true
+        type: boolean
+        default: true
+      track:
+        description: Google Play track
+        required: true
+        type: choice
+        default: internal
+        options:
+          - internal
+          - beta
+          - production
+  push:
+    branches:
+      - main
+      - release
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.41.6"
+          channel: stable
+          cache: true
+
+      - name: Cache Pub
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: |
+            pub-${{ runner.os }}-
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Create .env
+        run: |
+          printf "MAPBOX_ACCESS_TOKEN=%s\n" "${{ secrets.MAPBOX_ACCESS_TOKEN }}" > .env
+
+      - name: Install Dart dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Runner diagnostics (pre-build)
+        run: |
+          echo "CPU info"
+          nproc || true
+          echo "Memory"
+          free -h || true
+          echo "Disk"
+          df -h || true
+
+      - name: Validate signing secrets (safe preflight)
+        run: |
+          set -e
+
+          missing=false
+
+          if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "Missing secret: ANDROID_KEYSTORE_BASE64"
+            missing=true
+          fi
+          if [ -z "${{ secrets.ANDROID_KEY_ALIAS }}" ]; then
+            echo "Missing secret: ANDROID_KEY_ALIAS"
+            missing=true
+          fi
+          if [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ]; then
+            echo "Missing secret: ANDROID_KEYSTORE_PASSWORD"
+            missing=true
+          fi
+          if [ -z "${{ secrets.ANDROID_KEY_PASSWORD }}" ]; then
+            echo "Missing secret: ANDROID_KEY_PASSWORD"
+            missing=true
+          fi
+          if [ -z "${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}" ]; then
+            echo "Missing secret: PLAY_SERVICE_ACCOUNT_JSON"
+            missing=true
+          fi
+
+          if [ "$missing" = true ]; then
+            exit 1
+          fi
+
+          mkdir -p android/app
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+
+          if [ ! -s android/app/upload-keystore.jks ]; then
+            echo "Decoded keystore file is empty. Check ANDROID_KEYSTORE_BASE64."
+            exit 1
+          fi
+
+          keytool -list \
+            -keystore android/app/upload-keystore.jks \
+            -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            -alias "${{ secrets.ANDROID_KEY_ALIAS }}" >/dev/null
+
+          echo "Signing preflight passed: keystore decoded and alias validated."
+
+      - name: Create Google Play API access token
+        id: play_auth
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          set -euo pipefail
+
+          b64url() {
+            openssl base64 -A | tr '+/' '-_' | tr -d '='
+          }
+
+          SA_EMAIL=$(echo "$PLAY_SERVICE_ACCOUNT_JSON" | jq -r '.client_email')
+          SA_PRIVATE_KEY=$(echo "$PLAY_SERVICE_ACCOUNT_JSON" | jq -r '.private_key')
+
+          NOW=$(date +%s)
+          EXP=$((NOW + 3600))
+
+          HEADER=$(printf '{"alg":"RS256","typ":"JWT"}' | b64url)
+          CLAIMS=$(jq -nc \
+            --arg iss "$SA_EMAIL" \
+            --arg scope "https://www.googleapis.com/auth/androidpublisher" \
+            --arg aud "https://oauth2.googleapis.com/token" \
+            --argjson iat "$NOW" \
+            --argjson exp "$EXP" \
+            '{iss:$iss,scope:$scope,aud:$aud,iat:$iat,exp:$exp}')
+          PAYLOAD=$(printf '%s' "$CLAIMS" | b64url)
+
+          UNSIGNED_TOKEN="${HEADER}.${PAYLOAD}"
+          SIGNATURE=$(printf '%s' "$UNSIGNED_TOKEN" | openssl dgst -sha256 -sign <(printf '%s' "$SA_PRIVATE_KEY") -binary | b64url)
+          JWT="${UNSIGNED_TOKEN}.${SIGNATURE}"
+
+          TOKEN_RESPONSE=$(curl -sS -X POST "https://oauth2.googleapis.com/token" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer" \
+            --data-urlencode "assertion=${JWT}")
+
+          ACCESS_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.access_token')
+          if [ -z "$ACCESS_TOKEN" ] || [ "$ACCESS_TOKEN" = "null" ]; then
+            echo "Failed to mint Google OAuth token from service account key."
+            echo "Response: $TOKEN_RESPONSE"
+            exit 1
+          fi
+
+          echo "access_token=$ACCESS_TOKEN" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve next Google Play version code
+        id: play_version
+        env:
+          ACCESS_TOKEN: ${{ steps.play_auth.outputs.access_token }}
+          PACKAGE_NAME: app.outnest
+        run: |
+          set -euo pipefail
+
+          EDIT_RESPONSE=$(curl -sS -X POST \
+            -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+            -H "Content-Type: application/json" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE_NAME}/edits" \
+            -d '{}')
+
+          EDIT_ID=$(echo "${EDIT_RESPONSE}" | jq -r '.id')
+          if [ -z "${EDIT_ID}" ] || [ "${EDIT_ID}" = "null" ]; then
+            echo "Failed to create Google Play edit session"
+            echo "Response: ${EDIT_RESPONSE}"
+            exit 1
+          fi
+
+          TRACKS_RESPONSE=$(curl -sS \
+            -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE_NAME}/edits/${EDIT_ID}/tracks")
+
+          LATEST_VERSION_CODE=$(echo "${TRACKS_RESPONSE}" | jq -r '[.tracks[]?.releases[]?.versionCodes[]? | tonumber] | max // 0')
+          NEXT_VERSION_CODE=$((LATEST_VERSION_CODE + 1))
+
+          echo "latest=${LATEST_VERSION_CODE}" >> "$GITHUB_OUTPUT"
+          echo "next=${NEXT_VERSION_CODE}" >> "$GITHUB_OUTPUT"
+
+          echo "Latest Google Play version code: ${LATEST_VERSION_CODE}"
+          echo "Next version code for this build: ${NEXT_VERSION_CODE}"
+
+          curl -sS -X DELETE \
+            -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE_NAME}/edits/${EDIT_ID}" >/dev/null || true
+
+      - name: Prepare Android signing files
+        run: |
+          if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ] || [ -z "${{ secrets.ANDROID_KEY_ALIAS }}" ] || [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ] || [ -z "${{ secrets.ANDROID_KEY_PASSWORD }}" ]; then
+            echo "Missing Android signing secrets."
+            echo "Required: ANDROID_KEYSTORE_BASE64, ANDROID_KEY_ALIAS, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_PASSWORD"
+            exit 1
+          fi
+
+          mkdir -p android/app
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+
+          cat > android/key.properties <<EOF
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          storeFile=upload-keystore.jks
+          EOF
+
+      - name: Build release AAB
+        run: |
+          PUBSPEC_VERSION=$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}')
+          BUILD_NAME=${PUBSPEC_VERSION%%+*}
+          BUILD_NUMBER="${{ steps.play_version.outputs.next }}"
+
+          if [ -z "${BUILD_NUMBER}" ] || [ "${BUILD_NUMBER}" = "0" ]; then
+            echo "Could not resolve next version code from Google Play API."
+            exit 1
+          fi
+
+          echo "Using build name: ${BUILD_NAME}"
+          echo "Using build number from Google Play latest+1: ${BUILD_NUMBER}"
+          cat >> android/gradle.properties <<'EOF'
+          org.gradle.daemon=false
+          org.gradle.workers.max=2
+          org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8
+          kotlin.daemon.jvmargs=-Xmx1g
+          EOF
+          flutter build appbundle --release --no-tree-shake-icons --build-name "${BUILD_NAME}" --build-number "${BUILD_NUMBER}"
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+
+      - name: Determine Google Play track
+        id: track
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/release" ]; then
+            echo "value=production" >> $GITHUB_OUTPUT
+          else
+            echo "value=internal" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy to Google Play
+        if: ${{ github.event_name == 'push' || inputs.deploy }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: app.outnest
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          track: ${{ inputs.track || steps.track.outputs.value }}
+          status: completed
