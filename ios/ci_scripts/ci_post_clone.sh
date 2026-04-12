@@ -69,6 +69,38 @@ if ! flutter pub get --enforce-lockfile --offline; then
 fi
 end_step
 
+# Keep iOS version name from pubspec and auto-increment build number in Xcode Cloud.
+start_step "iOS build version setup"
+PUBSPEC_VERSION=$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}')
+PUBSPEC_BUILD_NAME=${PUBSPEC_VERSION%%+*}
+PUBSPEC_BUILD_NUMBER=$(echo "$PUBSPEC_VERSION" | sed -nE 's/^[^+]+\+([0-9]+)$/\1/p')
+IOS_BUILD_NUMBER=${CI_BUILD_NUMBER:-$PUBSPEC_BUILD_NUMBER}
+
+if [ -z "$IOS_BUILD_NUMBER" ]; then
+	IOS_BUILD_NUMBER=1
+fi
+
+GENERATED_XCCONFIG="ios/Flutter/Generated.xcconfig"
+if [ -f "$GENERATED_XCCONFIG" ]; then
+	if grep -q '^FLUTTER_BUILD_NAME=' "$GENERATED_XCCONFIG"; then
+		sed -i.bak "s/^FLUTTER_BUILD_NAME=.*/FLUTTER_BUILD_NAME=$PUBSPEC_BUILD_NAME/" "$GENERATED_XCCONFIG"
+	else
+		echo "FLUTTER_BUILD_NAME=$PUBSPEC_BUILD_NAME" >> "$GENERATED_XCCONFIG"
+	fi
+
+	if grep -q '^FLUTTER_BUILD_NUMBER=' "$GENERATED_XCCONFIG"; then
+		sed -i.bak "s/^FLUTTER_BUILD_NUMBER=.*/FLUTTER_BUILD_NUMBER=$IOS_BUILD_NUMBER/" "$GENERATED_XCCONFIG"
+	else
+		echo "FLUTTER_BUILD_NUMBER=$IOS_BUILD_NUMBER" >> "$GENERATED_XCCONFIG"
+	fi
+
+	rm -f "$GENERATED_XCCONFIG.bak"
+	echo "iOS build version configured: name=$PUBSPEC_BUILD_NAME number=$IOS_BUILD_NUMBER"
+else
+	echo "Warning: $GENERATED_XCCONFIG not found; skipping iOS build version override."
+fi
+end_step
+
 # Ensure FlutterFire CLI is available when Crashlytics symbol upload build phase is enabled.
 start_step "FlutterFire CLI availability"
 export PATH="$PATH:$HOME/.pub-cache/bin"
