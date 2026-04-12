@@ -133,6 +133,52 @@ jobs:
 
           echo "Signing preflight passed: keystore decoded and alias validated."
 
+      - name: Authenticate for Google Play API
+        id: play_auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+
+      - name: Resolve next Google Play version code
+        id: play_version
+        env:
+          ACCESS_TOKEN: ${{ steps.play_auth.outputs.access_token }}
+          PACKAGE_NAME: app.outnest
+        run: |
+          set -euo pipefail
+
+          EDIT_RESPONSE=$(curl -sS -X POST \
+            -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+            -H "Content-Type: application/json" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE_NAME}/edits" \
+            -d '{}')
+
+          EDIT_ID=$(echo "${EDIT_RESPONSE}" | jq -r '.id')
+          if [ -z "${EDIT_ID}" ] || [ "${EDIT_ID}" = "null" ]; then
+            echo "Failed to create Google Play edit session"
+            echo "Response: ${EDIT_RESPONSE}"
+            exit 1
+          fi
+
+          TRACKS_RESPONSE=$(curl -sS \
+            -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE_NAME}/edits/${EDIT_ID}/tracks")
+
+          LATEST_VERSION_CODE=$(echo "${TRACKS_RESPONSE}" | jq -r '[.tracks[]?.releases[]?.versionCodes[]? | tonumber] | max // 0')
+          NEXT_VERSION_CODE=$((LATEST_VERSION_CODE + 1))
+
+          echo "latest=${LATEST_VERSION_CODE}" >> "$GITHUB_OUTPUT"
+          echo "next=${NEXT_VERSION_CODE}" >> "$GITHUB_OUTPUT"
+
+          echo "Latest Google Play version code: ${LATEST_VERSION_CODE}"
+          echo "Next version code for this build: ${NEXT_VERSION_CODE}"
+
+          curl -sS -X DELETE \
+            -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE_NAME}/edits/${EDIT_ID}" >/dev/null || true
+
       - name: Prepare Android signing files
         run: |
           if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ] || [ -z "${{ secrets.ANDROID_KEY_ALIAS }}" ] || [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ] || [ -z "${{ secrets.ANDROID_KEY_PASSWORD }}" ]; then
@@ -154,17 +200,16 @@ jobs:
       - name: Build release AAB
         run: |
           PUBSPEC_VERSION=$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}')
-          BUILD_NUMBER=$(echo "${PUBSPEC_VERSION}" | sed -nE 's/^[^+]+\+([0-9]+)$/\1/p')
           BUILD_NAME=${PUBSPEC_VERSION%%+*}
+          BUILD_NUMBER="${{ steps.play_version.outputs.next }}"
 
-          if [ -z "${BUILD_NUMBER}" ]; then
-            echo "Invalid pubspec version format: ${PUBSPEC_VERSION}"
-            echo "Expected format: x.y.z+N (for example 1.1.6+32)."
+          if [ -z "${BUILD_NUMBER}" ] || [ "${BUILD_NUMBER}" = "0" ]; then
+            echo "Could not resolve next version code from Google Play API."
             exit 1
           fi
 
           echo "Using build name: ${BUILD_NAME}"
-          echo "Using build number from pubspec.yaml: ${BUILD_NUMBER}"
+          echo "Using build number from Google Play latest+1: ${BUILD_NUMBER}"
           cat >> android/gradle.properties <<'EOF'
           org.gradle.daemon=false
           org.gradle.workers.max=2
