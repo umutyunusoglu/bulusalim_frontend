@@ -97,8 +97,11 @@ class BadgeRepositoryImpl implements BadgeRepository {
 
         if (!globalBadgeDoc.exists) return null;
 
+        final globalData = globalBadgeDoc.data();
+        if (globalData == null) return null;
+
         final merged = {
-          ...globalBadgeDoc.data()!,
+          ...globalData,
           ...userBadgeDoc.data(),
         };
 
