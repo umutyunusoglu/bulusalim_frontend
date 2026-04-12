@@ -133,13 +133,50 @@ jobs:
 
           echo "Signing preflight passed: keystore decoded and alias validated."
 
-      - name: Authenticate for Google Play API
+      - name: Create Google Play API access token
         id: play_auth
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-          token_format: access_token
-          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          set -euo pipefail
+
+          b64url() {
+            openssl base64 -A | tr '+/' '-_' | tr -d '='
+          }
+
+          SA_EMAIL=$(echo "$PLAY_SERVICE_ACCOUNT_JSON" | jq -r '.client_email')
+          SA_PRIVATE_KEY=$(echo "$PLAY_SERVICE_ACCOUNT_JSON" | jq -r '.private_key')
+
+          NOW=$(date +%s)
+          EXP=$((NOW + 3600))
+
+          HEADER=$(printf '{"alg":"RS256","typ":"JWT"}' | b64url)
+          CLAIMS=$(jq -nc \
+            --arg iss "$SA_EMAIL" \
+            --arg scope "https://www.googleapis.com/auth/androidpublisher" \
+            --arg aud "https://oauth2.googleapis.com/token" \
+            --argjson iat "$NOW" \
+            --argjson exp "$EXP" \
+            '{iss:$iss,scope:$scope,aud:$aud,iat:$iat,exp:$exp}')
+          PAYLOAD=$(printf '%s' "$CLAIMS" | b64url)
+
+          UNSIGNED_TOKEN="${HEADER}.${PAYLOAD}"
+          SIGNATURE=$(printf '%s' "$UNSIGNED_TOKEN" | openssl dgst -sha256 -sign <(printf '%s' "$SA_PRIVATE_KEY") -binary | b64url)
+          JWT="${UNSIGNED_TOKEN}.${SIGNATURE}"
+
+          TOKEN_RESPONSE=$(curl -sS -X POST "https://oauth2.googleapis.com/token" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer" \
+            --data-urlencode "assertion=${JWT}")
+
+          ACCESS_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.access_token')
+          if [ -z "$ACCESS_TOKEN" ] || [ "$ACCESS_TOKEN" = "null" ]; then
+            echo "Failed to mint Google OAuth token from service account key."
+            echo "Response: $TOKEN_RESPONSE"
+            exit 1
+          fi
+
+          echo "access_token=$ACCESS_TOKEN" >> "$GITHUB_OUTPUT"
 
       - name: Resolve next Google Play version code
         id: play_version
