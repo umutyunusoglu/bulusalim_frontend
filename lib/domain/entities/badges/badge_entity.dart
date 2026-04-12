@@ -8,6 +8,7 @@ class BadgeEntity extends Equatable {
     required this.threshold,
     required this.info,
     required this.iconURL,
+    required this.earnedAt,
   });
 
   BadgeEntity copyWith({
@@ -17,6 +18,7 @@ class BadgeEntity extends Equatable {
     String? label,
     String? info,
     String? iconURL,
+    DateTime? earnedAt,
   }) {
     return BadgeEntity(
       category: category ?? this.category,
@@ -25,6 +27,7 @@ class BadgeEntity extends Equatable {
       label: label ?? this.label,
       info: info ?? this.info,
       iconURL: iconURL ?? this.iconURL,
+      earnedAt: earnedAt ?? this.earnedAt,
     );
   }
 
@@ -34,6 +37,7 @@ class BadgeEntity extends Equatable {
   final String label;
   final String info;
   final String iconURL;
+  final DateTime earnedAt;
 
   List<Object?> get props => [
     category,

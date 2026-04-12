@@ -82,32 +82,34 @@ class BadgeRepositoryImpl implements BadgeRepository {
 
   @override
   Future<List<BadgeEntity>> getBadgesOfUser(String userID) async {
-    final result = await _firestore
+    final userBadgesSnapshot = await _firestore
         .collection('users')
         .doc(userID)
         .collection('badges')
-        .get()
-        .then((snapshot) {
-          final badges = snapshot.docs
-              .map((doc) {
-                try {
-                  final BadgeModel badgeModel = BadgeModel.fromFirestore(
-                    doc.data(),
-                  );
-                  return badgeModel.toEntity();
-                } catch (e) {
-                  _logger.error(
-                    'Error parsing user badge document ${doc.id}: $e',
-                  );
-                  return null;
-                }
-              })
-              .whereType<BadgeEntity>()
-              .toList();
+        .get();
 
-          return badges;
-        });
+    final futures = userBadgesSnapshot.docs.map((userBadgeDoc) async {
+      try {
+        final globalBadgeDoc = await _firestore
+            .collection('badges')
+            .doc(userBadgeDoc.id)
+            .get();
 
-    return result;
+        if (!globalBadgeDoc.exists) return null;
+
+        final merged = {
+          ...globalBadgeDoc.data()!,
+          ...userBadgeDoc.data(),
+        };
+
+        return BadgeModel.fromFirestore(merged).toEntity();
+      } catch (e) {
+        _logger.error('Error parsing badge ${userBadgeDoc.id}: $e');
+        return null;
+      }
+    });
+
+    final results = await Future.wait(futures);
+    return results.whereType<BadgeEntity>().toList();
   }
 }
