@@ -128,6 +128,20 @@ class EventEntity extends FeedEntity with EquatableMixin {
   @override
   List<Object?> get props => [
     eventID,
+    name,
+    hobbies,
+    creator,
+    capacity,
+    participants,
+    requestPool,
+    rejectedUsers,
+    startTime,
+    endTime,
+    location,
+    displayAddress,
+    address,
+    updatedAt,
+    status,
     communityData,
   ];
 }

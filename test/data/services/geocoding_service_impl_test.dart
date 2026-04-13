@@ -68,7 +68,7 @@ void main() {
       () {
         // Null island — nowhere near Turkey
         final result = service.getCityDistrictFromGeolocation(
-          const Geolocation(latitude: 0.0, longitude: 0.0),
+          const Geolocation(latitude: 0, longitude: 0),
         );
         expect(result?.district, isNot('Kadıköy'));
       },
@@ -76,7 +76,7 @@ void main() {
 
     test('point north of Istanbul is not matched to Kadıköy', () {
       final result = service.getCityDistrictFromGeolocation(
-        const Geolocation(latitude: 50.0, longitude: 29.05205),
+        const Geolocation(latitude: 50, longitude: 29.05205),
       );
       expect(result?.district, isNot('Kadıköy'));
     });
@@ -100,14 +100,14 @@ void main() {
     test('point west of Keskin bbox is not matched to Keskin', () {
       // lon 30.0 is well outside the 33.4–34.0 range
       final result = service.getCityDistrictFromGeolocation(
-        const Geolocation(latitude: 39.59395, longitude: 30.0),
+        const Geolocation(latitude: 39.59395, longitude: 30),
       );
       expect(result?.district, isNot('Keskin'));
     });
 
     test('point east of Keskin bbox is not matched to Keskin', () {
       final result = service.getCityDistrictFromGeolocation(
-        const Geolocation(latitude: 39.59395, longitude: 35.0),
+        const Geolocation(latitude: 39.59395, longitude: 35),
       );
       expect(result?.district, isNot('Keskin'));
     });
@@ -131,7 +131,7 @@ void main() {
     test('point south of Bornova bbox is not matched to Bornova', () {
       // lat 37.0 is south of the 38.38–38.59 range
       final result = service.getCityDistrictFromGeolocation(
-        const Geolocation(latitude: 37.0, longitude: 27.26515),
+        const Geolocation(latitude: 37, longitude: 27.26515),
       );
       expect(result?.district, isNot('Bornova'));
     });
@@ -164,14 +164,14 @@ void main() {
     test('point over the Black Sea returns null', () {
       // lon=32, lat=43 — well north of Turkey's coast
       final result = service.getCityDistrictFromGeolocation(
-        const Geolocation(latitude: 43.0, longitude: 32.0),
+        const Geolocation(latitude: 43, longitude: 32),
       );
       expect(result, isNull);
     });
 
     test('point over the Mediterranean returns null', () {
       final result = service.getCityDistrictFromGeolocation(
-        const Geolocation(latitude: 33.0, longitude: 30.0),
+        const Geolocation(latitude: 33, longitude: 30),
       );
       expect(result, isNull);
     });

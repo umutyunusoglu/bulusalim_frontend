@@ -1,32 +1,54 @@
+import 'dart:async';
+
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:outnest/application/providers/inbox_notification_providers.dart';
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/notification/notification_entity.dart';
 import 'package:outnest/domain/repositories/inbox_repository.dart';
 import 'package:outnest/presentation/notification/view/components/notification_tile.dart';
+import 'package:outnest/presentation/notification/view/components/strategies/action/notification_tile_action_executor.dart';
+import 'package:outnest/presentation/notification/view/components/strategies/action/notification_tile_action_factory.dart';
+import 'package:outnest/presentation/notification/view/components/strategies/notification_tile_composition.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
-class NotificationPage extends StatefulWidget {
-  const NotificationPage({super.key});
+class NotificationPage extends ConsumerStatefulWidget {
+  const NotificationPage({
+    this.composition,
+    super.key,
+  });
+
+  final NotificationTileComposition? composition;
 
   @override
-  State<NotificationPage> createState() => _NotificationPageState();
+  ConsumerState<NotificationPage> createState() => _NotificationPageState();
 }
 
-class _NotificationPageState extends State<NotificationPage> {
+class _NotificationPageState extends ConsumerState<NotificationPage> {
   late final InboxRepository _inboxRepository;
+  final NotificationTileActionExecutor _actionExecutor =
+      NotificationTileActionExecutor();
+  late final NotificationTileComposition _composition;
 
   @override
   void initState() {
     super.initState();
     _inboxRepository = getIt<InboxRepository>();
+    unawaited(_inboxRepository.markAllNotificationsRead());
+    _composition =
+        widget.composition ??
+        NotificationTileComposition(
+          actionFactory: NotificationTileActionFactory(),
+        );
   }
 
-  void _onNotificationTap(NotificationEntity notification) {
-    // Buraya bildirim detayına gitme mantığı eklenebilir
-    final type = notification.type;
+  Future<void> _onNotificationTap(NotificationEntity notification) async {
+    final actionConfig = _composition.buildAction(notification);
+    if (actionConfig == null) return;
+    await _actionExecutor.execute(context, actionConfig);
   }
 
   @override
@@ -60,8 +82,12 @@ class _NotificationPageState extends State<NotificationPage> {
           Padding(
             padding: EdgeInsets.only(right: 16.w),
             child: GestureDetector(
-              onTap: () {
-                context.push('/follow-requests');
+              onTap: () async {
+                await context.push('/follow-requests');
+                if (!mounted) return;
+                unawaited(
+                  ref.read(unreadFollowRequestsProvider.notifier).refresh(),
+                );
               },
               child: SizedBox(
                 width: 32.w,
@@ -77,36 +103,23 @@ class _NotificationPageState extends State<NotificationPage> {
                       ),
                     ),
                     // Bildirim Sayısı Badge
-                    FutureBuilder<bool>(
-                      future: _inboxRepository.hasUnreadFollowRequest(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const SizedBox.shrink();
-                        }
-
-                        final hasUnread = snapshot.data ?? false;
-                        if (!hasUnread) return const SizedBox.shrink();
-
-                        return Positioned(
-                          right: 0,
-                          top: 0,
-                          child: Container(
-                            width: 10.w, // Küçük, şık bir nokta boyutu
-                            height: 10.w,
-                            decoration: BoxDecoration(
-                              color: AppColors.darkPrimaryColor,
-                              shape: BoxShape.circle,
-                              // İkonun üzerinde daha "temiz" durması için beyaz bir çerçeve
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 1.5,
-                              ),
+                    if (ref.watch(unreadFollowRequestsProvider))
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          width: 10.w,
+                          height: 10.w,
+                          decoration: BoxDecoration(
+                            color: AppColors.darkPrimaryColor,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white,
+                              width: 1.5,
                             ),
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -114,64 +127,59 @@ class _NotificationPageState extends State<NotificationPage> {
           ),
         ],
       ),
-      body: StreamBuilder<List<NotificationEntity>>(
-        stream: _inboxRepository.getNotificationsStream(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: ref
+          .watch(notificationStreamProvider)
+          .when(
+            data: (notifications) {
+              if (notifications.isEmpty) {
+                return const Center(child: Text('Bildirim yok'));
+              }
 
-          final notifications = snapshot.data ?? [];
-          if (notifications.isEmpty) {
-            return const Center(child: Text('Bildirim yok'));
-          }
+              final now = DateTime.now();
+              final today = <NotificationEntity>[];
+              final others = <NotificationEntity>[];
 
-          // --- GRUPLAMA MANTIĞI ---
-          final now = DateTime.now();
+              for (var n in notifications) {
+                final diff = now.difference(n.createdAt);
+                if (diff.inHours < 24) {
+                  today.add(n);
+                } else {
+                  others.add(n);
+                }
+              }
 
-          // Yöntem 1: Tek döngü ile ayırma (En Performanslısı)
-          // Listeyi bir kere döner ve ikiye ayırır.
-          final today = <NotificationEntity>[];
-          final others = <NotificationEntity>[];
-
-          for (var n in notifications) {
-            final diff = now.difference(n.createdAt);
-            if (diff.inHours < 24) {
-              today.add(n);
-            } else {
-              others.add(n);
-            }
-          }
-          return ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              // BUGÜN LİSTESİ
-              if (today.isNotEmpty) ...[
-                _buildSectionHeader('Bugün'),
-                ...today.map(
-                  (n) => NotificationTile(
-                    notification: n,
-                    onTap: () => _onNotificationTap(n),
-                  ),
-                ),
-              ],
-
-              // ESKİLER LİSTESİ
-              if (others.isNotEmpty) ...[
-                SizedBox(height: 10.h),
-                _buildSectionHeader('Son 7 Gün'),
-                ...others.map(
-                  (n) => NotificationTile(
-                    notification: n,
-                    onTap: () => _onNotificationTap(n),
-                  ),
-                ),
-              ],
-              SizedBox(height: 20.h),
-            ],
-          );
-        },
-      ),
+              return ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  if (today.isNotEmpty) ...[
+                    _buildSectionHeader('Bugün'),
+                    ...today.map(
+                      (n) => NotificationTile(
+                        notification: n,
+                        composition: _composition,
+                        onTap: () => _onNotificationTap(n),
+                      ),
+                    ),
+                  ],
+                  if (others.isNotEmpty) ...[
+                    SizedBox(height: 10.h),
+                    _buildSectionHeader('Son 7 Gün'),
+                    ...others.map(
+                      (n) => NotificationTile(
+                        notification: n,
+                        composition: _composition,
+                        onTap: () => _onNotificationTap(n),
+                      ),
+                    ),
+                  ],
+                  SizedBox(height: 20.h),
+                ],
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (_, __) =>
+                const Center(child: Text('Bildirimler yüklenemedi')),
+          ),
     );
   }
 

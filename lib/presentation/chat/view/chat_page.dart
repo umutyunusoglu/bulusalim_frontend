@@ -1,278 +1,183 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:outnest/application/app_state/current_user_data_providers/current_user_identity_provider.dart';
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
+import 'package:outnest/application/providers/event_stream_provider.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/chat/message_entity.dart';
-import 'package:outnest/domain/entities/feed/event/event_entity.dart';
-import 'package:outnest/domain/entities/user/index.dart';
 import 'package:outnest/domain/repositories/chat_repository.dart';
 import 'package:outnest/domain/services/file_service.dart';
-import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/presentation/chat/view/components/chat_input_bar.dart';
 import 'package:outnest/presentation/chat/view/components/chat_message_buble.dart';
 import 'package:outnest/presentation/chat/view/components/chat_page_header.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:intl/intl.dart';
 
-class ChatPage extends StatefulWidget {
-  const ChatPage({
-    required this.eventID,
-    required this.event,
-    required this.creatorID,
-    required this.chatTitle,
-    required this.participantAvatars,
-    required this.location,
-    required this.participantStatus,
-    required this.eventDate,
-    required this.creatorProfileImage,
-    super.key,
-  });
-
+class ChatPage extends HookConsumerWidget {
+  const ChatPage({required this.eventID, super.key});
   final String eventID;
-  final EventEntity event;
-  final String creatorID;
-  final String chatTitle;
-  final List<dynamic> participantAvatars;
-  final String location;
-  final String participantStatus;
-  final DateTime eventDate;
-  final String creatorProfileImage;
 
   @override
-  State<ChatPage> createState() => _ChatPageState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final chatRepository = useMemoized(() => getIt<ChatRepository>());
+    final scrollController = useScrollController();
+    final currentUserId = ref.watch(currentUserIDProvider);
+    final currentUser = ref.watch(currentUserEntityProvider).value;
 
-class _ChatPageState extends State<ChatPage> {
-  late final ChatRepository _chatRepository;
-  final ScrollController _scrollController = ScrollController();
-  final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
-  UserEntity? currentUser = getIt<SessionService>().currentUser;
+    final eventAsync = ref.watch(eventStreamProvider(eventID));
 
-  @override
-  void initState() {
-    super.initState();
-    _chatRepository = getIt<ChatRepository>();
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _handleSendMessage(String text) async {
-    if (currentUser == null) return;
-    final message = MessageEntity(
-      content: text,
-      senderID: currentUser!.userID,
-      username: currentUser!.username,
-      profileImageUrl: currentUser!.profileImageUrl,
-      createdAt: DateTime.now(),
-    );
-
-    await _chatRepository.sendMessage(widget.eventID, message).then((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          0,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
-  }
-
-  String _getCategoryIcon() {
-    var categoryIcon = '🎉';
-    if (widget.event.hobbies.isNotEmpty) {
-      final category = widget.event.hobbies.first;
-      categoryIcon = AppConfig.categories[category] ?? '🎉';
-    }
-    return categoryIcon;
-  }
-
-  Map<String, String> _getSenderDetails(String senderID) {
-    // Bu metod mantığına dokunulmadı, mevcut haliyle bırakıldı.
-    var imagePath = '';
-    var name = 'Bilinmeyen Kullanıcı';
-
-    if (senderID == widget.creatorID) {
-      name = 'Buluşma Sahibi';
-      imagePath = widget.creatorProfileImage.isNotEmpty
-          ? widget.creatorProfileImage
-          : FileService.defaultProfileImageUrl();
-    } else {
-      try {
-        final user = widget.participantAvatars.firstWhere(
-          (u) {
-            final uid = (u is Map) ? u['userID'] : u.userID;
-            return uid == senderID;
-          },
-          orElse: () => null,
-        );
-
-        if (user != null) {
-          if (user is Map) {
-            name = (user['username'] as String?) ?? 'İsimsiz';
-            imagePath =
-                (user['profileImageUrl'] as String?) ??
-                FileService.defaultProfileImageUrl();
-          } else {
-            // Eğer user bir Entity ise
-            name = (user.username as String?) ?? 'İsimsiz';
-            imagePath =
-                (user.profileImageUrl as String?) ??
-                FileService.defaultProfileImageUrl();
-          }
-        } else {
-          imagePath = FileService.defaultProfileImageUrl();
-        }
-      } catch (e) {
-        imagePath = FileService.defaultProfileImageUrl();
-      }
-    }
-
-    return {
-      'name': name,
-      'image': imagePath,
-    };
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
-      body: Column(
-        children: [
-          ChatPageHeader(
-            eventID: widget.eventID,
-            event: widget.event,
-            creatorID: widget.creatorID,
-            chatTitle: widget.chatTitle,
-            creatorProfileImage: widget.creatorProfileImage,
-            location: widget.location,
-            eventDate: widget.eventDate,
-            participantStatus: widget.participantStatus,
-            participantAvatars: widget.participantAvatars,
-            categoryIcon: _getCategoryIcon(), // Helper metoddan geliyor
+    Future<void> handleSendMessage(String text) async {
+      if (currentUser == null) return;
+      final message = MessageEntity(
+        content: text,
+        senderID: currentUser.userID,
+        username: currentUser.username,
+        profileImageUrl: currentUser.profileImageUrl,
+        createdAt: DateTime.now(),
+      );
+      await chatRepository.sendMessage(eventID, message);
+      if (scrollController.hasClients) {
+        unawaited(
+          scrollController.animateTo(
+            0,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
           ),
+        );
+      }
+    }
 
-          // 2. MESAJ LİSTESİ (Burası Clean Architecture'a uygun Repository Stream'i)
-          Expanded(
-            child: StreamBuilder<List<MessageEntity>>(
-              stream: _chatRepository.getChatMessagesStream(
-                widget.eventID,
-              ), // Dokunulmadı
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final messages = snapshot.data ?? [];
-                if (messages.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'Sohbeti başlat...',
-                      style: TextStyle(
-                        color: AppColors.textGrey,
-                        fontSize: 14.sp,
-                        fontFamily: 'SF Pro Display',
-                      ),
-                    ),
-                  );
-                }
-                return ListView.builder(
-                  controller: _scrollController,
-                  reverse: true,
-                  padding: EdgeInsets.only(
-                    left: 16.w,
-                    right: 16.w,
-                    bottom: 0.h,
-                    top: 10.h,
-                  ),
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final message = messages[index];
-                    final isMe = message.senderID == currentUserId;
+    return eventAsync.when(
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, s) => Scaffold(
+        body: Center(child: Text('Hata: $e')),
+      ),
+      data: (event) {
+        if (event == null) {
+          return const Scaffold(
+            body: Center(child: Text('Buluşma bulunamadı')),
+          );
+        }
 
-                    // --- Tarih Ayracı Mantığı Başlangıç ---
-                    bool showDateDivider = false;
+        final categoryIcon = event.hobbies.isNotEmpty
+            ? (AppConfig.categories[event.hobbies.first] ?? '🎉')
+            : '🎉';
+        final creatorImage = event.creator.profileImageUrl.isNotEmpty
+            ? event.creator.profileImageUrl
+            : FileService.defaultProfileImageUrl();
 
-                    if (index == messages.length - 1) {
-                      showDateDivider = true;
-                    } else {
-                      final prevMessage = messages[index + 1];
-                      final currentMsgDate = message.createdAt;
-                      final prevMsgDate = prevMessage.createdAt;
-
-                      if (currentMsgDate.year != prevMsgDate.year ||
-                          currentMsgDate.month != prevMsgDate.month ||
-                          currentMsgDate.day != prevMsgDate.day) {
-                        showDateDivider = true;
-                      }
+        return Scaffold(
+          backgroundColor: AppColors.backgroundColor,
+          body: Column(
+            children: [
+              ChatPageHeader(
+                eventID: eventID,
+                event: event,
+                creatorID: event.creator.userID,
+                chatTitle: event.name,
+                creatorProfileImage: creatorImage,
+                location: event.displayAddress.isNotEmpty
+                    ? event.displayAddress
+                    : 'Konum Yok',
+                eventDate: event.startTime,
+                participantStatus:
+                    '${event.participants.length}/${event.capacity}',
+                participantAvatars: event.participants,
+                categoryIcon: categoryIcon,
+              ),
+              Expanded(
+                child: StreamBuilder<List<MessageEntity>>(
+                  stream: chatRepository.getChatMessagesStream(eventID),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
                     }
-
-                    final String dateDividerString = _getFormattedDate(
-                      message.createdAt,
-                    );
-                    // --- Tarih Ayracı Mantığı Bitiş ---
-
-                    final timeString = DateFormat(
-                      'HH:mm',
-                    ).format(message.createdAt);
-
-                    String? username;
-                    String? profileImageUrl;
-
-                    if (!isMe) {
-                      username = message.username;
-                      profileImageUrl = message.profileImageUrl;
-                    }
-
-                    return Column(
-                      children: [
-                        if (showDateDivider)
-                          _buildDateDivider(dateDividerString),
-                        ChatMessageBubble(
-                          message: message.content,
-                          time: timeString,
-                          isCurrentUser: isMe,
-                          username: username,
-                          userprofileImageUrl: profileImageUrl,
+                    final messages = snapshot.data ?? [];
+                    if (messages.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'Sohbeti başlat...',
+                          style: TextStyle(
+                            color: AppColors.textGrey,
+                            fontSize: 14.sp,
+                            fontFamily: 'SF Pro Display',
+                          ),
                         ),
-                      ],
+                      );
+                    }
+                    return ListView.builder(
+                      controller: scrollController,
+                      reverse: true,
+                      padding: EdgeInsets.only(
+                        left: 16.w,
+                        right: 16.w,
+                        top: 10.h,
+                      ),
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        final message = messages[index];
+                        final isMe = message.senderID == currentUserId;
+
+                        var showDateDivider = false;
+                        if (index == messages.length - 1) {
+                          showDateDivider = true;
+                        } else {
+                          final prev = messages[index + 1];
+                          if (message.createdAt.day != prev.createdAt.day ||
+                              message.createdAt.month != prev.createdAt.month ||
+                              message.createdAt.year != prev.createdAt.year) {
+                            showDateDivider = true;
+                          }
+                        }
+
+                        return Column(
+                          children: [
+                            if (showDateDivider)
+                              _buildDateDivider(
+                                _getFormattedDate(message.createdAt),
+                              ),
+                            ChatMessageBubble(
+                              message: message.content,
+                              time: DateFormat(
+                                'HH:mm',
+                              ).format(message.createdAt),
+                              isCurrentUser: isMe,
+                              username: isMe ? null : message.username,
+                              userprofileImageUrl: isMe
+                                  ? null
+                                  : message.profileImageUrl,
+                            ),
+                          ],
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
+                ),
+              ),
+              ChatInputBar(onSend: handleSendMessage),
+            ],
           ),
-
-          // 3. INPUT ALANI
-          ChatInputBar(
-            onSend: (text) => _handleSendMessage(text),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  // Tarihi "Bugün", "Dün" veya "11 Şubat" şeklinde formatlar
   String _getFormattedDate(DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = DateTime(now.year, now.month, now.day - 1);
     final dateToCheck = DateTime(date.year, date.month, date.day);
-
-    if (dateToCheck == today) {
-      return 'Bugün';
-    } else if (dateToCheck == yesterday) {
-      return 'Dün';
-    } else {
-      return DateFormat('d MMMM yyyy', 'tr_TR').format(date);
-    }
+    if (dateToCheck == today) return 'Bugün';
+    if (dateToCheck == yesterday) return 'Dün';
+    return DateFormat('d MMMM yyyy', 'tr_TR').format(date);
   }
 
-  // Tarih ayracı tasarımı
   Widget _buildDateDivider(String date) {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 20.h),

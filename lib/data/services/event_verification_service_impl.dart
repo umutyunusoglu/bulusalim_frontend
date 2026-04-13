@@ -10,6 +10,7 @@ import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
+import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/services/event_verification_service.dart';
 import 'package:outnest/domain/services/persistance_service.dart';
 
@@ -18,12 +19,15 @@ class EventVerificationServiceImpl implements EventVerificationService {
     required this.currentUserId,
     required PersistanceService persistanceService,
     required LoggingService logger,
+    required EventRepository eventRepository,
   }) : _persistanceService = persistanceService,
-       _loggingService = logger;
+       _loggingService = logger,
+       _eventRepository = eventRepository;
 
   final String? currentUserId;
   final PersistanceService _persistanceService;
   final LoggingService _loggingService;
+  final EventRepository _eventRepository;
 
   static const String _verifiedEventsKey = 'verified_events_list';
 
@@ -199,6 +203,7 @@ class EventVerificationServiceImpl implements EventVerificationService {
 
   Future<void> _saveVerifiedEvent(EventEntity event) async {
     try {
+      // Mevcut local kayıt
       final data = await _persistanceService.getJson(_verifiedEventsKey);
       final verifiedIds = (data != null && data.containsKey('ids'))
           ? List<String>.from(data['ids'] as List)
@@ -211,8 +216,24 @@ class EventVerificationServiceImpl implements EventVerificationService {
         });
         _loggingService.info('Event ${event.id} saved to local verified list.');
       }
+
+      // Firestore'a yaz
+      if (currentUserId != null) {
+        await _eventRepository.markEventAsVerified(
+          eventId: event.id,
+          userId: currentUserId!,
+        );
+      }
     } catch (e) {
       _loggingService.error('Failed to persist verified event ${event.id}');
     }
+  }
+
+  @override
+  Future<void> markEventAsVerifiedForDebug(EventEntity event) async {
+    if (currentUserId == null) {
+      throw AuthorizationException('User not logged in');
+    }
+    await _saveVerifiedEvent(event);
   }
 }

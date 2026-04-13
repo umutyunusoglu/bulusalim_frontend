@@ -336,6 +336,27 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
+  Future<int> getUserProgress(Identifier userID, String category) async {
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(userID)
+        .collection('activityCounts')
+        .doc(category)
+        .get();
+
+    if (!snapshot.exists) {
+      return 0;
+    }
+    final data = snapshot.data();
+    if (data == null) {
+      return 0;
+    }
+
+    final progress = (data['count'] as num?)?.toInt();
+    return progress ?? 0;
+  }
+
+  @override
   Future<bool> doesUsernameExist(String username) async {
     final querySnapshot = await _firestore
         .collection('public_users')
@@ -350,70 +371,6 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   // === Hobbies Subcollection ===
-  @override
-  Future<void> addHobby(
-    Identifier userID,
-    UserHobbyEntity hobby,
-  ) async {
-    _logger.info('Adding hobby for user: $userID');
-
-    final hobbyModel = UserHobbyModel.fromEntity(hobby);
-    await _firestore
-        .collection('users')
-        .doc(userID)
-        .collection('hobbies')
-        .doc(hobby.hobby.name)
-        .set(hobbyModel.toFirestore());
-  }
-
-  @override
-  Future<void> updateHobby(
-    Identifier userID,
-    String hobbyName,
-    Map<String, dynamic> updates,
-  ) async {
-    _logger.info(
-      'Updating hobby for user: $userID, hobby: $hobbyName',
-    );
-    await _firestore
-        .collection('users')
-        .doc(userID)
-        .collection('hobbies')
-        .doc(hobbyName)
-        .update(updates);
-  }
-
-  @override
-  Future<void> deleteHobby(
-    Identifier userID,
-    String hobbyName,
-  ) async {
-    _logger.info(
-      'Deleting hobby for user: $userID, hobby: $hobbyName',
-    );
-    await _firestore
-        .collection('users')
-        .doc(userID)
-        .collection('hobbies')
-        .doc(hobbyName)
-        .delete();
-  }
-
-  @override
-  Future<List<UserHobbyEntity>> getUserHobbies(
-    Identifier userID,
-  ) async {
-    _logger.info('Getting hobbies for user: $userID');
-    final snapshot = await _firestore
-        .collection('users')
-        .doc(userID)
-        .collection('hobbies')
-        .get();
-
-    return snapshot.docs
-        .map((doc) => UserHobbyModel.fromFirestore(doc.data()).toEntity())
-        .toList();
-  }
 
   // === Events Subcollection ===
   @override
@@ -864,6 +821,32 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
+  Future<List<Identifier>> getCommonFollowerIds(
+    Identifier userID,
+    List<Identifier> candidateIds,
+  ) async {
+    if (candidateIds.isEmpty) return [];
+
+    final commonIds = <String>[];
+
+    for (var i = 0; i < candidateIds.length; i += 10) {
+      final chunk = candidateIds.sublist(
+        i,
+        (i + 10).clamp(0, candidateIds.length),
+      );
+      final snap = await _firestore
+          .collection('users')
+          .doc(userID)
+          .collection('followers')
+          .where(FieldPath.documentId, whereIn: chunk)
+          .get();
+      commonIds.addAll(snap.docs.map((d) => d.id));
+    }
+
+    return commonIds;
+  }
+
+  @override
   Future<int> getFollowersCount(Identifier userID) async {
     _logger.info('Getting followers count for user: $userID');
 
@@ -945,17 +928,19 @@ class UserRepositoryImpl implements UserRepository {
     _logger.info(
       'Follow request sent from user: $fromUserID to user: $toUserID',
     );
-    if (fromNotification) {
-      _firestore
-          .collection('users')
-          .doc(fromUserID)
-          .collection('followNotifications')
-          .doc(toUserID)
-          .set({
-            'status': 'sent',
-            'updatedAt': FieldValue.serverTimestamp(),
-          }, SetOptions(merge: true));
-    }
+
+    // Keep the sender-side followNotifications entry in sync so the badge
+    // system can observe follow request activity regardless of entry point.
+    _firestore
+        .collection('users')
+        .doc(fromUserID)
+        .collection('followNotifications')
+        .doc(toUserID)
+        .set({
+          'status': 'sent',
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
   }
 
   @override

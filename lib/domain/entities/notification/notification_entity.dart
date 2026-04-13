@@ -26,6 +26,8 @@ class NotificationEntity {
     this.actionText,
     this.isRead = false,
     this.eventId,
+    this.rawType,
+    this.actorUserId,
   });
 
   NotificationEntity copyWith({
@@ -37,6 +39,8 @@ class NotificationEntity {
     DateTime? createdAt,
     bool? isRead,
     String? eventId,
+    String? rawType,
+    String? actorUserId,
   }) {
     return NotificationEntity(
       type: type ?? this.type,
@@ -47,6 +51,8 @@ class NotificationEntity {
       createdAt: createdAt ?? this.createdAt,
       isRead: isRead ?? this.isRead,
       eventId: eventId ?? this.eventId,
+      rawType: rawType ?? this.rawType,
+      actorUserId: actorUserId ?? this.actorUserId,
     );
   }
 
@@ -59,4 +65,6 @@ class NotificationEntity {
   final DateTime createdAt;
   final bool isRead;
   final String? eventId;
+  final String? rawType;
+  final String? actorUserId;
 }

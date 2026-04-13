@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:outnest/application/providers/navbar_badge_provider.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/application/app_state/current_user_data_providers/current_user_event_providers.dart';
 import 'package:outnest/application/app_state/current_user_data_providers/current_user_identity_provider.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/presentation/chat/view/components/event_chat_card.dart';
-
 @immutable
 class MyEventItemData {
   const MyEventItemData({
@@ -29,20 +31,36 @@ class MyEventsPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // --- HOOKS ---
     useMemoized(() => initializeDateFormatting('tr_TR'));
-
     final selectedTab = useState(0);
+
+    // --- PROVIDERS ---
     final currentUserId = ref.watch(currentUserIDProvider);
     final activeEvents = ref.watch(activeEventsProvider);
 
+    // --- VERİ DÖNÜŞÜMÜ ---
     final chatEvents = activeEvents.map((event) {
       return MyEventItemData(
         event: event,
         pendingRequestCount: event.requestPool.length,
-        unreadChatCount: 0,
+        unreadChatCount: 0, // TODO: gerçek unread count
       );
     }).toList();
 
+    // --- BADGE SYNC (notifications branch'inden) ---
+    final hasUnreadChat = chatEvents.any((item) => item.unreadChatCount > 0);
+    useEffect(() {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(navBarBadgeProvider).setBadge(
+          tabIndex: 3,
+          visible: hasUnreadChat,
+        );
+      });
+      return null;
+    }, [hasUnreadChat]); // sadece hasUnreadChat değişince çalışır
+
+    // --- FİLTRELEME ---
     final filteredItems = chatEvents.where((item) {
       final isCreator = item.event.creator.userID == currentUserId;
       if (selectedTab.value == 0) {
@@ -58,6 +76,7 @@ class MyEventsPage extends HookConsumerWidget {
       }
     }).toList();
 
+    // --- HEADER BİLDİRİM SAYISI ---
     final totalCreatorNotifications = chatEvents
         .where((item) => item.event.creator.userID == currentUserId)
         .fold(0, (sum, item) => sum + item.pendingRequestCount);
@@ -67,6 +86,7 @@ class MyEventsPage extends HookConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
+            // HEADER
             Padding(
               padding: EdgeInsets.only(
                 left: 24.w,
@@ -96,11 +116,13 @@ class MyEventsPage extends HookConsumerWidget {
               ),
             ),
             Divider(height: 1, color: Colors.grey.withOpacity(0.2)),
+
+            // LİSTE
             Expanded(
               child: filteredItems.isEmpty
                   ? (selectedTab.value == 0
-                        ? _buildEmptyCreatorState(context)
-                        : _buildEmptyParticipantState(context))
+                      ? _buildEmptyCreatorState(context)
+                      : _buildEmptyParticipantState(context))
                   : ListView.separated(
                       padding: EdgeInsets.symmetric(
                         horizontal: 24.w,
@@ -146,7 +168,8 @@ class MyEventsPage extends HookConsumerWidget {
                               '/chat/room/${item.event.eventID}',
                               extra: {
                                 'title': item.event.name,
-                                'location': item.event.displayAddress.isNotEmpty
+                                'location':
+                                    item.event.displayAddress.isNotEmpty
                                     ? item.event.displayAddress
                                     : 'Konum Yok',
                                 'participants':

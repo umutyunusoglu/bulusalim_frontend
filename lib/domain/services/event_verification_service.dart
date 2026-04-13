@@ -24,4 +24,6 @@ abstract class EventVerificationService {
   /// Using local storage check whether the given event is verified by the
   /// Current User
   Future<bool> isEventVerified(EventEntity event);
+
+  Future<void> markEventAsVerifiedForDebug(EventEntity event);
 }

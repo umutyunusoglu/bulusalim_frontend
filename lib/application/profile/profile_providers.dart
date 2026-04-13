@@ -148,8 +148,10 @@ profileStatsProvider = FutureProvider.autoDispose
       profileUserID,
     ) async {
       final userRepo = getIt<UserRepository>();
+      final myUserId = ref.watch(currentUserIDProvider);
+      final isOwnProfile = profileUserID == myUserId;
 
-      final results = await Future.wait([
+      final futures = <Future<dynamic>>[
         _withFallback(
           () => userRepo.getFollowersCount(profileUserID),
           label: 'getFollowersCount',
@@ -160,14 +162,30 @@ profileStatsProvider = FutureProvider.autoDispose
           label: 'getFolloweesCount',
           fallback: 0,
         ),
-        _withFallback(
-          () => userRepo.getCompletedEventCount(profileUserID),
-          label: 'getCompletedEventCount',
-          fallback: 0,
-        ),
-      ]);
+        if (!isOwnProfile)
+          _withFallback<CompactUserEntity?>(
+            () => userRepo.getUserPublicData(profileUserID),
+            label: 'getUserPublicData',
+            fallback: null,
+          ),
+      ];
 
-      return (followers: results[0], following: results[1], events: results[2]);
+      final results = await Future.wait(futures);
+
+      final int verifiedEventCount;
+      if (isOwnProfile) {
+        verifiedEventCount =
+            ref.read(currentUserEntityProvider).value?.verifiedEventCount ?? 0;
+      } else {
+        final profileUser = results[2] as CompactUserEntity?;
+        verifiedEventCount = profileUser?.verifiedEventCount ?? 0;
+      }
+
+      return (
+        followers: results[0] as int,
+        following: results[1] as int,
+        events: verifiedEventCount,
+      );
     });
 
 //TODO: Eğer benim profilimse, kendi streamlerime göre getir!
@@ -235,18 +253,16 @@ profileCommonFollowersProvider = FutureProvider.autoDispose
       final myUserId = ref.watch(currentUserIDProvider);
       if (myUserId == null || profileUserID == myUserId) return [];
 
-      final myFollowers = ref.watch(currentUserFollowersProvider).value ?? [];
+      final myFolloweeIds = ref.watch(currentUserFolloweeIDsProvider);
+      final myFollowees = await ref.watch(currentUserFolloweesProvider.future);
+      if (myFolloweeIds.isEmpty) return [];
+
       final userRepo = getIt<UserRepository>();
-      final commonFollows = <CompactUserEntity>[];
+      final commonIds = await userRepo.getCommonFollowerIds(
+        profileUserID,
+        myFolloweeIds,
+      );
 
-      for (final follower in myFollowers) {
-        final follows = await _withFallback(
-          () => userRepo.isFollowing(profileUserID, follower.userID),
-          label: 'isFollowingCommon:${follower.userID}',
-          fallback: false,
-        );
-        if (follows) commonFollows.add(follower);
-      }
-
-      return commonFollows;
+      final commonIdSet = commonIds.toSet();
+      return myFollowees.where((f) => commonIdSet.contains(f.userID)).toList();
     });
