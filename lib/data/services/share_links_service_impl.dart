@@ -36,22 +36,22 @@ class ShareLinksServiceImpl extends ShareLinksService {
 
   @override
   Future<void> sharePost(String postId) async {
-    // Use redirect URL for external sharing (handles app store fallback)
-    final link = redirectPost(postId);
+    // Use direct share link for external sharing
+    final link = post(postId);
     await SharePlus.instance.share(ShareParams(text: link.toString()));
   }
 
   @override
   Future<void> shareEvent(String eventId) async {
-    // Use redirect URL for external sharing (handles app store fallback)
-    final link = redirectEvent(eventId);
+    // Use direct share link for external sharing
+    final link = event(eventId);
     await SharePlus.instance.share(ShareParams(text: link.toString()));
   }
 
   @override
   Future<void> shareUserProfile(String userId) async {
-    // Use redirect URL for external sharing (handles app store fallback)
-    final link = redirectProfile(userId);
+    // Use direct share link for external sharing
+    final link = user(userId);
     await SharePlus.instance.share(ShareParams(text: link.toString()));
   }
 
