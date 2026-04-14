@@ -2,6 +2,7 @@
 set -e
 
 export COCOAPODS_DISABLE_STATS=1
+export COCOAPODS_MAX_CONCURRENT_DOWNLOADS=1
 
 SCRIPT_START_TS=$(date +%s)
 
@@ -21,6 +22,33 @@ print_total_duration() {
 	SCRIPT_END_TS=$(date +%s)
 	SCRIPT_DURATION=$((SCRIPT_END_TS - SCRIPT_START_TS))
 	echo "[CI TIMER] TOTAL: iOS post-clone setup (${SCRIPT_DURATION}s)"
+}
+
+run_with_retry() {
+	MAX_ATTEMPTS="$1"
+	INITIAL_DELAY="$2"
+	shift 2
+
+	ATTEMPT=1
+	DELAY="$INITIAL_DELAY"
+
+	while [ "$ATTEMPT" -le "$MAX_ATTEMPTS" ]; do
+		echo "Attempt ${ATTEMPT}/${MAX_ATTEMPTS}: $*"
+		if "$@"; then
+			return 0
+		fi
+
+		if [ "$ATTEMPT" -lt "$MAX_ATTEMPTS" ]; then
+			echo "Command failed. Retrying in ${DELAY}s..."
+			sleep "$DELAY"
+			DELAY=$((DELAY * 2))
+		fi
+
+		ATTEMPT=$((ATTEMPT + 1))
+	done
+
+	echo "Command failed after ${MAX_ATTEMPTS} attempts."
+	return 1
 }
 
 cd "$CI_PRIMARY_REPOSITORY_PATH"
@@ -123,6 +151,10 @@ if ! command -v pod >/dev/null 2>&1; then
 else
 	echo "CocoaPods already installed; skipping brew install."
 fi
+
+# Work around intermittent HTTP/2 transport issues while cloning pod git sources.
+git config --global http.version HTTP/1.1
+git config --global http.postBuffer 524288000
 end_step
 
 start_step "pod install"
@@ -131,7 +163,7 @@ cd ios
 if [ -f "Pods/Manifest.lock" ] && cmp -s "Pods/Manifest.lock" "Podfile.lock"; then
 	echo "Pods are already in sync with Podfile.lock; skipping pod install."
 else
-	pod install --deployment --no-repo-update
+	run_with_retry 4 8 pod install --deployment --repo-update
 fi
 end_step
 
