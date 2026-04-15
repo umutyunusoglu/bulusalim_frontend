@@ -45,7 +45,21 @@ import 'package:outnest/presentation/tutorial/tutorial_overlay.dart';
 import 'package:outnest/scaffold_with_navbar.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
-
+final GlobalKey<NavigatorState> _homeShellKey = GlobalKey<NavigatorState>(
+  debugLabel: 'home',
+);
+final GlobalKey<NavigatorState> _searchShellKey = GlobalKey<NavigatorState>(
+  debugLabel: 'search',
+);
+final GlobalKey<NavigatorState> _mapShellKey = GlobalKey<NavigatorState>(
+  debugLabel: 'map',
+);
+final GlobalKey<NavigatorState> _chatShellKey = GlobalKey<NavigatorState>(
+  debugLabel: 'chat',
+);
+final GlobalKey<NavigatorState> _profileShellKey = GlobalKey<NavigatorState>(
+  debugLabel: 'my_profile',
+);
 List<AvatarInfo> _mapToAvatarInfo(List<dynamic> rawList) {
   return rawList.map((e) {
     if (e is CompactUserEntity) {
@@ -231,6 +245,7 @@ final router = GoRouter(
       },
       branches: [
         StatefulShellBranch(
+          navigatorKey: _homeShellKey,
           routes: [
             GoRoute(
               path: '/home',
@@ -272,6 +287,7 @@ final router = GoRouter(
         ),
 
         StatefulShellBranch(
+          navigatorKey: _searchShellKey,
           routes: [
             GoRoute(
               path: '/search',
@@ -290,6 +306,7 @@ final router = GoRouter(
           ],
         ),
         StatefulShellBranch(
+          navigatorKey: _mapShellKey,
           routes: [
             GoRoute(
               path: '/map',
@@ -301,6 +318,7 @@ final router = GoRouter(
           ],
         ),
         StatefulShellBranch(
+          navigatorKey: _chatShellKey,
           routes: [
             GoRoute(
               path: '/chat',
@@ -309,6 +327,7 @@ final router = GoRouter(
           ],
         ),
         StatefulShellBranch(
+          navigatorKey: _profileShellKey,
           routes: [
             GoRoute(
               path: '/my_profile',
