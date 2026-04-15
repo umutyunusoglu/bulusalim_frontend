@@ -123,7 +123,7 @@ void showMultipleEventsSelectionDialog(
                       fontFamily: 'SF Pro Display',
                       fontSize: 10.sp,
                       fontWeight: FontWeight.w400,
-                      color: const Color(0xFF8E8E93),
+                      color: AppColors.textGrey,
                     ),
                   ),
                   SizedBox(
