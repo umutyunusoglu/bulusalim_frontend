@@ -222,7 +222,7 @@ class _UserListItemState extends State<UserListItem> {
                 style: TextStyle(
                   fontFamily: 'SF Pro Display',
                   fontSize: 11.sp,
-                  color: const Color(0xFF8E8E93),
+                  color: AppColors.textGrey,
                   height: 1.4,
                 ),
               ),
@@ -325,7 +325,7 @@ class _UserListItemState extends State<UserListItem> {
                   Text(
                     "@${widget.user.username}",
                     style: TextStyle(
-                      color: const Color(0xFF8E8E93),
+                      color: AppColors.textGrey,
                       fontSize: 12.sp,
                     ),
                   ),
