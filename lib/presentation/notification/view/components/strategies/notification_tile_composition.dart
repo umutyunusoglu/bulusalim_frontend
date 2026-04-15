@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:outnest/domain/entities/notification/notification_entity.dart';
 import 'package:outnest/presentation/notification/view/components/strategies/action/notification_tile_action_config.dart';
 import 'package:outnest/presentation/notification/view/components/strategies/action/notification_tile_action_factory.dart';
@@ -53,7 +54,10 @@ class NotificationTileComposition {
     return _textFactory.build(notification);
   }
 
-  NotificationTileActionConfig? buildAction(NotificationEntity notification) {
-    return actionFactory?.build(notification);
+  NotificationTileActionConfig? buildAction(
+    NotificationEntity notification,
+    WidgetRef ref,
+  ) {
+    return actionFactory?.build(notification, ref);
   }
 }

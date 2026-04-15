@@ -381,7 +381,7 @@ class _ScaffoldWithNavbarState extends ConsumerState<ScaffoldWithNavbar> {
       body: widget.navigationShell,
       floatingActionButton: kDebugMode ? const DebugPanel() : null,
       floatingActionButtonLocation: kDebugMode
-          ? FloatingActionButtonLocation.miniEndTop
+          ? FloatingActionButtonLocation.miniCenterTop
           : null,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
