@@ -255,7 +255,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       width: 36.w,
                       height: 4.h,
                       decoration: BoxDecoration(
-                        color: const Color(0XFF8E8E93),
+                        color: AppColors.textGrey,
                         borderRadius: BorderRadius.circular(2.r),
                       ),
                     ),

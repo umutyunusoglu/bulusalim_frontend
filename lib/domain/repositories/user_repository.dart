@@ -25,21 +25,6 @@ abstract class UserRepository {
   Future<bool> tryUpdateUsername(String newUsername, String userId);
   Future<bool> doesUsernameExist(String username);
 
-  // === Hobbies Subcollection ===
-  Future<void> addHobby(
-    Identifier userID,
-    UserHobbyEntity hobby,
-  );
-  Future<void> updateHobby(
-    Identifier userID,
-    String hobbyName,
-    Map<String, dynamic> updates,
-  );
-  Future<void> deleteHobby(
-    Identifier userID,
-    String hobbyName,
-  );
-
   // === Events Subcollection ===
   Future<void> addEvent(
     Identifier userID,
@@ -94,10 +79,8 @@ abstract class UserRepository {
 
   Future<List<PostEntity>> getUserPosts(Identifier userID);
 
-  // Hobbies Subcollection
-  Future<List<UserHobbyEntity>> getUserHobbies(
-    Identifier userID,
-  );
+  // User Progress Subcollection
+  Future<int> getUserProgress(Identifier userID, String category);
 
   // Friendships Subcollection
   Future<void> addFollower(

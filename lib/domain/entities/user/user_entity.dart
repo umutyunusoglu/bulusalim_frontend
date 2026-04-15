@@ -30,6 +30,7 @@ class UserEntity extends Equatable {
     this.hobbies = const [],
     this.followerIds = const [],
     this.followeeIds = const [],
+    this.verifiedEventCount = 0,
   });
 
   UserEntity copyWith({
@@ -58,6 +59,7 @@ class UserEntity extends Equatable {
     List<EventEntity>? activeEvents,
     List<Identifier>? followerIds,
     List<Identifier>? followeeIds,
+    int? verifiedEventCount,
   }) {
     return UserEntity(
       userID: userID ?? this.userID,
@@ -82,6 +84,7 @@ class UserEntity extends Equatable {
       hideSavedEvents: hideSavedEvents ?? this.hideSavedEvents,
       followerIds: followerIds ?? this.followerIds,
       followeeIds: followeeIds ?? this.followeeIds,
+      verifiedEventCount: verifiedEventCount ?? this.verifiedEventCount,
     );
   }
 
@@ -105,6 +108,7 @@ class UserEntity extends Equatable {
   final List<String> hobbies;
   final bool isPrivate;
   final bool hideSavedEvents;
+  final int verifiedEventCount;
 
   final List<Identifier>? followerIds;
   final List<Identifier>? followeeIds;

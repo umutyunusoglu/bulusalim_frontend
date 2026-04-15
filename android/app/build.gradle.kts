@@ -27,10 +27,19 @@ dependencies {
 
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
 
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
+
+if (localPropertiesFile.exists()) {
+    localProperties.load(FileInputStream(localPropertiesFile))
+}
+
+val flutterVersionCode = localProperties.getProperty("flutter.versionCode")?.toInt() ?: 1
+val flutterVersionName = "1.1.7"
 
 android {
     namespace = "app.outnest"
@@ -72,8 +81,8 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 26
         targetSdk = 35
-        versionCode = 31
-        versionName = "1.1.5"
+        versionCode = flutterVersionCode
+        versionName = flutterVersionName
         multiDexEnabled = true                                                                                                                                                                                   
 
         externalNativeBuild {

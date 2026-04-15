@@ -46,7 +46,7 @@ class _NotificationPageState extends ConsumerState<NotificationPage> {
   }
 
   Future<void> _onNotificationTap(NotificationEntity notification) async {
-    final actionConfig = _composition.buildAction(notification);
+    final actionConfig = _composition.buildAction(notification, ref);
     if (actionConfig == null) return;
     await _actionExecutor.execute(context, actionConfig);
   }

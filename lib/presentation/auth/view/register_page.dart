@@ -8,6 +8,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/errors/exceptions/auth_exceptions.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/presentation/auth/controllers/auth_status_enum.dart';
 import 'package:outnest/presentation/auth/controllers/handle_social_signin.dart';
@@ -29,6 +30,8 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final _phoneController = TextEditingController();
+
+  final LoggingService _logger = getIt<LoggingService>();
 
   // Enum değişkeni
   AuthStatus _authStatus = AuthStatus.none;
@@ -84,18 +87,22 @@ class _RegisterPageState extends State<RegisterPage> {
         );
       case Left(value: OTPSendException()):
         if (!mounted) return;
+        _logger.error('SMS gönderilemedi:${result.value.message}');
         showErrorPopup(
           context,
           message: 'SMS gönderilemedi. Lütfen tekrar deneyiniz.',
         );
       case Left(value: SMSTimeoutException()):
         if (!mounted) return;
+        _logger.error('SMS zaman aşımına uğradı:${result.value.message}');
+
         showErrorPopup(
           context,
           message: 'Zaman aşımına uğradı. Lütfen tekrar deneyiniz.',
         );
       case Left(value: final _):
         if (!mounted) return;
+        _logger.error('Beklenmedik bir hata oluştu:${result.value.message}');
         showErrorPopup(
           context,
           message: 'Beklenmedik bir hata oluştu.',

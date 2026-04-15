@@ -354,6 +354,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                         _selectedDate ??= initialDate;
                         final formattedDate = DateFormat(
                           'dd/MM/yyyy',
+                          'tr_TR',
                         ).format(_selectedDate!);
                         _dobController.text = formattedDate;
                         Navigator.pop(context);
@@ -363,16 +364,20 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                 ),
               ),
               Expanded(
-                child: CupertinoDatePicker(
-                  mode: CupertinoDatePickerMode.date,
-                  initialDateTime: _selectedDate ?? initialDate,
-                  minimumDate: minDate,
-                  maximumDate: maxDate,
-                  onDateTimeChanged: (DateTime newDate) {
-                    setState(() {
-                      _selectedDate = newDate;
-                    });
-                  },
+                child: Localizations.override(
+                  context: context,
+                  locale: const Locale('tr', 'TR'),
+                  child: CupertinoDatePicker(
+                    mode: CupertinoDatePickerMode.date,
+                    initialDateTime: _selectedDate ?? initialDate,
+                    minimumDate: minDate,
+                    maximumDate: maxDate,
+                    onDateTimeChanged: (DateTime newDate) {
+                      setState(() {
+                        _selectedDate = newDate;
+                      });
+                    },
+                  ),
                 ),
               ),
             ],
@@ -867,7 +872,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                               fontFamily: 'SF Pro Display',
                               fontSize: 10.sp,
                               fontWeight: FontWeight.w400,
-                              color: const Color(0xFF8E8E93),
+                              color: AppColors.textGrey,
                               height: 1.5,
                             ),
                           ),

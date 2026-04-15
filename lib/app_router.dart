@@ -31,6 +31,7 @@ import 'package:outnest/presentation/map/view/components/steps/community_event_d
 import 'package:outnest/presentation/map/view/map_page.dart';
 import 'package:outnest/presentation/notification/view/follow_request_page.dart';
 import 'package:outnest/presentation/notification/view/notification_page.dart';
+import 'package:outnest/presentation/profile/view/components/profile_scanner.dart'; // Senin importun
 import 'package:outnest/presentation/profile/view/profile_dispatcher.dart';
 import 'package:outnest/presentation/search/view/search_page.dart';
 import 'package:outnest/presentation/settings/view/account_settings_page.dart';
@@ -44,7 +45,21 @@ import 'package:outnest/presentation/tutorial/tutorial_overlay.dart';
 import 'package:outnest/scaffold_with_navbar.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
-
+final GlobalKey<NavigatorState> _homeShellKey = GlobalKey<NavigatorState>(
+  debugLabel: 'home',
+);
+final GlobalKey<NavigatorState> _searchShellKey = GlobalKey<NavigatorState>(
+  debugLabel: 'search',
+);
+final GlobalKey<NavigatorState> _mapShellKey = GlobalKey<NavigatorState>(
+  debugLabel: 'map',
+);
+final GlobalKey<NavigatorState> _chatShellKey = GlobalKey<NavigatorState>(
+  debugLabel: 'chat',
+);
+final GlobalKey<NavigatorState> _profileShellKey = GlobalKey<NavigatorState>(
+  debugLabel: 'my_profile',
+);
 List<AvatarInfo> _mapToAvatarInfo(List<dynamic> rawList) {
   return rawList.map((e) {
     if (e is CompactUserEntity) {
@@ -230,6 +245,7 @@ final router = GoRouter(
       },
       branches: [
         StatefulShellBranch(
+          navigatorKey: _homeShellKey,
           routes: [
             GoRoute(
               path: '/home',
@@ -271,6 +287,7 @@ final router = GoRouter(
         ),
 
         StatefulShellBranch(
+          navigatorKey: _searchShellKey,
           routes: [
             GoRoute(
               path: '/search',
@@ -289,6 +306,7 @@ final router = GoRouter(
           ],
         ),
         StatefulShellBranch(
+          navigatorKey: _mapShellKey,
           routes: [
             GoRoute(
               path: '/map',
@@ -300,6 +318,7 @@ final router = GoRouter(
           ],
         ),
         StatefulShellBranch(
+          navigatorKey: _chatShellKey,
           routes: [
             GoRoute(
               path: '/chat',
@@ -308,6 +327,7 @@ final router = GoRouter(
           ],
         ),
         StatefulShellBranch(
+          navigatorKey: _profileShellKey,
           routes: [
             GoRoute(
               path: '/my_profile',
@@ -348,6 +368,12 @@ final router = GoRouter(
         ),
       ],
     ),
+    GoRoute(
+      path: '/profile-scanner',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const ProfileScannerScreen(),
+    ),
+
     GoRoute(
       path: '/groups',
       parentNavigatorKey: _rootNavigatorKey,
@@ -421,14 +447,6 @@ final router = GoRouter(
 
         return ChatPage(
           eventID: eventID,
-          event: extra?['event'] as EventEntity,
-          chatTitle: (extra?['title'] as String?) ?? 'Sohbet',
-          participantAvatars: safeAvatars,
-          location: (extra?['location'] as String?) ?? '',
-          participantStatus: (extra?['participants'] as String?) ?? '',
-          eventDate: extra?['startTime'] as DateTime? ?? DateTime.now(),
-          creatorID: (extra?['creatorID'] as String?) ?? '',
-          creatorProfileImage: (extra?['creatorProfileImage'] as String?) ?? '',
         );
       },
       routes: [
@@ -488,6 +506,7 @@ final router = GoRouter(
     ),
     GoRoute(
       path: '/share/profile/:userId',
+      parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
         final userId = state.pathParameters['userId'] ?? '';
         return ProfileDispatcher(profileUserID: userId);

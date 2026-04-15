@@ -47,7 +47,7 @@ class _EventPreviewScreenState extends State<EventPreviewScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Event'),
+        title: const Text('Buluşma'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
@@ -76,7 +76,7 @@ class _EventPreviewScreenState extends State<EventPreviewScreen> {
           final event = snapshot.data![0] as EventEntity?;
           final participants = snapshot.data![1] as List<CompactUserEntity>;
           if (event == null) {
-            return const Center(child: Text('Event not found'));
+            return const Center(child: Text('Bu buluşma bulunamadı.'));
           }
 
           return SingleChildScrollView(

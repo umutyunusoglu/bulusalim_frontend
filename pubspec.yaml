@@ -1,7 +1,7 @@
 name: outnest
 description: "A social Media App For Future of Socialising."
 publish_to: "none"
-version: 0.1.1
+version: 1.1.7
 
 environment:
   sdk: ^3.8.1
@@ -9,6 +9,8 @@ environment:
 dependencies:
   camera: ^0.12.0
   flutter:
+    sdk: flutter
+  flutter_localizations:
     sdk: flutter
   app_links: ^7.0.0
   cloud_firestore: ^6.0.0
@@ -27,8 +29,6 @@ dependencies:
   firebase_storage: ^13.0.0
   flutter_holo_date_picker: ^2.0.0
   flutter_hooks: ^0.21.3
-  flutter_localizations:
-    sdk: flutter
   flutter_riverpod: ^3.3.1
   flutter_screenutil: ^5.9.3
   get_it: ^9.2.1
@@ -64,7 +64,7 @@ dependencies:
   google_sign_in: ^7.2.0
   rxdart: ^0.28.0
   flutter_image_compress: ^2.4.0
-  image_cropper: ^11.0.0
+  image_cropper: ^12.2.0
   recaptcha_enterprise_flutter: ^18.8.2
   geolocator: ^14.0.2
   flutter_speed_dial: ^7.0.0
@@ -95,7 +95,7 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   json_serializable: ^6.10.0
-  lint_hard: ^6.1.1
+  lint_hard: ^7.1.2
   mocktail: ^1.0.4
   test: ^1.26.2
   very_good_analysis: ^10.2.0
@@ -120,7 +120,10 @@ flutter:
     - assets/defaults/
     - assets/outnest/
     - .env
-  fonts:
+fonts:
+    - family: SF Pro Display
+      fonts:
+        - asset: fonts/SF-Pro-Display-Regular.otf
     - family: Agrandir
       fonts:
         - asset: fonts/Agrandir-Grand-Heavy-800.otf

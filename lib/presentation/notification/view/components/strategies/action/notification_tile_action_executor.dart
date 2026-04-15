@@ -46,8 +46,7 @@ class NotificationTileActionExecutor {
             extra: {
               'title': event.name,
               'location': event.displayAddress,
-              'participants':
-                  '${event.participants.length}/${event.capacity}',
+              'participants': '${event.participants.length}/${event.capacity}',
               'startTime': event.startTime,
               'creatorID': event.creator.userID,
               'creatorProfileImage': safeCreatorImage,
@@ -60,10 +59,21 @@ class NotificationTileActionExecutor {
 
         // Legacy notifications can carry malformed IDs/routes. Guard navigation.
         try {
-          await context.push(route);
+          // If the route belongs to a bottom nav tab (ShellRoute), we MUST use .go()
+          if (route.startsWith('/home') ||
+              route.startsWith('/search') ||
+              route.startsWith('/map') ||
+              route.startsWith('/chat') ||
+              route.startsWith('/my_profile')) {
+            context.go(route);
+          } else {
+            // Root-level routes can safely be pushed
+            await context.push(route);
+          }
+          // ignore: avoid_catching_errors
         } on AssertionError {
           if (route.startsWith('/home/profile/')) {
-            await context.push('/follow-requests');
+            context.go('/follow-requests');
             return;
           }
           _showInfoMessage(

@@ -1,3 +1,5 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:outnest/application/app_state/current_user_data_providers/current_user_event_providers.dart';
 import 'package:outnest/domain/entities/notification/notification_entity.dart';
 import 'package:outnest/presentation/notification/view/components/strategies/action/notification_tile_action_config.dart';
 import 'package:outnest/presentation/notification/view/components/strategies/action/notification_tile_action_strategy.dart';
@@ -10,12 +12,15 @@ class EventNotificationTileActionStrategy
   }
 
   @override
-  NotificationTileActionConfig build(NotificationEntity notification) {
-    final rawType = (notification.rawType ?? '').toLowerCase();
-    final isAcceptedNotification =
-        notification.type == NotificationType.join ||
-        rawType == 'join' ||
-        rawType.contains('accept');
+  NotificationTileActionConfig build(
+    NotificationEntity notification,
+    WidgetRef ref,
+  ) {
+    final myevents = ref.watch(activeEventsProvider);
+
+    final isAcceptedNotification = myevents.any(
+      (event) => event.id == notification.eventId,
+    );
 
     if (isAcceptedNotification) {
       return NotificationTileActionConfig(

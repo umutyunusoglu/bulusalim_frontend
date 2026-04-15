@@ -658,7 +658,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
   TextStyle get _subLabelStyle => TextStyle(
     fontFamily: 'SF Pro Display',
     fontSize: 12.sp,
-    color: const Color(0xFF8E8E93),
+    color: AppColors.textGrey,
     height: 1.2,
   );
 

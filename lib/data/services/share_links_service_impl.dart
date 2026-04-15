@@ -1,4 +1,4 @@
-import 'package:outnest/core/constants/Configs/app_store_redirect_config.dart';
+import 'package:outnest/core/constants/configs/app_store_redirect_config.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/domain/services/share_links_service.dart';
@@ -36,22 +36,22 @@ class ShareLinksServiceImpl extends ShareLinksService {
 
   @override
   Future<void> sharePost(String postId) async {
-    // Use redirect URL for external sharing (handles app store fallback)
-    final link = redirectPost(postId);
+    // Use direct share link for external sharing
+    final link = post(postId);
     await SharePlus.instance.share(ShareParams(text: link.toString()));
   }
 
   @override
   Future<void> shareEvent(String eventId) async {
-    // Use redirect URL for external sharing (handles app store fallback)
-    final link = redirectEvent(eventId);
+    // Use direct share link for external sharing
+    final link = event(eventId);
     await SharePlus.instance.share(ShareParams(text: link.toString()));
   }
 
   @override
   Future<void> shareUserProfile(String userId) async {
-    // Use redirect URL for external sharing (handles app store fallback)
-    final link = redirectProfile(userId);
+    // Use direct share link for external sharing
+    final link = user(userId);
     await SharePlus.instance.share(ShareParams(text: link.toString()));
   }
 
