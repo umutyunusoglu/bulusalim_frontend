@@ -12,6 +12,8 @@ import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/services/file_service.dart';
+import 'package:outnest/presentation/search/view/components/suggested_users_carousel.dart';
+import 'package:outnest/presentation/search/view/components/whats_new_carousel.dart';
 
 class SearchPage extends HookConsumerWidget {
   const SearchPage({super.key});
@@ -38,7 +40,7 @@ class SearchPage extends HookConsumerWidget {
     final suggestedUsers = useMemoized(
       () => (List<CompactUserEntity>.from(
         allFollowers,
-      )..shuffle()).take(5).toList(),
+      )..shuffle()).take(10).toList(),
       [allFollowers],
     );
 
@@ -147,103 +149,119 @@ class SearchPage extends HookConsumerWidget {
         searchController.text.isEmpty &&
         suggestedUsers.isNotEmpty;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Arama')),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: searchController,
-              focusNode: focusNode,
-              onChanged: onSearchChanged,
-              decoration: InputDecoration(
-                hintText: 'Kullanıcı veya buluşma ara...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          searchController.clear();
-                          onSearchChanged('');
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+    final showExplorePage = !isFocused.value && searchController.text.isEmpty;
+    return SafeArea(
+      child: Scaffold(
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                controller: searchController,
+                focusNode: focusNode,
+                onChanged: onSearchChanged,
+                decoration: InputDecoration(
+                  hintText: 'Kullanıcı veya buluşma ara...',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            searchController.clear();
+                            onSearchChanged('');
+                          },
+                        )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
-          ),
-          if (isLoading.value)
-            const LinearProgressIndicator()
-          else if (showSuggestions)
-            Expanded(
-              child: ListView(
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
-                    child: Text(
-                      'ÖNERİLEN KULLANICILAR',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
-                  ...suggestedUsers.map((u) => _UserTile(user: u)),
-                ],
-              ),
-            )
-          else
-            Expanded(
-              child: ListView(
-                controller: scrollController,
-                children: [
-                  if (users.value.isNotEmpty) ...[
+            if (isLoading.value)
+              const LinearProgressIndicator()
+            else if (showExplorePage)
+              Expanded(
+                child: Column(
+                  children: [
+                    if (suggestedUsers.isNotEmpty) ...[
+                      SuggestedUsersCarousel(users: suggestedUsers),
+                    ],
+                    const Spacer(),
+                    const WhatsNewCarousel(),
+                    const SizedBox(height: 8),
+                  ],
+                ),
+              )
+            else if (showSuggestions)
+              Expanded(
+                child: ListView(
+                  children: [
                     const Padding(
                       padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
                       child: Text(
-                        'KULLANICILAR',
+                        'ÖNERİLEN KULLANICILAR',
                         style: TextStyle(
-                          fontWeight: FontWeight.bold,
+                          fontFamily: 'SF Pro Display',
+                          fontWeight: FontWeight.w500,
                           color: Colors.grey,
                         ),
                       ),
                     ),
-                    ...users.value.map((u) => _UserTile(user: u)),
-                    if (isLoadingMore.value)
+                    ...suggestedUsers.take(5).map((u) => _UserTile(user: u)),
+                  ],
+                ),
+              )
+            else
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  children: [
+                    if (users.value.isNotEmpty) ...[
                       const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                        padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+                        child: Text(
+                          'KULLANICILAR',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
+                          ),
                         ),
                       ),
-                  ],
-                  if (events.value.isNotEmpty) ...[
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-                      child: Text(
-                        'BULUŞMALAR',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey,
+                      ...users.value.map((u) => _UserTile(user: u)),
+                      if (isLoadingMore.value)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                    ],
+                    if (events.value.isNotEmpty) ...[
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                        child: Text(
+                          'BULUŞMALAR',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
+                          ),
                         ),
                       ),
-                    ),
-                    ...events.value.map((e) => _EventTile(event: e)),
+                      ...events.value.map((e) => _EventTile(event: e)),
+                    ],
+                    if (users.value.isEmpty &&
+                        events.value.isEmpty &&
+                        searchController.text.isNotEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Center(child: Text('Sonuç bulunamadı.')),
+                      ),
                   ],
-                  if (users.value.isEmpty &&
-                      events.value.isEmpty &&
-                      searchController.text.isNotEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Center(child: Text('Sonuç bulunamadı.')),
-                    ),
-                ],
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

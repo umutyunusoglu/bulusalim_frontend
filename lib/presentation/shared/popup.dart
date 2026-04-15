@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
 
 class Popup extends StatelessWidget {
   const Popup({
@@ -55,7 +56,7 @@ class Popup extends StatelessWidget {
                 fontFamily: 'SF Pro Display',
                 fontWeight: FontWeight.w400,
                 fontSize: 10.sp,
-                color: const Color(0xFF8E8E93),
+                color: AppColors.textGrey,
                 height: 1.4,
               ),
             ),

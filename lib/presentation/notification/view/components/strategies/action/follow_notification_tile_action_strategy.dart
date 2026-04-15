@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:outnest/domain/entities/notification/notification_entity.dart';
 import 'package:outnest/presentation/notification/view/components/strategies/action/notification_tile_action_config.dart';
 import 'package:outnest/presentation/notification/view/components/strategies/action/notification_tile_action_strategy.dart';
@@ -13,7 +14,10 @@ class FollowNotificationTileActionStrategy
   }
 
   @override
-  NotificationTileActionConfig build(NotificationEntity notification) {
+  NotificationTileActionConfig build(
+    NotificationEntity notification,
+    WidgetRef ref,
+  ) {
     final rawType = (notification.rawType ?? '').toLowerCase();
 
     // Follow-request items should open the inbox page directly.
