@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 Provider<List<String>> turkeyCitiesProvider = Provider<List<String>>((ref) {
-  return [
+  return const [
     'Adana',
     'Adıyaman',
     'Afyonkarahisar',
