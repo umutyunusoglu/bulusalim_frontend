@@ -82,6 +82,7 @@ class UploadPost {
       postID: '',
       creator: creator,
       eventID: currentEvent.eventID,
+      city: currentEvent.city,
       caption: caption,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
