@@ -14,6 +14,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
   EventEntity({
     required this.eventID,
     required this.name,
+    required this.city,
     required this.hobbies,
     required this.creator,
     required this.capacity,
@@ -43,6 +44,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
   EventEntity copyWith({
     String? eventID,
     String? name,
+    String? city,
     List<String>? hobbies,
     EventStatusEnum? status,
     EventParticipantEntity? creator,
@@ -71,6 +73,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
     return EventEntity(
       eventID: eventID ?? this.eventID,
       name: name ?? this.name,
+      city: city ?? this.city,
       hobbies: hobbies ?? this.hobbies,
       creator: creator ?? this.creator,
       capacity: capacity ?? this.capacity,
@@ -103,6 +106,7 @@ class EventEntity extends FeedEntity with EquatableMixin {
   final int participantCount;
   final String eventID;
   final String name;
+  final String? city;
   final List<String> hobbies;
   final EventStatusEnum status;
   final EventParticipantEntity creator;
