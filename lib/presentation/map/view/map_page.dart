@@ -76,7 +76,7 @@ class _MapPageState extends ConsumerState<MapPage> {
   final MapRepository _mapRepository = getIt<MapRepository>();
   final GeocodingService _geocodingService = getIt<GeocodingService>();
 
-  Geolocation? _userLocation = null;
+  Geolocation? _userLocation;
   final ValueNotifier<bool> _isDialOpen = ValueNotifier(false);
   // --- STATE ---
   final Map<String, String> _categories = AppConfig.categories;
@@ -161,7 +161,7 @@ class _MapPageState extends ConsumerState<MapPage> {
       _isPickingFromMap = false;
     }
 
-    _initializeLocation();
+    unawaited(_initializeLocation());
   }
 
   @override
@@ -176,7 +176,7 @@ class _MapPageState extends ConsumerState<MapPage> {
   }
 
   Future<void> _initializeLocation() async {
-    LocationPermission permission = await Geolocator.checkPermission();
+    var permission = await Geolocator.checkPermission();
 
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -211,10 +211,11 @@ class _MapPageState extends ConsumerState<MapPage> {
         );
 
         setState(() {
-          _userLocation = Geolocation(
+          _userLocation = const Geolocation(
             latitude: 40.9819,
             longitude: 29.0254,
           );
+
           _isLocationPermissionGranted = false;
         });
       }
@@ -232,7 +233,7 @@ class _MapPageState extends ConsumerState<MapPage> {
     _isDialOpen.dispose();
     if (pointAnnotationManager != null) {
       try {
-        pointAnnotationManager!.deleteAll();
+        unawaited(pointAnnotationManager!.deleteAll());
       } on Exception catch (e) {
         debugPrint('Annotation cleanup error: $e');
       }
@@ -247,19 +248,22 @@ class _MapPageState extends ConsumerState<MapPage> {
     bool completed = false,
   }) {
     if (!completed) {
-      getIt<AnalyticsService>().logFailEventCreation(
-        FailEventCreationAnalyticsConfig(
-          failStep: closedAtStep,
-          category: _tempCategory,
-          isLocationSearched: _tempLocation != null && _isLocationSearchUsed,
-          hasStartTime: _tempDate != null && _tempTime != null,
-          visibility: _tempVisibility ?? VisibilityEnum.everyone,
-          showOnMap: _tempShowOnMap ?? false,
-          isNameSuggestionUsed: _tempEventName != null && _isNameSuggestionUsed,
+      unawaited(
+        getIt<AnalyticsService>().logFailEventCreation(
+          FailEventCreationAnalyticsConfig(
+            failStep: closedAtStep,
+            category: _tempCategory,
+            isLocationSearched: _tempLocation != null && _isLocationSearchUsed,
+            hasStartTime: _tempDate != null && _tempTime != null,
+            visibility: _tempVisibility ?? VisibilityEnum.everyone,
+            showOnMap: _tempShowOnMap ?? false,
+            isNameSuggestionUsed:
+                _tempEventName != null && _isNameSuggestionUsed,
+          ),
         ),
       );
     }
-    _removePickingMarker();
+    unawaited(_removePickingMarker());
     setState(() {
       _tempCategory = null;
       _tempAddress = null;
@@ -292,7 +296,9 @@ class _MapPageState extends ConsumerState<MapPage> {
     if (_pickingMarker != null) {
       try {
         await pointAnnotationManager!.delete(_pickingMarker!);
-      } catch (e) {}
+      } catch (e) {
+        _logger.warn('Error removing picking marker: $e');
+      }
       _pickingMarker = null;
     }
 
@@ -601,10 +607,10 @@ class _MapPageState extends ConsumerState<MapPage> {
     await _fetchVisibleEvents(forceRefresh: true);
 
     _clickListener = pointAnnotationManager?.tapEvents(
-      onTap: (PointAnnotation annotation) {
+      onTap: (annotation) {
         if (_isPickingFromMap) {
           final pos = annotation.geometry.coordinates;
-          _handleMapPick(pos.lat.toDouble(), pos.lng.toDouble());
+          unawaited(_handleMapPick(pos.lat.toDouble(), pos.lng.toDouble()));
           return;
         }
 
@@ -623,7 +629,7 @@ class _MapPageState extends ConsumerState<MapPage> {
   void _onCameraChangeListener(CameraChangedEventData event) {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 200), () {
-      if (!_isDisposed && mounted) _fetchVisibleEvents();
+      if (!_isDisposed && mounted) unawaited(_fetchVisibleEvents());
     });
   }
 
@@ -658,14 +664,14 @@ class _MapPageState extends ConsumerState<MapPage> {
       _cachedEvents = events;
 
       // 3. FİLTRELERİ UYGULA (Markerları güncelle)
-      _applyLocalFilters();
+      unawaited(_applyLocalFilters());
     } on Exception catch (e) {
       _logger.error('Error fetching visible events: $e');
     }
   }
 
   // B) SADECE FİLTRELEME (Filtre butonlarına basınca çalışır - İSTEK ATMAZ)
-  void _applyLocalFilters() async {
+  Future<void> _applyLocalFilters() async {
     if (_isDisposed || !mounted) return;
 
     final sessionService = getIt<SessionService>();
@@ -675,7 +681,7 @@ class _MapPageState extends ConsumerState<MapPage> {
     //TODO: Move to server side later
 
     // Hafızadaki (_cachedEvents) veriyi süzüyoruz
-    final List<EventEntity> filteredEvents = [];
+    final filteredEvents = <EventEntity>[];
 
     for (final e in _cachedEvents) {
       if (currentUser.userID == e.creator.userID) {
@@ -759,25 +765,27 @@ class _MapPageState extends ConsumerState<MapPage> {
 
   void _flyToEvent(EventEntity event) {
     if (event.location == null) return;
-    mapboxMap.flyTo(
-      CameraOptions(
-        center: Point(
-          coordinates: Position(
-            event.location!.longitude,
-            event.location!.latitude,
+    unawaited(
+      mapboxMap.flyTo(
+        CameraOptions(
+          center: Point(
+            coordinates: Position(
+              event.location!.longitude,
+              event.location!.latitude,
+            ),
           ),
+          padding: MbxEdgeInsets(top: 0, left: 0, bottom: 250.h, right: 0),
+          zoom: 16.5,
         ),
-        padding: MbxEdgeInsets(top: 0, left: 0, bottom: 250.h, right: 0),
-        zoom: 16.5,
+        MapAnimationOptions(duration: 1200),
       ),
-      MapAnimationOptions(duration: 1200),
     );
   }
 
   void _onMapBackgroundClick(MapContentGestureContext context) {
     if (_isPickingFromMap) {
       final pos = context.point.coordinates;
-      _handleMapPick(pos.lat.toDouble(), pos.lng.toDouble());
+      unawaited(_handleMapPick(pos.lat.toDouble(), pos.lng.toDouble()));
       return;
     }
     if (_isCardVisible && mounted) {
@@ -848,7 +856,7 @@ class _MapPageState extends ConsumerState<MapPage> {
                 ),
                 onMapCreated: _onMapCreated,
                 styleUri:
-                    "mapbox://styles/outnestdev/cmldktm5b002o01r0bnvqdjgu",
+                    'mapbox://styles/outnestdev/cmldktm5b002o01r0bnvqdjgu',
                 onTapListener: _onMapBackgroundClick,
                 onCameraChangeListener: _onCameraChangeListener,
               ),
@@ -882,11 +890,13 @@ class _MapPageState extends ConsumerState<MapPage> {
                               const Duration(milliseconds: 150),
                               () {
                                 // Filtreleri uygula
-                                _applyLocalFilters();
+                                unawaited(_applyLocalFilters());
 
                                 // Analytics kaydı
-                                getIt<AnalyticsService>().logFilterMapByTime(
-                                  FilterMapByTimeAnalyticsConfig(time: range),
+                                unawaited(
+                                  getIt<AnalyticsService>().logFilterMapByTime(
+                                    FilterMapByTimeAnalyticsConfig(time: range),
+                                  ),
                                 );
                               },
                             );
@@ -896,7 +906,6 @@ class _MapPageState extends ConsumerState<MapPage> {
 
                       // Yeni Küçük Kişi Filtresi
                       Expanded(
-                        flex: 1,
                         child: MapPeopleFilter(
                           options: const [
                             'herkes',
@@ -912,20 +921,23 @@ class _MapPageState extends ConsumerState<MapPage> {
                                   ),
                             );
 
-                            if (_filterDebounce?.isActive ?? false)
+                            if (_filterDebounce?.isActive ?? false) {
                               _filterDebounce!.cancel();
+                            }
 
                             _filterDebounce = Timer(
                               const Duration(milliseconds: 200),
                               () {
-                                _applyLocalFilters();
+                                unawaited(_applyLocalFilters());
 
-                                getIt<AnalyticsService>()
-                                    .logFilterMapByVisibility(
-                                      FilterMapByVisibilityAnalyticsConfig(
-                                        visibility: _filterPeople,
+                                unawaited(
+                                  getIt<AnalyticsService>()
+                                      .logFilterMapByVisibility(
+                                        FilterMapByVisibilityAnalyticsConfig(
+                                          visibility: _filterPeople,
+                                        ),
                                       ),
-                                    );
+                                );
                               },
                             );
                           },
@@ -951,7 +963,7 @@ class _MapPageState extends ConsumerState<MapPage> {
                       padding: EdgeInsets.symmetric(horizontal: 16.w),
                       scrollDirection: Axis.horizontal,
                       itemCount: _categories.length,
-                      separatorBuilder: (_, __) => SizedBox(width: 10.w),
+                      separatorBuilder: (_, _) => SizedBox(width: 10.w),
                       itemBuilder: (_, index) {
                         final key = _categories.keys.elementAt(index);
                         return Center(
@@ -973,14 +985,16 @@ class _MapPageState extends ConsumerState<MapPage> {
                               _filterDebounce = Timer(
                                 const Duration(milliseconds: 200),
                                 () {
-                                  _applyLocalFilters();
+                                  unawaited(_applyLocalFilters());
 
-                                  getIt<AnalyticsService>()
-                                      .logFilterMapByVisibility(
-                                        FilterMapByVisibilityAnalyticsConfig(
-                                          visibility: _filterPeople,
+                                  unawaited(
+                                    getIt<AnalyticsService>()
+                                        .logFilterMapByVisibility(
+                                          FilterMapByVisibilityAnalyticsConfig(
+                                            visibility: _filterPeople,
+                                          ),
                                         ),
-                                      );
+                                  );
                                 },
                               );
                             },
@@ -1125,18 +1139,20 @@ class _MapPageState extends ConsumerState<MapPage> {
                             (e) => lastKnown!,
                           ); // Hata alırsan eskisini kullan
 
-                      mapboxMap.flyTo(
-                        CameraOptions(
-                          center: Point(
-                            coordinates: Position(
-                              position.longitude,
+                      unawaited(
+                        mapboxMap.flyTo(
+                          CameraOptions(
+                            center: Point(
+                              coordinates: Position(
+                                position.longitude,
 
-                              position.latitude,
+                                position.latitude,
+                              ),
                             ),
+                            zoom: 15,
                           ),
-                          zoom: 15.0,
+                          MapAnimationOptions(duration: 1000),
                         ),
-                        MapAnimationOptions(duration: 1000),
                       );
                       setState(() {
                         _userLocation = Geolocation(
@@ -1145,7 +1161,7 @@ class _MapPageState extends ConsumerState<MapPage> {
                         );
                       });
                     } catch (e) {
-                      _logger.error("Hata: $e");
+                      _logger.error('Hata: $e');
                     }
                   },
 
@@ -1437,9 +1453,10 @@ class _MapPageState extends ConsumerState<MapPage> {
       rejectedUsers: [],
       startTime: startTime,
       endTime: startTime.add(const Duration(hours: 2)),
-      location: _tempLocation ?? Geolocation(latitude: 42, longitude: 36),
+      location: _tempLocation ?? const Geolocation(latitude: 42, longitude: 36),
       displayAddress: _tempDisplayAddress ?? 'Preview',
       address: _tempAddress ?? 'Preview',
+      city: _tempDisplayAddress?.split(',').last.trim(),
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
       isLocked: false,
@@ -1474,6 +1491,7 @@ class _MapPageState extends ConsumerState<MapPage> {
         userID: currentUser.userID,
         username: currentUser.username,
         profileImageUrl: currentUser.profileImageUrl,
+        city: currentUser.city,
         university: currentUser.university,
         nameSurname: currentUser.nameSurname,
         isPrivate: currentUser.isPrivate,
@@ -1521,10 +1539,11 @@ class _MapPageState extends ConsumerState<MapPage> {
         rejectedUsers: [],
         startTime: startTime,
         endTime: null,
-        location: _tempLocation!,
+        location: _tempLocation,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         displayAddress: _tempDisplayAddress ?? '',
+        city: _tempDisplayAddress?.split(',').last.trim() ?? '',
         address: _tempAddress ?? '',
         participantCount: 1,
         isLocked: false,
@@ -1534,7 +1553,7 @@ class _MapPageState extends ConsumerState<MapPage> {
             ? _tempVisibilityGroupID
             : null,
         showOnMap: _tempShowOnMap ?? true,
-        accountType: currentUser.accountType ?? AccountType.personal,
+        accountType: currentUser.accountType,
         communityData: EventCommunityData(
           description: _tempCommunityDescription,
           rules: _tempCommunityRules,
@@ -1548,14 +1567,16 @@ class _MapPageState extends ConsumerState<MapPage> {
 
       await eventRepository.createEvent(event);
 
-      getIt<AnalyticsService>().logCreateEvent(
-        CreateEventAnalyticsConfig(
-          category: _tempCategory ?? 'diğer',
-          isLocationSearched: _isLocationSearchUsed,
-          hasStartTime: _tempTime != null,
-          visibility: _tempVisibility ?? VisibilityEnum.everyone,
-          showOnMap: _tempShowOnMap ?? true,
-          isNameSuggestionUsed: _isNameSuggestionUsed,
+      unawaited(
+        getIt<AnalyticsService>().logCreateEvent(
+          CreateEventAnalyticsConfig(
+            category: _tempCategory ?? 'diğer',
+            isLocationSearched: _isLocationSearchUsed,
+            hasStartTime: _tempTime != null,
+            visibility: _tempVisibility ?? VisibilityEnum.everyone,
+            showOnMap: _tempShowOnMap ?? true,
+            isNameSuggestionUsed: _isNameSuggestionUsed,
+          ),
         ),
       );
 

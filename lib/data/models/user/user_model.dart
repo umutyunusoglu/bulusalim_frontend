@@ -12,6 +12,7 @@ class UserModel extends Model<UserEntity> {
     required this.userID,
     required this.username,
     required this.nameSurname,
+    required this.city,
     required this.birthDate,
     required this.gender,
     required this.university,
@@ -38,6 +39,7 @@ class UserModel extends Model<UserEntity> {
       userID: entity.userID,
       nameSurname: entity.nameSurname,
       username: entity.username,
+      city: entity.city,
       birthDate: entity.birthDate,
       gender: entity.gender,
       university: entity.university,
@@ -82,7 +84,7 @@ class UserModel extends Model<UserEntity> {
       userID: doc['userID'] as String,
       nameSurname: doc['nameSurname'] as String? ?? 'Bilinmeyen Kullanıcı',
       username: doc['username'] as String? ?? 'Bilinmeyen Kullanıcı',
-
+      city: doc['city'] as String?,
       birthDate: birthDate,
       gender: gender,
       university: doc['universityName'] as String?,
@@ -120,6 +122,7 @@ class UserModel extends Model<UserEntity> {
       'userID': userID,
       'username': username,
       'nameSurname': nameSurname,
+      'city': city,
       'birthDate': Timestamp.fromDate(birthDate),
       'gender': gender.toString(),
       'universityName': university,
@@ -147,6 +150,7 @@ class UserModel extends Model<UserEntity> {
       userID: userID,
       username: username,
       nameSurname: nameSurname,
+      city: city,
       birthDate: birthDate,
       gender: gender,
       university: university,
@@ -171,6 +175,7 @@ class UserModel extends Model<UserEntity> {
   final Identifier userID;
   final String username;
   final String nameSurname;
+  final String? city;
   final DateTime birthDate;
   final GenderEnum gender;
   final String? university;

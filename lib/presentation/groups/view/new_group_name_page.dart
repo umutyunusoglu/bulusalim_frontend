@@ -55,6 +55,7 @@ class _NewGroupNamePageState extends State<NewGroupNamePage> {
           userID: u.id,
           username: u.username,
           profileImageUrl: u.avatarUrl,
+          city: null,
           university: '',
           nameSurname: '',
           isPrivate: false,

@@ -262,6 +262,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
         university: university,
         universityEmail: universityEmail,
         profileImageUrl: profileImageUrl,
+        city: null, //TODO: must be provided by user in registration flow
         bio: '',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),

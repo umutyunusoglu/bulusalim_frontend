@@ -6,10 +6,6 @@ import 'package:outnest/core/utils/types/enums/visibility_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/presentation/camera/view/camera_page.dart';
 
-import 'package:flutter/material.dart';
-import 'package:outnest/domain/entities/feed/event/event_entity.dart';
-import 'package:outnest/presentation/camera/view/camera_page.dart';
-
 class DebugCameraScreen extends StatelessWidget {
   const DebugCameraScreen({super.key});
 
@@ -20,6 +16,7 @@ class DebugCameraScreen extends StatelessWidget {
         event: EventEntity(
           eventID: 'debug-event-001',
           name: 'Akşam Yürüyüşü',
+          city: 'İstanbul',
           hobbies: ['Yürüyüş', 'Doğa', 'Fotoğrafçılık'],
           creator: const EventParticipantEntity(
             userID: '',

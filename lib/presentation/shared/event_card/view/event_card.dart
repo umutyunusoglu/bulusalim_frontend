@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
-import 'package:outnest/core/utils/types/enums/visibility_enum.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:outnest/domain/services/share_links_service.dart';
-import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
-import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
-import 'package:outnest/presentation/shared/popup.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
 import 'package:outnest/core/utils/types/enums/screen_enum.dart';
+import 'package:outnest/core/utils/types/enums/visibility_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart'
@@ -24,6 +20,7 @@ import 'package:outnest/domain/services/analytics/event_configs/click_view_event
 import 'package:outnest/domain/services/remote_config_service.dart';
 import 'package:outnest/domain/services/security_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/domain/services/share_links_service.dart';
 import 'package:outnest/presentation/home/view/components/event/event_info_chip.dart';
 import 'package:outnest/presentation/home/view/components/event/event_location_chip.dart';
 import 'package:outnest/presentation/home/view/components/event/participant_bottom_sheet.dart';
@@ -83,7 +80,7 @@ class _EventCardState extends State<EventCard> {
   void _updateFollowingStatus() {
     if (!mounted) return;
 
-    final myFollowees = sessionService.stateListenable.value?.followees ?? [];
+    final myFollowees = sessionService.stateListenable.value.followees;
     final isFollowing = myFollowees.any(
       (u) => u.userID == widget.event.creator.userID,
     );
@@ -188,6 +185,7 @@ class _EventCardState extends State<EventCard> {
                       userID: currentUser.userID,
                       username: currentUser.username,
                       profileImageUrl: currentUser.profileImageUrl,
+                      city: currentUser.city,
                       university: currentUser.university,
                       nameSurname: currentUser.nameSurname,
                       isPrivate: currentUser.isPrivate,
@@ -245,6 +243,7 @@ class _EventCardState extends State<EventCard> {
                       userID: currentUser.userID,
                       username: currentUser.username,
                       profileImageUrl: currentUser.profileImageUrl,
+                      city: currentUser.city,
                       university: currentUser.university,
                       nameSurname: currentUser.nameSurname,
                       isPrivate: currentUser.isPrivate,
@@ -401,6 +400,7 @@ class _EventCardState extends State<EventCard> {
       userID: widget.event.creator.userID,
       username: widget.event.creator.username,
       profileImageUrl: widget.event.creator.profileImageUrl,
+      city: null,
       university: widget.event.creator.university,
       nameSurname: null,
       isPrivate: null,

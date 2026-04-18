@@ -270,6 +270,7 @@ class _PostCardState extends State<PostCard> {
       userID: widget.post.creator.userID,
       username: widget.post.creator.username,
       profileImageUrl: widget.post.creator.profileImageUrl,
+      city: widget.post.creator.city,
       university: widget.post.creator.university,
       nameSurname: null,
       isPrivate: null,

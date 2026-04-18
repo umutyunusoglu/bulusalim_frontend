@@ -279,6 +279,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
         final compactUser = CompactUserEntity(
           userID: currentUser.userID,
           username: currentUser.username,
+          city: currentUser.city,
           profileImageUrl: currentUser.profileImageUrl,
           university: currentUser.university,
           nameSurname: currentUser.nameSurname,

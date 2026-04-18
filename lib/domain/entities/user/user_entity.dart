@@ -10,6 +10,7 @@ class UserEntity extends Equatable {
     required this.userID,
     required this.username,
     required this.nameSurname,
+    required this.city,
     required this.birthDate,
     required this.gender,
     required this.university,
@@ -38,6 +39,7 @@ class UserEntity extends Equatable {
     String? email,
     String? nameSurname,
     String? username,
+    String? city,
     DateTime? birthDate,
     GenderEnum? gender,
     String? university,
@@ -65,6 +67,7 @@ class UserEntity extends Equatable {
       userID: userID ?? this.userID,
       username: username ?? this.username,
       nameSurname: nameSurname ?? this.nameSurname,
+      city: city ?? this.city,
       birthDate: birthDate ?? this.birthDate,
       gender: gender ?? this.gender,
       university: university ?? this.university,
@@ -91,6 +94,7 @@ class UserEntity extends Equatable {
   final Identifier userID;
   final String username;
   final String nameSurname;
+  final String? city;
   final DateTime birthDate;
   final String? phoneNumber;
   final GenderEnum gender;

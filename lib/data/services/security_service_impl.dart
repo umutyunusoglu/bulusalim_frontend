@@ -99,6 +99,7 @@ class SecurityServiceImpl implements SecurityService {
             userID: doc['userID'] as String,
             username: doc['username'] as String,
             profileImageUrl: doc['profileImageUrl'] as String,
+            city: null,
             university: null,
             nameSurname: null,
             isPrivate: null,
