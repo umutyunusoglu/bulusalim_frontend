@@ -122,6 +122,7 @@ class UserModel extends Model<UserEntity> {
       'userID': userID,
       'username': username,
       'nameSurname': nameSurname,
+      'city': city,
       'birthDate': Timestamp.fromDate(birthDate),
       'gender': gender.toString(),
       'universityName': university,
