@@ -1474,6 +1474,7 @@ class _MapPageState extends ConsumerState<MapPage> {
         userID: currentUser.userID,
         username: currentUser.username,
         profileImageUrl: currentUser.profileImageUrl,
+        city: currentUser.city,
         university: currentUser.university,
         nameSurname: currentUser.nameSurname,
         isPrivate: currentUser.isPrivate,

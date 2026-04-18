@@ -31,6 +31,7 @@ class EventJoinController {
       userID: u.userID,
       username: u.username,
       profileImageUrl: u.profileImageUrl,
+      city: u.city,
       university: u.university,
       nameSurname: u.nameSurname,
       isPrivate: u.isPrivate,
