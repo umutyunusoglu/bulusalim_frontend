@@ -133,7 +133,7 @@ class CameraPage extends HookWidget {
           currentPhotoPath = await processFlippedImage(currentPhotoPath);
         }
 
-        final croppedFile = await cropToSquare(currentPhotoPath);
+        final croppedFile = await cropImage(currentPhotoPath);
 
         if (croppedFile != null) {
           takenPhotos.value = [...takenPhotos.value, File(croppedFile.path)];
