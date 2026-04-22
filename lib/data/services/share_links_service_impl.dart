@@ -8,6 +8,8 @@ class ShareLinksServiceImpl extends ShareLinksService {
   String? _pendingDeepLink;
   final LoggingService _logger = getIt<LoggingService>();
 
+  static const String _appName = 'Outnest';
+
   static const String shareLinkPrefix =
       'https://outnest.app/share'; // This will be the base URL
 
@@ -34,25 +36,35 @@ class ShareLinksServiceImpl extends ShareLinksService {
   static Uri redirectProfile(String userId) =>
       AppStoreRedirectConfig.getRedirectUrl('profile', userId);
 
+  static String _buildShareMessage({
+    required String contentLabel,
+    required Uri link,
+  }) => '$contentLabel $_appName\n${link.toString()}';
+
+  Future<void> _shareContent({
+    required String contentLabel,
+    required Uri link,
+  }) async {
+    final text = _buildShareMessage(contentLabel: contentLabel, link: link);
+    await SharePlus.instance.share(ShareParams(text: text));
+  }
+
   @override
   Future<void> sharePost(String postId) async {
-    // Use direct share link for external sharing
     final link = post(postId);
-    await SharePlus.instance.share(ShareParams(text: link.toString()));
+    await _shareContent(contentLabel: 'Bu gönderiye göz at -', link: link);
   }
 
   @override
   Future<void> shareEvent(String eventId) async {
-    // Use direct share link for external sharing
     final link = event(eventId);
-    await SharePlus.instance.share(ShareParams(text: link.toString()));
+    await _shareContent(contentLabel: 'Bu etkinliğe göz at -', link: link);
   }
 
   @override
   Future<void> shareUserProfile(String userId) async {
-    // Use direct share link for external sharing
     final link = user(userId);
-    await SharePlus.instance.share(ShareParams(text: link.toString()));
+    await _shareContent(contentLabel: 'Bu profile göz at -', link: link);
   }
 
   @override
