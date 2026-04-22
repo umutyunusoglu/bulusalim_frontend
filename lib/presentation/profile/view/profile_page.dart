@@ -37,7 +37,6 @@ import 'package:outnest/presentation/profile/view/components/profile_tab_bar.dar
 import 'package:outnest/presentation/profile/view/dialogs/show_no_shareable_event_dialog.dart';
 import 'package:outnest/presentation/profile/view/dialogs/show_share_selection_dialog.dart';
 import 'package:outnest/presentation/profile/view/dialogs/show_unfollow_dialog.dart';
-import 'package:share_plus/share_plus.dart';
 
 class ProfilePage extends HookConsumerWidget {
   const ProfilePage({required this.profileUserID, super.key});
@@ -257,7 +256,7 @@ class ProfilePage extends HookConsumerWidget {
     void openCustomShareMenu() {
       final shareUrl = 'https://outnest.app/share/profile/$profileUserID';
 
-      showModalBottomSheet(
+      showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
         useRootNavigator: true,
@@ -266,11 +265,8 @@ class ProfilePage extends HookConsumerWidget {
           username: username,
           profileImageUrl: profileImageUrl,
           profileUrl: shareUrl,
-          onSharePressed: () async {
-            await SharePlus.instance.share(
-              ShareParams(text: shareUrl),
-            );
-          },
+          onSharePressed: () =>
+              actionNotifier.shareProfile(context, profileUserID),
         ),
       );
     }
