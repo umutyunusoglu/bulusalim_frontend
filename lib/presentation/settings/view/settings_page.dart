@@ -10,6 +10,7 @@ import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/presentation/badge/badges_page.dart';
 import 'package:outnest/presentation/groups/view/groups_page.dart';
 import 'package:outnest/presentation/settings/view/about_community_page.dart';
 import 'package:outnest/presentation/settings/view/blocked_users_page.dart';
@@ -264,15 +265,17 @@ class _SettingsPageState extends State<SettingsPage>
           },
         ),
       )
-      /*
       ..add(
         SettingsTile(
           title: 'Rozetler',
           onTap: () {
-            // TODO: Rozetler sayfasına yönlendir
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BadgesPage()),
+            );
           },
         ),
-      )*/
+      )
       ..add(
         SettingsTile(
           title: 'Engellenen Kullanıcılar',

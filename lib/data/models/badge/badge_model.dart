@@ -14,14 +14,28 @@ class BadgeModel implements Model<BadgeEntity> {
     required this.earnedAt,
   });
   factory BadgeModel.fromFirestore(Map<String, dynamic> data) {
+    int parseIntSafely(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      if (value is String) return int.tryParse(value) ?? 0;
+      return 0;
+    }
+
+    String parseStringSafely(dynamic value, [String fallback = '']) {
+      return value?.toString() ?? fallback;
+    }
+
     return BadgeModel(
-      category: data['category'] as String,
-      tier: data['tier'] as int,
-      threshold: data['threshold'] as int,
-      label: data['label'] as String,
-      info: data['info'] as String,
-      iconURL: data['iconURL'] as String,
-      earnedAt: (data['earnedAt'] as Timestamp).toDate(),
+      category: parseStringSafely(data['category'], 'Genel'),
+      tier: parseIntSafely(data['tier']),
+      threshold: parseIntSafely(data['threshold']),
+      label: parseStringSafely(data['label'], 'İsimsiz Rozet'),
+      info: parseStringSafely(data['info']),
+      iconURL: parseStringSafely(data['iconURL']),
+      earnedAt: data['earnedAt'] != null && data['earnedAt'] is Timestamp
+          ? (data['earnedAt'] as Timestamp).toDate()
+          : DateTime.fromMillisecondsSinceEpoch(0),
     );
   }
 

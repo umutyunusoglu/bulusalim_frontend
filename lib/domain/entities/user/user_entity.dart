@@ -31,7 +31,33 @@ class UserEntity extends Equatable {
     this.followerIds = const [],
     this.followeeIds = const [],
     this.verifiedEventCount = 0,
+    this.pinnedBadges = const [],
   });
+
+  final Identifier userID;
+  final String username;
+  final String nameSurname;
+  final DateTime birthDate;
+  final String? phoneNumber;
+  final GenderEnum gender;
+  final String? university;
+  final String? universityEmail;
+  final String profileImageUrl;
+  final String? bio;
+  final AccountType accountType;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime lastActiveAt;
+  final int followeeCount;
+  final int followerCount;
+  final CommunityData? communityData;
+  final List<String> hobbies;
+  final bool isPrivate;
+  final bool hideSavedEvents;
+  final int verifiedEventCount;
+  final List<Identifier>? followerIds;
+  final List<Identifier>? followeeIds;
+  final List<String> pinnedBadges;
 
   UserEntity copyWith({
     Identifier? userID,
@@ -60,6 +86,7 @@ class UserEntity extends Equatable {
     List<Identifier>? followerIds,
     List<Identifier>? followeeIds,
     int? verifiedEventCount,
+    List<String>? pinnedBadges,
   }) {
     return UserEntity(
       userID: userID ?? this.userID,
@@ -85,33 +112,9 @@ class UserEntity extends Equatable {
       followerIds: followerIds ?? this.followerIds,
       followeeIds: followeeIds ?? this.followeeIds,
       verifiedEventCount: verifiedEventCount ?? this.verifiedEventCount,
+      pinnedBadges: pinnedBadges ?? this.pinnedBadges,
     );
   }
-
-  final Identifier userID;
-  final String username;
-  final String nameSurname;
-  final DateTime birthDate;
-  final String? phoneNumber;
-  final GenderEnum gender;
-  final String? university;
-  final String? universityEmail;
-  final String profileImageUrl;
-  final String? bio;
-  final AccountType accountType;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final DateTime lastActiveAt;
-  final int followeeCount;
-  final int followerCount;
-  final CommunityData? communityData;
-  final List<String> hobbies;
-  final bool isPrivate;
-  final bool hideSavedEvents;
-  final int verifiedEventCount;
-
-  final List<Identifier>? followerIds;
-  final List<Identifier>? followeeIds;
 
   @override
   List<Object?> get props => [
@@ -126,6 +129,7 @@ class UserEntity extends Equatable {
     isPrivate,
     hideSavedEvents,
     communityData,
+    pinnedBadges,
   ];
 }
 

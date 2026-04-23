@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
-// GenderEnum importunun doğru olduğundan emin ol
 import 'package:outnest/core/utils/types/enums/gender_enum.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/data/models/model.dart';
@@ -30,6 +29,7 @@ class UserModel extends Model<UserEntity> {
     required this.accountType,
     required this.communityData,
     this.verifiedEventCount = 0,
+    this.pinnedBadges = const [],
   });
 
   @override
@@ -56,6 +56,7 @@ class UserModel extends Model<UserEntity> {
       accountType: entity.accountType,
       communityData: entity.communityData,
       verifiedEventCount: entity.verifiedEventCount,
+      pinnedBadges: entity.pinnedBadges,
     );
   }
 
@@ -107,6 +108,9 @@ class UserModel extends Model<UserEntity> {
           ? CommunityData.fromMap(doc['communityData'] as Map<String, dynamic>)
           : null,
       verifiedEventCount: doc['verifiedEventCount'] as int? ?? 0,
+      pinnedBadges: (doc['pinnedBadges'] as List<dynamic>? ?? [])
+          .map((e) => e as String)
+          .toList(),
     );
   }
 
@@ -138,6 +142,7 @@ class UserModel extends Model<UserEntity> {
       'accountType': accountType.toString(),
       'communityData': communityData?.toMap(),
       'verifiedEventCount': verifiedEventCount,
+      'pinnedBadges': pinnedBadges,
     };
   }
 
@@ -165,6 +170,7 @@ class UserModel extends Model<UserEntity> {
       accountType: accountType,
       communityData: communityData,
       verifiedEventCount: verifiedEventCount,
+      pinnedBadges: pinnedBadges,
     );
   }
 
@@ -190,4 +196,5 @@ class UserModel extends Model<UserEntity> {
   final int verifiedEventCount;
 
   final List<String> hobbies;
+  final List<String> pinnedBadges;
 }

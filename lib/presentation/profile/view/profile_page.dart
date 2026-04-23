@@ -16,7 +16,9 @@ import 'package:outnest/application/app_state/current_user_data_providers/curren
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/application/profile/profile_notifier.dart';
 import 'package:outnest/application/profile/profile_providers.dart';
+import 'package:outnest/application/providers/badges/all_badges_provider.dart';
 import 'package:outnest/core/utils/types/enums/profile_segment_enum.dart';
+import 'package:outnest/domain/entities/badges/badge_entity.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/feed/post/post_entity.dart';
 import 'package:outnest/domain/services/analytics/analytics_service.dart';
@@ -43,12 +45,6 @@ class ProfilePage extends HookConsumerWidget {
   const ProfilePage({required this.profileUserID, super.key});
 
   final String profileUserID;
-
-  static const _badges = [
-    'assets/badge/badge1.png',
-    'assets/badge/badge2.png',
-    'assets/badge/badge3.png',
-  ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -89,7 +85,23 @@ class ProfilePage extends HookConsumerWidget {
     }
 
     final user = profileUserAsync.value;
+    final allBadges = ref.watch(allBadgesProvider).value ?? [];
+    final pinnedBadgeLabels = List<String>.from(
+      isCurrentUser
+          ? (currentUser?.pinnedBadges ?? [])
+          : (user?.pinnedBadges as List<String>? ?? []),
+    );
 
+    final pinnedBadgeEntities = <BadgeEntity>[];
+
+    for (final label in pinnedBadgeLabels) {
+      try {
+        final foundBadge = allBadges.firstWhere((b) => b.label == label);
+        pinnedBadgeEntities.add(foundBadge);
+      } catch (e) {
+        debugPrint('Sabitlenmiş rozet bulunamadı: $label');
+      }
+    }
     // ─── Derived fields ──────────────────────────────────────
     final username = isCurrentUser
         ? (currentUser?.username ?? '')
@@ -347,7 +359,7 @@ class ProfilePage extends HookConsumerWidget {
                                   ),
                                   child: ProfilePhoto(
                                     profileImageUrl: profileImageUrl,
-                                    badgeUrls: _badges,
+                                    pinnedBadges: pinnedBadgeEntities,
                                   ),
                                 ),
                               ),
