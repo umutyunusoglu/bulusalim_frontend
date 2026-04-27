@@ -127,6 +127,24 @@ class ProfileActionNotifier extends Notifier<ProfileActionState> {
     }
   }
 
+  Future<void> shareProfileToInstagramStory(
+    BuildContext context,
+    String userId,
+  ) async {
+    try {
+      await getIt<ShareLinksService>().shareUserProfileToInstagramStory(userId);
+    } catch (e) {
+      if (context.mounted) {
+        showErrorPopup(
+          context,
+          message:
+              'Instagram ile paylaşılırken bir hata oluştu. Lütfen tekrar deneyin.',
+        );
+      }
+      debugPrint('Instagram profil paylaşma hatası: $e');
+    }
+  }
+
   /// Provider'ları yeniden yükle
   void invalidateProfileData() {
     ref
