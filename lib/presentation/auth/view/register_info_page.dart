@@ -273,6 +273,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
         accountType: AccountType.personal,
         communityData: null,
         phoneNumber: getIt<AuthService>().getUserPhoneNumber().toNullable(),
+        capabilities: {},
       );
 
       await userRepository.createUser(

@@ -1,5 +1,8 @@
+import 'dart:isolate';
+
 import 'package:equatable/equatable.dart';
 import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
+import 'package:outnest/core/utils/types/enums/capability.dart';
 import 'package:outnest/core/utils/types/enums/gender_enum.dart';
 import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
@@ -25,6 +28,7 @@ class UserEntity extends Equatable {
     required this.communityData,
     required this.accountType,
     required this.phoneNumber,
+    required this.capabilities,
 
     this.isPrivate = false,
     this.hideSavedEvents = false,
@@ -62,6 +66,7 @@ class UserEntity extends Equatable {
     List<Identifier>? followerIds,
     List<Identifier>? followeeIds,
     int? verifiedEventCount,
+    Set<CapabilityEnum>? capabilities,
   }) {
     return UserEntity(
       userID: userID ?? this.userID,
@@ -88,6 +93,7 @@ class UserEntity extends Equatable {
       followerIds: followerIds ?? this.followerIds,
       followeeIds: followeeIds ?? this.followeeIds,
       verifiedEventCount: verifiedEventCount ?? this.verifiedEventCount,
+      capabilities: capabilities ?? this.capabilities,
     );
   }
 
@@ -114,6 +120,8 @@ class UserEntity extends Equatable {
   final bool hideSavedEvents;
   final int verifiedEventCount;
 
+  final Set<CapabilityEnum> capabilities;
+
   final List<Identifier>? followerIds;
   final List<Identifier>? followeeIds;
 
@@ -130,6 +138,18 @@ class UserEntity extends Equatable {
     isPrivate,
     hideSavedEvents,
     communityData,
+    accountType,
+    phoneNumber,
+    createdAt,
+    updatedAt,
+    lastActiveAt,
+    followeeCount,
+    followerCount,
+    hobbies,
+    followerIds,
+    followeeIds,
+    verifiedEventCount,
+    capabilities,
   ];
 }
 
