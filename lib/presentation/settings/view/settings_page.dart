@@ -20,6 +20,7 @@ import 'package:outnest/presentation/settings/view/components/static_info_widget
 import 'package:outnest/presentation/settings/view/delete_account_page.dart';
 import 'package:outnest/presentation/settings/view/device_permissons_page.dart';
 import 'package:outnest/presentation/settings/view/edit_profile_page.dart';
+import 'package:outnest/presentation/shared/city_selection_dialog.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -36,6 +37,7 @@ class _SettingsPageState extends State<SettingsPage>
   bool _isLocationGranted = false;
   bool _isCameraGranted = false;
   bool _isPhotosGranted = false;
+  String? _updatedCity;
 
   @override
   void initState() {
@@ -208,6 +210,12 @@ class _SettingsPageState extends State<SettingsPage>
     final isCommunity = currentUser?.accountType == AccountType.community;
     final profileImageUrl = currentUser?.profileImageUrl ?? '';
 
+    final userCity =
+        _updatedCity ??
+        ((currentUser?.city != null && currentUser!.city!.trim().isNotEmpty)
+            ? currentUser.city!
+            : 'Seçilmedi');
+
     final content = <Widget>[
       SizedBox(height: 8.h),
       // 1. ÜST KISIM: PROFİLİ DÜZENLE
@@ -251,6 +259,60 @@ class _SettingsPageState extends State<SettingsPage>
           onTap: () {
             context.push('/settings/edit-account');
           },
+        ),
+      )
+      ..add(
+        InkWell(
+          onTap: () async {
+            final returnedCity = await showDialog<String>(
+              context: context,
+              builder: (context) =>
+                  const CitySelectionDialog(isDismissible: true),
+            );
+
+            if (returnedCity != null && mounted) {
+              setState(() {
+                _updatedCity = returnedCity;
+              });
+            }
+          },
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 14.h),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Şehir',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Display',
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.onBackgroundColor,
+                  ),
+                ),
+                Row(
+                  children: [
+                    Text(
+                      userCity,
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Display',
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.textGrey,
+                      ),
+                    ),
+                    SizedBox(width: 6.w),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      color: Colors.black,
+                      size: 16.sp,
+                    ),
+                    SizedBox(width: 4.w),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       )
       ..add(
