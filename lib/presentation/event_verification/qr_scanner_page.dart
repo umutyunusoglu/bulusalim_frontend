@@ -28,7 +28,6 @@ class QRScannerScreen extends HookConsumerWidget {
     final isVerified = useState(false);
     final isLoading = useState(false);
 
-    // Throttle: tarama cooldown flag'i
     final isCooldown = useRef(false);
 
     final verificationService = ref.watch(eventVerificationServiceProvider);
