@@ -188,9 +188,11 @@ class CitySelectionDialog extends HookConsumerWidget {
                               await getIt<UserRepository>().updateUser(userId, {
                                 'city': selectedCity.value,
                               });
-
                               if (context.mounted) {
-                                Navigator.pop(context);
+                                Navigator.pop(
+                                  context,
+                                  selectedCity.value,
+                                );
                               }
                             } catch (_) {
                               if (context.mounted) {
