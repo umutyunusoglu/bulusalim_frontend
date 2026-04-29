@@ -6,7 +6,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:outnest/application/app_state/current_user_data_providers/current_user_identity_provider.dart';
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/utils/types/enums/feed_type.dart';
-import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/analytics/analytics_service.dart';
 import 'package:outnest/domain/services/analytics/event_configs/select_feed_analytics_config.dart';
 import 'package:outnest/presentation/home/view/components/custom_tab_bar.dart';
