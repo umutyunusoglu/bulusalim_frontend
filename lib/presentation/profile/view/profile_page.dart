@@ -37,6 +37,7 @@ import 'package:outnest/presentation/profile/view/components/profile_tab_bar.dar
 import 'package:outnest/presentation/profile/view/dialogs/show_no_shareable_event_dialog.dart';
 import 'package:outnest/presentation/profile/view/dialogs/show_share_selection_dialog.dart';
 import 'package:outnest/presentation/profile/view/dialogs/show_unfollow_dialog.dart';
+import 'package:outnest/domain/services/share_links_service.dart';
 
 class ProfilePage extends HookConsumerWidget {
   const ProfilePage({required this.profileUserID, super.key});
@@ -265,10 +266,13 @@ class ProfilePage extends HookConsumerWidget {
           username: username,
           profileImageUrl: profileImageUrl,
           profileUrl: shareUrl,
-          onInstagramSharePressed: () => actionNotifier
-              .shareProfileToInstagramStory(context, profileUserID),
-          onSharePressed: () =>
-              actionNotifier.shareProfile(context, profileUserID),
+          onInstagramSharePressed: (bytes) async {
+            await getIt<ShareLinksService>().shareUserProfileToInstagramStory(
+              profileUserID,
+              stickerImageBytes: bytes,
+            );
+          },
+          onSharePressed: () => actionNotifier.shareProfile(context, profileUserID),
         ),
       );
     }

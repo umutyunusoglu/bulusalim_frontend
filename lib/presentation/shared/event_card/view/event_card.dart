@@ -403,10 +403,9 @@ class _EventCardState extends State<EventCard> {
           onSharePressed: () => getIt<ShareLinksService>().shareEvent(
             widget.event.id,
           ),
-          onInstagramSharePressed: () =>
-              getIt<ShareLinksService>().shareEventToInstagramStory(
-                widget.event.id,
-              ),
+          onInstagramSharePressed: (bytes) => getIt<ShareLinksService>()
+              .shareEventToInstagramStory(widget.event.id,
+                  stickerImageBytes: bytes),
         ),
       );
     } catch (e) {

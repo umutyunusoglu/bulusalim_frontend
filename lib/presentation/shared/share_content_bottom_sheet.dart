@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -36,7 +37,8 @@ class ShareContentBottomSheet extends StatelessWidget {
   final String scannerButtonLabel;
   final VoidCallback? onScannerPressed;
   final VoidCallback onSharePressed;
-  final VoidCallback onInstagramSharePressed;
+  final Future<void> Function(Uint8List? stickerImageBytes)
+      onInstagramSharePressed;
 
   @override
   Widget build(BuildContext context) {
@@ -219,9 +221,22 @@ class ShareContentBottomSheet extends StatelessWidget {
             width: double.infinity,
             height: 40.h,
             child: ElevatedButton.icon(
-              onPressed: () {
+              onPressed: () async {
+                Uint8List? bytes;
+                final preview = previewImageUrl;
+                if (preview != null && preview.isNotEmpty && preview.startsWith('http')) {
+                  try {
+                    final uri = Uri.parse(preview);
+                    final bundle = NetworkAssetBundle(uri);
+                    final data = await bundle.load(preview);
+                    bytes = data.buffer.asUint8List();
+                  } catch (_) {
+                    bytes = null;
+                  }
+                }
+
                 Navigator.pop(context);
-                onInstagramSharePressed();
+                await onInstagramSharePressed(bytes);
               },
               icon: Icon(
                 Symbols.photo_library,

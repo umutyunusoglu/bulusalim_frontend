@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:outnest/app_router.dart';
 import 'package:outnest/presentation/shared/share_content_bottom_sheet.dart';
@@ -15,7 +16,8 @@ class ProfileShareBottomSheet extends StatelessWidget {
   final String profileImageUrl;
   final String profileUrl;
   final VoidCallback onSharePressed;
-  final VoidCallback onInstagramSharePressed;
+  final Future<void> Function(Uint8List? stickerImageBytes)
+      onInstagramSharePressed;
 
   @override
   Widget build(BuildContext context) {

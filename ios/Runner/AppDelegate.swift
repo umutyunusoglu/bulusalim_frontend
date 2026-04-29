@@ -46,10 +46,9 @@ import UIKit
         return
       }
 
-      guard
-        let args = call.arguments as? [String: Any],
-        let message = args["message"] as? String,
-        let link = args["link"] as? String
+      guard let args = call.arguments as? [String: Any],
+            let message = args["message"] as? String,
+            let link = args["link"] as? String
       else {
         result(
           FlutterError(
@@ -61,13 +60,30 @@ import UIKit
         return
       }
 
-      result(self?.shareToInstagramStory(message: message, link: link) ?? false)
+      // Optional sticker image bytes from Flutter. Accept multiple possible types.
+      var stickerDataArg: Data? = nil
+      if let stickerAny = args["stickerImage"] {
+        switch stickerAny {
+        case let typed as FlutterStandardTypedData:
+          stickerDataArg = typed.data
+        case let data as Data:
+          stickerDataArg = data
+        case let nsdata as NSData:
+          stickerDataArg = Data(referencing: nsdata)
+        case let byteArray as [UInt8]:
+          stickerDataArg = Data(byteArray)
+        default:
+          break
+        }
+      }
+
+      result(self?.shareToInstagramStory(message: message, link: link, stickerDataParam: stickerDataArg) ?? false)
     }
 
     instagramStoryChannel = channel
   }
 
-  private func shareToInstagramStory(message: String, link: String) -> Bool {
+  private func shareToInstagramStory(message: String, link: String, stickerDataParam: Data? = nil) -> Bool {
     guard let linkUrl = URL(string: link) else { return false }
 
     let instagramUrl = URL(string: "instagram-stories://share")!
@@ -75,8 +91,14 @@ import UIKit
       return false
     }
 
-    guard let stickerData = makeStickerImageData(message: message, link: link) else {
-      return false
+    let stickerData: Data
+    if let provided = stickerDataParam {
+      stickerData = provided
+    } else {
+      guard let generated = makeStickerImageData(message: message, link: link) else {
+        return false
+      }
+      stickerData = generated
     }
 
     let pasteboardItems: [[String: Any]] = [

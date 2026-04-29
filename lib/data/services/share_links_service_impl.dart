@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 import 'package:outnest/core/constants/configs/app_store_redirect_config.dart';
@@ -59,16 +60,22 @@ class ShareLinksServiceImpl extends ShareLinksService {
   Future<bool> _shareToInstagramStory({
     required String contentLabel,
     required Uri link,
+    Uint8List? stickerImageBytes,
   }) async {
     if (!Platform.isIOS && !Platform.isAndroid) return false;
 
     try {
+      final args = <String, dynamic>{
+        'message': '$contentLabel $_appName',
+        'link': link.toString(),
+      };
+      if (stickerImageBytes != null) {
+        args['stickerImage'] = stickerImageBytes;
+      }
+
       final shared = await _instagramStoryChannel.invokeMethod<bool>(
         'shareToInstagramStory',
-        {
-          'message': '$contentLabel $_appName',
-          'link': link.toString(),
-        },
+        args,
       );
       return shared ?? false;
     } on PlatformException catch (e) {
@@ -87,11 +94,15 @@ class ShareLinksServiceImpl extends ShareLinksService {
   }
 
   @override
-  Future<void> sharePostToInstagramStory(String postId) async {
+  Future<void> sharePostToInstagramStory(
+    String postId, {
+    Uint8List? stickerImageBytes,
+  }) async {
     final link = post(postId);
     final shared = await _shareToInstagramStory(
       contentLabel: 'Bu gönderiye göz at -',
       link: link,
+      stickerImageBytes: stickerImageBytes,
     );
     if (!shared) {
       await _shareContent(contentLabel: 'Bu gönderiye göz at -', link: link);
@@ -105,11 +116,15 @@ class ShareLinksServiceImpl extends ShareLinksService {
   }
 
   @override
-  Future<void> shareEventToInstagramStory(String eventId) async {
+  Future<void> shareEventToInstagramStory(
+    String eventId, {
+    Uint8List? stickerImageBytes,
+  }) async {
     final link = event(eventId);
     final shared = await _shareToInstagramStory(
       contentLabel: 'Bu etkinliğe göz at -',
       link: link,
+      stickerImageBytes: stickerImageBytes,
     );
     if (!shared) {
       await _shareContent(contentLabel: 'Bu etkinliğe göz at -', link: link);
@@ -123,11 +138,15 @@ class ShareLinksServiceImpl extends ShareLinksService {
   }
 
   @override
-  Future<void> shareUserProfileToInstagramStory(String userId) async {
+  Future<void> shareUserProfileToInstagramStory(
+    String userId, {
+    Uint8List? stickerImageBytes,
+  }) async {
     final link = user(userId);
     final shared = await _shareToInstagramStory(
       contentLabel: 'Bu profile göz at -',
       link: link,
+      stickerImageBytes: stickerImageBytes,
     );
     if (!shared) {
       await _shareContent(contentLabel: 'Bu profile göz at -', link: link);

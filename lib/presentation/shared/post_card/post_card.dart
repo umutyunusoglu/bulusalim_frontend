@@ -401,10 +401,9 @@ class _PostCardState extends State<PostCard> {
           onSharePressed: () => getIt<ShareLinksService>().sharePost(
             widget.post.id,
           ),
-          onInstagramSharePressed: () =>
-              getIt<ShareLinksService>().sharePostToInstagramStory(
-                widget.post.id,
-              ),
+          onInstagramSharePressed: (bytes) => getIt<ShareLinksService>()
+              .sharePostToInstagramStory(widget.post.id,
+                  stickerImageBytes: bytes),
         ),
       );
     } catch (e) {
