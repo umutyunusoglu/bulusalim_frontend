@@ -1,5 +1,3 @@
-import 'dart:isolate';
-
 import 'package:equatable/equatable.dart';
 import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
 import 'package:outnest/core/utils/types/enums/capability.dart';
