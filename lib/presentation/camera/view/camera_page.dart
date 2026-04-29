@@ -38,6 +38,7 @@ class CameraPage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMounted = useIsMounted();
     final takenPhotos = useState<List<File>>([]);
     final isCameraInitialized = useState(false);
     final selectedCameraIndex = useState(0);
@@ -100,7 +101,12 @@ class CameraPage extends HookWidget {
         } catch (_) {}
         return;
       }
-
+      if (initToken.value != myToken || !isMounted()) {
+        try {
+          await newController.dispose();
+        } catch (_) {}
+        return;
+      }
       controllerRef.value = newController;
       isCameraInitialized.value = true;
     }
