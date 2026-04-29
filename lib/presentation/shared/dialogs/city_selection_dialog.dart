@@ -188,7 +188,7 @@ class CitySelectionDialog extends HookConsumerWidget {
                               'city': selectedCity.value,
                             });
                             if (context.mounted) {
-                              Navigator.pop(context, selectedCity.value);
+                              Navigator.pop(context);
                             }
                           }
                         }

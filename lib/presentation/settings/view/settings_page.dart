@@ -20,7 +20,7 @@ import 'package:outnest/presentation/settings/view/components/static_info_widget
 import 'package:outnest/presentation/settings/view/delete_account_page.dart';
 import 'package:outnest/presentation/settings/view/device_permissons_page.dart';
 import 'package:outnest/presentation/settings/view/edit_profile_page.dart';
-import 'package:outnest/presentation/shared/city_selection_dialog.dart';
+import 'package:outnest/presentation/shared/dialogs/city_selection_dialog.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class SettingsPage extends StatefulWidget {
