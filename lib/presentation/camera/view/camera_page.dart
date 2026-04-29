@@ -101,7 +101,12 @@ class CameraPage extends HookWidget {
         } catch (_) {}
         return;
       }
-      if (initToken.value != myToken || !isMounted()) return;
+      if (initToken.value != myToken || !isMounted()) {
+        try {
+          await newController.dispose();
+        } catch (_) {}
+        return;
+      }
       controllerRef.value = newController;
       isCameraInitialized.value = true;
     }
