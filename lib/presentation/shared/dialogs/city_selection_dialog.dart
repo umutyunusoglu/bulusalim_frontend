@@ -184,11 +184,24 @@ class CitySelectionDialog extends HookConsumerWidget {
                       ? () async {
                           final userId = ref.read(currentUserIDProvider);
                           if (userId != null) {
-                            await getIt<UserRepository>().updateUser(userId, {
-                              'city': selectedCity.value,
-                            });
-                            if (context.mounted) {
-                              Navigator.pop(context);
+                            try {
+                              await getIt<UserRepository>().updateUser(userId, {
+                                'city': selectedCity.value,
+                              });
+
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                              }
+                            } catch (_) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Şehir kaydedilemedi. Lütfen tekrar deneyin.',
+                                    ),
+                                  ),
+                                );
+                              }
                             }
                           }
                         }
