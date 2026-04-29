@@ -60,7 +60,7 @@ class ShareLinksServiceImpl extends ShareLinksService {
     required String contentLabel,
     required Uri link,
   }) async {
-    if (!Platform.isIOS) return false;
+    if (!Platform.isIOS && !Platform.isAndroid) return false;
 
     try {
       final shared = await _instagramStoryChannel.invokeMethod<bool>(

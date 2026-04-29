@@ -4,47 +4,67 @@ import UIKit
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   private let instagramStoryChannelName = "outnest/share/instagram_story"
+  private var instagramStoryChannel: FlutterMethodChannel?
 
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    if let controller = window?.rootViewController as? FlutterViewController {
-      let channel = FlutterMethodChannel(
-        name: instagramStoryChannelName,
-        binaryMessenger: controller.binaryMessenger
-      )
-
-      channel.setMethodCallHandler { [weak self] call, result in
-        guard call.method == "shareToInstagramStory" else {
-          result(FlutterMethodNotImplemented)
-          return
-        }
-
-        guard
-          let args = call.arguments as? [String: Any],
-          let message = args["message"] as? String,
-          let link = args["link"] as? String
-        else {
-          result(
-            FlutterError(
-              code: "invalid_args",
-              message: "Missing message or link",
-              details: nil
-            )
-          )
-          return
-        }
-
-        result(self?.shareToInstagramStory(message: message, link: link) ?? false)
-      }
+    let didFinishLaunching = super.application(
+      application,
+      didFinishLaunchingWithOptions: launchOptions
+    )
+    DispatchQueue.main.async { [weak self] in
+      self?.configureInstagramStoryChannelIfNeeded()
     }
+    return didFinishLaunching
+  }
 
-    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  override func applicationDidBecomeActive(_ application: UIApplication) {
+    super.applicationDidBecomeActive(application)
+    configureInstagramStoryChannelIfNeeded()
   }
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+  }
+
+  private func configureInstagramStoryChannelIfNeeded() {
+    guard instagramStoryChannel == nil else { return }
+    guard let controller = window?.rootViewController as? FlutterViewController else {
+      return
+    }
+
+    let channel = FlutterMethodChannel(
+      name: instagramStoryChannelName,
+      binaryMessenger: controller.binaryMessenger
+    )
+
+    channel.setMethodCallHandler { [weak self] call, result in
+      guard call.method == "shareToInstagramStory" else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+
+      guard
+        let args = call.arguments as? [String: Any],
+        let message = args["message"] as? String,
+        let link = args["link"] as? String
+      else {
+        result(
+          FlutterError(
+            code: "invalid_args",
+            message: "Missing message or link",
+            details: nil
+          )
+        )
+        return
+      }
+
+      result(self?.shareToInstagramStory(message: message, link: link) ?? false)
+    }
+
+    instagramStoryChannel = channel
   }
 
   private func shareToInstagramStory(message: String, link: String) -> Bool {
