@@ -119,6 +119,7 @@ flutter:
     - assets/data/
     - assets/defaults/
     - assets/outnest/
+    - assets/tutorial/
     - .env
 fonts:
     - family: SF Pro Display
