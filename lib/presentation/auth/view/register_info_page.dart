@@ -5,11 +5,13 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Sadece BottomSheet içinden veriyi çekmek için eklendi
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:outnest/application/data_providers/turkey_cities_provider.dart'; // Şehir listesi klasörden çekildi
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
@@ -54,6 +56,7 @@ enum RegisterStep {
   universityEmail,
   universityOtp,
   gender,
+  city,
   profilePhoto,
   interests,
   permissions,
@@ -65,7 +68,8 @@ final Map<RegisterStep, RegisterStep> backSteps = {
   RegisterStep.universityEmail: RegisterStep.dob,
   RegisterStep.universityOtp: RegisterStep.universityEmail,
   RegisterStep.gender: RegisterStep.universityEmail,
-  RegisterStep.profilePhoto: RegisterStep.gender,
+  RegisterStep.city: RegisterStep.gender,
+  RegisterStep.profilePhoto: RegisterStep.city,
   RegisterStep.interests: RegisterStep.profilePhoto,
   RegisterStep.permissions: RegisterStep.interests,
 };
@@ -80,6 +84,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
   final _dobController = TextEditingController();
   final _universityController = TextEditingController();
   final _genderDisplayController = TextEditingController();
+  final _cityDisplayController = TextEditingController();
   final _friendSearchController = TextEditingController();
   // --- İZİN STATE'LERİ (Varsayılan Kapalı) ---
   bool _permNotifications = false;
@@ -122,6 +127,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
     _dobController.dispose();
     _universityController.dispose();
     _genderDisplayController.dispose();
+    _cityDisplayController.dispose();
     _friendSearchController.dispose();
     for (final c in _eduOtpControllers) {
       c.dispose();
@@ -170,6 +176,8 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
         analytics.logSelectGender(
           SelectGenderAnalyticsConfig(value: chosenGender, previousValue: null),
         );
+        break;
+      case RegisterStep.city:
         break;
       case RegisterStep.profilePhoto:
         // Fotoğraf seçimi validasyonu yapılacak
@@ -233,6 +241,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
       final dob = _selectedDate!;
       GenderEnum gender;
       gender = GenderEnum.fromString(_genderDisplayController.text);
+      final city = _cityDisplayController.text.trim();
 
       final interests = _selectedInterests;
       final uploadUseCase = getIt<UploadProfilePicture>();
@@ -262,7 +271,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
         university: university,
         universityEmail: universityEmail,
         profileImageUrl: profileImageUrl,
-        city: null, //TODO: must be provided by user in registration flow
+        city: city.isEmpty ? null : city,
         bio: '',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -280,7 +289,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
         newUser,
       );
 
-      if (!mounted) return; // Eklemen gereken satır
+      if (!mounted) return;
       context.go('/splash', extra: UniqueKey());
     } catch (e, stackTrace) {
       // Konsola detaylı bas ki hatayı görebilelim
@@ -312,6 +321,145 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
         _selectedInterests.add(category);
       }
     });
+  }
+
+  void _showCityPicker() {
+    String searchQuery = '';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Consumer(
+              builder: (context, ref, child) {
+                final cities = ref.watch(turkeyCitiesProvider);
+                final filteredCities = cities
+                    .where(
+                      (c) =>
+                          c.toLowerCase().contains(searchQuery.toLowerCase()),
+                    )
+                    .toList();
+
+                return Container(
+                  height: MediaQuery.of(context).size.height * 0.7,
+                  padding: EdgeInsets.only(
+                    top: 20.h,
+                    left: 20.w,
+                    right: 20.w,
+                    bottom: MediaQuery.of(context).viewInsets.bottom,
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Şehrini Seç',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Display',
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.onBackgroundColor,
+                        ),
+                      ),
+                      SizedBox(height: 16.h),
+                      Container(
+                        height: 40.h,
+                        decoration: BoxDecoration(
+                          color: AppColors.inputFillColor,
+                          borderRadius: BorderRadius.circular(25.r),
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Symbols.search,
+                              color: AppColors.textGrey,
+                              size: 20.sp,
+                            ),
+                            SizedBox(width: 10.w),
+                            Expanded(
+                              child: TextField(
+                                onChanged: (val) {
+                                  setModalState(() {
+                                    searchQuery = val;
+                                  });
+                                },
+                                textAlignVertical: TextAlignVertical.center,
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Display',
+                                  fontSize: 14.sp,
+                                  color: AppColors.onBackgroundColor,
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: 'Şehir ara...',
+                                  hintStyle: TextStyle(
+                                    fontFamily: 'SF Pro Display',
+                                    color: AppColors.textGrey,
+                                    fontSize: 14.sp,
+                                  ),
+                                  border: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 12.h),
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: filteredCities.length,
+                          itemBuilder: (context, index) {
+                            final city = filteredCities[index];
+                            final isSelected =
+                                _cityDisplayController.text == city;
+                            return ListTile(
+                              title: Text(
+                                city,
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Display',
+                                  fontSize: 14.sp,
+                                  color: isSelected
+                                      ? AppColors.primaryColor
+                                      : AppColors.onBackgroundColor,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                              trailing: isSelected
+                                  ? Icon(
+                                      Symbols.check_circle,
+                                      color: AppColors.primaryColor,
+                                      size: 20.sp,
+                                    )
+                                  : null,
+                              onTap: () {
+                                setState(() {
+                                  _cityDisplayController.text = city;
+                                });
+                                Navigator.pop(context);
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
   }
 
   // --- CUPERTINO DATE PICKER ---
@@ -680,6 +828,26 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                 ),
 
                 RegisterStepView(
+                  title: 'Şehrini Seç',
+                  controller: _cityDisplayController,
+                  hintText: 'lütfen seçiniz',
+                  description:
+                      "Sana en uygun buluşmaları gösterebilmemiz için lütfen yaşadığın şehri doğru gir. Daha sonra Ayarlar'dan değişiklik yapabilirsin.",
+                  readOnly: true,
+                  onTapInput: _showCityPicker,
+                  onNext: () {
+                    if (_cityDisplayController.text.trim().isEmpty) {
+                      showErrorPopup(
+                        context,
+                        message: 'Lütfen bir şehir seçiniz.',
+                      );
+                      return;
+                    }
+                    _nextPage();
+                  },
+                ),
+
+                RegisterStepView(
                   title: 'Profil Fotoğrafı',
                   onNext: _nextPage,
                   customContent: GestureDetector(
@@ -1021,7 +1189,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
   }) {
     return InkWell(
       borderRadius: BorderRadius.circular(12.r),
-      // DEĞİŞİKLİK: Eğer değer true (izin verilmiş) ise onTap null olsun
       onTap: () => _handlePermissionTap(permission),
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: 14.h),
@@ -1037,7 +1204,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                     style: TextStyle(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w500,
-                      // DEĞİŞİKLİK: İzin verilince rengi hafifçe soluklaştırabilirsin (opsiyonel)
                       color: value ? Colors.black87 : Colors.black,
                     ),
                   ),
