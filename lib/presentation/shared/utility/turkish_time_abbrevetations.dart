@@ -1,6 +1,6 @@
 import 'package:timeago/timeago.dart' as timeago;
 
-class TurkishTimeAbbrevetations implements timeago.LookupMessages {
+class TurkishTimeAbbreviations implements timeago.LookupMessages {
   // ... (Önceki kod ile aynı)
   @override
   String prefixAgo() => '';
