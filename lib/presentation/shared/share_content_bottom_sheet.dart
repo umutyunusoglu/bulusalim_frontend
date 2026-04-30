@@ -215,7 +215,7 @@ class ShareContentBottomSheet extends StatelessWidget {
             ),
           ),
           SizedBox(height: 20.h),
-          SizedBox(
+          /* SizedBox(
             width: double.infinity,
             height: 40.h,
             child: ElevatedButton.icon(
@@ -245,7 +245,7 @@ class ShareContentBottomSheet extends StatelessWidget {
                 elevation: 0,
               ),
             ),
-          ),
+          ),*/
           SizedBox(height: 10.h),
           SizedBox(
             width: double.infinity,
