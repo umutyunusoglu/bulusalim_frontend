@@ -267,7 +267,7 @@ class _FollowRequestTileState extends State<FollowRequestTile> {
   // --- BUILD ---
   @override
   Widget build(BuildContext context) {
-    timeago.setLocaleMessages('tr_short', TurkishTimeAbbrevetations());
+    timeago.setLocaleMessages('tr_short', TurkishTimeAbbreviations());
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
