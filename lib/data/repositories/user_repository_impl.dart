@@ -628,6 +628,8 @@ class UserRepositoryImpl implements UserRepository {
           'status',
           isEqualTo: 'pending',
         )
+        .where('isActive', isEqualTo: true)
+        .orderBy('updatedAt', descending: true)
         .snapshots()
         .asyncMap((snapshot) async {
           if (snapshot.docs.isEmpty) return [];
