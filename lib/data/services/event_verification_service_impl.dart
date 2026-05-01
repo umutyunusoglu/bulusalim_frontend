@@ -45,7 +45,7 @@ class EventVerificationServiceImpl implements EventVerificationService {
       final geohash = geoHasher.encode(
         currentLocation.longitude,
         currentLocation.latitude,
-        precision: 6,
+        precision: 1,
       );
 
       final key = _generateKey(currentUserId!, geohash);
@@ -112,7 +112,7 @@ class EventVerificationServiceImpl implements EventVerificationService {
       final myGeohash = geohasher.encode(
         currentLocation.longitude,
         currentLocation.latitude,
-        precision: 6,
+        precision: 1,
       );
 
       final allCandidateGeohashes = geohasher.neighbors(myGeohash).values;

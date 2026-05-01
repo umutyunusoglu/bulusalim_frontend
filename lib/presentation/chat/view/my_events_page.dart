@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:material_symbols_icons/symbols.dart';
-import 'package:outnest/application/providers/navbar_badge_provider.dart';
-import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/application/app_state/current_user_data_providers/current_user_event_providers.dart';
 import 'package:outnest/application/app_state/current_user_data_providers/current_user_identity_provider.dart';
+import 'package:outnest/application/providers/navbar_badge_provider.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/presentation/chat/view/components/event_chat_card.dart';
+
 @immutable
 class MyEventItemData {
   const MyEventItemData({
@@ -33,7 +31,6 @@ class MyEventsPage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // --- HOOKS ---
     useMemoized(() => initializeDateFormatting('tr_TR'));
-    final selectedTab = useState(0);
 
     // --- PROVIDERS ---
     final currentUserId = ref.watch(currentUserIDProvider);
@@ -48,38 +45,19 @@ class MyEventsPage extends HookConsumerWidget {
       );
     }).toList();
 
-    // --- BADGE SYNC (notifications branch'inden) ---
+    // --- BADGE SYNC ---
     final hasUnreadChat = chatEvents.any((item) => item.unreadChatCount > 0);
     useEffect(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(navBarBadgeProvider).setBadge(
-          tabIndex: 3,
-          visible: hasUnreadChat,
-        );
+        ref
+            .read(navBarBadgeProvider)
+            .setBadge(
+              tabIndex: 3,
+              visible: hasUnreadChat,
+            );
       });
       return null;
-    }, [hasUnreadChat]); // sadece hasUnreadChat değişince çalışır
-
-    // --- FİLTRELEME ---
-    final filteredItems = chatEvents.where((item) {
-      final isCreator = item.event.creator.userID == currentUserId;
-      if (selectedTab.value == 0) {
-        return isCreator;
-      } else {
-        final isParticipant = item.event.participants.any(
-          (p) => p.userID == currentUserId,
-        );
-        final isPending = item.event.requestPool.any(
-          (req) => req.userID == currentUserId,
-        );
-        return !isCreator && (isParticipant || isPending);
-      }
-    }).toList();
-
-    // --- HEADER BİLDİRİM SAYISI ---
-    final totalCreatorNotifications = chatEvents
-        .where((item) => item.event.creator.userID == currentUserId)
-        .fold(0, (sum, item) => sum + item.pendingRequestCount);
+    }, [hasUnreadChat]);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -95,7 +73,6 @@ class MyEventsPage extends HookConsumerWidget {
                 bottom: 13.h,
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     'Buluşmalarım',
@@ -108,27 +85,21 @@ class MyEventsPage extends HookConsumerWidget {
                       color: AppColors.darkSlate,
                     ),
                   ),
-                  _buildCustomToggle(
-                    selectedTab: selectedTab,
-                    creatorNotificationCount: totalCreatorNotifications,
-                  ),
                 ],
               ),
             ),
             Divider(height: 1, color: Colors.grey.withOpacity(0.2)),
 
-            // LİSTE
+            // LİSTE VEYA BOŞ DURUM
             Expanded(
-              child: filteredItems.isEmpty
-                  ? (selectedTab.value == 0
-                      ? _buildEmptyCreatorState(context)
-                      : _buildEmptyParticipantState(context))
+              child: chatEvents.isEmpty
+                  ? _buildCombinedEmptyState()
                   : ListView.separated(
                       padding: EdgeInsets.symmetric(
                         horizontal: 24.w,
                         vertical: 24.h,
                       ),
-                      itemCount: filteredItems.length,
+                      itemCount: chatEvents.length,
                       separatorBuilder: (c, i) => Padding(
                         padding: EdgeInsets.symmetric(vertical: 20.h),
                         child: const Divider(
@@ -138,18 +109,21 @@ class MyEventsPage extends HookConsumerWidget {
                         ),
                       ),
                       itemBuilder: (context, index) {
-                        final item = filteredItems[index];
+                        final item = chatEvents[index];
                         final rawImage = item.event.creator.profileImageUrl;
                         final safeCreatorImage = rawImage.isNotEmpty
                             ? rawImage
                             : FileService.defaultProfileImageUrl();
+
+                        final isCreator =
+                            item.event.creator.userID == currentUserId;
                         final isPending = item.event.requestPool.any(
                           (u) => u.userID == currentUserId,
                         );
 
                         return EventChatCard(
                           event: item.event,
-                          isCreator: selectedTab.value == 0,
+                          isCreator: isCreator,
                           isPending: isPending,
                           pendingRequestCount: item.pendingRequestCount,
                           chatNotificationCount: item.unreadChatCount,
@@ -168,8 +142,7 @@ class MyEventsPage extends HookConsumerWidget {
                               '/chat/room/${item.event.eventID}',
                               extra: {
                                 'title': item.event.name,
-                                'location':
-                                    item.event.displayAddress.isNotEmpty
+                                'location': item.event.displayAddress.isNotEmpty
                                     ? item.event.displayAddress
                                     : 'Konum Yok',
                                 'participants':
@@ -193,219 +166,21 @@ class MyEventsPage extends HookConsumerWidget {
     );
   }
 
-  // --- TOGGLE ---
-
-  Widget _buildCustomToggle({
-    required ValueNotifier<int> selectedTab,
-    int creatorNotificationCount = 0,
-  }) {
-    return Container(
-      width: 114.w,
-      height: 30.h,
-      decoration: BoxDecoration(
-        color: AppColors.lightCloud,
-        borderRadius: BorderRadius.circular(30.r),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildToggleItem(
-              'kurucu',
-              0,
-              selectedTab: selectedTab,
-              notificationCount: creatorNotificationCount,
-            ),
+  Widget _buildCombinedEmptyState() {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 40.w),
+        child: Text(
+          'Şu anda dahil olduğunuz veya kurduğunuz bir buluşma bulunmamaktadır.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'SF Pro Display',
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textGrey,
+            height: 1.4,
           ),
-          Expanded(
-            child: _buildToggleItem('katılımcı', 1, selectedTab: selectedTab),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildToggleItem(
-    String text,
-    int index, {
-    required ValueNotifier<int> selectedTab,
-    int notificationCount = 0,
-  }) {
-    final isSelected = selectedTab.value == index;
-
-    return GestureDetector(
-      onTap: () {
-        if (selectedTab.value != index) {
-          selectedTab.value = index;
-        }
-      },
-      child: Container(
-        color: Colors.transparent,
-        alignment: Alignment.center,
-        child: Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.center,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 61.w,
-              height: 22.h,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.darkSlate : Colors.transparent,
-                borderRadius: BorderRadius.circular(30.r),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 2,
-                          offset: const Offset(0, 1),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Text(
-                text,
-                maxLines: 1,
-                style: TextStyle(
-                  fontFamily: 'SF Pro Display',
-                  fontWeight: FontWeight.w400,
-                  fontSize: 12.sp,
-                  height: 1,
-                  letterSpacing: 0,
-                  color: isSelected ? Colors.white : AppColors.darkSlate,
-                ),
-              ),
-            ),
-            if (notificationCount > 0)
-              Positioned(
-                top: -6.h,
-                right: -4.w,
-                child: Container(
-                  padding: EdgeInsets.all(4.w),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryColor,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.lightCloud, width: 1.5),
-                  ),
-                  child: Text(
-                    notificationCount.toString(),
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 9.sp,
-                      fontWeight: FontWeight.bold,
-                      height: 1,
-                    ),
-                  ),
-                ),
-              ),
-          ],
         ),
-      ),
-    );
-  }
-
-  // --- EMPTY STATES ---
-
-  Widget _buildEmptyCreatorState(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10.w),
-            child: Text(
-              'Şu anda kurulu bir buluşmanız bulunmamaktadır.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'SF Pro Display',
-                fontWeight: FontWeight.w500,
-                fontSize: 14.sp,
-                color: AppColors.textGrey,
-              ),
-            ),
-          ),
-          SizedBox(height: 20.5.h),
-          GestureDetector(
-            onTap: () => context.go('/map'),
-            child: Column(
-              children: [
-                Container(
-                  width: 95.w,
-                  height: 95.w,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.salmonPink.withOpacity(0.2),
-                    border: Border.all(color: AppColors.salmonPink, width: 2),
-                  ),
-                  child: Icon(
-                    Icons.add,
-                    size: 60.sp,
-                    color: AppColors.salmonPink,
-                  ),
-                ),
-                SizedBox(height: 12.5.h),
-                Text(
-                  'Buluşma Oluştur',
-                  style: TextStyle(
-                    fontFamily: 'Sf Pro Display',
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.salmonPink,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 50.h),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyParticipantState(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 40.w),
-            child: Text(
-              'Şu anda katılımcısı olduğunuz veya katılım onayı beklediğiniz bir buluşma bulunmamaktadır.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'SF Pro Display',
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textGrey,
-                height: 1.4,
-              ),
-            ),
-          ),
-          SizedBox(height: 16.h),
-          GestureDetector(
-            onTap: () => context.go('/home'),
-            child: Column(
-              children: [
-                Icon(
-                  Symbols.map_search,
-                  size: 90.sp,
-                  color: AppColors.salmonPink.withOpacity(0.3),
-                ),
-                SizedBox(height: 16.h),
-                Text(
-                  'Buluşmaları Keşfet',
-                  style: TextStyle(
-                    fontFamily: 'SF Pro Display',
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.salmonPink,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 60.h),
-        ],
       ),
     );
   }

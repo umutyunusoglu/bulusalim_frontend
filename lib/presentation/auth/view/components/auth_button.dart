@@ -23,17 +23,22 @@ class AuthButton extends StatelessWidget {
           backgroundColor: AppColors.tertiaryColor,
           foregroundColor: Colors.white,
           elevation: 0,
+          padding: EdgeInsets.symmetric(horizontal: 12.w),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20.r),
           ),
         ),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontFamily: 'SF Pro Display',
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w500,
-            letterSpacing: 0.5,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            text,
+            maxLines: 1,
+            style: TextStyle(
+              fontFamily: 'SF Pro Display',
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.5,
+            ),
           ),
         ),
       ),
