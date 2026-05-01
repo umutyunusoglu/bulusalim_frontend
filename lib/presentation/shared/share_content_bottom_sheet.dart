@@ -1,6 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -9,16 +8,14 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 class ShareContentBottomSheet extends StatelessWidget {
   const ShareContentBottomSheet({
-    super.key,
     required this.title,
     required this.shareUrl,
     required this.onSharePressed,
-    required this.onInstagramSharePressed,
+    super.key,
     this.subtitle,
     this.avatarImageUrl,
     this.previewImageUrl,
     this.shareButtonLabel = 'Bağlantıyı Paylaş',
-    this.instagramButtonLabel = 'Instagram Hikayede Paylaş',
     this.copySuccessMessage = 'Bağlantı kopyalandı!',
     this.showScannerButton = false,
     this.onScannerPressed,
@@ -31,14 +28,11 @@ class ShareContentBottomSheet extends StatelessWidget {
   final String? previewImageUrl;
   final String shareUrl;
   final String shareButtonLabel;
-  final String instagramButtonLabel;
   final String copySuccessMessage;
   final bool showScannerButton;
   final String scannerButtonLabel;
   final VoidCallback? onScannerPressed;
-  final VoidCallback onSharePressed;
-  final Future<void> Function(Uint8List? stickerImageBytes)
-      onInstagramSharePressed;
+  final Future<void> Function(Uint8List? imageBytes) onSharePressed;
 
   @override
   Widget build(BuildContext context) {
@@ -222,53 +216,10 @@ class ShareContentBottomSheet extends StatelessWidget {
             height: 40.h,
             child: ElevatedButton.icon(
               onPressed: () async {
-                Uint8List? bytes;
-                final preview = previewImageUrl;
-                if (preview != null && preview.isNotEmpty && preview.startsWith('http')) {
-                  try {
-                    final uri = Uri.parse(preview);
-                    final bundle = NetworkAssetBundle(uri);
-                    final data = await bundle.load(preview);
-                    bytes = data.buffer.asUint8List();
-                  } catch (_) {
-                    bytes = null;
-                  }
-                }
-
-                Navigator.pop(context);
-                await onInstagramSharePressed(bytes);
-              },
-              icon: Icon(
-                Symbols.photo_library,
-                size: 24.sp,
-                color: Colors.white,
-              ),
-              label: Text(
-                instagramButtonLabel,
-                style: TextStyle(
-                  fontFamily: 'SF Pro Display',
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE1306C),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                elevation: 0,
-              ),
-            ),
-          ),
-          SizedBox(height: 10.h),
-          SizedBox(
-            width: double.infinity,
-            height: 40.h,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                onSharePressed();
+                final navigator = Navigator.of(context);
+                final bytes = await _loadShareImageBytes();
+                navigator.pop();
+                await onSharePressed(bytes);
               },
               icon: Icon(Symbols.ios_share, size: 24.sp, color: Colors.white),
               label: Text(
@@ -318,6 +269,24 @@ class ShareContentBottomSheet extends StatelessWidget {
     );
   }
 
+  Future<Uint8List?> _loadShareImageBytes() async {
+    final preview = previewImageUrl?.isNotEmpty == true
+        ? previewImageUrl
+        : avatarImageUrl;
+    if (preview == null || preview.isEmpty || !preview.startsWith('http')) {
+      return null;
+    }
+
+    try {
+      final uri = Uri.parse(preview);
+      final bundle = NetworkAssetBundle(uri);
+      final data = await bundle.load(preview);
+      return data.buffer.asUint8List();
+    } on Object {
+      return null;
+    }
+  }
+
   ImageProvider? _buildAvatarImage() {
     final url = avatarImageUrl;
     if (url == null || url.isEmpty) return null;
@@ -338,7 +307,7 @@ class ShareContentBottomSheet extends StatelessWidget {
           alignment: Alignment.center,
           child: const CircularProgressIndicator(strokeWidth: 2),
         ),
-        errorWidget: (context, _, __) => Container(
+        errorWidget: (context, error, stackTrace) => Container(
           color: AppColors.cardBackgroundColor,
           alignment: Alignment.center,
           child: Icon(

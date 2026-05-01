@@ -2,20 +2,11 @@
 import 'dart:typed_data';
 
 abstract class ShareLinksService {
-  Future<void> sharePost(String postId);
+  Future<void> sharePost(String postId, {Uint8List? imageBytes});
 
-  Future<void> sharePostToInstagramStory(String postId,
-    {Uint8List? stickerImageBytes});
+  Future<void> shareEvent(String eventId, {Uint8List? imageBytes});
 
-  Future<void> shareEvent(String eventId);
-
-  Future<void> shareEventToInstagramStory(String eventId,
-    {Uint8List? stickerImageBytes});
-
-  Future<void> shareUserProfile(String userId);
-
-  Future<void> shareUserProfileToInstagramStory(String userId,
-    {Uint8List? stickerImageBytes});
+  Future<void> shareUserProfile(String userId, {Uint8List? imageBytes});
 
   void setPendingDeepLink(String? deepLink);
 

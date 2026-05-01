@@ -400,12 +400,10 @@ class _EventCardState extends State<EventCard> {
           avatarImageUrl: widget.event.creator.profileImageUrl,
           shareUrl: shareUrl,
           shareButtonLabel: 'Buluşmayı Paylaş',
-          onSharePressed: () => getIt<ShareLinksService>().shareEvent(
+          onSharePressed: (bytes) => getIt<ShareLinksService>().shareEvent(
             widget.event.id,
+            imageBytes: bytes,
           ),
-          onInstagramSharePressed: (bytes) => getIt<ShareLinksService>()
-              .shareEventToInstagramStory(widget.event.id,
-                  stickerImageBytes: bytes),
         ),
       );
     } catch (e) {
