@@ -9,9 +9,7 @@ import 'package:outnest/domain/repositories/user_repository.dart';
 /// Returns an empty list if the user is not authenticated.
 /// Auto-disposes when no longer listened to.
 final StreamProvider<List<EventEntity>> ongoingEventsProvider =
-    StreamProvider.autoDispose<List<EventEntity>>((
-      ref,
-    ) {
+    StreamProvider.autoDispose<List<EventEntity>>((ref) {
       final userID = ref.watch(currentUserIDProvider);
       if (userID == null) return Stream.value([]);
 
@@ -49,6 +47,14 @@ final StreamProvider<List<EventEntity>> completedAndActiveEventsProvider =
       return getIt<UserRepository>().watchCompletedAndActiveEvents(userID);
     });
 
+final StreamProvider<List<EventEntity>> pendingEventsProvider =
+    StreamProvider.autoDispose<List<EventEntity>>((ref) {
+      final userID = ref.watch(currentUserIDProvider);
+      if (userID == null) return Stream.value([]);
+
+      return getIt<UserRepository>().watchPendingEvents(userID);
+    });
+
 /// Combines [ongoingEventsProvider] and [upcomingEventsProvider] into a single
 /// flat list of all active events (ongoing + upcoming) for the current user.
 ///
@@ -60,13 +66,25 @@ final Provider<List<EventEntity>> upcomingAndOngoingEventsProvider =
       return [...ongoing, ...upcoming];
     });
 
-/// Combines [ongoingEventsProvider], [upcomingEventsProvider] and [completedAndActiveEventsProvider] into a single
-/// flat list of all active events (ongoing + upcoming + completed but still active)
+/// Combines ongoing, upcoming, completedAndActive AND pending events.
 final Provider<List<EventEntity>> activeEventsProvider =
     Provider.autoDispose<List<EventEntity>>((ref) {
       final ongoing = ref.watch(ongoingEventsProvider).value ?? [];
       final upcoming = ref.watch(upcomingEventsProvider).value ?? [];
       final completedAndActive =
           ref.watch(completedAndActiveEventsProvider).value ?? [];
-      return [...ongoing, ...upcoming, ...completedAndActive];
+      final pending = ref.watch(pendingEventsProvider).value ?? [];
+
+      final allEvents = [
+        ...ongoing,
+        ...upcoming,
+        ...completedAndActive,
+        ...pending,
+      ];
+
+      final uniqueEvents = {
+        for (var event in allEvents) event.eventID: event,
+      }.values.toList();
+
+      return uniqueEvents;
     });
