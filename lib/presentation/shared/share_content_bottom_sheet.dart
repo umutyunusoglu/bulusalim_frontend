@@ -211,45 +211,15 @@ class ShareContentBottomSheet extends StatelessWidget {
             ),
           ),
           SizedBox(height: 20.h),
-          /* SizedBox(
-            width: double.infinity,
-            height: 40.h,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                onInstagramSharePressed();
-              },
-              icon: Icon(
-                Symbols.photo_library,
-                size: 24.sp,
-                color: Colors.white,
-              ),
-              label: Text(
-                instagramButtonLabel,
-                style: TextStyle(
-                  fontFamily: 'SF Pro Display',
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE1306C),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                elevation: 0,
-              ),
-            ),
-          ),*/
-          SizedBox(height: 10.h),
           SizedBox(
             width: double.infinity,
             height: 40.h,
             child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                onSharePressed();
+              onPressed: () async {
+                final navigator = Navigator.of(context);
+                final bytes = await _loadShareImageBytes();
+                navigator.pop();
+                await onSharePressed(bytes);
               },
               icon: Icon(Symbols.ios_share, size: 24.sp, color: Colors.white),
               label: Text(
