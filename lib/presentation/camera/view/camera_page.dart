@@ -5,9 +5,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image/image.dart' as img;
+import 'package:image_picker/image_picker.dart';
+import 'package:outnest/application/app_state/current_user_data_providers/current_user_identity_provider.dart';
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/core/utils/types/enums/capability.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/services/draft_post_service.dart';
 import 'package:outnest/presentation/camera/controllers/image_cropper.dart';
@@ -31,13 +35,13 @@ Future<String> processFlippedImage(String path) async {
   return path;
 }
 
-class CameraPage extends HookWidget {
+class CameraPage extends HookConsumerWidget {
   const CameraPage({required this.event, super.key});
 
   final EventEntity event;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isMounted = useIsMounted();
     final takenPhotos = useState<List<File>>([]);
     final isCameraInitialized = useState(false);
@@ -47,6 +51,11 @@ class CameraPage extends HookWidget {
     final controllerRef = useRef<CameraController?>(null);
     final initialVolume = useRef<double>(0.5);
     final isRestoringVolume = useRef(false);
+
+    final currentUser = ref.watch(currentUserEntityProvider).value;
+    final hasPhotoCapability = currentUser?.capabilities.contains(
+      CapabilityEnum.photo,
+    );
 
     // Her initializeCamera çağrısına unique token verir.
     // Async işlem biterken token değişmişse o init iptal sayılır.
@@ -162,7 +171,6 @@ class CameraPage extends HookWidget {
         initToken.value++; // devam eden init'leri iptal et
         final controller = controllerRef.value;
         controllerRef.value = null;
-        isCameraInitialized.value = false;
         controller?.dispose();
       };
     }, const []);
@@ -205,6 +213,38 @@ class CameraPage extends HookWidget {
       });
       return null;
     }, const []);
+
+    Future<void> pickFromGallery() async {
+      if (isProcessing.value || takenPhotos.value.length >= 3) return;
+
+      isProcessing.value = true;
+      try {
+        final picker = ImagePicker();
+        final picked = await picker.pickImage(
+          source: ImageSource.gallery,
+          imageQuality: 80,
+        );
+
+        // Galeri kapandıktan sonra widget hâlâ hayatta mı?
+        if (!isMounted()) return;
+        if (picked == null) return;
+
+        final croppedFile = await cropToSquare(picked.path);
+
+        if (!isMounted()) return; // crop da async, tekrar kontrol
+        if (croppedFile != null) {
+          takenPhotos.value = [...takenPhotos.value, File(croppedFile.path)];
+          await getIt<DraftPostService>().saveDraft(
+            event.id,
+            takenPhotos.value,
+          );
+        }
+      } catch (e) {
+        debugPrint('Galeri hatası: $e');
+      } finally {
+        if (isMounted()) isProcessing.value = false; // finally'de de kontrol
+      }
+    }
 
     // ── Layout sabitleri ─────────────────────────────────────────────────────
     const primaryColor = AppColors.primaryColor;
@@ -262,6 +302,28 @@ class CameraPage extends HookWidget {
           SafeArea(
             child: Stack(
               children: [
+                // 3. KATMAN içinde, SafeArea > Stack'e ekle
+                if (hasPhotoCapability ?? false)
+                  Positioned(
+                    top: 10.h,
+                    left: 10.w,
+                    child: GestureDetector(
+                      onTap: pickFromGallery,
+                      child: Container(
+                        padding: EdgeInsets.all(6.w),
+                        decoration: BoxDecoration(
+                          color: Colors.black45,
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: const Icon(
+                          Icons.photo_library_outlined,
+                          color: Colors.white60,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+
                 // Kapat Butonu
                 Positioned(
                   top: 10.h,
