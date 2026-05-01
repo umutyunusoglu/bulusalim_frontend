@@ -8,16 +8,14 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 class ShareContentBottomSheet extends StatelessWidget {
   const ShareContentBottomSheet({
-    super.key,
     required this.title,
     required this.shareUrl,
     required this.onSharePressed,
-    required this.onInstagramSharePressed,
+    super.key,
     this.subtitle,
     this.avatarImageUrl,
     this.previewImageUrl,
     this.shareButtonLabel = 'Bağlantıyı Paylaş',
-    this.instagramButtonLabel = 'Instagram Hikayede Paylaş',
     this.copySuccessMessage = 'Bağlantı kopyalandı!',
     this.showScannerButton = false,
     this.onScannerPressed,
@@ -30,13 +28,11 @@ class ShareContentBottomSheet extends StatelessWidget {
   final String? previewImageUrl;
   final String shareUrl;
   final String shareButtonLabel;
-  final String instagramButtonLabel;
   final String copySuccessMessage;
   final bool showScannerButton;
   final String scannerButtonLabel;
   final VoidCallback? onScannerPressed;
-  final VoidCallback onSharePressed;
-  final VoidCallback onInstagramSharePressed;
+  final Future<void> Function(Uint8List? imageBytes) onSharePressed;
 
   @override
   Widget build(BuildContext context) {
@@ -303,6 +299,24 @@ class ShareContentBottomSheet extends StatelessWidget {
     );
   }
 
+  Future<Uint8List?> _loadShareImageBytes() async {
+    final preview = previewImageUrl?.isNotEmpty == true
+        ? previewImageUrl
+        : avatarImageUrl;
+    if (preview == null || preview.isEmpty || !preview.startsWith('http')) {
+      return null;
+    }
+
+    try {
+      final uri = Uri.parse(preview);
+      final bundle = NetworkAssetBundle(uri);
+      final data = await bundle.load(preview);
+      return data.buffer.asUint8List();
+    } on Object {
+      return null;
+    }
+  }
+
   ImageProvider? _buildAvatarImage() {
     final url = avatarImageUrl;
     if (url == null || url.isEmpty) return null;
@@ -323,7 +337,7 @@ class ShareContentBottomSheet extends StatelessWidget {
           alignment: Alignment.center,
           child: const CircularProgressIndicator(strokeWidth: 2),
         ),
-        errorWidget: (context, _, __) => Container(
+        errorWidget: (context, error, stackTrace) => Container(
           color: AppColors.cardBackgroundColor,
           alignment: Alignment.center,
           child: Icon(

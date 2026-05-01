@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:outnest/application/app_state/current_user_data_providers/current_user_friend_providers.dart';
@@ -112,9 +114,16 @@ class ProfileActionNotifier extends Notifier<ProfileActionState> {
   }
 
   /// Profil paylaş
-  Future<void> shareProfile(BuildContext context, String userId) async {
+  Future<void> shareProfile(
+    BuildContext context,
+    String userId, {
+    Uint8List? imageBytes,
+  }) async {
     try {
-      await getIt<ShareLinksService>().shareUserProfile(userId);
+      await getIt<ShareLinksService>().shareUserProfile(
+        userId,
+        imageBytes: imageBytes,
+      );
     } catch (e) {
       if (context.mounted) {
         showErrorPopup(
@@ -124,24 +133,6 @@ class ProfileActionNotifier extends Notifier<ProfileActionState> {
         );
       }
       debugPrint('Profil paylaşma hatası: $e');
-    }
-  }
-
-  Future<void> shareProfileToInstagramStory(
-    BuildContext context,
-    String userId,
-  ) async {
-    try {
-      await getIt<ShareLinksService>().shareUserProfileToInstagramStory(userId);
-    } catch (e) {
-      if (context.mounted) {
-        showErrorPopup(
-          context,
-          message:
-              'Instagram ile paylaşılırken bir hata oluştu. Lütfen tekrar deneyin.',
-        );
-      }
-      debugPrint('Instagram profil paylaşma hatası: $e');
     }
   }
 

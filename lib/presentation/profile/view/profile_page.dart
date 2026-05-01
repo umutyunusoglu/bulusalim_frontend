@@ -265,10 +265,11 @@ class ProfilePage extends HookConsumerWidget {
           username: username,
           profileImageUrl: profileImageUrl,
           profileUrl: shareUrl,
-          onInstagramSharePressed: () => actionNotifier
-              .shareProfileToInstagramStory(context, profileUserID),
-          onSharePressed: () =>
-              actionNotifier.shareProfile(context, profileUserID),
+          onSharePressed: (bytes) => actionNotifier.shareProfile(
+            context,
+            profileUserID,
+            imageBytes: bytes,
+          ),
         ),
       );
     }

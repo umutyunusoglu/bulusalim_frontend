@@ -398,13 +398,10 @@ class _PostCardState extends State<PostCard> {
               : null,
           shareUrl: shareUrl,
           shareButtonLabel: 'Gönderiyi Paylaş',
-          onSharePressed: () => getIt<ShareLinksService>().sharePost(
+          onSharePressed: (bytes) => getIt<ShareLinksService>().sharePost(
             widget.post.id,
+            imageBytes: bytes,
           ),
-          onInstagramSharePressed: () =>
-              getIt<ShareLinksService>().sharePostToInstagramStory(
-                widget.post.id,
-              ),
         ),
       );
     } catch (e) {

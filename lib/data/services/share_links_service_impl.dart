@@ -1,17 +1,11 @@
-import 'dart:io';
-
 import 'package:flutter/services.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/constants/configs/app_store_redirect_config.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
-import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/domain/services/share_links_service.dart';
 import 'package:share_plus/share_plus.dart';
 
 class ShareLinksServiceImpl extends ShareLinksService {
-  static const MethodChannel _instagramStoryChannel = MethodChannel(
-    'outnest/share/instagram_story',
-  );
-
   String? _pendingDeepLink;
   final LoggingService _logger = getIt<LoggingService>();
 
@@ -46,92 +40,69 @@ class ShareLinksServiceImpl extends ShareLinksService {
   static String _buildShareMessage({
     required String contentLabel,
     required Uri link,
-  }) => '$contentLabel $_appName\n${link.toString()}';
+  }) => '$contentLabel $_appName\n$link';
 
   Future<void> _shareContent({
     required String contentLabel,
     required Uri link,
+    Uint8List? imageBytes,
   }) async {
     final text = _buildShareMessage(contentLabel: contentLabel, link: link);
-    await SharePlus.instance.share(ShareParams(text: text));
-  }
-
-  Future<bool> _shareToInstagramStory({
-    required String contentLabel,
-    required Uri link,
-  }) async {
-    if (!Platform.isIOS) return false;
-
     try {
-      final shared = await _instagramStoryChannel.invokeMethod<bool>(
-        'shareToInstagramStory',
-        {
-          'message': '$contentLabel $_appName',
-          'link': link.toString(),
-        },
+      await Clipboard.setData(ClipboardData(text: link.toString()));
+
+      if (imageBytes == null || imageBytes.isEmpty) {
+        await SharePlus.instance.share(ShareParams(text: text));
+        return;
+      }
+
+      await SharePlus.instance.share(
+        ShareParams(
+          text: text,
+          files: [
+            XFile.fromData(
+              imageBytes,
+              mimeType: 'image/jpeg',
+              name: 'outnest-share.jpg',
+            ),
+          ],
+          fileNameOverrides: const ['outnest-share.jpg'],
+        ),
       );
-      return shared ?? false;
-    } on PlatformException catch (e) {
-      _logger.warn('Instagram story share failed: ${e.message}');
-      return false;
-    } catch (e) {
-      _logger.warn('Unexpected Instagram story share failure: $e');
-      return false;
+    } on Object catch (e) {
+      _logger.warn('Image share failed, falling back to text share: $e');
+      await SharePlus.instance.share(ShareParams(text: text));
     }
   }
 
   @override
-  Future<void> sharePost(String postId) async {
+  Future<void> sharePost(String postId, {Uint8List? imageBytes}) async {
     final link = post(postId);
-    await _shareContent(contentLabel: 'Bu gönderiye göz at -', link: link);
-  }
-
-  @override
-  Future<void> sharePostToInstagramStory(String postId) async {
-    final link = post(postId);
-    final shared = await _shareToInstagramStory(
+    await _shareContent(
       contentLabel: 'Bu gönderiye göz at -',
       link: link,
+      imageBytes: imageBytes,
     );
-    if (!shared) {
-      await _shareContent(contentLabel: 'Bu gönderiye göz at -', link: link);
-    }
   }
 
   @override
-  Future<void> shareEvent(String eventId) async {
+  Future<void> shareEvent(String eventId, {Uint8List? imageBytes}) async {
     final link = event(eventId);
-    await _shareContent(contentLabel: 'Bu etkinliğe göz at -', link: link);
-  }
-
-  @override
-  Future<void> shareEventToInstagramStory(String eventId) async {
-    final link = event(eventId);
-    final shared = await _shareToInstagramStory(
+    await _shareContent(
       contentLabel: 'Bu etkinliğe göz at -',
       link: link,
+      imageBytes: imageBytes,
     );
-    if (!shared) {
-      await _shareContent(contentLabel: 'Bu etkinliğe göz at -', link: link);
-    }
   }
 
   @override
-  Future<void> shareUserProfile(String userId) async {
+  Future<void> shareUserProfile(String userId, {Uint8List? imageBytes}) async {
     final link = user(userId);
-    await _shareContent(contentLabel: 'Bu profile göz at -', link: link);
-  }
-
-  @override
-  Future<void> shareUserProfileToInstagramStory(String userId) async {
-    final link = user(userId);
-    final shared = await _shareToInstagramStory(
+    await _shareContent(
       contentLabel: 'Bu profile göz at -',
       link: link,
+      imageBytes: imageBytes,
     );
-    if (!shared) {
-      await _shareContent(contentLabel: 'Bu profile göz at -', link: link);
-    }
   }
 
   @override
