@@ -30,6 +30,7 @@ import 'package:outnest/presentation/shared/event_card/view/components/event_car
 import 'package:outnest/presentation/shared/event_card/view/components/event_join_button.dart';
 import 'package:outnest/presentation/shared/event_card/view/components/stacked_avatars.dart';
 import 'package:outnest/presentation/shared/popup.dart';
+import 'package:outnest/presentation/shared/share_content_bottom_sheet.dart';
 
 class EventCard extends StatefulWidget {
   const EventCard({
@@ -217,6 +218,7 @@ class _EventCardState extends State<EventCard> {
                 text: 'Buluşmayı Paylaş',
                 onTap: () {
                   // close only the bottom sheet using the provided sheetContext
+                  sheetContext.pop();
                   _handleEventShare();
                 },
               ),
@@ -282,6 +284,7 @@ class _EventCardState extends State<EventCard> {
                 text: 'Buluşmayı Paylaş',
                 onTap: () {
                   // close only the bottom sheet using the provided sheetContext
+                  sheetContext.pop();
                   _handleEventShare();
                 },
               ),
@@ -382,9 +385,27 @@ class _EventCardState extends State<EventCard> {
   }
 
   Future<void> _handleEventShare() async {
-    // no automatic pop here; caller should close any sheets if needed
+    final shareUrl = 'https://outnest.app/share/event/${widget.event.id}';
     try {
-      await getIt<ShareLinksService>().shareEvent(widget.event.id);
+      if (!mounted) return;
+
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        useRootNavigator: true,
+        backgroundColor: Colors.transparent,
+        builder: (sheetContext) => ShareContentBottomSheet(
+          title: widget.event.name,
+          subtitle: 'Buluşma bağlantısını paylaş',
+          avatarImageUrl: widget.event.creator.profileImageUrl,
+          shareUrl: shareUrl,
+          shareButtonLabel: 'Buluşmayı Paylaş',
+          onSharePressed: (bytes) => getIt<ShareLinksService>().shareEvent(
+            widget.event.id,
+            imageBytes: bytes,
+          ),
+        ),
+      );
     } catch (e) {
       if (mounted) {
         showErrorPopup(
@@ -415,7 +436,7 @@ class _EventCardState extends State<EventCard> {
       ),
     );
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,

@@ -1,7 +1,6 @@
 import 'package:equatable/equatable.dart';
 
 sealed class DumpPage extends Equatable {
-  // sıralama
   const DumpPage({required this.id, required this.order});
   final String id;
   final int order;

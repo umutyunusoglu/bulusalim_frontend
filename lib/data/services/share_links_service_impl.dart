@@ -1,6 +1,7 @@
+import 'package:flutter/services.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/constants/configs/app_store_redirect_config.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
-import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/domain/services/share_links_service.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -39,32 +40,69 @@ class ShareLinksServiceImpl extends ShareLinksService {
   static String _buildShareMessage({
     required String contentLabel,
     required Uri link,
-  }) => '$contentLabel $_appName\n${link.toString()}';
+  }) => '$contentLabel $_appName\n$link';
 
   Future<void> _shareContent({
     required String contentLabel,
     required Uri link,
+    Uint8List? imageBytes,
   }) async {
     final text = _buildShareMessage(contentLabel: contentLabel, link: link);
-    await SharePlus.instance.share(ShareParams(text: text));
+    try {
+      await Clipboard.setData(ClipboardData(text: link.toString()));
+
+      if (imageBytes == null || imageBytes.isEmpty) {
+        await SharePlus.instance.share(ShareParams(text: text));
+        return;
+      }
+
+      await SharePlus.instance.share(
+        ShareParams(
+          text: text,
+          files: [
+            XFile.fromData(
+              imageBytes,
+              mimeType: 'image/jpeg',
+              name: 'outnest-share.jpg',
+            ),
+          ],
+          fileNameOverrides: const ['outnest-share.jpg'],
+        ),
+      );
+    } on Object catch (e) {
+      _logger.warn('Image share failed, falling back to text share: $e');
+      await SharePlus.instance.share(ShareParams(text: text));
+    }
   }
 
   @override
-  Future<void> sharePost(String postId) async {
+  Future<void> sharePost(String postId, {Uint8List? imageBytes}) async {
     final link = post(postId);
-    await _shareContent(contentLabel: 'Bu gönderiye göz at -', link: link);
+    await _shareContent(
+      contentLabel: 'Bu gönderiye göz at -',
+      link: link,
+      imageBytes: imageBytes,
+    );
   }
 
   @override
-  Future<void> shareEvent(String eventId) async {
+  Future<void> shareEvent(String eventId, {Uint8List? imageBytes}) async {
     final link = event(eventId);
-    await _shareContent(contentLabel: 'Bu etkinliğe göz at -', link: link);
+    await _shareContent(
+      contentLabel: 'Bu etkinliğe göz at -',
+      link: link,
+      imageBytes: imageBytes,
+    );
   }
 
   @override
-  Future<void> shareUserProfile(String userId) async {
+  Future<void> shareUserProfile(String userId, {Uint8List? imageBytes}) async {
     final link = user(userId);
-    await _shareContent(contentLabel: 'Bu profile göz at -', link: link);
+    await _shareContent(
+      contentLabel: 'Bu profile göz at -',
+      link: link,
+      imageBytes: imageBytes,
+    );
   }
 
   @override
