@@ -66,20 +66,18 @@ final Provider<List<EventEntity>> upcomingAndOngoingEventsProvider =
       return [...ongoing, ...upcoming];
     });
 
-/// Combines ongoing, upcoming, completedAndActive AND pending events.
+/// Combines ongoing, upcoming, completedAndActive
 final Provider<List<EventEntity>> activeEventsProvider =
     Provider.autoDispose<List<EventEntity>>((ref) {
       final ongoing = ref.watch(ongoingEventsProvider).value ?? [];
       final upcoming = ref.watch(upcomingEventsProvider).value ?? [];
       final completedAndActive =
           ref.watch(completedAndActiveEventsProvider).value ?? [];
-      final pending = ref.watch(pendingEventsProvider).value ?? [];
 
       final allEvents = [
         ...ongoing,
         ...upcoming,
         ...completedAndActive,
-        ...pending,
       ];
 
       final uniqueEvents = {

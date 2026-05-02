@@ -32,7 +32,6 @@ extension RepositoryModule on GetIt {
         () => EventRepositoryImpl(
           firestore: this(),
           logger: this(),
-          globalCache: this(),
         ),
       )
       ..registerLazySingleton<PostRepository>(
