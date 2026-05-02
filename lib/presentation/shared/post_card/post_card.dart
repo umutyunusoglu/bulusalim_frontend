@@ -28,6 +28,7 @@ import 'package:outnest/presentation/home/view/components/post/small_stacked_ava
 import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/post_card/countdown_timer.dart';
+import 'package:outnest/presentation/shared/share_content_bottom_sheet.dart';
 
 class PostCard extends StatefulWidget {
   const PostCard({
@@ -69,8 +70,6 @@ class _PostCardState extends State<PostCard> {
   bool _isEggedByMe = false;
 
   bool _amIFollowingPostCreator = false;
-  bool _isPostMine = false;
-
   // Pin durumunu yerel state'te tutuyoruz
   bool _isPinned = false;
 
@@ -95,7 +94,6 @@ class _PostCardState extends State<PostCard> {
     _updateFollowingStatus();
     _sessionService.stateListenable.addListener(_updateFollowingStatus);
     _isPinned = widget.post.isPinned;
-    _isPostMine = widget.post.creator.userID == _myUserId;
 
     _checkExistingEmotes();
   }
@@ -213,11 +211,11 @@ class _PostCardState extends State<PostCard> {
       final analytics = getIt<AnalyticsService>();
 
       final amIFollowingPostCreator = _amIFollowingPostCreator;
-      final amIFolloweeOfPostCreator =
-          _sessionService.stateListenable.value?.followees.any(
-            (u) => u.userID == widget.post.creator.userID,
-          ) ??
-          false;
+      final amIFolloweeOfPostCreator = _sessionService
+          .stateListenable
+          .value
+          .followees
+          .any((u) => u.userID == widget.post.creator.userID);
       if (isSelectedCurrent) {
         await _postRepository.removeEmoteFromPost(
           widget.post.id,
@@ -270,6 +268,7 @@ class _PostCardState extends State<PostCard> {
       userID: widget.post.creator.userID,
       username: widget.post.creator.username,
       profileImageUrl: widget.post.creator.profileImageUrl,
+      city: widget.post.creator.city,
       university: widget.post.creator.university,
       nameSurname: null,
       isPrivate: null,
@@ -278,7 +277,7 @@ class _PostCardState extends State<PostCard> {
       communityData: null,
     );
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -381,9 +380,30 @@ class _PostCardState extends State<PostCard> {
   }
 
   Future<void> _handleSharePost() async {
-    Navigator.pop(context);
+    final shareUrl = 'https://outnest.app/share/post/${widget.post.id}';
     try {
-      await getIt<ShareLinksService>().sharePost(widget.post.id);
+      if (!mounted) return;
+
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        useRootNavigator: true,
+        backgroundColor: Colors.transparent,
+        builder: (sheetContext) => ShareContentBottomSheet(
+          title: widget.user?.username ?? 'Buluşalım Kullanıcısı',
+          subtitle: 'Gönderi bağlantısını paylaş',
+          avatarImageUrl: widget.user?.profileImageUrl,
+          previewImageUrl: widget.post.imageUrls.isNotEmpty
+              ? widget.post.imageUrls.first
+              : null,
+          shareUrl: shareUrl,
+          shareButtonLabel: 'Gönderiyi Paylaş',
+          onSharePressed: (bytes) => getIt<ShareLinksService>().sharePost(
+            widget.post.id,
+            imageBytes: bytes,
+          ),
+        ),
+      );
     } catch (e) {
       if (mounted) {
         showErrorPopup(
@@ -467,7 +487,10 @@ class _PostCardState extends State<PostCard> {
                 icon: Symbols.share,
                 text: 'Paylaş',
                 color: Colors.black,
-                onTap: _handleSharePost,
+                onTap: () {
+                  Navigator.pop(context);
+                  _handleSharePost();
+                },
               ),
               if (_amIFollowingPostCreator)
                 _buildOptionItem(

@@ -1,6 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dart_firebase_admin/firestore.dart';
-import 'package:logger/web.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/data/models/badge/badge_model.dart';
 import 'package:outnest/domain/entities/badges/badge_entity.dart';
@@ -25,7 +23,7 @@ class BadgeRepositoryImpl implements BadgeRepository {
           final badges = snapshot.docs
               .map((doc) {
                 try {
-                  final BadgeModel badgeModel = BadgeModel.fromFirestore(
+                  final badgeModel = BadgeModel.fromFirestore(
                     doc.data(),
                   );
                   return badgeModel.toEntity();
@@ -41,7 +39,7 @@ class BadgeRepositoryImpl implements BadgeRepository {
         })
         .catchError((error) {
           _logger.error('Error fetching badges from Firestore: $error');
-          return [];
+          return <BadgeEntity>[];
         });
     return result;
   }
@@ -56,7 +54,7 @@ class BadgeRepositoryImpl implements BadgeRepository {
           final badges = snapshot.docs
               .map((doc) {
                 try {
-                  final BadgeModel badgeModel = BadgeModel.fromFirestore(
+                  final badgeModel = BadgeModel.fromFirestore(
                     doc.data(),
                   );
                   return badgeModel.toEntity();

@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:get_it/get_it.dart'; // Import GetIt
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/emote_enum.dart';
@@ -16,6 +15,7 @@ class PostModel extends Model<PostEntity> {
     required this.postID,
     required this.creator,
     required this.eventID,
+    required this.city,
     required this.caption,
     required this.hobbies,
     required this.participants,
@@ -35,6 +35,7 @@ class PostModel extends Model<PostEntity> {
       postID: entity.postID,
       creator: entity.creator,
       eventID: entity.eventID,
+      city: entity.city,
       caption: entity.caption,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
@@ -175,6 +176,7 @@ class PostModel extends Model<PostEntity> {
         creator: parsedCreator,
         eventID: doc['eventID']?.toString() ?? '',
         caption: doc['caption']?.toString() ?? '',
+        city: doc['city']?.toString(),
         createdAt: parsedCreatedAt,
         updatedAt: parsedUpdatedAt,
         location: parsedLocation,
@@ -202,6 +204,7 @@ class PostModel extends Model<PostEntity> {
       postID: postID,
       creator: creator,
       eventID: eventID,
+      city: city,
       caption: caption,
       createdAt: createdAt,
       updatedAt: updatedAt,
@@ -223,13 +226,14 @@ class PostModel extends Model<PostEntity> {
       'postID': postID,
       'creator': creator.toMap(),
       'eventID': eventID,
+      'city': city,
       'caption': caption,
       'location': location != null
           ? GeoPoint(location!.latitude, location!.longitude)
           : null,
       'address': address,
       'hobbies': hobbies.map((hobby) => hobby.name).toList(),
-      'imageUrls': imageUrls ?? [],
+      'imageUrls': imageUrls,
       'participants': participants.map((p) => p.toMap()).toList(),
       'emoteCounts': emoteCounts.map(
         (key, value) => MapEntry(key.toString(), value),
@@ -246,6 +250,7 @@ class PostModel extends Model<PostEntity> {
   final Identifier postID;
   final CompactUserEntity creator;
   final Identifier eventID;
+  final String? city;
   final String caption;
   final DateTime createdAt;
   final DateTime? updatedAt;

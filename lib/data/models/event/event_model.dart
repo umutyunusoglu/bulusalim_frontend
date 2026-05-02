@@ -16,6 +16,7 @@ class EventModel extends Model<EventEntity> {
   EventModel({
     required this.eventId,
     required this.name,
+    required this.city,
     required this.searchName,
     required this.hobbies,
     required this.creator,
@@ -46,6 +47,7 @@ class EventModel extends Model<EventEntity> {
     return EventModel(
       eventId: entity.eventID,
       name: entity.name,
+      city: entity.city,
       searchName: entity.name.toLowerCase(),
       status: entity.status,
       hobbies: entity.hobbies,
@@ -75,7 +77,7 @@ class EventModel extends Model<EventEntity> {
   @override
   factory EventModel.fromFirestore(Map<String, dynamic> doc) {
     Geolocation? location;
-    String? geohash = doc['geohash'] as String?;
+    var geohash = doc['geohash'] as String?;
 
     if (doc['location'] != null) {
       final geolocation = doc['location'] as GeoPoint;
@@ -152,6 +154,7 @@ class EventModel extends Model<EventEntity> {
     return EventModel(
       eventId: doc['eventID'] as String,
       name: doc['name'] as String,
+      city: doc['city'] as String?,
       searchName: (doc['name'] as String).toLowerCase(),
       hobbies: (doc['hobbies'] as List?)?.cast<String>().toList() ?? [],
       creator: creator,
@@ -190,6 +193,7 @@ class EventModel extends Model<EventEntity> {
     return {
       'eventID': eventId,
       'name': name,
+      'city': city,
       'searchName': searchName,
       'hobbies': hobbies,
       'creator': creatorMap,
@@ -231,6 +235,7 @@ class EventModel extends Model<EventEntity> {
     return EventEntity(
       eventID: eventId,
       name: name,
+      city: city,
       hobbies: hobbies,
       creator: creator,
       capacity: capacity,
@@ -284,6 +289,7 @@ class EventModel extends Model<EventEntity> {
 
   final Identifier eventId;
   final String name;
+  final String? city;
   final String? searchName;
   final List<String> hobbies;
   final EventStatusEnum status;

@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/data/models/model.dart';
 import 'package:outnest/domain/entities/badges/badge_entity.dart';
 

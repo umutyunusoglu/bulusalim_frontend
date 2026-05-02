@@ -24,13 +24,32 @@ import 'package:outnest/domain/services/analytics/event_configs/update_event_loc
 import 'package:outnest/domain/services/analytics/event_configs/update_event_name_analytics_config.dart';
 import 'package:outnest/domain/services/analytics/event_configs/update_event_start_time_analytics_config.dart';
 import 'package:outnest/domain/services/analytics/event_configs/update_event_visibility_analytics_config.dart';
-import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
+import 'package:outnest/presentation/chat/view/components/event_settings_components/event_settings_expandable_row.dart';
+import 'package:outnest/presentation/chat/view/components/event_settings_components/event_settings_pill_row.dart';
+import 'package:outnest/presentation/chat/view/components/event_settings_components/event_settings_simple_action_row.dart';
+import 'package:outnest/presentation/chat/view/components/event_settings_components/event_settings_switch_row.dart';
+import 'package:outnest/presentation/chat/view/components/event_settings_components/event_settings_thin_divider.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
+import 'package:outnest/presentation/shared/event_card/view/components/stacked_avatars.dart';
 import 'package:outnest/presentation/shared/form/sanitizer.dart';
 import 'package:outnest/presentation/shared/form/validators/validate_event_name.dart';
-import 'package:outnest/presentation/shared/event_card/view/components/stacked_avatars.dart';
 import 'package:outnest/presentation/shared/popup.dart';
+
+TextStyle get _labelStyle => TextStyle(
+  fontFamily: 'SF Pro Display',
+  fontWeight: FontWeight.w600,
+  fontSize: 14.sp,
+  height: 1,
+  color: Colors.black87,
+);
+
+TextStyle get _subLabelStyle => TextStyle(
+  fontFamily: 'SF Pro Display',
+  fontSize: 12.sp,
+  color: AppColors.textGrey,
+  height: 1.2,
+);
 
 class EventSettingsPage extends StatefulWidget {
   const EventSettingsPage({
@@ -87,7 +106,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
         sessionService.currentUser?.userID,
       );
 
-      if (data != null && mounted) {
+      if (mounted) {
         setState(() {
           _currentDate = data.startTime;
 
@@ -279,6 +298,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
         final compactUser = CompactUserEntity(
           userID: currentUser.userID,
           username: currentUser.username,
+          city: currentUser.city,
           profileImageUrl: currentUser.profileImageUrl,
           university: currentUser.university,
           nameSurname: currentUser.nameSurname,
@@ -342,7 +362,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
   }
 
   Future<void> _onEditTitleTap() async {
-    final TextEditingController titleController = TextEditingController(
+    final titleController = TextEditingController(
       text: _currentChatTitle,
     );
 
@@ -495,7 +515,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
   }
 
   void _showVisibilityBottomSheet() {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(
@@ -647,20 +667,6 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
   }
 
   // Styles
-  TextStyle get _labelStyle => TextStyle(
-    fontFamily: 'SF Pro Display',
-    fontWeight: FontWeight.w600,
-    fontSize: 14.sp,
-    height: 1,
-    color: Colors.black87,
-  );
-
-  TextStyle get _subLabelStyle => TextStyle(
-    fontFamily: 'SF Pro Display',
-    fontSize: 12.sp,
-    color: AppColors.textGrey,
-    height: 1.2,
-  );
 
   @override
   Widget build(BuildContext context) {
@@ -668,9 +674,7 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
     final isCreator =
         currentUser != null && currentUser.userID == widget.creatorID;
 
-    final profileImage = widget.event.creator.profileImageUrl != null
-        ? widget.event.creator.profileImageUrl
-        : FileService.defaultProfileImageUrl();
+    final profileImage = widget.event.creator.profileImageUrl;
 
     var dateString = 'Yükleniyor...';
     if (_currentDate != null) {
@@ -701,22 +705,18 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
         timeValue = dateString;
         timeOnTap = isCreator ? _onTimeUpdateTap : null;
         timeShowTrailing = true;
-        break;
       case EventStatusEnum.ongoing:
         timeValue = 'Devam Ediyor';
         timeOnTap = null;
         timeShowTrailing = false;
-        break;
       case EventStatusEnum.completed:
         timeValue = 'Tamamlandı';
         timeOnTap = null;
         timeShowTrailing = false;
-        break;
       case EventStatusEnum.cancelled:
         timeValue = 'İptal Edildi';
         timeOnTap = null;
         timeShowTrailing = false;
-        break;
     }
 
     return Scaffold(
@@ -839,7 +839,8 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                     ),
 
                     SizedBox(height: 22.h),
-                    _buildPillRow(
+                    EventSettingsPillRow(
+                      labelStyle: _labelStyle,
                       title: 'Buluşma Konumu',
                       value: _currentLocation.isNotEmpty
                           ? _currentLocation
@@ -847,45 +848,54 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
                       icon: Symbols.location_on,
                       onTap: locationOnTap,
                     ),
-                    _thinDivider(),
-                    _buildPillRow(
+                    EventSettingsThinDivider(),
+                    EventSettingsPillRow(
+                      labelStyle: _labelStyle,
                       title: 'Buluşma Zamanı',
                       value: timeValue,
                       icon: Symbols.schedule,
                       onTap: timeOnTap,
+                      showTrailing: timeShowTrailing,
                     ),
 
                     SizedBox(height: 8.h),
 
                     if (isCreator) ...[
-                      _buildSwitchRow(
-                        'Buluşmayı Kilitle',
-                        'Buluşman artık kullanıcıların karşısına çıkmaz.',
-                        isLocked,
-                        _onToggleEventLock,
+                      EventSettingsSwitchRow(
+                        labelStyle: _labelStyle,
+                        subLabelStyle: _subLabelStyle,
+                        title: 'Buluşmayı Kilitle',
+                        subtitle:
+                            'Buluşman artık kullanıcıların karşısına çıkmaz.',
+                        value: isLocked,
+                        onChanged: _onToggleEventLock,
                       ),
-                      _thinDivider(),
-                      _buildExpandableRow(
-                        'Görünürlük Seçenekleri',
-                        'Buluşmanın hangi kullanıcıların karşısına çıkacağını düzenlersin.',
-                        onTap:
-                            _showVisibilityBottomSheet, // Fonksiyonu buraya bağlıyoruz
+                      EventSettingsThinDivider(),
+                      EventSettingsExpandableRow(
+                        labelStyle: _labelStyle,
+                        subLabelStyle: _subLabelStyle,
+                        title: 'Görünürlük Seçenekleri',
+                        subtitle:
+                            'Buluşmanın hangi kullanıcıların karşısına çıkacağını düzenlersin.',
+                        onTap: _showVisibilityBottomSheet,
                       ),
-                      _thinDivider(),
+                      EventSettingsThinDivider(),
                     ] else
-                      _thinDivider(),
+                      EventSettingsThinDivider(),
 
                     if (!isCreator)
-                      _buildSimpleActionRow(
-                        'Buluşmadan Ayrıl',
+                      EventSettingsSimpleActionRow(
+                        labelStyle: _labelStyle,
+                        title: 'Buluşmadan Ayrıl',
                         textColor: AppColors.primaryColor,
                         onTap: _onLeaveEventTap,
                       ),
 
                     if (isCreator) ...[
-                      _thinDivider(),
-                      _buildSimpleActionRow(
-                        'Buluşmayı İptal Et',
+                      EventSettingsThinDivider(),
+                      EventSettingsSimpleActionRow(
+                        labelStyle: _labelStyle,
+                        title: 'Buluşmayı İptal Et',
                         textColor: AppColors.primaryColor,
                         onTap: _onCancelEventTap,
                       ),
@@ -899,161 +909,6 @@ class _EventSettingsPageState extends State<EventSettingsPage> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildPillRow({
-    required String title,
-    required String value,
-    IconData? icon,
-    VoidCallback? onTap,
-    bool showTrailing = false,
-  }) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 10.h),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(title, style: _labelStyle),
-          ),
-          GestureDetector(
-            onTap: onTap,
-            child: Container(
-              constraints: BoxConstraints(maxWidth: 240.w),
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-              decoration: BoxDecoration(
-                color: const Color(0xFFDDEFF5),
-                borderRadius: BorderRadius.circular(20.r),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: 14.sp, color: const Color(0xFF4A6572)),
-                    SizedBox(width: 6.w),
-                  ],
-                  Flexible(
-                    child: Text(
-                      value,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: 'SF Pro Display',
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF2C3E50),
-                      ),
-                    ),
-                  ),
-                  if (showTrailing) ...[
-                    SizedBox(width: 6.w),
-                    Icon(
-                      Icons.keyboard_arrow_right,
-                      size: 18.sp,
-                      color: const Color(0xFF4A6572),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSwitchRow(
-    String title,
-    String subtitle,
-    bool value,
-    Function(bool) onChanged,
-  ) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 12.h),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: _labelStyle),
-                SizedBox(height: 6.h),
-                Text(subtitle, style: _subLabelStyle),
-              ],
-            ),
-          ),
-          Transform.scale(
-            scale: 0.9,
-            child: Switch.adaptive(
-              value: value,
-              onChanged: onChanged,
-              activeColor: Colors.white,
-              activeTrackColor: AppColors.primaryColor,
-              inactiveThumbColor: Colors.white,
-              inactiveTrackColor: Colors.grey.shade300,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExpandableRow(
-    String title,
-    String subtitle, {
-    VoidCallback? onTap, // Dinamik onTap eklendi
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 12.h),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: _labelStyle),
-                  SizedBox(height: 6.h),
-                  Text(subtitle, style: _subLabelStyle),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.keyboard_arrow_right,
-              color: Colors.black54,
-              size: 22.sp,
-            ), // Aşağı bakan oku sağa bakan ok ile değiştirdim, Bottom Sheet açılacağı için daha doğru bir yönlendirme oluyor
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSimpleActionRow(
-    String title, {
-    Color? textColor,
-    VoidCallback? onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 14.h),
-        child: Text(
-          title,
-          style: _labelStyle.copyWith(
-            color: textColor ?? Colors.black87,
-            fontWeight: textColor != null ? FontWeight.w600 : FontWeight.w500,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _thinDivider() {
-    return Padding(
-      padding: EdgeInsets.only(top: 8.h, bottom: 8.h),
-      child: const Divider(height: 1, thickness: 1, color: Color(0xFFF0F0F0)),
     );
   }
 }

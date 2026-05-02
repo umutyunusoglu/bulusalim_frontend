@@ -39,6 +39,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         userID: user.id,
         username: user.username,
         profileImageUrl: user.avatarUrl,
+        city: null,
         university: '',
         nameSurname: '',
         isPrivate: false,

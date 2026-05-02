@@ -8,6 +8,7 @@ class CompactUserEntity extends Equatable {
     required this.userID,
     required this.username,
     required this.profileImageUrl,
+    required this.city,
     required this.university,
     required this.nameSurname,
     required this.isPrivate,
@@ -25,6 +26,7 @@ class CompactUserEntity extends Equatable {
       // Güvenli olması için 'as String?' yapıp default bir boş değer atamak en iyisidir.
       username: map['username'] as String? ?? '',
       profileImageUrl: map['profileImageUrl'] as String? ?? '',
+      city: map['city'] as String?,
 
       university: map['university'] as String?,
       nameSurname: (map['nameSurname'] ?? map['fullname']) as String?,
@@ -47,6 +49,7 @@ class CompactUserEntity extends Equatable {
     Identifier? userID,
     String? username,
     String? profileImageUrl,
+    String? city,
     String? university,
     String? nameSurname,
     bool? isPrivate,
@@ -59,6 +62,7 @@ class CompactUserEntity extends Equatable {
       userID: userID ?? this.userID,
       username: username ?? this.username,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      city: city ?? this.city,
       university: university ?? this.university,
       nameSurname: nameSurname ?? this.nameSurname,
       isPrivate: isPrivate ?? this.isPrivate,
@@ -94,11 +98,13 @@ class CompactUserEntity extends Equatable {
     bio,
     accountType,
     communityData,
+    verifiedEventCount,
   ];
 
   final Identifier userID;
   final String username;
   final String profileImageUrl;
+  final String? city;
 
   //For Profile
   final String? nameSurname;

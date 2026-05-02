@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
+import 'package:outnest/core/utils/types/enums/capability.dart';
 // GenderEnum importunun doğru olduğundan emin ol
 import 'package:outnest/core/utils/types/enums/gender_enum.dart';
 import 'package:outnest/core/utils/types/types.dart';
@@ -12,6 +13,7 @@ class UserModel extends Model<UserEntity> {
     required this.userID,
     required this.username,
     required this.nameSurname,
+    required this.city,
     required this.birthDate,
     required this.gender,
     required this.university,
@@ -29,6 +31,7 @@ class UserModel extends Model<UserEntity> {
     required this.phoneNumber,
     required this.accountType,
     required this.communityData,
+    required this.capabilities,
     this.verifiedEventCount = 0,
   });
 
@@ -38,6 +41,7 @@ class UserModel extends Model<UserEntity> {
       userID: entity.userID,
       nameSurname: entity.nameSurname,
       username: entity.username,
+      city: entity.city,
       birthDate: entity.birthDate,
       gender: entity.gender,
       university: entity.university,
@@ -56,6 +60,7 @@ class UserModel extends Model<UserEntity> {
       accountType: entity.accountType,
       communityData: entity.communityData,
       verifiedEventCount: entity.verifiedEventCount,
+      capabilities: entity.capabilities,
     );
   }
 
@@ -82,7 +87,7 @@ class UserModel extends Model<UserEntity> {
       userID: doc['userID'] as String,
       nameSurname: doc['nameSurname'] as String? ?? 'Bilinmeyen Kullanıcı',
       username: doc['username'] as String? ?? 'Bilinmeyen Kullanıcı',
-
+      city: doc['city'] as String?,
       birthDate: birthDate,
       gender: gender,
       university: doc['universityName'] as String?,
@@ -107,6 +112,9 @@ class UserModel extends Model<UserEntity> {
           ? CommunityData.fromMap(doc['communityData'] as Map<String, dynamic>)
           : null,
       verifiedEventCount: doc['verifiedEventCount'] as int? ?? 0,
+      capabilities: (doc['capabilities'] as List<dynamic>? ?? [])
+          .map((e) => CapabilityEnum.fromString(e as String))
+          .toSet(),
     );
   }
 
@@ -120,6 +128,7 @@ class UserModel extends Model<UserEntity> {
       'userID': userID,
       'username': username,
       'nameSurname': nameSurname,
+      'city': city,
       'birthDate': Timestamp.fromDate(birthDate),
       'gender': gender.toString(),
       'universityName': university,
@@ -138,6 +147,7 @@ class UserModel extends Model<UserEntity> {
       'accountType': accountType.toString(),
       'communityData': communityData?.toMap(),
       'verifiedEventCount': verifiedEventCount,
+      'capabilities': capabilities.map((e) => e.toString()).toList(),
     };
   }
 
@@ -147,6 +157,7 @@ class UserModel extends Model<UserEntity> {
       userID: userID,
       username: username,
       nameSurname: nameSurname,
+      city: city,
       birthDate: birthDate,
       gender: gender,
       university: university,
@@ -165,12 +176,14 @@ class UserModel extends Model<UserEntity> {
       accountType: accountType,
       communityData: communityData,
       verifiedEventCount: verifiedEventCount,
+      capabilities: capabilities,
     );
   }
 
   final Identifier userID;
   final String username;
   final String nameSurname;
+  final String? city;
   final DateTime birthDate;
   final GenderEnum gender;
   final String? university;
@@ -188,6 +201,6 @@ class UserModel extends Model<UserEntity> {
   final AccountType accountType;
   final CommunityData? communityData;
   final int verifiedEventCount;
-
   final List<String> hobbies;
+  final Set<CapabilityEnum> capabilities;
 }

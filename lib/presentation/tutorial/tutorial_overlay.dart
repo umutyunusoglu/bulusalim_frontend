@@ -114,32 +114,32 @@ class TutorialOverlay extends HookWidget {
                     topTitle: 'Buluşmalara Katıl',
                     topDesc:
                         'Etrafındaki buluşmaları keşfet ve ilgini çekenlere katıl. Yeni insanlarla tanışmak sadece bir dokunuş uzağında.',
-                    topImagePath: 'assets/tutorial_map.png',
+                    topImagePath: 'assets/tutorial/tutorial_map.png',
                     bottomTitle: 'Buluşma Oluştur',
                     bottomDesc:
                         'Kendi buluşmanı planla ve insanları davet et. Yer, zaman ve detayları ekle; gerisini Outnest halleder.',
-                    bottomImagePath: 'assets/tutorial_category.png',
-                    bottomSecondImagePath: 'assets/tutorial_date.png',
+                    bottomImagePath: 'assets/tutorial/tutorial_category.png',
+                    bottomSecondImagePath: 'assets/tutorial/tutorial_date.png',
                   ),
                   _buildDualFeaturePage(
                     topTitle: 'Buluşma Davetleri',
                     topDesc:
                         'Buluşmana katılmak isteyenleri Buluşmalarım sayfasından gör, kabul et ya da reddet. Kimin geleceğini sen belirle.',
-                    topImagePath: 'assets/tutorial_requests.png',
+                    topImagePath: 'assets/tutorial/tutorial_requests.png',
                     bottomTitle: 'Mesajlar',
                     bottomDesc:
                         'Katıldığın buluşmalar için özel bir sohbet açılır. Buluşma öncesinde konuşabilir, buluşma bittikten sonra ise 24 saat daha sohbet etmeye devam edebilirsin.',
-                    bottomImagePath: 'assets/tutorial_chat.png',
+                    bottomImagePath: 'assets/tutorial/tutorial_chat.png',
                   ),
                   _buildDualFeaturePage(
                     topTitle: 'QR Doğrulama',
                     topDesc:
                         'Buluşmada yan yana geldiğinde QR kodunu aç ve okut. Böylece buluşmaya gerçekten katıldığın doğrulanır.',
-                    topImagePath: 'assets/tutorial_qr.png',
+                    topImagePath: 'assets/tutorial/tutorial_qr.png',
                     bottomTitle: 'Fotoğraf Paylaş',
                     bottomDesc:
                         'Buluşmada çektiğin fotoğrafları paylaş. Hepsini aynı anda ya da gün içinde çekip sonra birlikte yayınlayabilirsin. Sabitlemezsen gönderiler 24 saat sonra kaybolur.',
-                    bottomImagePath: 'assets/tutorial_camera.png',
+                    bottomImagePath: 'assets/tutorial/tutorial_camera.png',
                   ),
                 ],
               ),
