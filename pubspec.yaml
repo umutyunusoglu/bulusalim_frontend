@@ -83,6 +83,7 @@ dependencies:
   ripple_wave: ^0.1.5
   glowy_borders: ^1.0.2
   riverpod: ^3.2.1
+  image_gallery_saver: ^2.0.3
 
 
 
