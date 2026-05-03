@@ -92,7 +92,10 @@ class EventVerificationServiceImpl implements EventVerificationService {
     EventVerificationSecret secret,
   ) async {
     try {
-      _loggingService.debug('Raw secret: $secret');
+      final secretFingerprint = sha256.convert(utf8.encode(secret)).toString();
+      _loggingService.debug(
+        'Received verification secret metadata: length=${secret.length}, sha256=$secretFingerprint',
+      );
 
       final split = secret.split('||');
       if (split.length != 2) {
