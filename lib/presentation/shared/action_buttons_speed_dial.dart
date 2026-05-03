@@ -13,9 +13,9 @@ class ActionButtonsSpeedDial extends HookConsumerWidget {
     required this.onLocationTap,
     required this.onQrTap,
     this.forceShowAllButtons = false,
-    this.closedSize = 68,
-    this.openSize = 32,
-    this.childSpacing = -16,
+    this.closedSize = 64,
+    this.openSize = 44,
+    this.childSpacing = 8,
   });
 
   final ValueNotifier<bool> isDialOpen;
@@ -118,30 +118,40 @@ class ActionButtonsSpeedDial extends HookConsumerWidget {
 
     return CompositedTransformTarget(
       link: layerLink,
-      child: Stack(
-        alignment: Alignment.center,
-        clipBehavior: Clip.none,
-        children: [
-          if (showGlow)
-            AnimatedGradientBorder(
-              borderSize: 4.5,
-              glowSize: 1,
-              animationTime: 6,
-              gradientColors: [
-                AppColors.primaryColor.withOpacity(0.5),
-                AppColors.primaryColor.withOpacity(0.2),
-                AppColors.primaryColor.withOpacity(0.5),
-              ],
-              borderRadius: BorderRadius.circular(110),
-              child: SizedBox(width: closedSize, height: closedSize),
-            ),
-          GestureDetector(
-            key: buttonKey,
-            onTap: () => isDialOpen.value = !isDialOpen.value,
-            child: SizedBox(
-              width: closedSize,
-              height: closedSize,
-              child: Center(
+      child: GestureDetector(
+        key: buttonKey,
+        onTap: () => isDialOpen.value = !isDialOpen.value,
+        child: SizedBox(
+          width: closedSize,
+          height: closedSize,
+          child: Stack(
+            alignment: Alignment.center,
+            clipBehavior: Clip.none,
+            children: [
+              // Glow — her zaman mount'ta kalır, sadece opacity değişir
+              // Glow — her zaman mount'ta kalır, sadece opacity değişir
+              AnimatedOpacity(
+                opacity: showGlow ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 300),
+                child: OverflowBox(
+                  maxWidth: closedSize + 40,
+                  maxHeight: closedSize + 40,
+                  child: AnimatedGradientBorder(
+                    borderSize: 4.5,
+                    glowSize: 1,
+                    animationTime: 6,
+                    gradientColors: [
+                      AppColors.primaryColor.withOpacity(0.5),
+                      AppColors.primaryColor.withOpacity(0.2),
+                      AppColors.primaryColor.withOpacity(0.5),
+                    ],
+                    borderRadius: BorderRadius.circular(110),
+                    child: SizedBox(width: closedSize, height: closedSize),
+                  ),
+                ),
+              ),
+              // Ana buton
+              Center(
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   curve: Curves.easeInOut,
@@ -165,9 +175,9 @@ class ActionButtonsSpeedDial extends HookConsumerWidget {
                   ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -191,8 +201,8 @@ class _CustomDialChild extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 60,
-        height: 60,
+        width: 64,
+        height: 64,
         decoration: BoxDecoration(
           color: backgroundColor,
           shape: BoxShape.circle,
