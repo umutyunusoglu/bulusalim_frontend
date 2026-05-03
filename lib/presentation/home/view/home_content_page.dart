@@ -173,7 +173,8 @@ class _HomeContentPageState extends ConsumerState<HomeContentPage> {
         }
         badgeService.clearBadge(0);
       } else {
-        final hasNewFeed = persistedSeen == null || newestMillis > persistedSeen;
+        final hasNewFeed =
+            persistedSeen == null || newestMillis > persistedSeen;
         badgeService.setBadge(tabIndex: 0, visible: hasNewFeed);
       }
     });

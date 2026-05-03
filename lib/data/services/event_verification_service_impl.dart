@@ -1,10 +1,10 @@
-// event_verification_service_impl.dart
-
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:crypto/crypto.dart';
-import 'package:dart_geohash/dart_geohash.dart';
 import 'package:encrypt/encrypt.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:outnest/core/errors/exceptions/event_verification_exceptions.dart';
 import 'package:outnest/core/errors/exceptions/security_exceptions.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
@@ -30,6 +30,7 @@ class EventVerificationServiceImpl implements EventVerificationService {
   final EventRepository _eventRepository;
 
   static const String _verifiedEventsKey = 'verified_events_list';
+  static const double _maxDistanceMeters = 1000;
 
   @override
   EventVerificationSecret createEventVerificationSecret(
@@ -41,21 +42,17 @@ class EventVerificationServiceImpl implements EventVerificationService {
     }
 
     try {
-      final geoHasher = GeoHasher();
-      final geohash = geoHasher.encode(
-        currentLocation.longitude,
-        currentLocation.latitude,
-        precision: 1,
-      );
+      final message =
+          '$currentUserId:${currentLocation.latitude}:${currentLocation.longitude}';
 
-      final key = _generateKey(currentUserId!, geohash);
-      final encryptionResult = _encryptMessage(currentUserId!, key);
+      final key = _generateKey(currentUserId!);
+      final encryptionResult = _encryptMessage(message, key);
 
       final secret =
-          '${encryptionResult['encrypted']}-${encryptionResult['iv']}';
+          '${encryptionResult['encrypted']}||${encryptionResult['iv']}';
 
       _loggingService.info(
-        'Verification secret created for user: $currentUserId at geohash: $geohash',
+        'Verification secret created for user: $currentUserId',
       );
       return secret;
     } catch (e) {
@@ -89,86 +86,142 @@ class EventVerificationServiceImpl implements EventVerificationService {
   }
 
   @override
-  Future<bool> verifyEvent(
+  Future<Either<EventVerificationException, Unit>> verifyEvent(
     EventEntity event,
     Geolocation currentLocation,
     EventVerificationSecret secret,
   ) async {
     try {
-      final split = secret.split('-');
+      final secretFingerprint = sha256.convert(utf8.encode(secret)).toString();
+      _loggingService.debug(
+        'Received verification secret metadata: length=${secret.length}, sha256=$secretFingerprint',
+      );
+
+      final split = secret.split('||');
       if (split.length != 2) {
         _loggingService.warn(
           'Invalid secret format received for event: ${event.id}',
         );
-        throw const FormatException(
-          'Invalid event verification secret format.',
+        return Left(
+          UnknownVerificationException(
+            'Invalid event verification secret format.',
+          ),
         );
       }
 
       final encryptedMessage = split[0];
       final iv = split[1];
 
-      final geohasher = GeoHasher();
-      final myGeohash = geohasher.encode(
-        currentLocation.longitude,
-        currentLocation.latitude,
-        precision: 1,
-      );
-
-      final allCandidateGeohashes = geohasher.neighbors(myGeohash).values;
-
       final possibleUserIDs = event.participants
           .map((user) => user.userID)
           .toSet();
 
       _loggingService.debug(
-        'Attempting verification for event ${event.id} across ${allCandidateGeohashes.length} geohashes',
+        'Attempting verification for event ${event.id} with ${possibleUserIDs.length} participants',
       );
 
       for (final userID in possibleUserIDs) {
-        for (final geohash in allCandidateGeohashes) {
-          final candidateKey = _generateKey(userID, geohash);
-          final decryptedMessage = _tryDecryptMessage(
-            encryptedMessage,
-            candidateKey,
-            iv,
-          );
+        if (userID == currentUserId) continue;
 
-          if (decryptedMessage != null &&
-              decryptedMessage == userID &&
-              userID != currentUserId) {
-            _loggingService.info(
-              'Event ${event.id} successfully verified by matching user $userID at geohash $geohash',
-            );
-            await _saveVerifiedEvent(event);
-            return true;
-          }
+        final candidateKey = _generateKey(userID);
+        final decryptedMessage = _tryDecryptMessage(
+          encryptedMessage,
+          candidateKey,
+          iv,
+        );
+
+        if (decryptedMessage == null) continue;
+
+        // userId:lat:lon formatını parse et
+        final parts = decryptedMessage.split(':');
+        if (parts.length != 3) continue;
+
+        final decryptedUserId = parts[0];
+        final lat = double.tryParse(parts[1]);
+        final lon = double.tryParse(parts[2]);
+
+        if (decryptedUserId != userID || lat == null || lon == null) continue;
+
+        // Mesafe kontrolü
+        final distance = _calculateDistanceMeters(
+          currentLocation.latitude,
+          currentLocation.longitude,
+          lat,
+          lon,
+        );
+
+        _loggingService.debug(
+          'Decrypted location for $userID: $lat, $lon — distance: ${distance.toStringAsFixed(0)}m',
+        );
+
+        if (distance <= _maxDistanceMeters) {
+          _loggingService.info(
+            'Event ${event.id} verified: matched user $userID at ${distance.toStringAsFixed(0)}m',
+          );
+          await _saveVerifiedEvent(event);
+          return const Right(unit);
+        } else {
+          _loggingService.warn(
+            'Verification failed for event ${event.id}: Location mismatch (${distance.toStringAsFixed(0)}m)',
+          );
+          return Left(
+            LocationMismatchException(
+              'Konumunuz QR kodunu oluşturan kişiyle uyuşmuyor. (${distance.toStringAsFixed(0)}m uzaktasınız)',
+            ),
+          );
         }
       }
 
       _loggingService.warn(
-        'Verification failed for event ${event.id}: No matching key found in 3x3 grid.',
+        'Verification failed for event ${event.id}: No matching participant found.',
       );
-      return false;
-    } on FormatException {
-      _loggingService.error('Format error during verification');
-      rethrow;
+      return Left(
+        EventMismatchException(
+          'Bu QR kodu bu etkinliğe ait değil.',
+        ),
+      );
     } catch (e) {
-      _loggingService.error('Unexpected error during event verification');
-      throw Exception('An error occurred during event verification: $e');
+      _loggingService.error('Unexpected error during event verification: $e');
+      return Left(
+        UnknownVerificationException(
+          'Doğrulama sırasında beklenmeyen bir hata oluştu.',
+        ),
+      );
     }
   }
 
-  String _generateKey(Identifier userID, String geohash) {
+  // Geohash yerine sadece userId ile key üret
+  String _generateKey(Identifier userID) {
     try {
-      final keyString = '$userID-$geohash';
-      final keyBytes = utf8.encode(keyString);
+      final keyBytes = utf8.encode(userID);
       return sha256.convert(keyBytes).toString();
     } catch (e) {
       _loggingService.error('Key generation failed');
       throw Exception('Failed to generate encryption key');
     }
   }
+
+  // Haversine formülü — metre cinsinden mesafe
+  double _calculateDistanceMeters(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
+    const earthRadiusMeters = 6371000.0;
+    final dLat = _degreesToRadians(lat2 - lat1);
+    final dLon = _degreesToRadians(lon2 - lon1);
+    final a =
+        sin(dLat / 2) * sin(dLat / 2) +
+        cos(_degreesToRadians(lat1)) *
+            cos(_degreesToRadians(lat2)) *
+            sin(dLon / 2) *
+            sin(dLon / 2);
+    final c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    return earthRadiusMeters * c;
+  }
+
+  double _degreesToRadians(double degrees) => degrees * pi / 180;
 
   Map<String, String> _encryptMessage(String message, String keyString) {
     try {
@@ -203,11 +256,10 @@ class EventVerificationServiceImpl implements EventVerificationService {
 
   Future<void> _saveVerifiedEvent(EventEntity event) async {
     try {
-      // Mevcut local kayıt
       final data = await _persistanceService.getJson(_verifiedEventsKey);
       final verifiedIds = (data != null && data.containsKey('ids'))
           ? List<String>.from(data['ids'] as List)
-          : [];
+          : <String>[];
 
       if (!verifiedIds.contains(event.id)) {
         verifiedIds.add(event.id);
@@ -217,7 +269,6 @@ class EventVerificationServiceImpl implements EventVerificationService {
         _loggingService.info('Event ${event.id} saved to local verified list.');
       }
 
-      // Firestore'a yaz
       if (currentUserId != null) {
         await _eventRepository.markEventAsVerified(
           eventId: event.id,
