@@ -1,14 +1,13 @@
 import 'dart:io';
-
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:gal/gal.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image/image.dart' as img;
-import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:outnest/application/app_state/current_user_data_providers/current_user_identity_provider.dart';
@@ -52,13 +51,12 @@ class CameraPage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isMounted = useIsMounted();
     final currentState = useState<CameraState>(CameraState.camera);
-    final isMounted = useIsMounted();
     final takenPhotos = useState<List<File>>([]);
     final currentPreviewFile = useState<File?>(null);
     final isCameraInitialized = useState(false);
     final selectedCameraIndex = useState(0);
     final isProcessing = useState(false);
-
+    final flashMode = useState<FlashMode>(FlashMode.off);
     final controllerRef = useRef<CameraController?>(null);
     final initialVolume = useRef<double>(0.5);
     final isRestoringVolume = useRef(false);
@@ -135,6 +133,21 @@ class CameraPage extends HookConsumerWidget {
       }
       controllerRef.value = newController;
       isCameraInitialized.value = true;
+    }
+
+    Future<void> toggleFlash() async {
+      final controller = controllerRef.value;
+      if (controller == null || !controller.value.isInitialized) return;
+
+      final next = switch (flashMode.value) {
+        FlashMode.off => FlashMode.always,
+        FlashMode.always => FlashMode.auto,
+        FlashMode.auto => FlashMode.off,
+        _ => FlashMode.off,
+      };
+
+      await controller.setFlashMode(next);
+      flashMode.value = next;
     }
 
     // ── Kamera geçişi ────────────────────────────────────────────────────────
@@ -323,7 +336,7 @@ class CameraPage extends HookConsumerWidget {
         if (!isMounted()) return;
         if (picked == null) return;
 
-        final croppedFile = await cropToSquare(picked.path);
+        final croppedFile = await cropImage(picked.path);
 
         if (!isMounted()) return; // crop da async, tekrar kontrol
         if (croppedFile != null) {
@@ -407,7 +420,7 @@ class CameraPage extends HookConsumerWidget {
                         color: Colors.white,
                         size: 24,
                       ),
-                      onPressed: () => context.pop(),
+                      onPressed: () => context.go('/home'),
                     ),
                     Stack(
                       alignment: Alignment.topRight,
@@ -464,6 +477,8 @@ class CameraPage extends HookConsumerWidget {
                 isProcessing: isProcessing.value,
                 onTakePhoto: takePhoto,
                 onToggleCamera: toggleCamera,
+                onToggleFlash: toggleFlash, // ADD
+                flashMode: flashMode.value, // ADD
                 isMaxPhotosReached: takenPhotos.value.length >= 3,
               ),
             ),
@@ -491,41 +506,6 @@ class CameraPage extends HookConsumerWidget {
                         size: 24,
                       ),
                       onPressed: discardPreview,
-          // 3. KATMAN: UI ELEMANLARI
-          SafeArea(
-            child: Stack(
-              children: [
-                // 3. KATMAN içinde, SafeArea > Stack'e ekle
-                if (hasPhotoCapability ?? false)
-                  Positioned(
-                    top: 10.h,
-                    left: 10.w,
-                    child: GestureDetector(
-                      onTap: pickFromGallery,
-                      child: Container(
-                        padding: EdgeInsets.all(6.w),
-                        decoration: BoxDecoration(
-                          color: Colors.black45,
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                        child: const Icon(
-                          Icons.photo_library_outlined,
-                          color: Colors.white60,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                // Kapat Butonu
-                Positioned(
-                  top: 10.h,
-                  right: 10.w,
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: 30,
                     ),
                     const Padding(
                       padding: EdgeInsets.all(8),
@@ -828,30 +808,13 @@ class CameraPage extends HookConsumerWidget {
                       if (currentIndex >= 0 &&
                           currentIndex < takenPhotos.value.length) {
                         final fileToSave = takenPhotos.value[currentIndex];
-                        try {
-                          // Resmi galeriye kaydet
-                          final result = await ImageGallerySaver.saveFile(
-                            fileToSave.path,
-                          );
+                        await Gal.putImage(fileToSave.path);
 
-                          if (result['isSuccess'] == true && context.mounted) {
-                            showInfoPopup(
-                              context,
-                              message: 'Fotoğraf galeriye kaydedildi!',
-                            );
-                          } else if (context.mounted) {
-                            showErrorPopup(
-                              context,
-                              message: 'Fotoğraf kaydedilemedi.',
-                            );
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            showErrorPopup(
-                              context,
-                              message: 'Bir hata oluştu: $e',
-                            );
-                          }
+                        if (context.mounted) {
+                          showInfoPopup(
+                            context,
+                            message: 'Fotoğraf galeriye kaydedildi!',
+                          );
                         }
                       }
                     },
@@ -873,6 +836,34 @@ class CameraPage extends HookConsumerWidget {
               ),
             ),
           ],
+
+          // 3. KATMAN: UI ELEMANLARI
+          SafeArea(
+            child: Stack(
+              children: [
+                if (hasPhotoCapability ?? false)
+                  Positioned(
+                    top: 10.h,
+                    left: 50.w,
+                    child: GestureDetector(
+                      onTap: pickFromGallery,
+                      child: Container(
+                        padding: EdgeInsets.all(6.w),
+                        decoration: BoxDecoration(
+                          color: Colors.black45,
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: const Icon(
+                          Icons.photo_library_outlined,
+                          color: Colors.white60,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -885,26 +876,36 @@ class _ActionButtons extends StatelessWidget {
     required this.primaryColor,
     required this.isProcessing,
     required this.onTakePhoto,
+    required this.onToggleFlash,
+    required this.flashMode,
     required this.onToggleCamera,
     required this.isMaxPhotosReached,
   });
 
   final Color primaryColor;
   final bool isProcessing;
+  final VoidCallback onToggleFlash;
+  final FlashMode flashMode;
   final VoidCallback onTakePhoto;
   final VoidCallback onToggleCamera;
   final bool isMaxPhotosReached;
 
   @override
   Widget build(BuildContext context) {
+    IconData flashIcon = switch (flashMode) {
+      FlashMode.auto => Icons.bolt,
+      FlashMode.always => Icons.flash_on,
+      FlashMode.off => Icons.flash_off,
+      _ => Icons.bolt,
+    };
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 40.w),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           IconButton(
-            icon: const Icon(Icons.bolt, color: Colors.white, size: 32),
-            onPressed: () {},
+            icon: Icon(flashIcon, color: Colors.white, size: 32), // UPDATED
+            onPressed: onToggleFlash, // UPDATED
           ),
 
           GestureDetector(

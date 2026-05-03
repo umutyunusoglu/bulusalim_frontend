@@ -82,7 +82,8 @@ class WhatsNewCarousel extends HookConsumerWidget {
             const SizedBox(height: 12),
 
             SizedBox(
-              height: 465,
+              height: 480,
+
               child: PageView.builder(
                 itemCount: items.length,
                 onPageChanged: (index) => currentIndex.value = index,
