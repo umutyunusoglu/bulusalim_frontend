@@ -105,7 +105,7 @@ String? remapProfilePaths(Uri uri) {
 
 final router = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: '/splash',
+  initialLocation: '/register-info',
   errorBuilder: (context, state) {
     debugPrint('GoRouter Hatası: ${state.error}');
     return const HomePage();

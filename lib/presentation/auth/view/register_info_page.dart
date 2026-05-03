@@ -5,15 +5,14 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // Sadece BottomSheet içinden veriyi çekmek için eklendi
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:outnest/application/data_providers/turkey_cities_provider.dart'; // Şehir listesi klasörden çekildi
+import 'package:outnest/application/data_providers/turkey_cities_provider.dart';
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
-import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
@@ -22,15 +21,12 @@ import 'package:outnest/domain/datasources/university_datasource.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/analytics/analytics_service.dart';
-import 'package:outnest/domain/services/analytics/event_configs/select_gender_analytics_config.dart';
-import 'package:outnest/domain/services/analytics/event_configs/select_hobbies_analytics_config.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/usecases/upload_profile_picture_usecase.dart';
 import 'package:outnest/presentation/auth/registration_loading_screen.dart';
 import 'package:outnest/presentation/auth/view/components/otp_row.dart';
 import 'package:outnest/presentation/auth/view/components/register_step_view.dart';
 import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
-import 'package:outnest/presentation/shared/category_filter_chip.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/form/formatters/name_surname_formatter.dart';
 import 'package:outnest/presentation/shared/form/formatters/username_formatter.dart';
@@ -55,10 +51,8 @@ enum RegisterStep {
   dob,
   universityEmail,
   universityOtp,
-  gender,
   city,
   profilePhoto,
-  interests,
   permissions,
 }
 
@@ -67,11 +61,9 @@ final Map<RegisterStep, RegisterStep> backSteps = {
   RegisterStep.dob: RegisterStep.name,
   RegisterStep.universityEmail: RegisterStep.dob,
   RegisterStep.universityOtp: RegisterStep.universityEmail,
-  RegisterStep.gender: RegisterStep.universityEmail,
-  RegisterStep.city: RegisterStep.gender,
+  RegisterStep.city: RegisterStep.universityEmail,
   RegisterStep.profilePhoto: RegisterStep.city,
-  RegisterStep.interests: RegisterStep.profilePhoto,
-  RegisterStep.permissions: RegisterStep.interests,
+  RegisterStep.permissions: RegisterStep.profilePhoto,
 };
 
 class _RegisterInfoPageState extends State<RegisterInfoPage>
@@ -83,9 +75,9 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
   final _nameController = TextEditingController();
   final _dobController = TextEditingController();
   final _universityController = TextEditingController();
-  final _genderDisplayController = TextEditingController();
   final _cityDisplayController = TextEditingController();
   final _friendSearchController = TextEditingController();
+
   // --- İZİN STATE'LERİ (Varsayılan Kapalı) ---
   bool _permNotifications = false;
   bool _permLocation = false;
@@ -99,10 +91,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
     (index) => TextEditingController(),
   );
 
-  final List<String> _selectedInterests = [];
-  final Map<String, String> _categories = AppConfig.categories;
   int _currentIndex = 0;
-  final bool _isLoadingConfig = false;
   DateTime? _selectedDate;
 
   String? _detectedUniversity;
@@ -126,7 +115,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
     _nameController.dispose();
     _dobController.dispose();
     _universityController.dispose();
-    _genderDisplayController.dispose();
     _cityDisplayController.dispose();
     _friendSearchController.dispose();
     for (final c in _eduOtpControllers) {
@@ -137,65 +125,12 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
 
   @override
   Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
-    // Uygulama arka plandan ön plana geldiğinde (ayarlardan dönünce)
     if (state == AppLifecycleState.resumed) {
       await _syncAllPermissions();
     }
   }
 
   void _nextPage() {
-    final currentStep = RegisterStep.values[_currentIndex];
-    final analytics = getIt<AnalyticsService>();
-
-    switch (currentStep) {
-      case RegisterStep.username:
-        // Burada username kontrolü yapılacak
-        break;
-      case RegisterStep.name:
-        // Ad soyad validasyonu yapılacak
-        break;
-      case RegisterStep.dob:
-        // Doğum tarihi validasyonu yapılacak
-        break;
-      case RegisterStep.universityEmail:
-        // Üniversite maili validasyonu yapılacak
-        break;
-      case RegisterStep.universityOtp:
-        // OTP validasyonu yapılacak
-        break;
-      case RegisterStep.gender:
-        final chosenGenderText = _genderDisplayController.text.trim();
-        GenderEnum? chosenGender;
-        if (chosenGenderText.isEmpty) {
-          // Hata mesajı göster
-          chosenGender = null;
-        } else {
-          chosenGender = GenderEnum.fromString(chosenGenderText);
-        }
-
-        analytics.logSelectGender(
-          SelectGenderAnalyticsConfig(value: chosenGender, previousValue: null),
-        );
-        break;
-      case RegisterStep.city:
-        break;
-      case RegisterStep.profilePhoto:
-        // Fotoğraf seçimi validasyonu yapılacak
-        break;
-      case RegisterStep.interests:
-        analytics.logSelectHobbies(
-          SelectHobbiesAnalyticsConfig(
-            value: _selectedInterests,
-            previousValue: [],
-          ),
-        );
-
-        break;
-      case RegisterStep.permissions:
-        // İzinler ile ilgili bilgilendirme yapılacak
-        break;
-    }
-
     _pageController.nextPage(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
@@ -209,9 +144,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
       final backIndex = RegisterStep.values.indexOf(backStep);
 
       if (_currentIndex - backIndex > 1) {
-        _pageController.jumpToPage(
-          backIndex,
-        );
+        _pageController.jumpToPage(backIndex);
       } else {
         _pageController.animateToPage(
           backIndex,
@@ -228,22 +161,18 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
 
   // --- KAYIT BİTİRME FONKSİYONU ---
   Future<void> _finishRegistration() async {
-    // Burada API'ye kayıt isteği atılmalı ve SessionService güncellenmeli.
-    // Başarılı olduktan sonra Home'a yönlendiriyoruz:
     if (_isRegistering) return; // Çift tıklamayı önle
 
     setState(() => _isRegistering = true);
-    //await Future.delayed(const Duration(seconds: 10));
 
     try {
       final username = sanitizeUsername(_usernameController.text);
       final name = sanitizeName(_nameController.text);
       final dob = _selectedDate!;
-      GenderEnum gender;
-      gender = GenderEnum.fromString(_genderDisplayController.text);
+      GenderEnum gender = GenderEnum.fromString('Belirtmek İstemiyorum');
       final city = _cityDisplayController.text.trim();
+      final List<String> interests = []; // Hobiler default boş liste
 
-      final interests = _selectedInterests;
       final uploadUseCase = getIt<UploadProfilePicture>();
       var profileImageUrl = '';
       if (_selectedImage != null) {
@@ -285,20 +214,16 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
         capabilities: const {},
       );
 
-      await userRepository.createUser(
-        newUser,
-      );
+      await userRepository.createUser(newUser);
 
       if (!mounted) return;
       context.go('/splash', extra: UniqueKey());
     } catch (e, stackTrace) {
-      // Konsola detaylı bas ki hatayı görebilelim
       debugPrint('HATA OLUŞTU: $e');
       debugPrint('Stack Trace: $stackTrace');
 
       getIt<LoggingService>().error('Kayıt tamamlanamadı: $e');
 
-      // EKRANA HATA MESAJI BASAN KOD BU:
       if (mounted) {
         showErrorPopup(
           context,
@@ -311,16 +236,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
         setState(() => _isRegistering = false);
       }
     }
-  }
-
-  void _toggleInterest(String category) {
-    setState(() {
-      if (_selectedInterests.contains(category)) {
-        _selectedInterests.remove(category);
-      } else {
-        _selectedInterests.add(category);
-      }
-    });
   }
 
   void _showCityPicker() {
@@ -538,46 +453,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
   }
 
   // --- BOTTOM SHEETS ---
-  void _selectGender(String gender) {
-    setState(() => _genderDisplayController.text = gender);
-    Navigator.pop(context);
-  }
-
-  void _showGenderPicker() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return CustomActionBottomSheet(
-          options: [
-            BottomSheetOption(
-              icon: Icons.female,
-              text: 'Kadın',
-              onTap: () => _selectGender('Kadın'),
-            ),
-            BottomSheetOption(
-              icon: Icons.male,
-              text: 'Erkek',
-              onTap: () => _selectGender('Erkek'),
-            ),
-
-            BottomSheetOption(
-              icon: Icons.block,
-              text: 'Belirtmek İstemiyorum',
-              onTap: () => _selectGender('Belirtmek İstemiyorum'),
-            ),
-            BottomSheetOption(
-              icon: Icons.brightness_1,
-              text: 'Özel',
-              onTap: () => _selectGender('Özel'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   void _showPhotoPicker() {
     showModalBottomSheet(
       context: context,
@@ -637,11 +512,8 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                   onNext: () async {
                     final username = _usernameController.text.trim();
 
-                    // 2. Async kontrolü burada yap
                     final exists = await getIt<UserRepository>()
-                        .doesUsernameExist(
-                          username,
-                        );
+                        .doesUsernameExist(username);
                     FocusScope.of(context).unfocus();
 
                     getIt<LoggingService>().warn(exists.toString());
@@ -652,7 +524,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                         message: 'Bu kullanıcı adı zaten alınmış!',
                       );
                     } else {
-                      // 3. Her şey yolundaysa genel _nextPage fonksiyonunu çağır
                       _nextPage();
                     }
                   },
@@ -699,7 +570,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                   buttonText: _isSendingEmail
                       ? 'gönderiliyor...'
                       : 'kod gönder',
-                  // Kullanıcı maili yazarken anlık kontrol:
                   onChanged: _onUniversityEmailChanged,
                   description: _detectedUniversity != null
                       ? 'Tespit Edilen: $_detectedUniversity'
@@ -721,7 +591,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                         sanitizeEmail(_universityController.text),
                       );
                       if (!mounted) return;
-                      _nextPage(); // Başarılıysa OTP sayfasına geç
+                      _nextPage();
                     } on FirebaseFunctionsException catch (error) {
                       if (mounted) {
                         if (error.code == 'resource-exhausted') {
@@ -747,11 +617,10 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                       if (mounted) setState(() => _isSendingEmail = false);
                     }
                   },
-                  onSkip: !_isSendingEmail
-                      ? () => _pageController.jumpToPage(
-                          RegisterStep.gender.index,
-                        )
-                      : null,
+
+                  // BURAYA "ATLA" ÖZELLİĞİ EKLENDİ
+                  onSkip: () =>
+                      _pageController.jumpToPage(RegisterStep.city.index),
 
                   footerWidget: TextButton(
                     onPressed: () async {
@@ -761,21 +630,20 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                       launchUrl(url, mode: LaunchMode.inAppWebView);
                     },
                     style: TextButton.styleFrom(
-                      foregroundColor:
-                          Colors.grey.shade600, // Silik, tatlı bir gri
+                      foregroundColor: Colors.grey.shade600,
                     ),
                     child: Text(
                       'Üniversitenizi bulamıyor musunuz? Bize bildirin.',
                       style: TextStyle(
                         fontFamily: 'SF Pro Display',
                         fontSize: 12.sp,
-                        decoration: TextDecoration
-                            .underline, // Tıklanabilir hissi verir
+                        decoration: TextDecoration.underline,
                       ),
                     ),
                   ),
                 ),
 
+                // 5. DOĞRULAMA KODU
                 RegisterStepView(
                   title: 'Doğrulama Kodu',
                   buttonText: 'onayla',
@@ -793,7 +661,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                         .map((c) => c.text)
                         .join();
                     try {
-                      // Debug ekranındaki verifyEmail logic'i:
                       print('otpCode: $otpCode');
                       await getIt<UserRepository>().verifyEmail(
                         sanitizeEmail(_universityController.text),
@@ -803,7 +670,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
 
                       if (!mounted) return;
                       setState(() => _isVerifyingEmail = false);
-                      _nextPage(); // Başarılıysa devam et
+                      _nextPage();
                     } catch (e) {
                       if (mounted) {
                         showErrorPopup(
@@ -816,17 +683,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                   },
                 ),
 
-                // 6. CİNSİYET
-                RegisterStepView(
-                  title: 'Cinsiyet',
-                  controller: _genderDisplayController,
-                  hintText: 'lütfen seçiniz',
-                  onNext: _nextPage,
-                  readOnly: true,
-                  onTapInput: _showGenderPicker,
-                  onSkip: _nextPage,
-                ),
-
+                // 6. ŞEHİR SEÇİMİ
                 RegisterStepView(
                   title: 'Şehrini Seç',
                   controller: _cityDisplayController,
@@ -847,17 +704,19 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                   },
                 ),
 
+                // 7. PROFİL FOTOĞRAFI
                 RegisterStepView(
                   title: 'Profil Fotoğrafı',
                   onNext: _nextPage,
+                  onSkip: _nextPage,
                   customContent: GestureDetector(
-                    onTap: _showPhotoPicker, // Mevcut modalını kullanacağız
+                    onTap: _showPhotoPicker,
                     child: Stack(
                       alignment: Alignment.bottomRight,
                       children: [
                         Container(
-                          width: 140.w,
-                          height: 140.w,
+                          width: 180.w,
+                          height: 180.w,
                           decoration: BoxDecoration(
                             color: const Color(0xFFF1F1F5),
                             shape: BoxShape.circle,
@@ -897,83 +756,8 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                     ),
                   ),
                 ),
-                // 8. İLGİ ALANLARI
-                RegisterStepView(
-                  title: 'İlgi Alanların',
-                  description: 'En az 3 adet seçmenizi öneririz.',
-                  onNext: _nextPage,
-                  onSkip: _nextPage,
-                  customContent: _isLoadingConfig
-                      ? SizedBox(
-                          height: 100.h,
-                          child: const Center(
-                            child: CircularProgressIndicator(
-                              color: AppColors.primaryColor,
-                            ),
-                          ),
-                        )
-                      : _categories.isEmpty
-                      ? Center(
-                          child: Text(
-                            'Kategoriler yüklenemedi.\nLütfen internet bağlantınızı kontrol edin.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        )
-                      : Wrap(
-                          spacing: 12.w,
-                          runSpacing: 12.h,
-                          alignment: WrapAlignment.center,
-                          children: _categories.entries.map((entry) {
-                            final categoryName = entry.key;
-                            final categoryEmoji = entry.value;
-                            final isSelected = _selectedInterests.contains(
-                              categoryName,
-                            );
 
-                            return CategoryFilterChip(
-                              label: categoryName.toLowerCase(),
-                              emoji: categoryEmoji,
-                              isSelected: isSelected,
-                              onTap: () => _toggleInterest(categoryName),
-                            );
-                          }).toList(),
-                        ),
-                ),
-
-                // 9. ARKADAŞLARINI EKLE
-                /*
-            RegisterStepView(
-              title: 'Arkadaşlarını Ekle',
-              onNext: _nextPage,
-              onSkip: _nextPage,
-              buttonText: 'devam',
-              customContent: Column(
-                children: [
-                  AuthInput(
-                    controller: _friendSearchController,
-                    hintText: 'Ara',
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: Colors.grey,
-                      size: 24.sp,
-                    ),
-                  ),
-                  SizedBox(height: 20.h),
-                  _buildActionRow(
-                    Icons.contact_phone_outlined,
-                    'Kişilerinden ara',
-                  ),
-                  Divider(color: Colors.grey.shade200),
-                  _buildActionRow(Icons.camera_alt_outlined, 'Instagram bağla'),
-                ],
-              ),
-            ),
-            */
-                // 10. CİHAZ İZİNLERİ
+                // 8. CİHAZ İZİNLERİ
                 RegisterStepView(
                   title: 'Cihaz İzinleri',
                   onNext: _finishRegistration,
@@ -988,14 +772,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                         permission: Permission.notification,
                         value: _permNotifications,
                       ),
-                      /*
-                  _buildPermissionTile(
-                    title: 'Bluetooth',
-                    description:
-                        "Outnest uygulamasına yakındaki cihazlarla bağlantı kurmak için Bluetooth'u kullanmasına izin verilir.",
-                    permission: Permission.bluetooth,
-                    value: _permBluetooth,
-                  ),*/
                       _buildPermissionTile(
                         title: 'Konum Servisleri',
                         description:
@@ -1138,7 +914,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
     try {
       final pickedFile = await _picker.pickImage(
         source: source,
-        maxWidth: 1000, // Performans için resmi boyutlandırıyoruz
+        maxWidth: 1000,
         maxHeight: 1000,
         imageQuality: 85,
       );
@@ -1149,7 +925,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
           _selectedImage = File(pickedFile.path);
         });
         if (!mounted) return;
-        Navigator.pop(context); // Modal'ı kapat
+        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
@@ -1159,17 +935,15 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
         );
       }
     }
-  } // --- İZİN YARDIMCI FONKSİYONLARI ---
+  }
 
   Future<void> _handlePermissionTap(Permission permission) async {
     final status = await permission.status;
 
-    // EĞER İZİN ZATEN VERİLDİYSE, FONKSİYONU DURDUR (KAPANAMAZ MANTIĞI)
     if (status.isGranted || status.isLimited) {
       return;
     }
 
-    // İzin verilmemişse süreci başlat
     final result = await permission.request();
 
     if (!mounted) return;
@@ -1185,7 +959,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
     required String title,
     required String description,
     required Permission permission,
-    required bool value, // Bu değer _syncAllPermissions'dan geliyor
+    required bool value,
   }) {
     return InkWell(
       borderRadius: BorderRadius.circular(12.r),
@@ -1221,23 +995,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
             ),
             Row(
               children: [
-                // Icon(
-                //   value ? Icons.check_circle : Icons.cancel,
-                //   color: value ? AppColors.primaryColor : Colors.grey.shade400,
-                //   size: 20.sp,
-                // ),
                 SizedBox(width: 6.w),
-
-                // Text(
-                //   value ? 'İzin Verildi' : 'Kapalı',
-                //   style: TextStyle(
-                //     fontSize: 12.sp,
-                //     fontWeight: FontWeight.w500,
-                //     color: value
-                //         ? AppColors.primaryColor
-                //         : Colors.grey.shade500,
-                //   ),
-                // ),
                 Icon(
                   Icons.chevron_right,
                   size: 18.sp,

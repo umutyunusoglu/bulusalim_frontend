@@ -83,6 +83,7 @@ dependencies:
   ripple_wave: ^0.1.5
   glowy_borders: ^1.0.2
   riverpod: ^3.2.1
+  lottie: ^3.3.3
 
 
 
@@ -121,6 +122,7 @@ flutter:
     - assets/outnest/
     - assets/tutorial/
     - .env
+    - assets/Animation - 1777538292613.json
 fonts:
     - family: SF Pro Display
       fonts:
