@@ -7,6 +7,7 @@ import 'package:outnest/core/utils/types/enums/screen_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/presentation/map/view/components/community_event_info_card.dart';
 import 'package:outnest/presentation/shared/event_card/view/components/event_join_button.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CommunityEventDetailViewPage extends StatelessWidget {
   const CommunityEventDetailViewPage({
@@ -180,17 +181,36 @@ class CommunityEventDetailViewPage extends StatelessWidget {
             ),
           ),
           SizedBox(height: 8.h),
-          Text(
-            content,
-            style: TextStyle(
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w400,
-              height: 1.5,
-              color: isLink
-                  ? AppColors.tertiaryColor
-                  : AppColors.onBackgroundColor,
+          if (isLink)
+            GestureDetector(
+              onTap: () async {
+                String url = content;
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                  url = 'https://$url';
+                }
+                final uri = Uri.parse(url);
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              },
+              child: Text(
+                content,
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w400,
+                  height: 1.5,
+                  color: AppColors.tertiaryColor,
+                ),
+              ),
+            )
+          else
+            Text(
+              content,
+              style: TextStyle(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w400,
+                height: 1.5,
+                color: AppColors.onBackgroundColor,
+              ),
             ),
-          ),
         ],
       ),
     );
