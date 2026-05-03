@@ -42,7 +42,10 @@ class EventJoinButton extends HookConsumerWidget {
     final isInActiveEvents = activeEvents.any(
       (e) => e.eventID == event.eventID,
     );
-    final uid = ref.watch(currentUserIDProvider)!;
+    final uid = ref.watch(currentUserIDProvider);
+    if (uid == null) {
+      return const SizedBox();
+    }
 
     final externalStatus = isInActiveEvents
         ? EventJoinStatus.joined
@@ -52,11 +55,11 @@ class EventJoinButton extends HookConsumerWidget {
     final isProcessing = useState(false);
 
     useEffect(() {
-      if (!isProcessing.value) {
-        status.value = externalStatus;
+      if (externalStatus == EventJoinStatus.joined) {
+        status.value = EventJoinStatus.joined;
       }
       return null;
-    }, [externalStatus, isProcessing.value]);
+    }, [externalStatus]);
 
     // ─── AKSIYON HANDLERLARı ───
 

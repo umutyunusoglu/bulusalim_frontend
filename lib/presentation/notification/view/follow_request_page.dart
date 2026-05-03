@@ -13,8 +13,7 @@ class FollowRequestsPage extends ConsumerStatefulWidget {
   const FollowRequestsPage({super.key});
 
   @override
-  ConsumerState<FollowRequestsPage> createState() =>
-      _FollowRequestsPageState();
+  ConsumerState<FollowRequestsPage> createState() => _FollowRequestsPageState();
 }
 
 class _FollowRequestsPageState extends ConsumerState<FollowRequestsPage> {
@@ -25,9 +24,15 @@ class _FollowRequestsPageState extends ConsumerState<FollowRequestsPage> {
     if (_isMarkingSeen || items.isEmpty) return;
     _isMarkingSeen = true;
     try {
+      // ref.read'leri await'ten ÖNCE yap, referansları sakla
       final repository = ref.read(inboxRepositoryProvider);
+      final notifier = ref.read(unreadFollowRequestsProvider.notifier);
+
       await repository.markFollowRequestsAsSeen(items.first.userID);
-      await ref.read(unreadFollowRequestsProvider.notifier).refresh();
+
+      // İkinci await'ten önce hâlâ mounted mıyız kontrol et
+      if (!mounted) return;
+      await notifier.refresh();
     } finally {
       _isMarkingSeen = false;
     }

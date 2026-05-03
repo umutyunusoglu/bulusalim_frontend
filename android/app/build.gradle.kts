@@ -39,7 +39,7 @@ if (localPropertiesFile.exists()) {
 }
 
 val flutterVersionCode = localProperties.getProperty("flutter.versionCode")?.toInt() ?: 1
-val flutterVersionName = "1.1.7"
+val flutterVersionName = "1.1.8"
 
 android {
     namespace = "app.outnest"

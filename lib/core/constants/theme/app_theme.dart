@@ -8,7 +8,7 @@ class AppTheme {
   // --- LIGHT THEME ---
   static final ThemeData lightTheme = ThemeData(
     useMaterial3: true,
-    fontFamily: 'Sf Pro Display', // Font burada tanımlı
+    fontFamily: 'SF Pro Display', // Font burada tanımlı
     primaryColor: AppColors.primaryColor,
     scaffoldBackgroundColor: AppColors.backgroundColor,
 
@@ -20,7 +20,7 @@ class AppTheme {
       centerTitle: true,
       iconTheme: IconThemeData(color: AppColors.iconColor),
       titleTextStyle: TextStyle(
-        fontFamily: 'Sf Pro Display',
+        fontFamily: 'SF Pro Display',
         color: AppColors.onBackgroundColor, // Başlık Siyah
         fontWeight: FontWeight.bold,
         fontSize: 20,
@@ -66,7 +66,7 @@ class AppTheme {
   // --- DARK THEME ---
   static final ThemeData darkTheme = ThemeData(
     useMaterial3: true,
-    fontFamily: 'Sf Pro Display',
+    fontFamily: 'SF Pro Display',
     primaryColor: AppColors.darkPrimaryColor,
     scaffoldBackgroundColor: AppColors.darkBackgroundColor,
 
@@ -77,7 +77,7 @@ class AppTheme {
       centerTitle: true,
       iconTheme: IconThemeData(color: AppColors.darkOnBackgroundColor),
       titleTextStyle: TextStyle(
-        fontFamily: 'Sf Pro Display',
+        fontFamily: 'SF Pro Display',
         color: AppColors.darkOnBackgroundColor,
         fontWeight: FontWeight.bold,
         fontSize: 20,

@@ -439,11 +439,6 @@ final router = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
         final eventID = state.pathParameters['eventID'] ?? '';
-        final extra = state.extra as Map<String, dynamic>?;
-
-        final safeAvatars = _mapToAvatarInfo(
-          (extra?['avatars'] as List?) ?? [],
-        );
 
         return ChatPage(
           eventID: eventID,

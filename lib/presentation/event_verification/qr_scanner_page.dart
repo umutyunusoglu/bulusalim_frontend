@@ -28,43 +28,31 @@ class QRScannerScreen extends HookConsumerWidget {
     final isVerified = useState(false);
     final isLoading = useState(false);
 
-    // Throttle: tarama cooldown flag'i
     final isCooldown = useRef(false);
 
     final verificationService = ref.watch(eventVerificationServiceProvider);
 
     Future<void> onDetect(BarcodeCapture capture) async {
-      if (isVerified.value || isLoading.value) return;
-
-      // Cooldown aktifse bu taramayı atla
-      if (isCooldown.value) return;
-      isCooldown.value = true;
-      Future.delayed(
-        const Duration(seconds: 1),
-        () => isCooldown.value = false,
-      );
+      if (isVerified.value || isLoading.value || isCooldown.value) return;
 
       final barcodes = capture.barcodes;
       for (final barcode in barcodes) {
         final rawValue = barcode.rawValue;
         if (rawValue == null) continue;
 
+        isCooldown.value = true;
         isLoading.value = true;
 
         try {
           final position = await getCurrentLocation(context);
-
-          if (position == null) {
-            // getCurrentLocation zaten kullanıcıya hata gösterdi
-            return;
-          }
+          if (position == null) return;
 
           final currentLocation = Geolocation(
             latitude: position.latitude,
             longitude: position.longitude,
           );
 
-          final success = await verificationService.verifyEvent(
+          final result = await verificationService.verifyEvent(
             event,
             currentLocation,
             rawValue,
@@ -72,37 +60,33 @@ class QRScannerScreen extends HookConsumerWidget {
 
           if (!context.mounted) return;
 
-          if (success) {
-            isVerified.value = true;
-            scannerController.stop();
-
-            Future.delayed(const Duration(seconds: 1), () {
-              if (!context.mounted) return;
-              context.go('/camera', extra: {'event': event});
-            });
-          } else {
-            showErrorPopup(
-              context,
-              message:
-                  'Doğrulama başarısız. Lütfen doğru QR kodu okuttuğunuzdan emin olun.',
-            );
-          }
+          result.fold(
+            (failure) => showErrorPopup(context, message: failure.message),
+            (_) {
+              isVerified.value = true;
+              scannerController.stop();
+              Future.delayed(const Duration(seconds: 1), () {
+                if (!context.mounted) return;
+                context.go('/camera', extra: {'event': event});
+              });
+            },
+          );
         } catch (e) {
           debugPrint('QR Doğrulama Hatası: $e');
           if (context.mounted) {
             showErrorPopup(
               context,
-              message:
-                  "Kod Doğrulanırken Bir Hata Oluştu, Lütfen QR'ın Doğruluğundan Emin Olun!",
+              message: 'Beklenmeyen bir hata oluştu.',
             );
           }
         } finally {
           if (context.mounted && !isVerified.value) {
             isLoading.value = false;
+            isCooldown.value = false;
           }
         }
 
-        break; // İlk anlamlı QR'ı işle, döngüden çık
+        break;
       }
     }
 
