@@ -88,4 +88,9 @@ abstract class EventRepository {
     required String eventId,
     required String userId,
   });
+
+  Future<bool> isEventVerifiedForUser({
+    required String eventId,
+    required String userId,
+  });
 }
