@@ -3,7 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_symbols_icons/symbols.dart';
+
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/services/draft_post_service.dart';
@@ -27,7 +30,7 @@ class NewPostPage extends StatefulWidget {
 
 class _NewPostPageState extends State<NewPostPage> {
   final TextEditingController _captionController = TextEditingController();
-  final PageController _pageController = PageController();
+  PageController? _pageController;
 
   List<File> _selectedMedia = [];
   int _currentImageIndex = 0;
@@ -42,28 +45,51 @@ class _NewPostPageState extends State<NewPostPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_pageController == null) {
+      final screenWidth = MediaQuery.of(context).size.width;
+      final fraction = (225.w + 16.w) / screenWidth;
+      _pageController = PageController(viewportFraction: fraction);
+    }
+  }
+
+  @override
   void dispose() {
     _captionController.dispose();
-    _pageController.dispose();
+    _pageController?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       resizeToAvoidBottomInset: false, // Klavye taşmasını önler
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
-          child: Column(
-            children: [
-              // --- ÜST BAR ---
-              SizedBox(
+        child: Column(
+          children: [
+            // --- ÜST BAR ---
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: SizedBox(
                 height: 50.h,
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: IconButton(
+                        onPressed: () => context.pop(),
+                        icon: Icon(
+                          Symbols.reply,
+                          color: Colors.black,
+                          size: 24.sp,
+                        ),
+                      ),
+                    ),
                     Text(
                       'Yeni Gönderi',
                       style: TextStyle(
@@ -87,63 +113,69 @@ class _NewPostPageState extends State<NewPostPage> {
                   ],
                 ),
               ),
+            ),
 
-              // --- FOTOĞRAF (361x361) ---
-              Container(
-                height: 330.h, // Ekran yüksekliğine göre 361.w ile orantılandı
-                width: 361.w,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24.r),
-                  color: Colors.grey.shade100,
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24.r),
-                  child: PageView.builder(
-                    controller: _pageController,
-                    itemCount: _selectedMedia.length,
-                    onPageChanged: (index) =>
-                        setState(() => _currentImageIndex = index),
-                    itemBuilder: (context, index) => Image.file(
-                      _selectedMedia[index],
-                      fit: BoxFit.cover,
+            SizedBox(height: 16.h),
+
+            SizedBox(
+              height: 300.h,
+              width: screenWidth,
+              child: PageView.builder(
+                controller: _pageController!,
+                physics: const BouncingScrollPhysics(),
+                itemCount: _selectedMedia.length,
+                onPageChanged: (index) =>
+                    setState(() => _currentImageIndex = index),
+                itemBuilder: (context, index) {
+                  return Container(
+                    margin: EdgeInsets.symmetric(
+                      horizontal: 6.w,
                     ),
-                  ),
-                ),
-              ),
-
-              SizedBox(height: 8.h),
-
-              // Sayfa Noktaları
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  _selectedMedia.length,
-                  (index) => Container(
-                    margin: EdgeInsets.symmetric(horizontal: 2.w),
-                    width: 6.w,
-                    height: 6.w,
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _currentImageIndex == index
-                          ? Colors.black
-                          : Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(24.r),
+                      image: DecorationImage(
+                        image: FileImage(_selectedMedia[index]),
+                        fit: BoxFit.cover,
+                      ),
                     ),
+                  );
+                },
+              ),
+            ),
+
+            SizedBox(height: 16.h),
+
+            // Sayfa Noktaları
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                _selectedMedia.length,
+                (index) => Container(
+                  margin: EdgeInsets.symmetric(horizontal: 4.w),
+                  width: 6.w,
+                  height: 6.w,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _currentImageIndex == index
+                        ? Colors.black
+                        : Colors.grey.shade300,
                   ),
                 ),
               ),
+            ),
 
-              SizedBox(height: 12.h),
+            SizedBox(height: 24.h),
 
-              // --- INPUT ALANI (Tam Ölçü: 361x68) ---
-              Container(
-                height: 68.h,
-                width: 361.w,
+            // --- INPUT ALANI  ---
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: Container(
+                height: 80.h,
+                width: double.infinity,
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF2F2F7), // Görseldeki açık gri tonu
-                  borderRadius: BorderRadius.circular(
-                    20.r,
-                  ), // Görseldeki yumuşak köşe
+                  color: const Color(0xFFF2F2F7),
+                  borderRadius: BorderRadius.circular(20.r),
                 ),
                 child: Stack(
                   children: [
@@ -172,7 +204,7 @@ class _NewPostPageState extends State<NewPostPage> {
                       ),
                       onChanged: (val) => setState(() {}),
                     ),
-                    // Sağ alt köşedeki karakter sayacı (0/50)
+                    // Sağ alt köşedeki karakter sayacı
                     Positioned(
                       bottom: 0,
                       right: 0,
@@ -188,56 +220,63 @@ class _NewPostPageState extends State<NewPostPage> {
                   ],
                 ),
               ),
+            ),
 
-              SizedBox(height: 12.h),
+            SizedBox(height: 24.h),
 
-              // --- SWITCHLER ---
-              _buildSwitchRow(
-                'Katılımcıları göster.',
-                'Katıldığın buluşmada bulunan diğer katılımcılar paylaşımında yer alacak.',
-                _showParticipants,
-                (v) => setState(() => _showParticipants = v),
-              ),
-              _buildSwitchRow(
-                "Dump'a dahil et.",
-                'Paylaştığın gönderideki fotoğrafların ay sonunda senin için hazırlayacağımız dump gönderisine dahil olur.',
-                _addToDump,
-                (v) => setState(() => _addToDump = v),
-              ),
-              _buildSwitchRow(
-                'Profile sabitle.',
-                'Paylaştığın gönderi 1 gün sonra profilinden silinmeyecek.',
-                _pinPhoto,
-                (v) => setState(() => _pinPhoto = v),
-              ),
-
-              const Spacer(),
-
-              // --- PAYLAŞ BUTONU ---
-              SizedBox(
-                width: 170.w,
-                height: 48.h,
-                child: ElevatedButton(
-                  onPressed: _sendPost,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6C86A4),
-                    shape: const StadiumBorder(),
-                    elevation: 0,
+            // --- SWITCHLER ---
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: Column(
+                children: [
+                  _buildSwitchRow(
+                    'Katılımcıları göster.',
+                    'Katıldığın buluşmada bulunan diğer katılımcılar paylaşımında yer alacak.',
+                    _showParticipants,
+                    (v) => setState(() => _showParticipants = v),
                   ),
-                  child: Text(
-                    'paylaş',
-                    style: TextStyle(
-                      fontFamily: 'SF Pro Display',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16.sp,
-                      color: Colors.white,
-                    ),
+                  _buildSwitchRow(
+                    "Dump'a dahil et.",
+                    'Paylaştığın gönderideki fotoğrafların ay sonunda senin için hazırlayacağımız dump gönderisine dahil olur.',
+                    _addToDump,
+                    (v) => setState(() => _addToDump = v),
+                  ),
+                  _buildSwitchRow(
+                    'Profile sabitle.',
+                    'Paylaştığın gönderi 1 gün sonra profilinden silinmeyecek.',
+                    _pinPhoto,
+                    (v) => setState(() => _pinPhoto = v),
+                  ),
+                ],
+              ),
+            ),
+
+            const Spacer(),
+
+            // --- PAYLAŞ BUTONU ---
+            SizedBox(
+              width: 170.w,
+              height: 48.h,
+              child: ElevatedButton(
+                onPressed: _sendPost,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6C86A4),
+                  shape: const StadiumBorder(),
+                  elevation: 0,
+                ),
+                child: Text(
+                  'paylaş',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Display',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16.sp,
+                    color: Colors.white,
                   ),
                 ),
               ),
-              SizedBox(height: 12.h),
-            ],
-          ),
+            ),
+            SizedBox(height: 12.h),
+          ],
         ),
       ),
     );
@@ -286,7 +325,7 @@ class _NewPostPageState extends State<NewPostPage> {
               value: val,
               onChanged: onCh,
               activeColor: Colors.white,
-              activeTrackColor: const Color(0xFFFF7A5C),
+              activeTrackColor: AppColors.primaryColor,
               trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
             ),
           ),

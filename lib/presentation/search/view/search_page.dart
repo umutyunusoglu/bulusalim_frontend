@@ -187,7 +187,7 @@ class SearchPage extends HookConsumerWidget {
                     if (suggestedUsers.isNotEmpty) ...[
                       SuggestedUsersCarousel(users: suggestedUsers),
                     ],
-                    const Spacer(),
+                    const SizedBox(height: 12),
                     const WhatsNewCarousel(),
                     const SizedBox(height: 8),
                   ],

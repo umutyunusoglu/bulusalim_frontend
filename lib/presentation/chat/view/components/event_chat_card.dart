@@ -9,7 +9,7 @@ import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/presentation/chat/view/components/chat_event_info_chip.dart';
 import 'package:outnest/presentation/chat/view/components/event_avatar_badge.dart';
-import 'package:outnest/presentation/chat/view/components/event_status_according.dart';
+import 'package:outnest/presentation/chat/view/components/event_status_accordion.dart';
 
 class EventChatCard extends ConsumerWidget {
   const EventChatCard({

@@ -24,7 +24,7 @@ class UniversityDataSourceImpl implements UniversityDatasource {
 
     try {
       logger.debug('Caching universities from local asset...');
-      final RemoteConfigService remoteConfig = getIt<RemoteConfigService>();
+      final remoteConfig = getIt<RemoteConfigService>();
 
       var response = '';
       try {

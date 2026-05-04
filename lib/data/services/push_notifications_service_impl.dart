@@ -61,11 +61,11 @@ class PushNotificationsServiceImpl implements PushNotificationsService {
   }
 
   // Session değiştiğinde çalışan callback
-  void _onSessionStateChanged() {
+  Future<void> _onSessionStateChanged() async {
     final user = _sessionService.currentUser;
     if (user != null) {
       _logger.info('Session updated: User detected, updating FCM token.');
-      _updateTokenForUser(user.userID);
+      await _updateTokenForUser(user.userID);
     } else {
       _logger.info('Session updated: No user (logged out).');
     }

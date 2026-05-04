@@ -1,3 +1,5 @@
+import 'package:fpdart/fpdart.dart';
+import 'package:outnest/core/errors/exceptions/event_verification_exceptions.dart';
 import 'package:outnest/core/utils/types/geolocation/geolocation.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 
@@ -8,7 +10,7 @@ abstract class EventVerificationService {
   /// Given an event, the current location of verifier and verification secret,
   /// Verifies whether current user is at the same event as the creator
   /// Of the Secret
-  Future<bool> verifyEvent(
+  Future<Either<EventVerificationException, Unit>> verifyEvent(
     EventEntity event,
     Geolocation currentLocation,
     EventVerificationSecret secret,

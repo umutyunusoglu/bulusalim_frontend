@@ -25,6 +25,7 @@ import 'package:outnest/domain/services/analytics/analytics_service.dart';
 import 'package:outnest/domain/services/analytics/event_configs/university_verification_analytics_config.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
+import 'package:rxdart/rxdart.dart';
 
 class UserRepositoryImpl implements UserRepository {
   UserRepositoryImpl({
@@ -491,189 +492,96 @@ class UserRepositoryImpl implements UserRepository {
     return eventLog.status == UserEventStatusEnum.saved;
   }
 
-  @override
-  Stream<List<EventEntity>> watchOngoingEvents(
-    Identifier userID,
+  // eventLog query'sinden gelen snapshot'u alıp her eventId için
+  // canlı getEventStream açar, hepsini combineLatestList ile birleştirir.
+  Stream<List<EventEntity>> _watchEventsFromLog(
+    Query<Map<String, dynamic>> query,
   ) {
-    return _firestore
-        .collection('users')
-        .doc(userID)
-        .collection('eventLog')
-        .where('status', whereIn: ['ongoing']) // Sadece devam edenler
-        .snapshots()
-        .asyncMap((snapshot) async {
-          _logger.info(
-            'UserRepository: Ongoing events snapshot received for user: $userID, doc count: ${snapshot.docs.length}',
-          );
-          if (snapshot.docs.isEmpty) return [];
+    return query.snapshots().switchMap((snapshot) {
+      if (snapshot.docs.isEmpty) return Stream.value([]);
 
-          // ID'leri alıp detayları çekme (Parallel Fetch)
-          final eventFutures = snapshot.docs.map((doc) async {
-            final historyData = doc.data();
-            final eventId = historyData['eventID'] as Identifier;
+      final streams = snapshot.docs.map((doc) {
+        final data = doc.data();
+        final eventId = data['eventID'] as Identifier;
+        final myStatus = data['status'] as String?;
+        final myRole = data['role']?.toString();
 
-            // Event detayını çek
-            final eventDoc = await _firestore
-                .collection('events')
-                .doc(eventId)
-                .get();
-            if (!eventDoc.exists) return null;
-
-            final eventEntity = await eventRepository.getEvent(eventId);
-            if (eventEntity == null) return null;
-            // Status ve Role bilgisini güncelle
-            return eventEntity.copyWith(
-              myStatus: historyData['status'] as String,
-              myRole: historyData['role'].toString(),
+        return eventRepository
+            .getEventStream(eventId)
+            .map(
+              (event) => event?.copyWith(myStatus: myStatus, myRole: myRole),
             );
-          });
+      }).toList();
 
-          // Null olanları temizle ve listeyi döndür
-          final events = await Future.wait(eventFutures);
-          return events.whereType<EventEntity>().toList();
-        });
+      return Rx.combineLatestList(
+        streams,
+      ).map((events) => events.whereType<EventEntity>().toList());
+    });
+  }
+
+  // ─── WATCH METODLARI ──────────────────────────────────────────────────────────
+
+  @override
+  Stream<List<EventEntity>> watchOngoingEvents(Identifier userID) {
+    return _watchEventsFromLog(
+      _firestore
+          .collection('users')
+          .doc(userID)
+          .collection('eventLog')
+          .where('status', whereIn: ['ongoing']),
+    );
   }
 
   @override
   Stream<List<EventEntity>> watchUpcomingEvents(Identifier userID) {
-    return _firestore
-        .collection('users')
-        .doc(userID)
-        .collection('eventLog')
-        .where('status', whereIn: ['upcoming']) // Sadece devam edenler
-        .snapshots()
-        .asyncMap((snapshot) async {
-          _logger.info(
-            'UserRepository: Upcoming events snapshot received for user: $userID, doc count: ${snapshot.docs.length}',
-          );
-          if (snapshot.docs.isEmpty) return [];
-
-          // ID'leri alıp detayları çekme (Parallel Fetch)
-          final eventFutures = snapshot.docs.map((doc) async {
-            final historyData = doc.data();
-            final eventId = historyData['eventID'] as Identifier;
-
-            // Event detayını çek
-            final eventDoc = await _firestore
-                .collection('events')
-                .doc(eventId)
-                .get();
-            if (!eventDoc.exists) return null;
-
-            final eventEntity = await eventRepository.getEvent(eventId);
-            if (eventEntity == null) return null;
-            // Status ve Role bilgisini güncelle
-            return eventEntity.copyWith(
-              myStatus: historyData['status'] as String,
-              myRole: historyData['role'].toString(),
-            );
-          });
-
-          // Null olanları temizle ve listeyi döndür
-          final events = await Future.wait(eventFutures);
-          return events.whereType<EventEntity>().toList();
-        });
+    return _watchEventsFromLog(
+      _firestore
+          .collection('users')
+          .doc(userID)
+          .collection('eventLog')
+          .where('status', whereIn: ['upcoming']),
+    );
   }
 
   @override
   Stream<List<EventEntity>> watchPendingEvents(Identifier userID) {
-    return _firestore
-        .collection('users')
-        .doc(userID)
-        .collection('eventLog')
-        .where(
-          'status',
-          isEqualTo: 'pending',
-        )
-        .where('isActive', isEqualTo: true)
-        .orderBy('updatedAt', descending: true)
-        .snapshots()
-        .asyncMap((snapshot) async {
-          if (snapshot.docs.isEmpty) return [];
-
-          final eventFutures = snapshot.docs.map((doc) async {
-            final historyData = doc.data();
-            final eventId = historyData['eventID'] as Identifier;
-
-            final eventEntity = await eventRepository.getEvent(eventId);
-            if (eventEntity == null) return null;
-
-            return eventEntity.copyWith(
-              myStatus: historyData['status'] as String,
-              myRole: historyData['role'].toString(),
-            );
-          });
-
-          final events = await Future.wait(eventFutures);
-          return events.whereType<EventEntity>().toList();
-        });
+    return _watchEventsFromLog(
+      _firestore
+          .collection('users')
+          .doc(userID)
+          .collection('eventLog')
+          .where('status', isEqualTo: 'pending')
+          .where('isActive', isEqualTo: true)
+          .orderBy('updatedAt', descending: true),
+    );
   }
 
   @override
   Stream<List<EventEntity>> watchCompletedAndActiveEvents(Identifier userID) {
-    return _firestore
-        .collection('users')
-        .doc(userID)
-        .collection('eventLog')
-        .where('status', isEqualTo: 'completed')
-        .where('isActive', isEqualTo: true)
-        .snapshots()
-        .asyncMap((snapshot) async {
-          if (snapshot.docs.isEmpty) return [];
-
-          final eventFutures = snapshot.docs.map((doc) async {
-            final historyData = doc.data();
-            final eventId = historyData['eventID'] as Identifier;
-
-            final eventEntity = await eventRepository.getEvent(eventId);
-            if (eventEntity == null) return null;
-
-            return eventEntity.copyWith(
-              myStatus: historyData['status'] as String,
-              myRole: historyData['role'].toString(),
-            );
-          });
-
-          final events = await Future.wait(eventFutures);
-          return events.whereType<EventEntity>().toList();
-        });
+    return _watchEventsFromLog(
+      _firestore
+          .collection('users')
+          .doc(userID)
+          .collection('eventLog')
+          .where('status', isEqualTo: 'completed')
+          .where('isActive', isEqualTo: true),
+    );
   }
 
-  //TODO: Deprecate this after session service becomes deprecated
   @override
   Stream<List<EventEntity>> watchActiveEvents(Identifier userID) {
-    return _firestore
-        .collection('users')
-        .doc(userID)
-        .collection('eventLog')
-        .where(
-          'status',
-          whereIn: ['upcoming', 'ongoing', 'completed', 'pending'],
-        )
-        .where('isActive', isEqualTo: true)
-        .orderBy('updatedAt', descending: true)
-        .snapshots()
-        .asyncMap((snapshot) async {
-          if (snapshot.docs.isEmpty) return [];
-
-          final eventFutures = snapshot.docs.map((doc) async {
-            final historyData = doc.data();
-            final eventId = historyData['eventID'] as Identifier;
-
-            // BURA DEĞİŞTİ: Repository üzerinden enrich edilmiş halini çekiyoruz
-            final eventEntity = await eventRepository.getEvent(eventId);
-
-            if (eventEntity == null) return null;
-
-            return eventEntity.copyWith(
-              myStatus: historyData['status'] as String,
-              myRole: historyData['role'].toString(),
-            );
-          });
-
-          final events = await Future.wait(eventFutures);
-          return events.whereType<EventEntity>().toList();
-        });
+    return _watchEventsFromLog(
+      _firestore
+          .collection('users')
+          .doc(userID)
+          .collection('eventLog')
+          .where(
+            'status',
+            whereIn: ['upcoming', 'ongoing', 'completed', 'pending'],
+          )
+          .where('isActive', isEqualTo: true)
+          .orderBy('updatedAt', descending: true),
+    );
   }
 
   @override
