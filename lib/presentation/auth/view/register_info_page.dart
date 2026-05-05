@@ -707,7 +707,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                 // 7. PROFİL FOTOĞRAFI
                 RegisterStepView(
                   title: 'Profil Fotoğrafı',
-                  onNext: _nextPage,
                   onSkip: _nextPage,
                   customContent: GestureDetector(
                     onTap: _showPhotoPicker,
