@@ -152,8 +152,14 @@ class EventVerificationServiceImpl implements EventVerificationService {
           );
           await Future.wait(
             [
-              _eventRepository.markEventAsVerified(event.id, currentUserId!),
-              _eventRepository.markEventAsVerified(event.id, userID),
+              _eventRepository.markEventAsVerified(
+                eventId: event.eventID,
+                userId: currentUserId!,
+              ),
+              _eventRepository.markEventAsVerified(
+                eventId: event.eventID,
+                userId: userID,
+              ),
             ],
             eagerError: true,
           );
