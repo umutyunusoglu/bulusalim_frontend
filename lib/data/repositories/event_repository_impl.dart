@@ -17,7 +17,6 @@ import 'package:outnest/domain/entities/hobby/hobby_entity.dart';
 import 'package:outnest/domain/entities/user/compact_user_entity.dart';
 import 'package:outnest/domain/entities/user/user_event_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
-import 'package:outnest/domain/services/global_content_cache.dart';
 import 'package:outnest/domain/services/session_service.dart';
 
 class EventRepositoryImpl implements EventRepository {
@@ -840,6 +839,31 @@ class EventRepositoryImpl implements EventRepository {
     } catch (e) {
       _logger.error('Failed to mark event as verified: $e');
       rethrow;
+    }
+  }
+
+  @override
+  Future<bool> isEventVerifiedForUser({
+    required String eventId,
+    required String userId,
+  }) async {
+    try {
+      final doc = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('eventLog')
+          .doc(eventId)
+          .get();
+
+      if (!doc.exists) return false;
+
+      final data = doc.data();
+      return data?['isVerified'] == true;
+    } catch (e) {
+      _logger.error(
+        'Failed to check verification status for $eventId / $userId: $e',
+      );
+      return false;
     }
   }
 }
