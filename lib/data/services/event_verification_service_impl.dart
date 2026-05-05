@@ -150,10 +150,13 @@ class EventVerificationServiceImpl implements EventVerificationService {
           _loggingService.info(
             'Event ${event.id} verified: matched user $userID at ${distance.toStringAsFixed(0)}m',
           );
-          await Future.wait([
-            _saveVerifiedEventForUser(event, currentUserId!),
-            _saveVerifiedEventForUser(event, userID),
-          ]);
+          await Future.wait(
+            [
+              _eventRepository.markEventAsVerified(event.id, currentUserId!),
+              _eventRepository.markEventAsVerified(event.id, userID),
+            ],
+            eagerError: true,
+          );
           return const Right(unit);
         } else {
           _loggingService.warn(
