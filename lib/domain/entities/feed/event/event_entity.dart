@@ -101,6 +101,9 @@ class EventEntity extends FeedEntity with EquatableMixin {
     );
   }
 
+  @override
+  DateTime get sortDate => createdAt;
+
   final String? currentUserStatus;
   final String? currentUserRole;
   final int participantCount;

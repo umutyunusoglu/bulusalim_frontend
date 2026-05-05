@@ -7,4 +7,5 @@ abstract class FeedEntity {
   });
   final String id;
   final FeedEntityTypeEnum feedType;
+  DateTime get sortDate;
 }
