@@ -12,19 +12,24 @@ import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/services/event_verification_service.dart';
+import 'package:outnest/domain/services/persistance_service.dart';
 
 class EventVerificationServiceImpl implements EventVerificationService {
   EventVerificationServiceImpl({
     required this.currentUserId,
+    required PersistanceService persistanceService,
     required LoggingService logger,
     required EventRepository eventRepository,
-  }) : _loggingService = logger,
+  }) : _persistanceService = persistanceService,
+       _loggingService = logger,
        _eventRepository = eventRepository;
 
   final String? currentUserId;
+  final PersistanceService _persistanceService;
   final LoggingService _loggingService;
   final EventRepository _eventRepository;
 
+  static const String _verifiedEventsKey = 'verified_events_list';
   static const double _maxDistanceMeters = 1000;
 
   @override
@@ -60,11 +65,36 @@ class EventVerificationServiceImpl implements EventVerificationService {
   Future<bool> isEventVerified(EventEntity event) async {
     if (currentUserId == null) return false;
 
+    // Check local persistence first — works offline and avoids bouncing
+    // already-verified users when Firestore is unreachable.
     try {
-      return await _eventRepository.isEventVerifiedForUser(
+      final data = await _persistanceService.getJson(_verifiedEventsKey);
+      if (data != null && data.containsKey('ids')) {
+        final verifiedIds = List<String>.from(data['ids'] as List);
+        if (verifiedIds.contains(event.id)) {
+          _loggingService.debug(
+            'Event ${event.id} is already verified in local storage.',
+          );
+          return true;
+        }
+      }
+    } catch (e) {
+      _loggingService.warn(
+        'Local verification check failed for ${event.id}: $e',
+      );
+    }
+
+    // Fall back to remote check (e.g. cross-device verification sync).
+    try {
+      final remoteVerified = await _eventRepository.isEventVerifiedForUser(
         eventId: event.id,
         userId: currentUserId!,
       );
+      if (remoteVerified) {
+        // Cache the remote result locally for future offline access.
+        await _saveVerifiedEventLocally(event);
+      }
+      return remoteVerified;
     } catch (e) {
       _loggingService.warn(
         'Remote verification check failed for ${event.id}: $e',
@@ -152,11 +182,18 @@ class EventVerificationServiceImpl implements EventVerificationService {
           );
           await Future.wait(
             [
-              _eventRepository.markEventAsVerified(event.id, currentUserId!),
-              _eventRepository.markEventAsVerified(event.id, userID),
+              _eventRepository.markEventAsVerified(
+                eventId: event.id,
+                userId: currentUserId!,
+              ),
+              _eventRepository.markEventAsVerified(
+                eventId: event.id,
+                userId: userID,
+              ),
             ],
             eagerError: true,
           );
+          await _saveVerifiedEventLocally(event);
           return const Right(unit);
         } else {
           _loggingService.warn(
@@ -250,21 +287,23 @@ class EventVerificationServiceImpl implements EventVerificationService {
     }
   }
 
-  Future<void> _saveVerifiedEventForUser(
-    EventEntity event,
-    String userId,
-  ) async {
+  Future<void> _saveVerifiedEventLocally(EventEntity event) async {
     try {
-      await _eventRepository.markEventAsVerified(
-        eventId: event.id,
-        userId: userId,
-      );
-      _loggingService.info(
-        'Event ${event.id} marked as verified for user $userId.',
-      );
+      final data = await _persistanceService.getJson(_verifiedEventsKey);
+      final verifiedIds = (data != null && data.containsKey('ids'))
+          ? List<String>.from(data['ids'] as List)
+          : <String>[];
+
+      if (!verifiedIds.contains(event.id)) {
+        verifiedIds.add(event.id);
+        await _persistanceService.saveJson(_verifiedEventsKey, {
+          'ids': verifiedIds,
+        });
+        _loggingService.info('Event ${event.id} saved to local verified list.');
+      }
     } catch (e) {
       _loggingService.error(
-        'Failed to mark event ${event.id} as verified for user $userId: $e',
+        'Failed to persist verified event ${event.id} locally: $e',
       );
     }
   }
@@ -274,6 +313,10 @@ class EventVerificationServiceImpl implements EventVerificationService {
     if (currentUserId == null) {
       throw AuthorizationException('User not logged in');
     }
-    await _saveVerifiedEventForUser(event, currentUserId!);
+    await _saveVerifiedEventLocally(event);
+    await _eventRepository.markEventAsVerified(
+      eventId: event.id,
+      userId: currentUserId!,
+    );
   }
 }
