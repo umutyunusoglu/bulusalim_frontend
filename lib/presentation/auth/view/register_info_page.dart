@@ -22,15 +22,12 @@ import 'package:outnest/domain/datasources/university_datasource.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/analytics/analytics_service.dart';
-import 'package:outnest/domain/services/analytics/event_configs/select_gender_analytics_config.dart';
-import 'package:outnest/domain/services/analytics/event_configs/select_hobbies_analytics_config.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/usecases/upload_profile_picture_usecase.dart';
 import 'package:outnest/presentation/auth/registration_loading_screen.dart';
 import 'package:outnest/presentation/auth/view/components/otp_row.dart';
 import 'package:outnest/presentation/auth/view/components/register_step_view.dart';
 import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
-import 'package:outnest/presentation/shared/category_filter_chip.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/form/formatters/name_surname_formatter.dart';
 import 'package:outnest/presentation/shared/form/formatters/username_formatter.dart';
@@ -55,10 +52,8 @@ enum RegisterStep {
   dob,
   universityEmail,
   universityOtp,
-  gender,
   city,
   profilePhoto,
-  interests,
   permissions,
 }
 
@@ -67,11 +62,9 @@ final Map<RegisterStep, RegisterStep> backSteps = {
   RegisterStep.dob: RegisterStep.name,
   RegisterStep.universityEmail: RegisterStep.dob,
   RegisterStep.universityOtp: RegisterStep.universityEmail,
-  RegisterStep.gender: RegisterStep.universityEmail,
-  RegisterStep.city: RegisterStep.gender,
+  RegisterStep.city: RegisterStep.universityEmail,
   RegisterStep.profilePhoto: RegisterStep.city,
-  RegisterStep.interests: RegisterStep.profilePhoto,
-  RegisterStep.permissions: RegisterStep.interests,
+  RegisterStep.permissions: RegisterStep.profilePhoto,
 };
 
 class _RegisterInfoPageState extends State<RegisterInfoPage>
@@ -163,33 +156,10 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
       case RegisterStep.universityOtp:
         // OTP validasyonu yapılacak
         break;
-      case RegisterStep.gender:
-        final chosenGenderText = _genderDisplayController.text.trim();
-        GenderEnum? chosenGender;
-        if (chosenGenderText.isEmpty) {
-          // Hata mesajı göster
-          chosenGender = null;
-        } else {
-          chosenGender = GenderEnum.fromString(chosenGenderText);
-        }
-
-        analytics.logSelectGender(
-          SelectGenderAnalyticsConfig(value: chosenGender, previousValue: null),
-        );
-        break;
       case RegisterStep.city:
         break;
       case RegisterStep.profilePhoto:
         // Fotoğraf seçimi validasyonu yapılacak
-        break;
-      case RegisterStep.interests:
-        analytics.logSelectHobbies(
-          SelectHobbiesAnalyticsConfig(
-            value: _selectedInterests,
-            previousValue: [],
-          ),
-        );
-
         break;
       case RegisterStep.permissions:
         // İzinler ile ilgili bilgilendirme yapılacak
@@ -239,11 +209,10 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
       final username = sanitizeUsername(_usernameController.text);
       final name = sanitizeName(_nameController.text);
       final dob = _selectedDate!;
-      GenderEnum gender;
-      gender = GenderEnum.fromString(_genderDisplayController.text);
+      GenderEnum gender = GenderEnum.fromString('Belirtmek İstemiyorum');
+      final interests = _selectedInterests;
       final city = _cityDisplayController.text.trim();
 
-      final interests = _selectedInterests;
       final uploadUseCase = getIt<UploadProfilePicture>();
       var profileImageUrl = '';
       if (_selectedImage != null) {
@@ -749,7 +718,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                   },
                   onSkip: !_isSendingEmail
                       ? () => _pageController.jumpToPage(
-                          RegisterStep.gender.index,
+                          RegisterStep.city.index,
                         )
                       : null,
 
@@ -816,17 +785,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                   },
                 ),
 
-                // 6. CİNSİYET
-                RegisterStepView(
-                  title: 'Cinsiyet',
-                  controller: _genderDisplayController,
-                  hintText: 'lütfen seçiniz',
-                  onNext: _nextPage,
-                  readOnly: true,
-                  onTapInput: _showGenderPicker,
-                  onSkip: _nextPage,
-                ),
-
+                // 6. ŞEHİR SEÇİMİ
                 RegisterStepView(
                   title: 'Şehrini Seç',
                   controller: _cityDisplayController,
@@ -847,17 +806,18 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                   },
                 ),
 
+                // 7. PROFİL FOTOĞRAFI
                 RegisterStepView(
                   title: 'Profil Fotoğrafı',
-                  onNext: _nextPage,
+                  onSkip: _nextPage,
                   customContent: GestureDetector(
                     onTap: _showPhotoPicker, // Mevcut modalını kullanacağız
                     child: Stack(
                       alignment: Alignment.bottomRight,
                       children: [
                         Container(
-                          width: 140.w,
-                          height: 140.w,
+                          width: 180.w,
+                          height: 180.w,
                           decoration: BoxDecoration(
                             color: const Color(0xFFF1F1F5),
                             shape: BoxShape.circle,
@@ -897,53 +857,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                     ),
                   ),
                 ),
-                // 8. İLGİ ALANLARI
-                RegisterStepView(
-                  title: 'İlgi Alanların',
-                  description: 'En az 3 adet seçmenizi öneririz.',
-                  onNext: _nextPage,
-                  onSkip: _nextPage,
-                  customContent: _isLoadingConfig
-                      ? SizedBox(
-                          height: 100.h,
-                          child: const Center(
-                            child: CircularProgressIndicator(
-                              color: AppColors.primaryColor,
-                            ),
-                          ),
-                        )
-                      : _categories.isEmpty
-                      ? Center(
-                          child: Text(
-                            'Kategoriler yüklenemedi.\nLütfen internet bağlantınızı kontrol edin.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        )
-                      : Wrap(
-                          spacing: 12.w,
-                          runSpacing: 12.h,
-                          alignment: WrapAlignment.center,
-                          children: _categories.entries.map((entry) {
-                            final categoryName = entry.key;
-                            final categoryEmoji = entry.value;
-                            final isSelected = _selectedInterests.contains(
-                              categoryName,
-                            );
-
-                            return CategoryFilterChip(
-                              label: categoryName.toLowerCase(),
-                              emoji: categoryEmoji,
-                              isSelected: isSelected,
-                              onTap: () => _toggleInterest(categoryName),
-                            );
-                          }).toList(),
-                        ),
-                ),
-
                 // 9. ARKADAŞLARINI EKLE
                 /*
             RegisterStepView(
@@ -973,7 +886,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
               ),
             ),
             */
-                // 10. CİHAZ İZİNLERİ
+                // 8. CİHAZ İZİNLERİ
                 RegisterStepView(
                   title: 'Cihaz İzinleri',
                   onNext: _finishRegistration,
