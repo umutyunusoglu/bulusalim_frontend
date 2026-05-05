@@ -18,7 +18,6 @@ abstract class EventRepository {
 
   Future<EventEntity> enrichEventWithDetails(EventEntity event);
 
-  Stream<List<EventEntity>> getEnrichedEventsOfUserStream(Identifier userId);
   Future<EventEntity> injectSensitiveDataIfAuthorized(
     EventEntity event,
     String? currentUserId,
@@ -86,6 +85,11 @@ abstract class EventRepository {
   );
 
   Future<void> markEventAsVerified({
+    required String eventId,
+    required String userId,
+  });
+
+  Future<bool> isEventVerifiedForUser({
     required String eventId,
     required String userId,
   });

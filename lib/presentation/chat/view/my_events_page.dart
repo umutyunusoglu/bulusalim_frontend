@@ -6,8 +6,10 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:outnest/application/app_state/current_user_data_providers/current_user_event_providers.dart';
 import 'package:outnest/application/app_state/current_user_data_providers/current_user_identity_provider.dart';
+import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/application/providers/navbar_badge_provider.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
+import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/presentation/chat/view/components/event_chat_card.dart';
@@ -34,10 +36,23 @@ class MyEventsPage extends HookConsumerWidget {
 
     // --- PROVIDERS ---
     final currentUserId = ref.watch(currentUserIDProvider);
+    final pendingEvents = ref.watch(pendingEventsProvider).value ?? [];
     final activeEvents = ref.watch(activeEventsProvider);
 
+    // pending'de olup active'de olmayan eventleri al
+    final pendingOnly = pendingEvents
+        .where(
+          (p) => !activeEvents.any((a) => a.eventID == p.eventID),
+        )
+        .toList();
+
+    final allEvents = activeEvents + pendingOnly;
+    final logger = getIt<LoggingService>()
+      ..debug(
+        '🔄 activeEvents rebuild: ${allEvents.map((e) => '${e.eventID}: requestPool=${e.requestPool.length}').join(', ')}',
+      );
     // --- VERİ DÖNÜŞÜMÜ ---
-    final chatEvents = activeEvents.map((event) {
+    final chatEvents = allEvents.map((event) {
       return MyEventItemData(
         event: event,
         pendingRequestCount: event.requestPool.length,
@@ -138,6 +153,7 @@ class MyEventsPage extends HookConsumerWidget {
                               );
                               return;
                             }
+
                             context.push(
                               '/chat/room/${item.event.eventID}',
                               extra: {

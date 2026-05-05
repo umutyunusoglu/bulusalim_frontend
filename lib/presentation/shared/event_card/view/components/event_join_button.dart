@@ -55,11 +55,11 @@ class EventJoinButton extends HookConsumerWidget {
     final isProcessing = useState(false);
 
     useEffect(() {
-      if (!isProcessing.value) {
-        status.value = externalStatus;
+      if (externalStatus == EventJoinStatus.joined) {
+        status.value = EventJoinStatus.joined;
       }
       return null;
-    }, [externalStatus, isProcessing.value]);
+    }, [externalStatus]);
 
     // ─── AKSIYON HANDLERLARı ───
 

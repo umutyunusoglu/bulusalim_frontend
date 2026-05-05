@@ -75,6 +75,9 @@ class PostEntity extends FeedEntity with EquatableMixin {
     isPinned,
   ];
 
+  @override
+  DateTime get sortDate => createdAt;
+
   final Identifier postID;
   final CompactUserEntity creator;
   final Identifier eventID;

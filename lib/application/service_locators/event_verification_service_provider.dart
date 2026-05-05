@@ -13,7 +13,6 @@ final eventVerificationServiceProvider = Provider<EventVerificationService>((
   final userId = ref.watch(currentUserIDProvider);
   return EventVerificationServiceImpl(
     currentUserId: userId,
-    persistanceService: getIt<PersistanceService>(),
     logger: getIt<LoggingService>(),
     eventRepository: getIt<EventRepository>(),
   );
