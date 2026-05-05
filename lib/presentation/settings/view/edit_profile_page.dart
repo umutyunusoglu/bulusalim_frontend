@@ -9,11 +9,9 @@ import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
-import 'package:outnest/core/utils/types/enums/gender_enum.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/analytics/analytics_service.dart';
 import 'package:outnest/domain/services/analytics/event_configs/click_hide_saved_events_analytics_config.dart';
-import 'package:outnest/domain/services/analytics/event_configs/select_gender_analytics_config.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/domain/usecases/upload_profile_picture_usecase.dart';
 import 'package:outnest/presentation/settings/view/components/profile_input_row.dart';
@@ -34,10 +32,8 @@ class EditProfilePage extends StatefulWidget {
 class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController _nameController;
   late TextEditingController _bioController;
-  late TextEditingController _genderController;
   late TextEditingController _dobController;
 
-  late GenderEnum _selectedGender;
   late DateTime _selectedDob;
 
   bool _hideSavedEvents = false;
@@ -49,7 +45,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late String _username;
   late String _previousName;
   late String _previousBio;
-  late String _previousGender;
   late String _previousDob;
   late bool _previousHideSavedEvents;
 
@@ -73,9 +68,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     _nameController = TextEditingController(text: user?.nameSurname ?? '');
     _bioController = TextEditingController(text: user?.bio ?? '');
-    _genderController = TextEditingController(
-      text: user?.gender.toString() ?? '',
-    );
 
     _dobController = TextEditingController(
       text: user?.birthDate != null
@@ -91,13 +83,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
       );
     }
     _hideSavedEvents = user?.hideSavedEvents ?? false;
-    _selectedGender = user?.gender ?? GenderEnum.preferNotToSay;
     _selectedDob = user?.birthDate ?? DateTime(2002, 1);
 
     // Önceki değerleri sakla
     _previousName = user?.nameSurname ?? '';
     _previousBio = user?.bio ?? '';
-    _previousGender = user?.gender.toString() ?? '';
     _previousDob = _dobController.text;
     _previousHideSavedEvents = user?.hideSavedEvents ?? false;
   }
@@ -106,7 +96,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
   void dispose() {
     _nameController.dispose();
     _bioController.dispose();
-    _genderController.dispose();
     _dobController.dispose();
     super.dispose();
   }
@@ -216,108 +205,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
               fontSize: 14.sp,
               fontWeight: FontWeight.w400,
               color: textColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // --- CİNSİYET SEÇİMİ (MODAL) ---
-  void _showGenderSelector() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      builder: (context) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-            // Üst Gölge
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 8,
-                spreadRadius: 1,
-                offset: const Offset(0, -2),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 36.w,
-                      height: 4.h,
-                      decoration: BoxDecoration(
-                        color: AppColors.textGrey,
-                        borderRadius: BorderRadius.circular(2.r),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 22.h),
-                  _buildGenderOption(icon: Icons.female, label: 'Kadın'),
-                  SizedBox(height: 27.h),
-                  _buildGenderOption(icon: Icons.male, label: 'Erkek'),
-
-                  SizedBox(height: 27.h),
-                  _buildGenderOption(
-                    icon: Icons.block_outlined,
-                    label: 'Belirtmek İstemiyorum',
-                  ),
-                  SizedBox(height: 27.h),
-                  _buildGenderOption(
-                    icon: Icons.circle_outlined,
-                    label: 'Diğer',
-                  ),
-                  SizedBox(height: 20.h),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildGenderOption({required IconData icon, required String label}) {
-    return InkWell(
-      onTap: () {
-        _genderController.text = label;
-        switch (label) {
-          case 'Kadın':
-            _selectedGender = GenderEnum.female;
-          case 'Erkek':
-            _selectedGender = GenderEnum.male;
-          case 'Belirtmek İstemiyorum':
-            _selectedGender = GenderEnum.preferNotToSay;
-          case 'Diğer':
-            _selectedGender = GenderEnum.other;
-          default:
-            _selectedGender = GenderEnum.preferNotToSay;
-        }
-
-        _onFieldChanged(label);
-        Navigator.pop(context);
-      },
-      child: Row(
-        children: [
-          Icon(icon, size: 24.sp, color: Colors.black87),
-          SizedBox(width: 16.w),
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'SF Pro Display',
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w400,
-                color: Colors.black,
-              ),
             ),
           ),
         ],
@@ -514,14 +401,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
 
                   ProfileInputRow(
-                    label: 'Cinsiyet',
-                    controller: _genderController,
-                    readOnly: true, // Sadece inputa basılınca açılır
-                    canChange: true,
-                    onTap: _showGenderSelector,
-                  ),
-
-                  ProfileInputRow(
                     label: 'Doğum Tarihi',
                     controller: _dobController,
                     readOnly: true, // Sadece inputa basılınca açılır
@@ -575,25 +454,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   // --- AVATAR BÖLÜMÜ ---
   Widget _buildProfilePhotoSection() {
-    ImageProvider? imageProvider;
     String? remoteImageUrl;
 
-    if (_profileImageUrl.isNotEmpty) {
-      // Eğer URL 'http' ile başlıyorsa sunucudaki resimdir
-      if (_profileImageUrl.startsWith('http')) {
-        remoteImageUrl = fixEmulatorUrl(_profileImageUrl);
-        if (_lastLoggedRemoteImageUrl != remoteImageUrl) {
-          _lastLoggedRemoteImageUrl = remoteImageUrl;
-          getIt<LoggingService>().debug(
-            'Trying to load profile image from Firebase URL: $remoteImageUrl',
-          );
-        }
-        imageProvider = CachedNetworkImageProvider(
-          remoteImageUrl,
+    if (_profileImageUrl.isNotEmpty && _profileImageUrl.startsWith('http')) {
+      remoteImageUrl = fixEmulatorUrl(_profileImageUrl);
+      if (_lastLoggedRemoteImageUrl != remoteImageUrl) {
+        _lastLoggedRemoteImageUrl = remoteImageUrl;
+        getIt<LoggingService>().debug(
+          'Trying to load profile image from Firebase URL: $remoteImageUrl',
         );
-      } else {
-        // Değilse, cihazdan yeni seçilmiş yerel bir dosyadır
-        imageProvider = FileImage(File(_profileImageUrl));
       }
     }
 
@@ -607,16 +476,40 @@ class _EditProfilePageState extends State<EditProfilePage> {
               CircleAvatar(
                 radius: 38.r,
                 backgroundColor: Colors.grey.shade200,
-                backgroundImage:
-                    imageProvider, // Yukarıdaki mantığı buraya veriyoruz
-                onBackgroundImageError: (error, stackTrace) {
-                  getIt<LoggingService>().error(
-                    'Profile image load failed. url=$remoteImageUrl error=$error stack=$stackTrace',
-                  );
-                },
-                child: _profileImageUrl.isEmpty
-                    ? Icon(Icons.person, size: 38.sp, color: Colors.grey)
-                    : null,
+                child: ClipOval(
+                  child: SizedBox(
+                    width: 76.r,
+                    height: 76.r,
+                    child: _profileImageUrl.isEmpty
+                        ? Icon(Icons.person, size: 38.sp, color: Colors.grey)
+                        : (_profileImageUrl.startsWith('http')
+                              ? CachedNetworkImage(
+                                  imageUrl: remoteImageUrl!,
+                                  fadeInDuration: Duration.zero,
+                                  fit: BoxFit.cover,
+                                  errorWidget: (context, url, error) {
+                                    getIt<LoggingService>().error(
+                                      'Profile image load failed. url=$url error=$error',
+                                    );
+                                    return Icon(
+                                      Icons.person,
+                                      size: 38.sp,
+                                      color: Colors.grey,
+                                    );
+                                  },
+                                )
+                              : Image.file(
+                                  File(_profileImageUrl),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Icon(
+                                        Icons.person,
+                                        size: 38.sp,
+                                        color: Colors.grey,
+                                      ),
+                                )),
+                  ),
+                ),
               ),
 
               // DÜZENLEME (KALEM) İKONU
@@ -700,22 +593,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (_bioController.text != _previousBio) {
         updatedData['bio'] = sanitizeInput(_bioController.text);
       }
-      if (_genderController.text != _previousGender) {
-        getIt<LoggingService>().info('Yeni cinsiyet seçildi: $_selectedGender');
 
-        final previousGenderEnum = GenderEnum.values.firstWhere(
-          (g) => g.toString() == _previousGender,
-          orElse: () => GenderEnum.preferNotToSay,
-        );
-        analytics.logSelectGender(
-          SelectGenderAnalyticsConfig(
-            value: _selectedGender,
-            previousValue: previousGenderEnum,
-          ),
-        );
-
-        updatedData['gender'] = _selectedGender.toString().toLowerCase();
-      }
       if (_dobController.text != _previousDob) {
         updatedData['birthDate'] = _selectedDob;
       }
