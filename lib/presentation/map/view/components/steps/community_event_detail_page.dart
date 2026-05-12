@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -25,7 +26,7 @@ class CommunityEventDetailPage extends HookWidget {
     final rulesController = useTextEditingController(text: '• ');
     final venueController = useTextEditingController();
     final linkController = useTextEditingController();
-    final maxParticipants = useState<int?>(null);
+    final maxParticipantsController = useTextEditingController();
     final requiresDocument = useState(false);
 
     useEffect(() {
@@ -77,13 +78,15 @@ class CommunityEventDetailPage extends HookWidget {
           'rules': sanitizeInput(rulesController.text),
           'venueInfo': sanitizeInput(venueController.text),
           'link': linkValue,
-          'maxParticipants': maxParticipants.value ?? 0,
+          'maxParticipants':
+              int.tryParse(maxParticipantsController.text.trim()) ?? 0,
           'requiresDocument': requiresDocument.value,
           'coverImage': coverImage.value,
           'eventName': args['eventName'],
           'displayAddress': args['displayAddress'],
           'startTime': args['startTime'],
           'category': args['category'],
+          'creator': args['creator'],
         },
       );
     }
@@ -200,28 +203,13 @@ class CommunityEventDetailPage extends HookWidget {
             // MAKSİMUM KATILIMCI
             _buildLabel('Maksimum Katılımcı Sayısı'),
             SizedBox(
-              width: 329.w,
-              height: 40.h,
+              width: 361.w,
               child: Row(
                 children: [
                   Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(10.r),
-                        border: Border.all(color: const Color(0xFFC6D0D9)),
-                      ),
-                      alignment: Alignment.centerLeft,
-                      padding: EdgeInsets.symmetric(horizontal: 12.w),
-                      child: Text(
-                        maxParticipants.value != null
-                            ? '${maxParticipants.value} kişi'
-                            : '',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          color: AppColors.onBackgroundColor,
-                        ),
-                      ),
+                    child: _buildNumberTextField(
+                      maxParticipantsController,
+                      hint: 'Örn: 50',
                     ),
                   ),
                   SizedBox(width: 8.w),
@@ -229,8 +217,17 @@ class CommunityEventDetailPage extends HookWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       GestureDetector(
-                        onTap: () => maxParticipants.value =
-                            (maxParticipants.value ?? 0) + 1,
+                        onTap: () {
+                          final current =
+                              int.tryParse(maxParticipantsController.text) ?? 0;
+                          final newText = (current + 1).toString();
+                          maxParticipantsController.value = TextEditingValue(
+                            text: newText,
+                            selection: TextSelection.collapsed(
+                              offset: newText.length,
+                            ),
+                          );
+                        },
                         child: const Icon(
                           Icons.keyboard_arrow_up,
                           size: 20,
@@ -239,11 +236,18 @@ class CommunityEventDetailPage extends HookWidget {
                       ),
                       GestureDetector(
                         onTap: () {
-                          if (maxParticipants.value != null &&
-                              maxParticipants.value! > 1) {
-                            maxParticipants.value = maxParticipants.value! - 1;
+                          final current =
+                              int.tryParse(maxParticipantsController.text) ?? 0;
+                          if (current > 1) {
+                            final newText = (current - 1).toString();
+                            maxParticipantsController.value = TextEditingValue(
+                              text: newText,
+                              selection: TextSelection.collapsed(
+                                offset: newText.length,
+                              ),
+                            );
                           } else {
-                            maxParticipants.value = null;
+                            maxParticipantsController.clear();
                           }
                         },
                         child: const Icon(
@@ -267,7 +271,7 @@ class CommunityEventDetailPage extends HookWidget {
                   data: Theme.of(context).copyWith(
                     checkboxTheme: CheckboxThemeData(
                       fillColor: WidgetStateProperty.all(
-                        const Color(0xFFF2F2F7),
+                        AppColors.inputFillColor,
                       ),
                       checkColor: WidgetStateProperty.all(
                         AppColors.onBackgroundColor,
@@ -353,16 +357,63 @@ class CommunityEventDetailPage extends HookWidget {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.r),
-          borderSide: const BorderSide(color: Color(0xFFC6D0D9)),
+          borderSide: const BorderSide(
+            color: AppColors.dividerColor,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.r),
-          borderSide: const BorderSide(color: Color(0xFFC6D0D9)),
+          borderSide: const BorderSide(
+            color: AppColors.dividerColor,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.r),
           borderSide: const BorderSide(color: AppColors.secondaryColor),
         ),
+      ),
+    ),
+  );
+
+  Widget _buildNumberTextField(
+    TextEditingController controller, {
+    String? hint,
+  }) => TextField(
+    cursorColor: AppColors.onBackgroundColor,
+    controller: controller,
+    keyboardType: TextInputType.number,
+    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+    style: TextStyle(
+      fontSize: 14.sp,
+      color: AppColors.onBackgroundColor,
+    ),
+    decoration: InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(
+        color: AppColors.textGrey,
+        fontSize: 14.sp,
+      ),
+      fillColor: Colors.transparent,
+      filled: false,
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: 12.w,
+        vertical: 10.h,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10.r),
+        borderSide: const BorderSide(
+          color: AppColors.dividerColor,
+        ),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10.r),
+        borderSide: const BorderSide(
+          color: AppColors.dividerColor,
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10.r),
+        borderSide: const BorderSide(color: AppColors.secondaryColor),
       ),
     ),
   );

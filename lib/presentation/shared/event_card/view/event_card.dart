@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -461,16 +462,27 @@ class _EventCardState extends State<EventCard> {
     getIt<RemoteConfigService>();
     final categories = AppConfig.categories;
 
+    final isCommunity =
+        widget.event.accountType == AccountType.community ||
+        widget.event.creator.accountType == AccountType.community;
+
     final displayAvatars = <AvatarInfo>[];
 
-    if (widget.participants.isNotEmpty) {
-      final creatorEntry = widget.participants
-          .where((u) => u.userID == widget.event.creator.userID)
-          .map((u) => AvatarInfo(userId: u.userID, imageUrl: u.profileImageUrl))
-          .firstOrNull;
+    final actualCreator = widget.participants
+        .where((u) => u.userID == widget.event.creator.userID)
+        .firstOrNull;
 
-      if (creatorEntry != null) {
-        displayAvatars.add(creatorEntry);
+    final creatorAvatarUrl =
+        actualCreator?.profileImageUrl ?? widget.event.creator.profileImageUrl;
+
+    if (widget.participants.isNotEmpty) {
+      if (!isCommunity && actualCreator != null) {
+        displayAvatars.add(
+          AvatarInfo(
+            userId: actualCreator.userID,
+            imageUrl: actualCreator.profileImageUrl,
+          ),
+        );
       }
 
       displayAvatars.addAll(
@@ -484,8 +496,6 @@ class _EventCardState extends State<EventCard> {
     final categoryIcon = widget.event.hobbies.isNotEmpty
         ? categories[widget.event.hobbies[0]] ?? ''
         : '🎉';
-
-    final isCommunity = widget.event.accountType == AccountType.community;
 
     return AnimatedCrossFade(
       duration: const Duration(milliseconds: 500),
@@ -650,22 +660,19 @@ class _EventCardState extends State<EventCard> {
               top: -24.h,
               child: isCommunity
                   ? SizedBox(
-                      width: 46.w,
-                      height: 46.w,
+                      width: 50.w,
+                      height: 50.w,
                       child: Stack(
                         clipBehavior: Clip.none,
                         alignment: Alignment.center,
                         children: [
                           CircleAvatar(
-                            radius: 16.r,
+                            radius: 22.r,
                             backgroundColor: AppColors.inputFillColor,
-                            backgroundImage:
-                                widget.event.creator.profileImageUrl.isNotEmpty
-                                ? NetworkImage(
-                                    widget.event.creator.profileImageUrl,
-                                  )
+                            backgroundImage: creatorAvatarUrl.isNotEmpty
+                                ? CachedNetworkImageProvider(creatorAvatarUrl)
                                 : null,
-                            child: widget.event.creator.profileImageUrl.isEmpty
+                            child: creatorAvatarUrl.isEmpty
                                 ? Icon(
                                     Icons.group,
                                     size: 16.sp,
@@ -674,11 +681,11 @@ class _EventCardState extends State<EventCard> {
                                 : null,
                           ),
                           Positioned(
-                            right: 0,
-                            bottom: 0,
+                            right: -2,
+                            bottom: 5,
                             child: Container(
-                              width: 18.w,
-                              height: 18.h,
+                              width: 20.w,
+                              height: 20.h,
                               decoration: BoxDecoration(
                                 color: AppColors.cardBackgroundColor,
                                 shape: BoxShape.circle,
