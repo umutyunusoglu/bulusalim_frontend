@@ -4,6 +4,7 @@ import 'package:outnest/domain/datasources/university_datasource.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/form/sanitizer.dart';
 import 'package:outnest/presentation/shared/form/validators/validate_university_mail.dart';
@@ -26,6 +27,8 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
   bool _isLoading = false;
   bool _isCodeSent = false;
   String? _detectedUniversity;
+  List<UniversitySuggestion> _emailSuggestions = const [];
+  bool _hasCheckedEmail = false;
 
   @override
   void dispose() {
@@ -43,26 +46,120 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
       });
     }
 
-    // Basit format kontrolü (opsiyonel, validator zaten yapacak)
     if (!email.contains('@') || !email.contains('.')) {
-      setState(() => _detectedUniversity = null);
+      setState(() {
+        _detectedUniversity = null;
+        _emailSuggestions = const [];
+        _hasCheckedEmail = false;
+      });
       return;
     }
 
     try {
-      final uniNames = await getIt<UniversityDatasource>().getUniversityOfMail(
-        email.trim(),
-        'Turkey',
-      );
+      final ds = getIt<UniversityDatasource>();
+      final uniNames = await ds.getUniversityOfMail(email.trim(), 'Turkey');
 
-      setState(() {
-        _detectedUniversity = uniNames.isNotEmpty ? uniNames.first : null;
-        // Artık burada _errorMessage = '...' demene gerek yok,
-        // çünkü validator buton basıldığında bunu söyleyecek.
-      });
+      if (uniNames.isNotEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _detectedUniversity = uniNames.first;
+          _emailSuggestions = const [];
+          _hasCheckedEmail = true;
+        });
+      } else {
+        final suggestions = await ds.findSuggestionsForMail(
+          email.trim(),
+          'Turkey',
+        );
+        if (!mounted) return;
+        setState(() {
+          _detectedUniversity = null;
+          _emailSuggestions = suggestions;
+          _hasCheckedEmail = true;
+        });
+
+        // Suggestion varsa klavyeyi kapat ki banner görünsün
+        if (suggestions.isNotEmpty) {
+          FocusScope.of(context).unfocus();
+        }
+      }
     } catch (e) {
       debugPrint('Uni Check Error: $e');
     }
+  }
+
+  void _applySuggestion(UniversitySuggestion s) {
+    _emailController.text = s.suggestedEmail;
+    _emailController.selection = TextSelection.fromPosition(
+      TextPosition(offset: s.suggestedEmail.length),
+    );
+    setState(() {
+      _detectedUniversity = s.universityName;
+      _emailSuggestions = const [];
+    });
+  }
+
+  void _showSuggestionsSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Bunlardan birini mi demek istediniz?',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Display',
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.onBackgroundColor,
+                ),
+              ),
+              SizedBox(height: 16.h),
+              ..._emailSuggestions.map(
+                (s) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    s.suggestedEmail,
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Display',
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.tertiaryColor,
+                    ),
+                  ),
+                  subtitle: Text(
+                    s.universityName,
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Display',
+                      fontSize: 12.sp,
+                      color: AppColors.textGrey,
+                    ),
+                  ),
+                  trailing: Icon(
+                    Symbols.arrow_forward,
+                    size: 18.sp,
+                    color: AppColors.tertiaryColor,
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _applySuggestion(s);
+                  },
+                ),
+              ),
+              SizedBox(height: 8.h),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _handleSendCode() async {
@@ -106,7 +203,7 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
         Navigator.pop(context, _detectedUniversity);
       }
     } catch (e) {
-      _pinController.clear(); // Hatalı kod girilirse temizle
+      _pinController.clear();
     } finally {
       setState(() => _isLoading = false);
     }
@@ -158,9 +255,23 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
                 child: _buildStatusMessage(),
               ),
 
+              // Suggestion banner
+              if (_detectedUniversity == null &&
+                  _emailSuggestions.isNotEmpty) ...[
+                SizedBox(height: 12.h),
+                if (_emailSuggestions.length == 1)
+                  _buildSuggestionBanner(_emailSuggestions.first)
+                else
+                  _buildMultiSuggestionBanner(),
+              ],
+
               SizedBox(height: 16.h),
               Text(
-                'Üniversiteni doğruladığında, üniversite bilgin profilinde otomatik olarak görünür.',
+                _hasCheckedEmail &&
+                        _detectedUniversity == null &&
+                        _emailSuggestions.isEmpty
+                    ? 'Bu üniversite henüz desteklenmiyor. Lütfen başka bir mail deneyin veya bize bildirin.'
+                    : 'Üniversiteni doğruladığında, üniversite bilgin profilinde otomatik olarak görünür.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'SF Pro Display',
@@ -174,7 +285,6 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
               SizedBox(height: 24.h),
               _buildButton(
                 text: 'gönder',
-                // Kod gönderildiyse butonu pasif yapıyoruz (tekrar basılmasın)
                 onPressed:
                     (_isLoading || _detectedUniversity == null || _isCodeSent)
                     ? null
@@ -230,6 +340,116 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
               SizedBox(height: 40.h),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSuggestionBanner(UniversitySuggestion suggestion) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(12.r),
+      onTap: () => _applySuggestion(suggestion),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+        decoration: BoxDecoration(
+          color: AppColors.tertiaryColor.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: AppColors.tertiaryColor.withOpacity(0.3),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Symbols.lightbulb,
+              size: 18.sp,
+              color: AppColors.tertiaryColor,
+            ),
+            SizedBox(width: 10.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Bunu mu demek istediniz?',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Display',
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textGrey,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    suggestion.suggestedEmail,
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Display',
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.tertiaryColor,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    suggestion.universityName,
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Display',
+                      fontSize: 11.sp,
+                      color: AppColors.textGrey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Symbols.arrow_forward,
+              size: 18.sp,
+              color: AppColors.tertiaryColor,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMultiSuggestionBanner() {
+    return InkWell(
+      borderRadius: BorderRadius.circular(12.r),
+      onTap: _showSuggestionsSheet,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+        decoration: BoxDecoration(
+          color: AppColors.tertiaryColor.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: AppColors.tertiaryColor.withOpacity(0.3),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Symbols.lightbulb,
+              size: 18.sp,
+              color: AppColors.tertiaryColor,
+            ),
+            SizedBox(width: 10.w),
+            Expanded(
+              child: Text(
+                '${_emailSuggestions.length} olası üniversite bulundu. Hangisini demek istediniz?',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Display',
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.onBackgroundColor,
+                ),
+              ),
+            ),
+            Icon(
+              Symbols.arrow_forward,
+              size: 18.sp,
+              color: AppColors.tertiaryColor,
+            ),
+          ],
         ),
       ),
     );
@@ -359,11 +579,10 @@ class _ChangeUniversityPageState extends State<ChangeUniversityPage> {
     return TextButton(
       onPressed: () async {
         final Uri url = Uri.parse('https://forms.gle/AJXYJXhBPQaeka6u9');
-
         launchUrl(url, mode: LaunchMode.inAppWebView);
       },
       style: TextButton.styleFrom(
-        foregroundColor: AppColors.textGrey, // Temanızdaki gri renk
+        foregroundColor: AppColors.textGrey,
         padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 16.w),
       ),
       child: Text(

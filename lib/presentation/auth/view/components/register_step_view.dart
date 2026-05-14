@@ -59,20 +59,26 @@ class RegisterStepView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final keyboardOpen = bottomInset > 0;
     return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      padding: EdgeInsets.only(
+        left: 16.w,
+        right: 16.w,
+        bottom: bottomInset + 24.h,
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // LOGO
-          Image.asset(
-            'assets/outnest2.png',
-            height: 48.h,
-            fit: BoxFit.contain,
-          ),
-
-          SizedBox(height: 80.h),
-
+          if (!keyboardOpen) ...[
+            Image.asset(
+              'assets/outnest2.png',
+              height: 48.h,
+              fit: BoxFit.contain,
+            ),
+            SizedBox(height: 80.h),
+          ] else
+            SizedBox(height: 20.h),
           // BAŞLIK
           Text(
             title,
