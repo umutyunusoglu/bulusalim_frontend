@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -36,12 +37,6 @@ class CommunityProfilePage extends HookConsumerWidget {
   const CommunityProfilePage({required this.profileUserID, super.key});
 
   final String profileUserID;
-
-  static const _badges = [
-    'assets/badge/badge1.png',
-    'assets/badge/badge2.png',
-    'assets/badge/badge3.png',
-  ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -154,6 +149,77 @@ class CommunityProfilePage extends HookConsumerWidget {
       );
     }
 
+    Future<void> showFullScreenImage(
+      BuildContext context,
+      String imageUrl,
+    ) async {
+      final hasValidImage =
+          imageUrl.trim().isNotEmpty && imageUrl.startsWith('http');
+
+      await showGeneralDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel: 'Close',
+        barrierColor: Colors.black.withOpacity(0.5),
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Scaffold(
+              backgroundColor: Colors.transparent,
+              body: Stack(
+                children: [
+                  Positioned.fill(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(color: Colors.black26),
+                    ),
+                  ),
+                  Center(
+                    child: Hero(
+                      tag: 'community_profile_pic_$profileUserID',
+                      child: Container(
+                        width: 264.w,
+                        height: 264.w,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.grey.shade100,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.5),
+                            ),
+                          ],
+                        ),
+                        child: ClipOval(
+                          child: hasValidImage
+                              ? CachedNetworkImage(
+                                  imageUrl: imageUrl,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => Container(
+                                    color: Colors.black,
+                                  ),
+                                  errorWidget: (context, url, error) => Icon(
+                                    Symbols.groups,
+                                    size: 120.sp,
+                                    color: Colors.grey,
+                                  ),
+                                )
+                              : Icon(
+                                  Symbols.groups,
+                                  size: 120.sp,
+                                  color: Colors.grey,
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    }
+
     // ─── BUILD ───────────────────────────────────────────────
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
@@ -209,9 +275,14 @@ class CommunityProfilePage extends HookConsumerWidget {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Column(
-                            children: [
-                              CircleAvatar(
+                          GestureDetector(
+                            onTap: () => showFullScreenImage(
+                              context,
+                              safeProfileImageUrl,
+                            ),
+                            child: Hero(
+                              tag: 'community_profile_pic_$profileUserID',
+                              child: CircleAvatar(
                                 radius: 38.r,
                                 backgroundColor: Colors.grey.shade100,
                                 backgroundImage: profileImageUrl.isNotEmpty
@@ -237,24 +308,7 @@ class CommunityProfilePage extends HookConsumerWidget {
                                       )
                                     : null,
                               ),
-                              SizedBox(height: 8.h),
-                              if (_badges.isNotEmpty)
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: _badges.map((badge) {
-                                    return Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 2.w,
-                                      ),
-                                      child: Image.asset(
-                                        badge,
-                                        width: 22.r,
-                                        height: 22.r,
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                            ],
+                            ),
                           ),
                           SizedBox(width: 16.w),
                           Expanded(
