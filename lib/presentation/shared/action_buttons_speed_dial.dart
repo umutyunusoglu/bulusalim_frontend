@@ -12,6 +12,7 @@ class ActionButtonsSpeedDial extends HookConsumerWidget {
     required this.onCameraTap,
     required this.onLocationTap,
     required this.onQrTap,
+    required this.onIdeaTap,
     this.forceShowAllButtons = false,
     this.closedSize = 64,
     this.openSize = 44,
@@ -22,6 +23,7 @@ class ActionButtonsSpeedDial extends HookConsumerWidget {
   final VoidCallback onCameraTap;
   final VoidCallback onLocationTap;
   final VoidCallback onQrTap;
+  final VoidCallback onIdeaTap;
   final bool forceShowAllButtons;
   final double closedSize;
   final double openSize;
@@ -78,6 +80,13 @@ class ActionButtonsSpeedDial extends HookConsumerWidget {
                 ),
                 const SizedBox(height: 8),
               ],
+              _CustomDialChild(
+                icon: Icons.note_add_outlined,
+                iconColor: AppColors.darkSlate,
+                backgroundColor: AppColors.backgroundColor,
+                onTap: onIdeaTap,
+              ),
+              const SizedBox(height: 8),
               _CustomDialChild(
                 icon: Icons.add_location_alt_outlined,
                 iconColor: const Color(0xFF1B6A45),

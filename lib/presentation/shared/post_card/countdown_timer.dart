@@ -62,7 +62,7 @@ class CountdownTimerState extends State<CountdownTimer> {
     // Sadece dakikalar kaldığında gösterim
     if (days == 0 && minutes > 0) parts.add('$minutes dk.');
 
-    if (parts.isEmpty) return 'Başlıyor';
+    if (parts.isEmpty) return 'Şimdi  ';
 
     return parts.join(' ');
   }

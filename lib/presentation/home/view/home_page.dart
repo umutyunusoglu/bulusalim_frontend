@@ -1,3 +1,5 @@
+// presentation/home/view/home_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -101,6 +103,7 @@ class HomePage extends HookConsumerWidget {
             onCameraTap: () => navigateToCamera(context, ref),
             onLocationTap: () => context.go('/map', extra: true),
             onQrTap: () => context.push('/my-qr'),
+            onIdeaTap: () => context.push('/create-idea'),
           );
         },
       ),
