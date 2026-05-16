@@ -13,6 +13,7 @@ import 'package:outnest/core/utils/types/enums/feed_type.dart';
 import 'package:outnest/core/utils/types/enums/screen_enum.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/entities/feed/feed_entity.dart';
+import 'package:outnest/domain/entities/feed/idea/idea_entity.dart';
 import 'package:outnest/domain/entities/feed/post/post_entity.dart';
 import 'package:outnest/domain/repositories/feed_repository.dart';
 import 'package:outnest/domain/services/navbar_badge_service.dart';
@@ -20,6 +21,7 @@ import 'package:outnest/domain/services/persistance_service.dart';
 import 'package:outnest/domain/services/session_service.dart';
 import 'package:outnest/presentation/profile/view/components/empty_profile_screen.dart';
 import 'package:outnest/presentation/shared/event_card/view/event_card.dart';
+import 'package:outnest/presentation/shared/idea_card/idea_cart.dart';
 import 'package:outnest/presentation/shared/post_card/post_card.dart';
 
 class HomeContentPage extends HookConsumerWidget {
@@ -123,6 +125,12 @@ class HomeContentPage extends HookConsumerWidget {
                     repository: repo,
                   );
                 }
+                if (item is IdeaEntity) {
+                  return IdeaCard(
+                    key: ValueKey('idea_${item.id}'),
+                    idea: item,
+                  );
+                }
                 return const SizedBox.shrink();
               },
             );
@@ -172,11 +180,12 @@ void _useFeedBadgeSync({
 
   DateTime? latest;
   for (final item in items) {
-    final ts = item is PostEntity
-        ? (item.updatedAt ?? item.createdAt)
-        : item is EventEntity
-        ? item.updatedAt
-        : null;
+    final ts = switch (item) {
+      PostEntity p => p.updatedAt ?? p.createdAt,
+      EventEntity e => e.updatedAt,
+      IdeaEntity i => i.updatedAt ?? i.createdAt,
+      _ => null,
+    };
     if (ts == null) continue;
     if (latest == null || ts.isAfter(latest)) latest = ts;
   }

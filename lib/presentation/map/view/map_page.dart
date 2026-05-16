@@ -1206,6 +1206,7 @@ class _MapPageState extends ConsumerState<MapPage> {
                       });
                     },
                     onQrTap: () => context.push('/my-qr'),
+                    onIdeaTap: () => context.push('/create-idea'),
                   ),
                 ),
               ),
