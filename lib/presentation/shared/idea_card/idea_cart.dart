@@ -12,7 +12,6 @@ import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/domain/entities/feed/idea/idea_entity.dart';
 import 'package:outnest/domain/services/file_service.dart';
 import 'package:outnest/presentation/shared/idea_card/components/vote_buttons.dart';
-import 'package:outnest/presentation/shared/post_card/countdown_timer.dart';
 
 /// Feed card for an [IdeaEntity] (the "Fikir Balonu" surface from
 /// the design — see screenshot 1).
@@ -23,9 +22,20 @@ import 'package:outnest/presentation/shared/post_card/countdown_timer.dart';
 /// (e.g. on refresh) the card picks up server-side numbers
 /// transparently.
 class IdeaCard extends HookConsumerWidget {
-  const IdeaCard({required this.idea, super.key});
+  const IdeaCard({
+    required this.idea,
+    this.onCommentTap,
+    super.key,
+  });
 
   final IdeaEntity idea;
+
+  /// Override for the comment-icon tap. When `null` (the feed case),
+  /// the card pushes its own detail route. The detail page passes a
+  /// callback here that focuses the composer instead — otherwise
+  /// tapping the icon from within the detail page would push a new
+  /// copy of the same detail page onto the navigator stack.
+  final VoidCallback? onCommentTap;
 
   static const _textMain = Color(0xFF1A1A1A);
   static const _textGrey = Color(0xFF8E8E93);
@@ -98,29 +108,26 @@ class IdeaCard extends HookConsumerWidget {
               ),
             ),
             SizedBox(height: 12.h),
-            Row(
-              children: [
-                CountdownTimer(
-                  targetTime: idea.createdAt,
-                  isEvent: false,
-                  style: TextStyle(
-                    fontFamily: 'SF Pro Display',
-                    fontSize: 12.sp,
-                    color: _textGrey,
-                  ),
-                ),
-                const Spacer(),
-                VoteButtons(
-                  vote: vote.value,
-                  likeCount: likeCount.value,
-                  dislikeCount: dislikeCount.value,
-                  commentCount: idea.commentCount,
-                  commentsEnabled: idea.commentsEnabled,
-                  onLike: () => handleVote(IdeaVoteType.like),
-                  onDislike: () => handleVote(IdeaVoteType.dislike),
-                  onComment: () => context.push('/idea/${idea.id}'),
-                ),
-              ],
+            // Just the vote/comment trio, right-aligned. The
+            // timestamp lives in the header now (under @username),
+            // matching the design where the date sits with the
+            // author block rather than next to the actions.
+            Align(
+              alignment: Alignment.centerRight,
+              child: VoteButtons(
+                vote: vote.value,
+                likeCount: likeCount.value,
+                dislikeCount: dislikeCount.value,
+                commentCount: idea.commentCount,
+                commentsEnabled: idea.commentsEnabled,
+                onLike: () => handleVote(IdeaVoteType.like),
+                onDislike: () => handleVote(IdeaVoteType.dislike),
+                // Use the override if the host page passed one
+                // (detail page focuses the composer); otherwise the
+                // feed default behavior is to open the detail page.
+                onComment:
+                    onCommentTap ?? () => context.push('/idea/${idea.id}'),
+              ),
             ),
           ],
         ),
@@ -187,6 +194,7 @@ class _Header extends StatelessWidget {
     }
 
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         GestureDetector(
           onTap: goToProfile,
@@ -204,22 +212,48 @@ class _Header extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              GestureDetector(
-                onTap: goToProfile,
-                child: Text(
-                  creator.nameSurname ?? creator.username,
-                  style: TextStyle(
-                    fontFamily: 'SF Pro Display',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16.sp,
-                    color: IdeaCard._textMain,
+              // Row 1: bold display name, then the @handle in grey
+              // on the same line — matches the design's "Arda Yıldız
+              // @arda11yildiz" pairing.
+              Row(
+                children: [
+                  Flexible(
+                    child: GestureDetector(
+                      onTap: goToProfile,
+                      child: Text(
+                        creator.nameSurname ?? creator.username,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Display',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15.sp,
+                          color: IdeaCard._textMain,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                  SizedBox(width: 6.w),
+                  Flexible(
+                    child: Text(
+                      '@${creator.username}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Display',
+                        fontSize: 13.sp,
+                        color: IdeaCard._textGrey,
+                      ),
+                    ),
+                  ),
+                ],
               ),
+              SizedBox(height: 2.h),
+              // Row 2: absolute date, not relative. The design uses
+              // "30.04.2026" — calendar-style. We format with
+              // intl's DateFormat for locale-aware separators.
               Text(
-                '@${creator.username}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                _formatDate(idea.createdAt),
                 style: TextStyle(
                   fontFamily: 'SF Pro Display',
                   fontSize: 12.sp,
@@ -241,5 +275,13 @@ class _Header extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  /// dd.MM.yyyy with zero-padded day and month. Pure-Dart so we
+  /// don't drag in `intl` for a single format.
+  String _formatDate(DateTime d) {
+    final dd = d.day.toString().padLeft(2, '0');
+    final mm = d.month.toString().padLeft(2, '0');
+    return '$dd.$mm.${d.year}';
   }
 }

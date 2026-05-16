@@ -45,7 +45,7 @@ class CommentThread extends HookConsumerWidget {
     required this.onReplyTo,
     required this.insertSignal,
     this.depth = 0,
-    this.maxIndentDepth = 4,
+    this.maxIndentDepth = 1,
     super.key,
   });
 
@@ -201,7 +201,7 @@ class CommentThread extends HookConsumerWidget {
           ),
           if (loadingBranches.value.contains(comment.id))
             Padding(
-              padding: EdgeInsets.only(left: _indentFor(depth + 1), top: 4.h),
+              padding: EdgeInsets.only(left: _stepFor(depth + 1), top: 4.h),
               child: SizedBox(
                 width: 16.w,
                 height: 16.w,
@@ -209,25 +209,47 @@ class CommentThread extends HookConsumerWidget {
               ),
             ),
           if (openBranches.value[comment.id] != null)
-            _IndentedBranch(
-              indent: _indentFor(depth + 1),
-              child: CommentThread(
-                ideaId: ideaId,
-                comments: openBranches.value[comment.id]!,
-                onReplyTo: onReplyTo,
-                insertSignal: insertSignal,
-                depth: depth + 1,
-                maxIndentDepth: maxIndentDepth,
-              ),
-            ),
+            // Past the indent cap, skip the _IndentedBranch wrapper
+            // entirely so the vertical thread line doesn't draw on
+            // top of itself once consecutive levels stack at the
+            // same x. Result: one clean line from depth=1 onwards.
+            (depth + 1 > maxIndentDepth
+                ? CommentThread(
+                    ideaId: ideaId,
+                    comments: openBranches.value[comment.id]!,
+                    onReplyTo: onReplyTo,
+                    insertSignal: insertSignal,
+                    depth: depth + 1,
+                    maxIndentDepth: maxIndentDepth,
+                  )
+                : _IndentedBranch(
+                    indent: _stepFor(depth + 1),
+                    child: CommentThread(
+                      ideaId: ideaId,
+                      comments: openBranches.value[comment.id]!,
+                      onReplyTo: onReplyTo,
+                      insertSignal: insertSignal,
+                      depth: depth + 1,
+                      maxIndentDepth: maxIndentDepth,
+                    ),
+                  )),
         ],
       ],
     );
   }
 
-  double _indentFor(int d) {
-    final effective = d > maxIndentDepth ? maxIndentDepth : d;
-    return 24.0 * effective;
+  /// Step (not absolute position) added at this child's depth.
+  ///
+  /// Padding here is relative to the parent's padding, so what we
+  /// add is *additional* indent on top of the chain already
+  /// accumulated above. Each level under the cap contributes a
+  /// fixed step; once we cross [maxIndentDepth] the step becomes 0
+  /// — the vertical thread line keeps drawing through every level,
+  /// but the content stops marching rightward. Matches the design's
+  /// "one indent then everything stays put" behavior.
+  double _stepFor(int childDepth) {
+    if (childDepth > maxIndentDepth) return 0;
+    return 32.0;
   }
 }
 

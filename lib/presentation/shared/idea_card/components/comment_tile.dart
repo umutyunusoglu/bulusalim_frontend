@@ -96,7 +96,7 @@ class CommentTile extends HookConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               CircleAvatar(
-                radius: 14.r,
+                radius: 16.r,
                 backgroundColor: Colors.grey.shade200,
                 backgroundImage: hasAvatar
                     ? CachedNetworkImageProvider(
@@ -105,7 +105,7 @@ class CommentTile extends HookConsumerWidget {
                     : AssetImage(FileService.defaultProfileImageUrl())
                           as ImageProvider,
               ),
-              SizedBox(width: 8.w),
+              SizedBox(width: 10.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

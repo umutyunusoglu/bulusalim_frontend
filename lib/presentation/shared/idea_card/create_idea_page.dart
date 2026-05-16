@@ -10,6 +10,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/app_state/current_user_data_providers/current_user_identity_provider.dart';
 import 'package:outnest/application/providers/idea_providers.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/domain/services/file_service.dart';
 
@@ -72,7 +73,11 @@ class CreateIdeaPage extends HookConsumerWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Symbols.arrow_back, color: Color(0xFF1A1A1A)),
+          icon: const Icon(
+            Symbols.arrow_back,
+            color: Color(0xFF1A1A1A),
+            weight: 400,
+          ),
           onPressed: () => context.pop(),
         ),
         centerTitle: true,
@@ -101,6 +106,9 @@ class CreateIdeaPage extends HookConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Composer takes all available vertical space. The
+              // text scrolls inside it once it overflows; everything
+              // below (counter + comments toggle) stays pinned.
               Expanded(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,6 +131,7 @@ class CreateIdeaPage extends HookConsumerWidget {
                           color: const Color(0xFF1A1A1A),
                           height: 1.4,
                         ),
+                        cursorColor: const Color(0xFFFF6B4A),
                         decoration: InputDecoration(
                           hintText: 'Ne düşünüyorsun?',
                           hintStyle: TextStyle(
@@ -130,42 +139,62 @@ class CreateIdeaPage extends HookConsumerWidget {
                             fontSize: 16.sp,
                             color: const Color(0xFF8E8E93),
                           ),
+                          // Every border state explicitly nuked so
+                          // the app-level InputDecorationTheme can't
+                          // sneak in an underline, outline, or fill
+                          // on focus — that was the "balloon" the
+                          // user kept seeing.
                           border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
+                          focusedErrorBorder: InputBorder.none,
+                          filled: false,
+                          fillColor: Colors.transparent,
                           counterText: '',
                           isCollapsed: true,
-                          contentPadding: EdgeInsets.only(top: 10.h),
+                          contentPadding: EdgeInsets.only(top: 6.h),
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              Align(
-                alignment: Alignment.bottomRight,
-                child: Text(
-                  '${length.value}/$_maxLength',
-                  style: TextStyle(
-                    fontFamily: 'SF Pro Display',
-                    fontSize: 12.sp,
-                    color: const Color(0xFF8E8E93),
+              // Character counter sits right above the comments
+              // toggle, with no divider in between — the toggle row
+              // is the only visual anchor at the bottom.
+              Padding(
+                padding: EdgeInsets.only(bottom: 8.h),
+                child: Align(
+                  alignment: Alignment.bottomRight,
+                  child: Text(
+                    '${length.value}/$_maxLength',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Display',
+                      fontSize: 12.sp,
+                      color: const Color(0xFF8E8E93),
+                    ),
                   ),
                 ),
               ),
-              const Divider(height: 24, color: Color(0xFFEFEFEF)),
               Row(
                 children: [
-                  Icon(
-                    Icons.add_box_outlined,
-                    size: 20.sp,
-                    color: Theme.of(context).colorScheme.primary,
+                  Transform.flip(
+                    flipX: true,
+                    child: Icon(
+                      Icons.add_comment_outlined,
+                      size: 22.sp,
+                      color: AppColors.tertiaryColor,
+                    ),
                   ),
                   SizedBox(width: 8.w),
                   Text(
                     'Yorumlar',
                     style: TextStyle(
                       fontFamily: 'SF Pro Display',
-                      fontSize: 14.sp,
-                      color: Theme.of(context).colorScheme.primary,
+                      fontSize: 15.sp,
+                      color: AppColors.tertiaryColor,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -173,6 +202,8 @@ class CreateIdeaPage extends HookConsumerWidget {
                   Switch.adaptive(
                     value: commentsEnabled.value,
                     onChanged: (v) => commentsEnabled.value = v,
+                    activeColor: Colors.white,
+                    activeTrackColor: AppColors.tertiaryColor,
                   ),
                 ],
               ),
@@ -193,7 +224,7 @@ class _Avatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasUrl = url != null && url!.isNotEmpty && url!.startsWith('http');
     return CircleAvatar(
-      radius: 20.r,
+      radius: 18.r,
       backgroundColor: Colors.grey.shade200,
       backgroundImage: hasUrl
           ? CachedNetworkImageProvider(fixEmulatorUrl(url!))

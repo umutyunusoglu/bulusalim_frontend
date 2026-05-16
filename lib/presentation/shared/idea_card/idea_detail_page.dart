@@ -9,6 +9,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/app_state/current_user_data_providers/current_user_identity_provider.dart';
 import 'package:outnest/application/providers/idea_providers.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/domain/entities/feed/idea/idea_comment_entity.dart';
 import 'package:outnest/domain/services/file_service.dart';
@@ -101,91 +102,107 @@ class IdeaDetailPage extends HookConsumerWidget {
       composerFocus.requestFocus();
     }
 
+    // Tapping the comment icon on the idea card while already on
+    // the detail page should NOT push another copy of this page.
+    // Instead, treat it as "start a top-level comment": clear any
+    // active reply target and focus the composer.
+    void focusComposerForTopLevel() {
+      replyTarget.value = null;
+      composerFocus.requestFocus();
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F8),
+      // AppBar shares the page's grey background so the top doesn't
+      // read as a separate white strip — same surface, edge to edge.
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFF7F7F8),
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(Symbols.arrow_back, color: Color(0xFF1A1A1A)),
           onPressed: () => context.pop(),
         ),
         centerTitle: true,
-        title: Text(
-          'Balon Yorumları',
-          style: TextStyle(
-            fontFamily: 'SF Pro Display',
-            fontWeight: FontWeight.w600,
-            fontSize: 17.sp,
-            color: const Color(0xFF1A1A1A),
-          ),
-        ),
       ),
+      // Stack instead of Column: the composer floats over the list,
+      // letting the grey page background flow uninterrupted behind
+      // it. The list reserves enough bottom padding so its last
+      // comment never sits under the pill.
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            Expanded(
-              child: ideaAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(child: Text('Hata: $e')),
-                data: (idea) {
-                  if (idea == null) {
-                    return const Center(child: Text('Fikir bulunamadı.'));
-                  }
-                  return ListView(
-                    padding: EdgeInsets.only(bottom: 96.h),
-                    children: [
-                      IdeaCard(idea: idea),
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 16.w,
-                          vertical: 8.h,
-                        ),
-                        child: commentsAsync.when(
-                          loading: () => const Padding(
-                            padding: EdgeInsets.all(24),
-                            child: Center(
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
+            ideaAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Hata: $e')),
+              data: (idea) {
+                if (idea == null) {
+                  return const Center(child: Text('Fikir bulunamadı.'));
+                }
+                return ListView(
+                  padding: EdgeInsets.only(bottom: 96.h),
+                  children: [
+                    IdeaCard(
+                      idea: idea,
+                      // Override the default push-to-detail so we
+                      // don't stack another IdeaDetailPage on top
+                      // of this one.
+                      onCommentTap: focusComposerForTopLevel,
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 8.h,
+                      ),
+                      child: commentsAsync.when(
+                        loading: () => const Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           ),
-                          error: (e, _) => Text('Yorumlar yüklenemedi: $e'),
-                          data: (comments) {
-                            if (comments.isEmpty) {
-                              return Padding(
-                                padding: EdgeInsets.all(24.h),
-                                child: Center(
-                                  child: Text(
-                                    'İlk yorumu sen yaz.',
-                                    style: TextStyle(
-                                      fontFamily: 'SF Pro Display',
-                                      fontSize: 13.sp,
-                                      color: const Color(0xFF8E8E93),
-                                    ),
+                        ),
+                        error: (e, _) => Text('Yorumlar yüklenemedi: $e'),
+                        data: (comments) {
+                          if (comments.isEmpty) {
+                            return Padding(
+                              padding: EdgeInsets.all(24.h),
+                              child: Center(
+                                child: Text(
+                                  'İlk yorumu sen yaz.',
+                                  style: TextStyle(
+                                    fontFamily: 'SF Pro Display',
+                                    fontSize: 13.sp,
+                                    color: const Color(0xFF8E8E93),
                                   ),
                                 ),
-                              );
-                            }
-                            return CommentThread(
-                              ideaId: ideaId,
-                              comments: comments,
-                              onReplyTo: startReply,
-                              insertSignal: insertSignal,
+                              ),
                             );
-                          },
-                        ),
+                          }
+                          return CommentThread(
+                            ideaId: ideaId,
+                            comments: comments,
+                            onReplyTo: startReply,
+                            insertSignal: insertSignal,
+                          );
+                        },
                       ),
-                    ],
-                  );
-                },
-              ),
+                    ),
+                  ],
+                );
+              },
             ),
-            _Composer(
-              controller: composerController,
-              focusNode: composerFocus,
-              replyTarget: replyTarget.value,
-              onCancelReply: () => replyTarget.value = null,
-              onSend: sendComment,
-              busy: isPosting.value,
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _Composer(
+                controller: composerController,
+                focusNode: composerFocus,
+                replyTarget: replyTarget.value,
+                onCancelReply: () => replyTarget.value = null,
+                onSend: sendComment,
+                busy: isPosting.value,
+              ),
             ),
           ],
         ),
@@ -227,17 +244,11 @@ class _Composer extends HookConsumerWidget {
         user?.profileImageUrl.isNotEmpty == true &&
         user!.profileImageUrl.startsWith('http');
 
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFEFEFEF))),
-      ),
-      padding: EdgeInsets.fromLTRB(
-        16.w,
-        10.h,
-        16.w,
-        10.h + MediaQuery.of(context).viewInsets.bottom * 0,
-      ),
+    return Padding(
+      // No background, no top border — the composer is meant to
+      // float over the grey page. We only pad it so the pill has
+      // breathing room from the screen edges and the keyboard.
+      padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 12.h),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -281,47 +292,60 @@ class _Composer extends HookConsumerWidget {
               ),
               SizedBox(width: 10.w),
               Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
+                child: TextField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  maxLines: 4,
+                  minLines: 1,
+                  // Idle state: white text on the coral pill so the
+                  // hint reads as a label, not a placeholder. Focused
+                  // state: dark text on white, conventional input.
+                  // We drive both colors from the same flag so they
+                  // never desync — which is what caused the earlier
+                  // bug where the hint stayed white on a white fill.
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Display',
+                    fontSize: 14.sp,
                     color: hasFocus || hasText
-                        ? Colors.white
-                        : const Color(0xFFFF6B4A),
-                    borderRadius: BorderRadius.circular(24.r),
-                    border: Border.all(
-                      color: hasFocus || hasText
-                          ? const Color(0xFFEFEFEF)
-                          : Colors.transparent,
-                    ),
+                        ? const Color(0xFF1A1A1A)
+                        : Colors.white,
                   ),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 4.h,
-                  ),
-                  child: TextField(
-                    controller: controller,
-                    focusNode: focusNode,
-                    maxLines: 4,
-                    minLines: 1,
-                    style: TextStyle(
+                  decoration: InputDecoration(
+                    hintText: 'Yorum yaz.',
+                    hintStyle: TextStyle(
                       fontFamily: 'SF Pro Display',
                       fontSize: 14.sp,
                       color: hasFocus || hasText
-                          ? const Color(0xFF1A1A1A)
+                          ? const Color(0xFF8E8E93)
                           : Colors.white,
                     ),
-                    decoration: InputDecoration(
-                      hintText: 'Yorum yaz.',
-                      hintStyle: TextStyle(
-                        fontFamily: 'SF Pro Display',
-                        fontSize: 14.sp,
-                        color: hasFocus || hasText
-                            ? const Color(0xFF8E8E93)
-                            : Colors.white,
-                      ),
-                      border: InputBorder.none,
-                      isCollapsed: true,
-                      contentPadding: EdgeInsets.symmetric(vertical: 10.h),
+                    // InputDecoration.filled wins over any ambient
+                    // Material canvas color, so the coral pill
+                    // renders even on the first frame — no more
+                    // "white pill with coral border" flash.
+                    filled: true,
+                    fillColor: hasFocus || hasText
+                        ? Colors.white
+                        : AppColors.primaryColor,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 10.h,
                     ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24.r),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24.r),
+                      borderSide: hasFocus || hasText
+                          ? const BorderSide(color: Color(0xFFEFEFEF))
+                          : BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24.r),
+                      borderSide: const BorderSide(color: Color(0xFFEFEFEF)),
+                    ),
+                    isCollapsed: true,
                   ),
                 ),
               ),

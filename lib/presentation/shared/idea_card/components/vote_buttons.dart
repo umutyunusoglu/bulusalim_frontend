@@ -52,7 +52,7 @@ class VoteButtons extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _IconCount(
-          icon: liked ? Icons.thumb_up : Icons.thumb_up_outlined,
+          icon: liked ? Symbols.thumb_up : Icons.thumb_up_outlined,
           count: likeCount,
           active: liked,
           size: size,
@@ -60,7 +60,7 @@ class VoteButtons extends StatelessWidget {
         ),
         SizedBox(width: 14.w),
         _IconCount(
-          icon: disliked ? Icons.thumb_down : Icons.thumb_down_outlined,
+          icon: disliked ? Symbols.thumb_down : Icons.thumb_down_outlined,
           count: dislikeCount,
           active: disliked,
           size: size,
@@ -97,6 +97,12 @@ class _IconCount extends StatelessWidget {
   final VoidCallback? onTap;
   final bool dimmed;
 
+  /// Resting color for thumbs and the comment add-box. Matches the
+  /// dark indigo/navy used in the design — gives the row a bit of
+  /// brand-flavored personality without competing with the coral
+  /// accents used for primary actions (composer pill, send button).
+  static const _restingColor = Color(0xFF2C3E8C);
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -104,7 +110,7 @@ class _IconCount extends StatelessWidget {
         ? const Color(0xFFC7C7CC)
         : active
         ? theme.colorScheme.primary
-        : const Color(0xFF1A1A1A);
+        : _restingColor;
 
     return InkWell(
       onTap: onTap,
