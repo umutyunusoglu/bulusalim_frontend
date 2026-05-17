@@ -12,24 +12,19 @@ import 'package:outnest/core/utils/types/types.dart';
 import 'package:outnest/domain/entities/feed/event/event_entity.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/services/event_verification_service.dart';
-import 'package:outnest/domain/services/persistance_service.dart';
 
 class EventVerificationServiceImpl implements EventVerificationService {
   EventVerificationServiceImpl({
     required this.currentUserId,
-    required PersistanceService persistanceService,
     required LoggingService logger,
     required EventRepository eventRepository,
-  }) : _persistanceService = persistanceService,
-       _loggingService = logger,
+  }) : _loggingService = logger,
        _eventRepository = eventRepository;
 
   final String? currentUserId;
-  final PersistanceService _persistanceService;
   final LoggingService _loggingService;
   final EventRepository _eventRepository;
 
-  static const String _verifiedEventsKey = 'verified_events_list';
   static const double _maxDistanceMeters = 1000;
 
   @override
@@ -63,23 +58,16 @@ class EventVerificationServiceImpl implements EventVerificationService {
 
   @override
   Future<bool> isEventVerified(EventEntity event) async {
+    if (currentUserId == null) return false;
+
     try {
-      final data = await _persistanceService.getJson(_verifiedEventsKey);
-      if (data == null || !data.containsKey('ids')) return false;
-
-      final verifiedIds = List<String>.from(data['ids'] as List);
-      final isVerified = verifiedIds.contains(event.id);
-
-      if (isVerified) {
-        _loggingService.debug(
-          'Event ${event.id} is already verified in local storage.',
-        );
-      }
-
-      return isVerified;
+      return await _eventRepository.isEventVerifiedForUser(
+        eventId: event.id,
+        userId: currentUserId!,
+      );
     } catch (e) {
       _loggingService.warn(
-        'Error checking event verification status for ${event.id}: $e',
+        'Remote verification check failed for ${event.id}: $e',
       );
       return false;
     }
@@ -91,6 +79,12 @@ class EventVerificationServiceImpl implements EventVerificationService {
     Geolocation currentLocation,
     EventVerificationSecret secret,
   ) async {
+    if (currentUserId == null) {
+      return Left(
+        UnknownVerificationException('User not logged in'),
+      );
+    }
+
     try {
       final secretFingerprint = sha256.convert(utf8.encode(secret)).toString();
       _loggingService.debug(
@@ -132,7 +126,6 @@ class EventVerificationServiceImpl implements EventVerificationService {
 
         if (decryptedMessage == null) continue;
 
-        // userId:lat:lon formatını parse et
         final parts = decryptedMessage.split(':');
         if (parts.length != 3) continue;
 
@@ -142,7 +135,6 @@ class EventVerificationServiceImpl implements EventVerificationService {
 
         if (decryptedUserId != userID || lat == null || lon == null) continue;
 
-        // Mesafe kontrolü
         final distance = _calculateDistanceMeters(
           currentLocation.latitude,
           currentLocation.longitude,
@@ -158,7 +150,19 @@ class EventVerificationServiceImpl implements EventVerificationService {
           _loggingService.info(
             'Event ${event.id} verified: matched user $userID at ${distance.toStringAsFixed(0)}m',
           );
-          await _saveVerifiedEvent(event);
+          await Future.wait(
+            [
+              _eventRepository.markEventAsVerified(
+                eventId: event.eventID,
+                userId: currentUserId!,
+              ),
+              _eventRepository.markEventAsVerified(
+                eventId: event.eventID,
+                userId: userID,
+              ),
+            ],
+            eagerError: true,
+          );
           return const Right(unit);
         } else {
           _loggingService.warn(
@@ -190,7 +194,6 @@ class EventVerificationServiceImpl implements EventVerificationService {
     }
   }
 
-  // Geohash yerine sadece userId ile key üret
   String _generateKey(Identifier userID) {
     try {
       final keyBytes = utf8.encode(userID);
@@ -201,7 +204,6 @@ class EventVerificationServiceImpl implements EventVerificationService {
     }
   }
 
-  // Haversine formülü — metre cinsinden mesafe
   double _calculateDistanceMeters(
     double lat1,
     double lon1,
@@ -254,29 +256,22 @@ class EventVerificationServiceImpl implements EventVerificationService {
     }
   }
 
-  Future<void> _saveVerifiedEvent(EventEntity event) async {
+  Future<void> _saveVerifiedEventForUser(
+    EventEntity event,
+    String userId,
+  ) async {
     try {
-      final data = await _persistanceService.getJson(_verifiedEventsKey);
-      final verifiedIds = (data != null && data.containsKey('ids'))
-          ? List<String>.from(data['ids'] as List)
-          : <String>[];
-
-      if (!verifiedIds.contains(event.id)) {
-        verifiedIds.add(event.id);
-        await _persistanceService.saveJson(_verifiedEventsKey, {
-          'ids': verifiedIds,
-        });
-        _loggingService.info('Event ${event.id} saved to local verified list.');
-      }
-
-      if (currentUserId != null) {
-        await _eventRepository.markEventAsVerified(
-          eventId: event.id,
-          userId: currentUserId!,
-        );
-      }
+      await _eventRepository.markEventAsVerified(
+        eventId: event.id,
+        userId: userId,
+      );
+      _loggingService.info(
+        'Event ${event.id} marked as verified for user $userId.',
+      );
     } catch (e) {
-      _loggingService.error('Failed to persist verified event ${event.id}');
+      _loggingService.error(
+        'Failed to mark event ${event.id} as verified for user $userId: $e',
+      );
     }
   }
 
@@ -285,6 +280,6 @@ class EventVerificationServiceImpl implements EventVerificationService {
     if (currentUserId == null) {
       throw AuthorizationException('User not logged in');
     }
-    await _saveVerifiedEvent(event);
+    await _saveVerifiedEventForUser(event, currentUserId!);
   }
 }

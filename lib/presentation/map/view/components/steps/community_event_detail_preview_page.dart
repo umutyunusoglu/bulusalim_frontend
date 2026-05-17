@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -26,6 +27,7 @@ class CommunityEventDetailPreviewPage extends StatelessWidget {
   String get _displayAddress => data['displayAddress'] as String? ?? '';
   DateTime get _startTime => data['startTime'] as DateTime? ?? DateTime.now();
   String get _category => data['category'] as String? ?? '';
+  bool get _requiresDocument => data['requiresDocument'] as bool? ?? false;
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +76,7 @@ class CommunityEventDetailPreviewPage extends StatelessWidget {
                     maxParticipants: _maxParticipants,
                     link: _link.isNotEmpty ? _link : null,
                     category: _category,
+                    requiresDocument: _requiresDocument,
                   ),
 
                   // DETAY BÖLÜMLERİ
@@ -136,7 +139,9 @@ class CommunityEventDetailPreviewPage extends StatelessWidget {
           radius: 14.r,
           backgroundColor: AppColors.inputFillColor,
           backgroundImage: profileImageUrl.isNotEmpty
-              ? NetworkImage(profileImageUrl)
+              ? CachedNetworkImageProvider(
+                  profileImageUrl,
+                )
               : null,
           child: profileImageUrl.isEmpty
               ? Icon(Icons.group, size: 16.sp, color: AppColors.textGrey)

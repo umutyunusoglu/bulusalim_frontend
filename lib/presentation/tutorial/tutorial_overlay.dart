@@ -236,7 +236,7 @@ class TutorialOverlay extends HookWidget {
                       onCameraTap: () {},
                       onLocationTap: () {},
                       onQrTap: () {},
-
+                      onIdeaTap: () {},
                       forceShowAllButtons: true,
                     ),
                     SizedBox(height: 16.h),

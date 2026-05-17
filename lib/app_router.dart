@@ -40,6 +40,8 @@ import 'package:outnest/presentation/settings/view/edit_profile_page.dart';
 import 'package:outnest/presentation/settings/view/settings_page.dart';
 import 'package:outnest/presentation/shared/event_card/event_preview_screen.dart';
 import 'package:outnest/presentation/shared/event_card/view/components/stacked_avatars.dart';
+import 'package:outnest/presentation/shared/idea_card/create_idea_page.dart';
+import 'package:outnest/presentation/shared/idea_card/idea_detail_page.dart';
 import 'package:outnest/presentation/shared/post_card/post_preview_screen.dart';
 import 'package:outnest/presentation/tutorial/tutorial_overlay.dart';
 import 'package:outnest/scaffold_with_navbar.dart';
@@ -217,6 +219,17 @@ final router = GoRouter(
           builder: (context, state) => const RegistrationLoadingScreen(),
         ),
       ],
+    ),
+
+    GoRoute(
+      path: '/create-idea',
+      builder: (_, __) => const CreateIdeaPage(),
+    ),
+    GoRoute(
+      path: '/idea/:id',
+      builder: (_, state) => IdeaDetailPage(
+        ideaId: state.pathParameters['id']!,
+      ),
     ),
     GoRoute(
       path: '/tutorial',

@@ -9,7 +9,7 @@ import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 class RegisterStepView extends StatelessWidget {
   const RegisterStepView({
     required this.title,
-    required this.onNext,
+    this.onNext,
     super.key,
     this.controller,
     this.hintText,
@@ -29,7 +29,7 @@ class RegisterStepView extends StatelessWidget {
 
   final String title;
   final TextEditingController? controller;
-  final VoidCallback onNext;
+  final VoidCallback? onNext;
   final String? hintText;
   final String? description;
   final bool enabled;
@@ -54,25 +54,31 @@ class RegisterStepView extends StatelessWidget {
       }
     }
     // Hata yoksa veya validator tanımlanmamışsa ilerle.
-    onNext();
+    onNext?.call();
   }
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final keyboardOpen = bottomInset > 0;
     return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      padding: EdgeInsets.only(
+        left: 16.w,
+        right: 16.w,
+        bottom: bottomInset + 24.h,
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // LOGO
-          Image.asset(
-            'assets/outnest2.png',
-            height: 48.h,
-            fit: BoxFit.contain,
-          ),
-
-          SizedBox(height: 80.h),
-
+          if (!keyboardOpen) ...[
+            Image.asset(
+              'assets/outnest2.png',
+              height: 48.h,
+              fit: BoxFit.contain,
+            ),
+            SizedBox(height: 80.h),
+          ] else
+            SizedBox(height: 20.h),
           // BAŞLIK
           Text(
             title,
@@ -130,27 +136,24 @@ class RegisterStepView extends StatelessWidget {
           SizedBox(height: 36.h),
 
           // DEVAM / GÖNDER BUTONU
-          AuthButton(
-            text: buttonText,
-            onPressed: () => _handleNext(context),
-          ),
+          if (onNext != null)
+            AuthButton(
+              text: buttonText,
+              onPressed: () => _handleNext(context),
+            ),
 
           // ATLA BUTONU
           if (onSkip != null) ...[
-            SizedBox(height: 16.h),
+            if (onNext != null) SizedBox(height: 16.h),
             Container(
               width: 100.w,
               height: 40.h,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(
-                  20.r,
-                ),
+                borderRadius: BorderRadius.circular(20.r),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(
-                      0.10,
-                    ),
+                    color: Colors.black.withOpacity(0.10),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -176,7 +179,12 @@ class RegisterStepView extends StatelessWidget {
               ),
             ),
           ],
-          if (footerWidget != null) footerWidget!,
+
+          if (footerWidget != null) ...[
+            SizedBox(height: 16.h),
+            footerWidget!,
+          ],
+
           SizedBox(height: 60.h),
         ],
       ),

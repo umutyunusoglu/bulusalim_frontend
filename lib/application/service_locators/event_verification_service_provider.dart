@@ -5,7 +5,6 @@ import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/data/services/event_verification_service_impl.dart';
 import 'package:outnest/domain/repositories/event_repository.dart';
 import 'package:outnest/domain/services/event_verification_service.dart';
-import 'package:outnest/domain/services/persistance_service.dart';
 
 final eventVerificationServiceProvider = Provider<EventVerificationService>((
   ref,
@@ -13,7 +12,6 @@ final eventVerificationServiceProvider = Provider<EventVerificationService>((
   final userId = ref.watch(currentUserIDProvider);
   return EventVerificationServiceImpl(
     currentUserId: userId,
-    persistanceService: getIt<PersistanceService>(),
     logger: getIt<LoggingService>(),
     eventRepository: getIt<EventRepository>(),
   );

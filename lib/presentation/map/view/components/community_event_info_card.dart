@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -13,6 +14,7 @@ class CommunityEventInfoCard extends StatelessWidget {
     required this.startTime,
     required this.maxParticipants,
     required this.category,
+    this.requiresDocument = false,
     super.key,
     this.link,
   });
@@ -25,6 +27,7 @@ class CommunityEventInfoCard extends StatelessWidget {
   final int maxParticipants;
   final String category;
   final String? link;
+  final bool requiresDocument;
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +53,7 @@ class CommunityEventInfoCard extends StatelessWidget {
                   radius: 25.r,
                   backgroundColor: AppColors.inputFillColor,
                   backgroundImage: profileImageUrl.isNotEmpty
-                      ? NetworkImage(profileImageUrl)
+                      ? CachedNetworkImageProvider(profileImageUrl)
                       : null,
                   child: profileImageUrl.isEmpty
                       ? Icon(
@@ -169,8 +172,8 @@ class CommunityEventInfoCard extends StatelessWidget {
             ),
           ),
 
-          // BİLET İKONU — sadece link varsa göster
-          if (link != null && link!.isNotEmpty) ...[
+          // BİLET İKONU sadece requiresDocument true ise göster
+          if (requiresDocument) ...[
             SizedBox(width: 8.w),
             Icon(
               Symbols.confirmation_number,

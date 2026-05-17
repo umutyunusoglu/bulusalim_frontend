@@ -13,7 +13,6 @@ import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/data_providers/turkey_cities_provider.dart'; // Şehir listesi klasörden çekildi
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
-import 'package:outnest/core/constants/configs/app_config.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/core/utils/types/enums/account_type_enum.dart';
@@ -22,15 +21,12 @@ import 'package:outnest/domain/datasources/university_datasource.dart';
 import 'package:outnest/domain/entities/user/user_entity.dart';
 import 'package:outnest/domain/repositories/user_repository.dart';
 import 'package:outnest/domain/services/analytics/analytics_service.dart';
-import 'package:outnest/domain/services/analytics/event_configs/select_gender_analytics_config.dart';
-import 'package:outnest/domain/services/analytics/event_configs/select_hobbies_analytics_config.dart';
 import 'package:outnest/domain/services/auth_service.dart';
 import 'package:outnest/domain/usecases/upload_profile_picture_usecase.dart';
 import 'package:outnest/presentation/auth/registration_loading_screen.dart';
 import 'package:outnest/presentation/auth/view/components/otp_row.dart';
 import 'package:outnest/presentation/auth/view/components/register_step_view.dart';
 import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
-import 'package:outnest/presentation/shared/category_filter_chip.dart';
 import 'package:outnest/presentation/shared/dialogs/show_popups.dart';
 import 'package:outnest/presentation/shared/form/formatters/name_surname_formatter.dart';
 import 'package:outnest/presentation/shared/form/formatters/username_formatter.dart';
@@ -55,10 +51,8 @@ enum RegisterStep {
   dob,
   universityEmail,
   universityOtp,
-  gender,
   city,
   profilePhoto,
-  interests,
   permissions,
 }
 
@@ -67,11 +61,9 @@ final Map<RegisterStep, RegisterStep> backSteps = {
   RegisterStep.dob: RegisterStep.name,
   RegisterStep.universityEmail: RegisterStep.dob,
   RegisterStep.universityOtp: RegisterStep.universityEmail,
-  RegisterStep.gender: RegisterStep.universityEmail,
-  RegisterStep.city: RegisterStep.gender,
+  RegisterStep.city: RegisterStep.universityEmail,
   RegisterStep.profilePhoto: RegisterStep.city,
-  RegisterStep.interests: RegisterStep.profilePhoto,
-  RegisterStep.permissions: RegisterStep.interests,
+  RegisterStep.permissions: RegisterStep.profilePhoto,
 };
 
 class _RegisterInfoPageState extends State<RegisterInfoPage>
@@ -86,12 +78,13 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
   final _genderDisplayController = TextEditingController();
   final _cityDisplayController = TextEditingController();
   final _friendSearchController = TextEditingController();
+
   // --- İZİN STATE'LERİ (Varsayılan Kapalı) ---
   bool _permNotifications = false;
   bool _permLocation = false;
   bool _permCamera = false;
   bool _permPhotos = false;
-
+  bool _hasCheckedEmail = false;
   final _logger = getIt<LoggingService>();
 
   final List<TextEditingController> _eduOtpControllers = List.generate(
@@ -100,14 +93,13 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
   );
 
   final List<String> _selectedInterests = [];
-  final Map<String, String> _categories = AppConfig.categories;
   int _currentIndex = 0;
-  final bool _isLoadingConfig = false;
   DateTime? _selectedDate;
 
   String? _detectedUniversity;
   bool _isSendingEmail = false;
   bool _isVerifyingEmail = false;
+  List<UniversitySuggestion> _emailSuggestions = const [];
 
   File? _selectedImage;
   final ImagePicker _picker = ImagePicker();
@@ -163,33 +155,10 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
       case RegisterStep.universityOtp:
         // OTP validasyonu yapılacak
         break;
-      case RegisterStep.gender:
-        final chosenGenderText = _genderDisplayController.text.trim();
-        GenderEnum? chosenGender;
-        if (chosenGenderText.isEmpty) {
-          // Hata mesajı göster
-          chosenGender = null;
-        } else {
-          chosenGender = GenderEnum.fromString(chosenGenderText);
-        }
-
-        analytics.logSelectGender(
-          SelectGenderAnalyticsConfig(value: chosenGender, previousValue: null),
-        );
-        break;
       case RegisterStep.city:
         break;
       case RegisterStep.profilePhoto:
         // Fotoğraf seçimi validasyonu yapılacak
-        break;
-      case RegisterStep.interests:
-        analytics.logSelectHobbies(
-          SelectHobbiesAnalyticsConfig(
-            value: _selectedInterests,
-            previousValue: [],
-          ),
-        );
-
         break;
       case RegisterStep.permissions:
         // İzinler ile ilgili bilgilendirme yapılacak
@@ -239,11 +208,10 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
       final username = sanitizeUsername(_usernameController.text);
       final name = sanitizeName(_nameController.text);
       final dob = _selectedDate!;
-      GenderEnum gender;
-      gender = GenderEnum.fromString(_genderDisplayController.text);
+      GenderEnum gender = GenderEnum.fromString('Belirtmek İstemiyorum');
+      final interests = _selectedInterests;
       final city = _cityDisplayController.text.trim();
 
-      final interests = _selectedInterests;
       final uploadUseCase = getIt<UploadProfilePicture>();
       var profileImageUrl = '';
       if (_selectedImage != null) {
@@ -749,30 +717,40 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                   },
                   onSkip: !_isSendingEmail
                       ? () => _pageController.jumpToPage(
-                          RegisterStep.gender.index,
+                          RegisterStep.city.index,
                         )
                       : null,
 
-                  footerWidget: TextButton(
-                    onPressed: () async {
-                      final Uri url = Uri.parse(
-                        'https://forms.gle/KfpyB3Y2SeiX28R47',
-                      );
-                      launchUrl(url, mode: LaunchMode.inAppWebView);
-                    },
-                    style: TextButton.styleFrom(
-                      foregroundColor:
-                          Colors.grey.shade600, // Silik, tatlı bir gri
-                    ),
-                    child: Text(
-                      'Üniversitenizi bulamıyor musunuz? Bize bildirin.',
-                      style: TextStyle(
-                        fontFamily: 'SF Pro Display',
-                        fontSize: 12.sp,
-                        decoration: TextDecoration
-                            .underline, // Tıklanabilir hissi verir
+                  footerWidget: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (_emailSuggestions.length == 1) ...[
+                        _buildSuggestionBanner(_emailSuggestions.first),
+                        SizedBox(height: 12.h),
+                      ] else if (_emailSuggestions.length > 1) ...[
+                        _buildMultiSuggestionBanner(),
+                        SizedBox(height: 12.h),
+                      ],
+                      TextButton(
+                        onPressed: () async {
+                          final Uri url = Uri.parse(
+                            'https://forms.gle/KfpyB3Y2SeiX28R47',
+                          );
+                          launchUrl(url, mode: LaunchMode.inAppWebView);
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.grey.shade600,
+                        ),
+                        child: Text(
+                          'Üniversitenizi bulamıyor musunuz? Bize bildirin.',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Display',
+                            fontSize: 12.sp,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
 
@@ -816,17 +794,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                   },
                 ),
 
-                // 6. CİNSİYET
-                RegisterStepView(
-                  title: 'Cinsiyet',
-                  controller: _genderDisplayController,
-                  hintText: 'lütfen seçiniz',
-                  onNext: _nextPage,
-                  readOnly: true,
-                  onTapInput: _showGenderPicker,
-                  onSkip: _nextPage,
-                ),
-
+                // 6. ŞEHİR SEÇİMİ
                 RegisterStepView(
                   title: 'Şehrini Seç',
                   controller: _cityDisplayController,
@@ -847,17 +815,18 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                   },
                 ),
 
+                // 7. PROFİL FOTOĞRAFI
                 RegisterStepView(
                   title: 'Profil Fotoğrafı',
-                  onNext: _nextPage,
+                  onSkip: _nextPage,
                   customContent: GestureDetector(
                     onTap: _showPhotoPicker, // Mevcut modalını kullanacağız
                     child: Stack(
                       alignment: Alignment.bottomRight,
                       children: [
                         Container(
-                          width: 140.w,
-                          height: 140.w,
+                          width: 180.w,
+                          height: 180.w,
                           decoration: BoxDecoration(
                             color: const Color(0xFFF1F1F5),
                             shape: BoxShape.circle,
@@ -897,53 +866,6 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
                     ),
                   ),
                 ),
-                // 8. İLGİ ALANLARI
-                RegisterStepView(
-                  title: 'İlgi Alanların',
-                  description: 'En az 3 adet seçmenizi öneririz.',
-                  onNext: _nextPage,
-                  onSkip: _nextPage,
-                  customContent: _isLoadingConfig
-                      ? SizedBox(
-                          height: 100.h,
-                          child: const Center(
-                            child: CircularProgressIndicator(
-                              color: AppColors.primaryColor,
-                            ),
-                          ),
-                        )
-                      : _categories.isEmpty
-                      ? Center(
-                          child: Text(
-                            'Kategoriler yüklenemedi.\nLütfen internet bağlantınızı kontrol edin.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        )
-                      : Wrap(
-                          spacing: 12.w,
-                          runSpacing: 12.h,
-                          alignment: WrapAlignment.center,
-                          children: _categories.entries.map((entry) {
-                            final categoryName = entry.key;
-                            final categoryEmoji = entry.value;
-                            final isSelected = _selectedInterests.contains(
-                              categoryName,
-                            );
-
-                            return CategoryFilterChip(
-                              label: categoryName.toLowerCase(),
-                              emoji: categoryEmoji,
-                              isSelected: isSelected,
-                              onTap: () => _toggleInterest(categoryName),
-                            );
-                          }).toList(),
-                        ),
-                ),
-
                 // 9. ARKADAŞLARINI EKLE
                 /*
             RegisterStepView(
@@ -973,7 +895,7 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
               ),
             ),
             */
-                // 10. CİHAZ İZİNLERİ
+                // 8. CİHAZ İZİNLERİ
                 RegisterStepView(
                   title: 'Cihaz İzinleri',
                   onNext: _finishRegistration,
@@ -1101,19 +1023,42 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
 
   Future<void> _checkUniversity(String email) async {
     if (!email.contains('@') || !email.contains('.')) {
-      setState(() => _detectedUniversity = null);
+      setState(() {
+        _detectedUniversity = null;
+        _emailSuggestions = const [];
+        _hasCheckedEmail = false;
+      });
       return;
     }
     try {
-      final uniNames = await getIt<UniversityDatasource>().getUniversityOfMail(
-        email,
-        'Turkiye',
-      );
-      setState(() {
-        _detectedUniversity = uniNames.isNotEmpty ? uniNames.first : null;
-      });
+      final ds = getIt<UniversityDatasource>();
+      final uniNames = await ds.getUniversityOfMail(email, 'Turkiye');
+
+      if (uniNames.isNotEmpty) {
+        setState(() {
+          _detectedUniversity = uniNames.first;
+          _emailSuggestions = const [];
+          _hasCheckedEmail = true;
+        });
+      } else {
+        final suggestions = await ds.findSuggestionsForMail(email, 'Turkiye');
+        if (!mounted) return;
+        setState(() {
+          _detectedUniversity = null;
+          _emailSuggestions = suggestions;
+          _hasCheckedEmail = true;
+        });
+
+        if (suggestions.isNotEmpty) {
+          FocusScope.of(context).unfocus();
+        }
+      }
     } catch (_) {
-      setState(() => _detectedUniversity = null);
+      setState(() {
+        _detectedUniversity = null;
+        _emailSuggestions = const [];
+        _hasCheckedEmail = false;
+      });
     }
   }
 
@@ -1307,5 +1252,185 @@ class _RegisterInfoPageState extends State<RegisterInfoPage>
         ],
       ),
     );
+  }
+
+  Widget _buildSuggestionBanner(UniversitySuggestion suggestion) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(12.r),
+      onTap: () => _applySuggestion(suggestion),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+        decoration: BoxDecoration(
+          color: AppColors.primaryColor.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: AppColors.primaryColor.withOpacity(0.3),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Symbols.lightbulb,
+              size: 18.sp,
+              color: AppColors.primaryColor,
+            ),
+            SizedBox(width: 10.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Bunu mu demek istediniz?',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Display',
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textGrey,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    suggestion.suggestedEmail,
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Display',
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryColor,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    suggestion.universityName,
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Display',
+                      fontSize: 11.sp,
+                      color: AppColors.textGrey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Symbols.arrow_forward,
+              size: 18.sp,
+              color: AppColors.primaryColor,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMultiSuggestionBanner() {
+    return InkWell(
+      borderRadius: BorderRadius.circular(12.r),
+      onTap: _showSuggestionsSheet,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+        decoration: BoxDecoration(
+          color: AppColors.primaryColor.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: AppColors.primaryColor.withOpacity(0.3),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(Symbols.lightbulb, size: 18.sp, color: AppColors.primaryColor),
+            SizedBox(width: 10.w),
+            Expanded(
+              child: Text(
+                '${_emailSuggestions.length} olası üniversite bulundu. Hangisini demek istediniz?',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Display',
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.onBackgroundColor,
+                ),
+              ),
+            ),
+            Icon(
+              Symbols.arrow_forward,
+              size: 18.sp,
+              color: AppColors.primaryColor,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSuggestionsSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Bunlardan birini mi demek istediniz?',
+                style: TextStyle(
+                  fontFamily: 'SF Pro Display',
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.onBackgroundColor,
+                ),
+              ),
+              SizedBox(height: 16.h),
+              ..._emailSuggestions.map(
+                (s) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    s.suggestedEmail,
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Display',
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryColor,
+                    ),
+                  ),
+                  subtitle: Text(
+                    s.universityName,
+                    style: TextStyle(
+                      fontFamily: 'SF Pro Display',
+                      fontSize: 12.sp,
+                      color: AppColors.textGrey,
+                    ),
+                  ),
+                  trailing: Icon(
+                    Symbols.arrow_forward,
+                    size: 18.sp,
+                    color: AppColors.primaryColor,
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _applySuggestion(s);
+                  },
+                ),
+              ),
+              SizedBox(height: 8.h),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _applySuggestion(UniversitySuggestion s) {
+    _universityController.text = s.suggestedEmail;
+    _universityController.selection = TextSelection.fromPosition(
+      TextPosition(offset: s.suggestedEmail.length),
+    );
+    setState(() {
+      _detectedUniversity = s.universityName;
+      _emailSuggestions = const [];
+    });
   }
 }

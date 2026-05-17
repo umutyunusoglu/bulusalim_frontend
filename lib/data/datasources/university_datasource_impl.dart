@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:outnest/application/get_it_service_locators/get_it_init.dart';
 import 'package:outnest/core/utils/logging/logging_service.dart';
 import 'package:outnest/data/models/organization/organization_model.dart';
-import 'package:outnest/data/models/post/post_model.dart';
 import 'package:outnest/domain/datasources/university_datasource.dart';
 import 'package:outnest/domain/entities/organization/organization_entity.dart';
 import 'package:outnest/domain/services/remote_config_service.dart';
@@ -42,6 +41,8 @@ class UniversityDataSourceImpl implements UniversityDatasource {
         return OrganizationModel.fromMap({
           'name': map['name'],
           'mailExtension': (map['domains'] as List).cast<String>(),
+          'similarDomains':
+              (map['similar_domains'] as List?)?.cast<String>() ?? const [],
         }).toEntity();
       }).toList();
 
@@ -109,5 +110,51 @@ class UniversityDataSourceImpl implements UniversityDatasource {
       country: country,
     );
     return unis.isNotEmpty ? unis.first.mailExtension : [];
+  }
+
+  @override
+  Future<List<UniversitySuggestion>> findSuggestionsForMail(
+    String email,
+    String? country,
+  ) async {
+    logger.debug('Finding suggestions for email: $email');
+    if (!email.contains('@')) return const [];
+
+    final parts = email.split('@');
+    if (parts.length != 2 || parts[0].isEmpty) return const [];
+
+    final localPart = parts[0];
+    final emailDomain = parts[1].toLowerCase().trim();
+
+    await _ensureInitialized();
+
+    // Zaten geçerli bir domain ise öneri verme
+    final alreadyValid = _cachedUniversities.any(
+      (uni) => uni.mailExtension.any(
+        (d) => d.toLowerCase() == emailDomain,
+      ),
+    );
+    if (alreadyValid) return const [];
+
+    final suggestions = <UniversitySuggestion>[];
+
+    for (final uni in _cachedUniversities) {
+      final hitsSimilar = uni.similarDomains.any(
+        (d) => d.toLowerCase() == emailDomain,
+      );
+      if (hitsSimilar && uni.mailExtension.isNotEmpty) {
+        final correctDomain = uni.mailExtension.first;
+        suggestions.add(
+          UniversitySuggestion(
+            universityName: uni.name,
+            suggestedEmail: '$localPart@$correctDomain',
+            originalDomain: emailDomain,
+            suggestedDomain: correctDomain,
+          ),
+        );
+      }
+    }
+
+    return suggestions;
   }
 }
