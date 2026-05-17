@@ -47,12 +47,12 @@ class ParticipantsBottomSheet extends StatelessWidget {
 
     final totalCount = displayParticipants.length;
     return Container(
+      height: 510.h,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
           // Drag Handle
           SizedBox(height: 16.h),
@@ -85,9 +85,8 @@ class ParticipantsBottomSheet extends StatelessWidget {
           SizedBox(height: 9.h),
 
           // Liste
-          Flexible(
+          Expanded(
             child: ListView.builder(
-              shrinkWrap: true,
               padding: EdgeInsets.only(bottom: 36.h),
               itemCount: totalCount,
               itemBuilder: (context, index) {

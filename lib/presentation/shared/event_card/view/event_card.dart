@@ -628,7 +628,7 @@ class _EventCardState extends State<EventCard> {
                                   width: 36.w,
                                   height: 36.w,
                                   decoration: const BoxDecoration(
-                                    color: AppColors.secondaryColor,
+                                    color: AppColors.primaryColor,
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
