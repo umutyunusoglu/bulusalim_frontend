@@ -176,4 +176,11 @@ class FeedRepositoryImpl implements FeedRepository {
       source.reset();
     }
   }
+
+  @override
+  void removeItem(String id) {
+    if (!_feedController.hasValue) return;
+    final next = _feedController.value.where((e) => e.id != id).toList();
+    _feedController.add(next);
+  }
 }
