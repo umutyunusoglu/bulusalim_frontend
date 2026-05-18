@@ -428,17 +428,17 @@ class TutorialOverlay extends HookWidget {
         SizedBox(
           width: 172.w,
           child: secondImagePath != null
-                ? Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // İki görsel varsa her biri 172x90 (keeps smaller stacked cards)
-                      _buildImageCard(imagePath, height: 90.h),
-                      SizedBox(height: 12.h), // İki görsel arası boşluk
-                      _buildImageCard(secondImagePath, height: 90.h),
-                    ],
-                  )
-                // Tek görsel: use 4:3 aspect instead of square
-                : _buildImageCard(imagePath),
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // İki görsel varsa her biri 172x90
+                    _buildImageCard(imagePath, height: 90.h),
+                    SizedBox(height: 12.h), // İki görsel arası boşluk
+                    _buildImageCard(secondImagePath, height: 90.h),
+                  ],
+                )
+              // Tek görsel: use 3:4 aspect instead of square
+              : _buildImageCard(imagePath),
         ),
       ],
     );
@@ -446,7 +446,7 @@ class TutorialOverlay extends HookWidget {
 
   Widget _buildImageCard(String path, {double? height}) {
     final width = 172.w;
-    final h = height ?? (width * 3 / 4);
+    final h = height ?? (width * 4 / 3);
 
     return Container(
       height: h,
@@ -466,7 +466,7 @@ class TutorialOverlay extends HookWidget {
           ),
         ],
       ),
-        child: ClipRRect(
+      child: ClipRRect(
         borderRadius: BorderRadius.circular(8.r),
         child: Image.asset(
           path,

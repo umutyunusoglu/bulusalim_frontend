@@ -7,8 +7,8 @@ Future<File?> cropImage(String path) async {
   final original = img.decodeImage(bytes);
   if (original == null) return null;
 
-  // Desired aspect ratio (width / height) => 4:3
-  const double targetAspect = 4 / 3;
+  // Desired aspect ratio (width / height) => 3:4
+  const double targetAspect = 3 / 4;
 
   final origW = original.width.toDouble();
   final origH = original.height.toDouble();
