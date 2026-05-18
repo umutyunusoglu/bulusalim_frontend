@@ -142,49 +142,72 @@ class IdeaDetailPage extends HookConsumerWidget {
                 return ListView(
                   padding: EdgeInsets.only(bottom: 96.h),
                   children: [
-                    IdeaCard(
-                      idea: idea,
-                      // Override the default push-to-detail so we
-                      // don't stack another IdeaDetailPage on top
-                      // of this one.
-                      onCommentTap: focusComposerForTopLevel,
-                    ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(
+                    Container(
+                      margin: EdgeInsets.symmetric(
                         horizontal: 16.w,
                         vertical: 8.h,
                       ),
-                      child: commentsAsync.when(
-                        loading: () => const Padding(
-                          padding: EdgeInsets.all(24),
-                          child: Center(
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(
+                          24.r,
                         ),
-                        error: (e, _) => Text('Yorumlar yüklenemedi: $e'),
-                        data: (comments) {
-                          if (comments.isEmpty) {
-                            return Padding(
-                              padding: EdgeInsets.all(24.h),
-                              child: Center(
-                                child: Text(
-                                  'İlk yorumu sen yaz.',
-                                  style: TextStyle(
-                                    fontFamily: 'SF Pro Display',
-                                    fontSize: 13.sp,
-                                    color: const Color(0xFF8E8E93),
+                        border: Border.all(
+                          color: const Color(0xFFEFEFEF),
+                        ),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          IdeaCard(
+                            idea: idea,
+                            // Override the default push-to-detail so we
+                            // don't stack another IdeaDetailPage on top
+                            // of this one.
+                            onCommentTap: focusComposerForTopLevel,
+                            isDetailMode: true,
+                          ),
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16.w,
+                              vertical: 8.h,
+                            ),
+                            child: commentsAsync.when(
+                              loading: () => const Padding(
+                                padding: EdgeInsets.all(24),
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
                                   ),
                                 ),
                               ),
-                            );
-                          }
-                          return CommentThread(
-                            ideaId: ideaId,
-                            comments: comments,
-                            onReplyTo: startReply,
-                            insertSignal: insertSignal,
-                          );
-                        },
+                              error: (e, _) => Text('Yorumlar yüklenemedi: $e'),
+                              data: (comments) {
+                                if (comments.isEmpty) {
+                                  return Padding(
+                                    padding: EdgeInsets.all(24.h),
+                                    child: Center(
+                                      child: Text(
+                                        'İlk yorumu sen yaz.',
+                                        style: TextStyle(
+                                          fontFamily: 'SF Pro Display',
+                                          fontSize: 13.sp,
+                                          color: const Color(0xFF8E8E93),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }
+                                return CommentThread(
+                                  ideaId: ideaId,
+                                  comments: comments,
+                                  onReplyTo: startReply,
+                                  insertSignal: insertSignal,
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -278,10 +301,10 @@ class _Composer extends HookConsumerWidget {
               ),
             ),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               CircleAvatar(
-                radius: 16.r,
+                radius: 20.r,
                 backgroundColor: Colors.grey.shade200,
                 backgroundImage: hasUrl
                     ? CachedNetworkImageProvider(
@@ -292,82 +315,85 @@ class _Composer extends HookConsumerWidget {
               ),
               SizedBox(width: 10.w),
               Expanded(
-                child: TextField(
-                  controller: controller,
-                  focusNode: focusNode,
-                  maxLines: 4,
-                  minLines: 1,
-                  // Idle state: white text on the coral pill so the
-                  // hint reads as a label, not a placeholder. Focused
-                  // state: dark text on white, conventional input.
-                  // We drive both colors from the same flag so they
-                  // never desync — which is what caused the earlier
-                  // bug where the hint stayed white on a white fill.
-                  style: TextStyle(
-                    fontFamily: 'SF Pro Display',
-                    fontSize: 14.sp,
+                child: Container(
+                  decoration: BoxDecoration(
                     color: hasFocus || hasText
-                        ? const Color(0xFF1A1A1A)
-                        : Colors.white,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Yorum yaz.',
-                    hintStyle: TextStyle(
-                      fontFamily: 'SF Pro Display',
-                      fontSize: 14.sp,
-                      color: hasFocus || hasText
-                          ? const Color(0xFF8E8E93)
-                          : Colors.white,
-                    ),
-                    // InputDecoration.filled wins over any ambient
-                    // Material canvas color, so the coral pill
-                    // renders even on the first frame — no more
-                    // "white pill with coral border" flash.
-                    filled: true,
-                    fillColor: hasFocus || hasText
-                        ? Colors.white
+                        ? AppColors.secondaryColor
                         : AppColors.primaryColor,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 10.h,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24.r),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24.r),
-                      borderSide: hasFocus || hasText
-                          ? const BorderSide(color: Color(0xFFEFEFEF))
-                          : BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24.r),
-                      borderSide: const BorderSide(color: Color(0xFFEFEFEF)),
-                    ),
-                    isCollapsed: true,
+                    borderRadius: BorderRadius.circular(24.r),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          maxLines: 4,
+                          minLines: 1,
+                          // Idle state: white text on the coral pill so the
+                          // hint reads as a label, not a placeholder. Focused
+                          // state: dark text on white, conventional input.
+                          // We drive both colors from the same flag so they
+                          // never desync — which is what caused the earlier
+                          // bug where the hint stayed white on a white fill.
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Display',
+                            fontSize: 14.sp,
+                            color: Colors.white,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Yorum yaz.',
+                            hintStyle: TextStyle(
+                              fontFamily: 'SF Pro Display',
+                              fontSize: 14.sp,
+                              color: hasFocus || hasText
+                                  ? Colors.white.withOpacity(0.7)
+                                  : Colors.white,
+                            ),
+                            // InputDecoration.filled wins over any ambient
+                            // Material canvas color, so the coral pill
+                            // renders even on the first frame — no more
+                            // "white pill with coral border" flash.
+                            filled: false,
+                            contentPadding: EdgeInsets.only(
+                              left: 16.w,
+                              right: (hasFocus || hasText) ? 8.w : 16.w,
+                              top: 12.h,
+                              bottom: 12.h,
+                            ),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            isCollapsed: true,
+                          ),
+                        ),
+                      ),
+                      if (hasFocus || hasText) ...[
+                        Padding(
+                          padding: EdgeInsets.only(right: 8.w, bottom: 6.h),
+                          child: GestureDetector(
+                            onTap: busy ? null : onSend,
+                            child: Container(
+                              width: 32.r,
+                              height: 32.r,
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Symbols.arrow_upward,
+                                color: AppColors.secondaryColor,
+                                size: 18.sp,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ),
-              if (hasFocus || hasText) ...[
-                SizedBox(width: 8.w),
-                GestureDetector(
-                  onTap: busy ? null : onSend,
-                  child: Container(
-                    width: 36.r,
-                    height: 36.r,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFF6B4A),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Symbols.arrow_upward,
-                      color: Colors.white,
-                      size: 18.sp,
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
         ],

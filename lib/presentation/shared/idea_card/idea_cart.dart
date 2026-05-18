@@ -25,10 +25,12 @@ class IdeaCard extends HookConsumerWidget {
   const IdeaCard({
     required this.idea,
     this.onCommentTap,
+    this.isDetailMode = false,
     super.key,
   });
 
   final IdeaEntity idea;
+  final bool isDetailMode;
 
   /// Override for the comment-icon tap. When `null` (the feed case),
   /// the card pushes its own detail route. The detail page passes a
@@ -83,56 +85,63 @@ class IdeaCard extends HookConsumerWidget {
       }
     }
 
-    return Center(
-      child: Container(
-        width: 361.w,
-        margin: EdgeInsets.only(bottom: 16.h, top: 8.h),
-        padding: EdgeInsets.all(16.r),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: const Color(0xFFEFEFEF)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _Header(idea: idea),
-            SizedBox(height: 12.h),
-            Text(
-              idea.content,
-              style: TextStyle(
-                fontFamily: 'SF Pro Display',
-                fontSize: 14.sp,
-                color: _textMain,
-                height: 1.4,
-              ),
+    final Widget cardContent = Container(
+      width: isDetailMode ? double.infinity : 361.w,
+      margin: isDetailMode
+          ? EdgeInsets.zero
+          : EdgeInsets.only(bottom: 16.h, top: 8.h),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+      decoration: BoxDecoration(
+        borderRadius: isDetailMode
+            ? BorderRadius.zero
+            : BorderRadius.circular(16.r),
+        border: isDetailMode
+            ? null
+            : Border.all(color: const Color(0xFFEFEFEF)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _Header(idea: idea),
+          SizedBox(height: 12.h),
+          Text(
+            idea.content,
+            style: TextStyle(
+              fontFamily: 'SF Pro Display',
+              fontSize: 14.sp,
+              color: _textMain,
+              height: 1.4,
             ),
-            SizedBox(height: 12.h),
-            // Just the vote/comment trio, right-aligned. The
-            // timestamp lives in the header now (under @username),
-            // matching the design where the date sits with the
-            // author block rather than next to the actions.
-            Align(
-              alignment: Alignment.centerRight,
-              child: VoteButtons(
-                vote: vote.value,
-                likeCount: likeCount.value,
-                dislikeCount: dislikeCount.value,
-                commentCount: idea.commentCount,
-                commentsEnabled: idea.commentsEnabled,
-                onLike: () => handleVote(IdeaVoteType.like),
-                onDislike: () => handleVote(IdeaVoteType.dislike),
-                // Use the override if the host page passed one
-                // (detail page focuses the composer); otherwise the
-                // feed default behavior is to open the detail page.
-                onComment:
-                    onCommentTap ?? () => context.push('/idea/${idea.id}'),
-              ),
+          ),
+          SizedBox(height: 12.h),
+          // Just the vote/comment trio, right-aligned. The
+          // timestamp lives in the header now (under @username),
+          // matching the design where the date sits with the
+          // author block rather than next to the actions.
+          Align(
+            alignment: Alignment.centerRight,
+            child: VoteButtons(
+              vote: vote.value,
+              likeCount: likeCount.value,
+              dislikeCount: dislikeCount.value,
+              commentCount: idea.commentCount,
+              commentsEnabled: idea.commentsEnabled,
+              onLike: () => handleVote(IdeaVoteType.like),
+              onDislike: () => handleVote(IdeaVoteType.dislike),
+              // Use the override if the host page passed one
+              // (detail page focuses the composer); otherwise the
+              // feed default behavior is to open the detail page.
+              onComment: onCommentTap ?? () => context.push('/idea/${idea.id}'),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
+
+    if (isDetailMode) {
+      return cardContent;
+    }
+    return Center(child: cardContent);
   }
 }
 

@@ -199,11 +199,14 @@ class CreateIdeaPage extends HookConsumerWidget {
                     ),
                   ),
                   const Spacer(),
-                  Switch.adaptive(
-                    value: commentsEnabled.value,
-                    onChanged: (v) => commentsEnabled.value = v,
-                    activeColor: Colors.white,
-                    activeTrackColor: AppColors.tertiaryColor,
+                  Transform.scale(
+                    scale: 0.8,
+                    child: Switch.adaptive(
+                      value: commentsEnabled.value,
+                      onChanged: (v) => commentsEnabled.value = v,
+                      activeColor: Colors.white,
+                      activeTrackColor: AppColors.tertiaryColor,
+                    ),
                   ),
                 ],
               ),
@@ -247,13 +250,13 @@ class _SendButton extends StatelessWidget {
     return GestureDetector(
       onTap: enabled ? onTap : null,
       child: Container(
-        width: 36.r,
-        height: 36.r,
+        width: 24.r,
+        height: 24.r,
         decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         child: Icon(
           Symbols.arrow_upward,
           color: Colors.white,
-          size: 20.sp,
+          size: 18.sp,
         ),
       ),
     );
