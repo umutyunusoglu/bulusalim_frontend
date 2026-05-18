@@ -238,6 +238,11 @@ class _MoreButton extends ConsumerWidget {
     final isMine =
         currentUserId != null && currentUserId == comment.author.userID;
 
+    // Non-authors don't see any actions yet (no share/report APIs
+    // wired up), so the icon would just open an empty sheet. Hide
+    // it entirely until there's something to put behind it.
+    if (!isMine) return const SizedBox.shrink();
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
@@ -247,30 +252,28 @@ class _MoreButton extends ConsumerWidget {
           useRootNavigator: true,
           builder: (sheetContext) => CustomActionBottomSheet(
             options: [
-              if (isMine)
-                BottomSheetOption(
-                  icon: Symbols.delete,
-                  text: 'Yorumu Sil',
-                  isDestructive: true,
-                  onTap: () async {
-                    sheetContext.pop();
-                    await _confirmAndDeleteComment(
-                      context,
-                      ref,
-                      ideaId: comment.ideaId,
-                      commentId: comment.id,
-                    );
-                  },
-                ),
+              BottomSheetOption(
+                icon: Symbols.delete,
+                text: 'Yorumu Sil',
+                isDestructive: true,
+                onTap: () async {
+                  sheetContext.pop();
+                  await _confirmAndDeleteComment(
+                    context,
+                    ref,
+                    ideaId: comment.ideaId,
+                    commentId: comment.id,
+                  );
+                },
+              ),
               // TODO: share / report for non-authors when those
-              // APIs land on IdeaRepository.
+              // APIs land — at that point drop the early return
+              // above so the icon shows for everyone again.
             ],
           ),
         );
       },
       child: Padding(
-        // Bigger hit target than the visual icon — easier to tap
-        // without enlarging the icon itself.
         padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
         child: Icon(
           Symbols.more_vert,
