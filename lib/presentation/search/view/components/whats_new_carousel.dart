@@ -53,9 +53,8 @@ class WhatsNewCarousel extends HookConsumerWidget {
       data: (items) {
         if (items.isEmpty) return const SizedBox.shrink();
 
-        final contentWidth =
-            MediaQuery.of(context).size.width - 32; // padding 16 each side
-        final pageHeight = contentWidth * 4 / 3;
+        final contentWidth = MediaQuery.of(context).size.width - 32; // padding 16 each side
+        final pageHeight = contentWidth * 3 / 4;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,30 +97,28 @@ class WhatsNewCarousel extends HookConsumerWidget {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(16),
                       child: AspectRatio(
-                        aspectRatio: 3 / 4,
+                        aspectRatio: 4 / 3,
                         child: item.imageUrl.isNotEmpty
                             ? CachedNetworkImage(
                                 imageUrl: item.imageUrl,
                                 fit: BoxFit.cover,
-                                placeholder: (context, url) => ColoredBox(
-                                  color: Colors.grey.shade100,
-                                  child: const Center(
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 1,
-                                    ),
+                              placeholder: (context, url) => ColoredBox(
+                                color: Colors.grey.shade100,
+                                child: const Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 1,
                                   ),
                                 ),
-                                errorWidget: (context, url, error) =>
-                                    ColoredBox(
-                                      color: Colors.grey.shade200,
-                                      child: const Icon(
-                                        Icons.broken_image,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                              )
-                            : const ColoredBox(color: Colors.grey),
-                      ),
+                              ),
+                              errorWidget: (context, url, error) => ColoredBox(
+                                color: Colors.grey.shade200,
+                                child: const Icon(
+                                  Icons.broken_image,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            )
+                          : const ColoredBox(color: Colors.grey),
                     ),
                   );
                 },
