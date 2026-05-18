@@ -7,6 +7,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:outnest/application/providers/idea_providers.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/domain/entities/feed/idea/idea_comment_entity.dart';
 import 'package:outnest/domain/entities/feed/idea/idea_entity.dart';
@@ -93,7 +94,6 @@ class CommentTile extends HookConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               CircleAvatar(
                 radius: 16.r,
@@ -110,49 +110,24 @@ class CommentTile extends HookConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Text(
-                          '@${author.username}',
-                          style: TextStyle(
-                            fontFamily: 'SF Pro Display',
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF1A1A1A),
-                          ),
-                        ),
-                        SizedBox(width: 6.w),
-                        CountdownTimer(
-                          targetTime: comment.createdAt,
-                          isEvent: false,
-                          style: TextStyle(
-                            fontFamily: 'SF Pro Display',
-                            fontSize: 11.sp,
-                            color: const Color(0xFF8E8E93),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 4.h),
                     Text(
-                      comment.content,
+                      '@${author.username}',
                       style: TextStyle(
                         fontFamily: 'SF Pro Display',
                         fontSize: 13.sp,
+                        fontWeight: FontWeight.w600,
                         color: const Color(0xFF1A1A1A),
-                        height: 1.35,
                       ),
                     ),
-                    SizedBox(height: 6.h),
-                    VoteButtons(
-                      vote: vote.value,
-                      likeCount: likeCount.value,
-                      dislikeCount: dislikeCount.value,
-                      commentCount: comment.replyCount,
-                      onLike: () => handleVote(IdeaVoteType.like),
-                      onDislike: () => handleVote(IdeaVoteType.dislike),
-                      onComment: onReply,
-                      iconSize: 18.sp,
+                    SizedBox(height: 2.h),
+                    CountdownTimer(
+                      targetTime: comment.createdAt,
+                      isEvent: false,
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Display',
+                        fontSize: 11.sp,
+                        color: const Color(0xFF8E8E93),
+                      ),
                     ),
                   ],
                 ),
@@ -164,9 +139,34 @@ class CommentTile extends HookConsumerWidget {
               ),
             ],
           ),
+
+          SizedBox(height: 8.h),
+          Text(
+            comment.content,
+            style: TextStyle(
+              fontFamily: 'SF Pro Display',
+              fontSize: 13.sp,
+              color: const Color(0xFF1A1A1A),
+              height: 1.35,
+            ),
+          ),
+          SizedBox(height: 6.h),
+          Align(
+            alignment: Alignment.centerRight,
+            child: VoteButtons(
+              vote: vote.value,
+              likeCount: likeCount.value,
+              dislikeCount: dislikeCount.value,
+              commentCount: comment.replyCount,
+              onLike: () => handleVote(IdeaVoteType.like),
+              onDislike: () => handleVote(IdeaVoteType.dislike),
+              onComment: onReply,
+              iconSize: 20.sp,
+            ),
+          ),
           if (comment.replyCount > 0)
             Padding(
-              padding: EdgeInsets.only(left: 36.w, top: 4.h),
+              padding: EdgeInsets.only(top: 4.h),
               child: GestureDetector(
                 onTap: onToggleReplies,
                 child: Text(
@@ -176,7 +176,7 @@ class CommentTile extends HookConsumerWidget {
                   style: TextStyle(
                     fontFamily: 'SF Pro Display',
                     fontSize: 12.sp,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: AppColors.darkSlate,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

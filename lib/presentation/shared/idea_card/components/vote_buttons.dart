@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/domain/entities/feed/idea/idea_entity.dart';
 
 /// The like / dislike / comment triplet used on both [IdeaCard] and
@@ -44,7 +45,7 @@ class VoteButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = iconSize ?? 22.sp;
+    final size = iconSize ?? 20.sp;
     final liked = vote == IdeaVoteType.like;
     final disliked = vote == IdeaVoteType.dislike;
 
@@ -52,7 +53,7 @@ class VoteButtons extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _IconCount(
-          icon: liked ? Symbols.thumb_up : Icons.thumb_up_outlined,
+          icon: liked ? Icons.thumb_up : Icons.thumb_up_outlined,
           count: likeCount,
           active: liked,
           size: size,
@@ -60,7 +61,7 @@ class VoteButtons extends StatelessWidget {
         ),
         SizedBox(width: 14.w),
         _IconCount(
-          icon: disliked ? Symbols.thumb_down : Icons.thumb_down_outlined,
+          icon: disliked ? Icons.thumb_down : Icons.thumb_down_outlined,
           count: dislikeCount,
           active: disliked,
           size: size,
@@ -68,7 +69,7 @@ class VoteButtons extends StatelessWidget {
         ),
         SizedBox(width: 14.w),
         _IconCount(
-          icon: Icons.add_box_outlined,
+          icon: Symbols.add_comment,
           count: commentCount,
           active: false,
           size: size,
@@ -109,8 +110,8 @@ class _IconCount extends StatelessWidget {
     final color = dimmed
         ? const Color(0xFFC7C7CC)
         : active
-        ? theme.colorScheme.primary
-        : _restingColor;
+        ? theme.colorScheme.secondary
+        : AppColors.secondaryColor;
 
     return InkWell(
       onTap: onTap,
