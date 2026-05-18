@@ -4,14 +4,17 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:outnest/application/app_state/current_user_data_providers/current_user_identity_provider.dart';
 import 'package:outnest/application/providers/idea_providers.dart';
 import 'package:outnest/core/constants/theme/color_themes.dart';
 import 'package:outnest/core/utils/debug/android_image_url_fixer.dart';
 import 'package:outnest/domain/entities/feed/idea/idea_comment_entity.dart';
 import 'package:outnest/domain/entities/feed/idea/idea_entity.dart';
 import 'package:outnest/domain/services/file_service.dart';
+import 'package:outnest/presentation/shared/bottom_sheet_option.dart';
 import 'package:outnest/presentation/shared/idea_card/components/vote_buttons.dart';
 import 'package:outnest/presentation/shared/post_card/countdown_timer.dart';
 
@@ -132,11 +135,7 @@ class CommentTile extends HookConsumerWidget {
                   ],
                 ),
               ),
-              Icon(
-                Symbols.more_vert,
-                size: 18.sp,
-                color: const Color(0xFF8E8E93),
-              ),
+              _MoreButton(comment: comment),
             ],
           ),
 
@@ -220,5 +219,115 @@ void _applyOptimisticVote({
   } else {
     dislikeCount.value++;
     likeCount.value--;
+  }
+}
+
+/// Tappable more-actions button at the right edge of every comment.
+///
+/// Only the author sees the "Yorumu Sil" entry; non-authors get an
+/// empty sheet for now. Kept as its own ConsumerWidget so the tile
+/// above doesn't have to be rebuilt every time the auth provider
+/// emits — the watch lives behind this much narrower boundary.
+class _MoreButton extends ConsumerWidget {
+  const _MoreButton({required this.comment});
+  final IdeaCommentEntity comment;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentUserId = ref.watch(currentUserIDProvider);
+    final isMine =
+        currentUserId != null && currentUserId == comment.author.userID;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        showModalBottomSheet<void>(
+          context: context,
+          backgroundColor: Colors.transparent,
+          useRootNavigator: true,
+          builder: (sheetContext) => CustomActionBottomSheet(
+            options: [
+              if (isMine)
+                BottomSheetOption(
+                  icon: Symbols.delete,
+                  text: 'Yorumu Sil',
+                  isDestructive: true,
+                  onTap: () async {
+                    sheetContext.pop();
+                    await _confirmAndDeleteComment(
+                      context,
+                      ref,
+                      ideaId: comment.ideaId,
+                      commentId: comment.id,
+                    );
+                  },
+                ),
+              // TODO: share / report for non-authors when those
+              // APIs land on IdeaRepository.
+            ],
+          ),
+        );
+      },
+      child: Padding(
+        // Bigger hit target than the visual icon — easier to tap
+        // without enlarging the icon itself.
+        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
+        child: Icon(
+          Symbols.more_vert,
+          size: 18.sp,
+          color: const Color(0xFF8E8E93),
+        ),
+      ),
+    );
+  }
+}
+
+/// Confirms with the user and soft-deletes the comment on accept.
+///
+/// Mirrors `_confirmAndDelete` in idea_card.dart — same pattern,
+/// different repository call. Top-level so the dialog/snackbar
+/// attach to the tile's context, not the dismissed bottom sheet.
+Future<void> _confirmAndDeleteComment(
+  BuildContext context,
+  WidgetRef ref, {
+  required String ideaId,
+  required String commentId,
+}) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Yorumu Sil'),
+      content: const Text('Bu yorumu silmek istediğine emin misin?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: const Text('Vazgeç'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: const Text(
+            'Sil',
+            style: TextStyle(color: Color(0xFFFF3B30)),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed != true) return;
+
+  try {
+    await ref
+        .read(ideaRepositoryProvider)
+        .deleteComment(
+          ideaId: ideaId,
+          commentId: commentId,
+        );
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Silinemedi: $e')),
+      );
+    }
   }
 }
