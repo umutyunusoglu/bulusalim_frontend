@@ -53,9 +53,6 @@ class WhatsNewCarousel extends HookConsumerWidget {
       data: (items) {
         if (items.isEmpty) return const SizedBox.shrink();
 
-        final contentWidth = MediaQuery.of(context).size.width - 32; // padding 16 each side
-        final pageHeight = contentWidth * 3 / 4;
-
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -85,7 +82,7 @@ class WhatsNewCarousel extends HookConsumerWidget {
             const SizedBox(height: 12),
 
             SizedBox(
-              height: pageHeight,
+              height: 480,
 
               child: PageView.builder(
                 itemCount: items.length,
@@ -96,12 +93,10 @@ class WhatsNewCarousel extends HookConsumerWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(16),
-                      child: AspectRatio(
-                        aspectRatio: 4 / 3,
-                        child: item.imageUrl.isNotEmpty
-                            ? CachedNetworkImage(
-                                imageUrl: item.imageUrl,
-                                fit: BoxFit.cover,
+                      child: item.imageUrl.isNotEmpty
+                          ? CachedNetworkImage(
+                              imageUrl: item.imageUrl,
+                              fit: BoxFit.cover,
                               placeholder: (context, url) => ColoredBox(
                                 color: Colors.grey.shade100,
                                 child: const Center(

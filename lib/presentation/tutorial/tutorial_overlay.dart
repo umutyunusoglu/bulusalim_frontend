@@ -437,20 +437,17 @@ class TutorialOverlay extends HookWidget {
                     _buildImageCard(secondImagePath, height: 90.h),
                   ],
                 )
-              // Tek görsel: use 3:4 aspect instead of square
-              : _buildImageCard(imagePath),
+              // Tek görsel varsa 172x172
+              : _buildImageCard(imagePath, height: 172.h),
         ),
       ],
     );
   }
 
-  Widget _buildImageCard(String path, {double? height}) {
-    final width = 172.w;
-    final h = height ?? (width * 4 / 3);
-
+  Widget _buildImageCard(String path, {required double height}) {
     return Container(
-      height: h,
-      width: width,
+      height: height,
+      width: 172.w,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8.r),
@@ -471,8 +468,8 @@ class TutorialOverlay extends HookWidget {
         child: Image.asset(
           path,
           fit: BoxFit.cover,
-          width: width,
-          height: h,
+          width: 172.w,
+          height: height,
         ),
       ),
     );
