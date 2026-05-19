@@ -64,9 +64,6 @@ class _NewPostPageState extends State<NewPostPage> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final pageFraction = (225.w + 16.w) / screenWidth;
-    // enforce 3:4 (width:height) for each page card
-    final pageHeight = screenWidth * pageFraction * 4 / 3;
 
     return Scaffold(
       resizeToAvoidBottomInset: false, // Klavye taşmasını önler
@@ -121,7 +118,7 @@ class _NewPostPageState extends State<NewPostPage> {
             SizedBox(height: 16.h),
 
             SizedBox(
-              height: pageHeight,
+              height: 300.h,
               width: screenWidth,
               child: PageView.builder(
                 controller: _pageController!,
@@ -289,7 +286,7 @@ class _NewPostPageState extends State<NewPostPage> {
     String title,
     String sub,
     bool val,
-    void Function(bool) onCh,
+    Function(bool) onCh,
   ) {
     return Padding(
       padding: EdgeInsets.only(bottom: 8.h),

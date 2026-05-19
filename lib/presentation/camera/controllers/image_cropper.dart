@@ -7,34 +7,20 @@ Future<File?> cropImage(String path) async {
   final original = img.decodeImage(bytes);
   if (original == null) return null;
 
-  // Desired aspect ratio (width / height) => 3:4
-  const double targetAspect = 3 / 4;
+  final cropWidth = original.width < (original.height * 3 ~/ 4)
+      ? original.width
+      : original.height * 3 ~/ 4;
+  final cropHeight = cropWidth * 4 ~/ 3;
 
-  final origW = original.width.toDouble();
-  final origH = original.height.toDouble();
-
-  int cropW;
-  int cropH;
-
-  if ((origW / origH) > targetAspect) {
-    // Image is wider than target aspect -> crop width
-    cropH = original.height;
-    cropW = (origH * targetAspect).round();
-  } else {
-    // Image is taller (or narrower) than target -> crop height
-    cropW = original.width;
-    cropH = (origW / targetAspect).round();
-  }
-
-  final offsetX = ((original.width - cropW) / 2).round();
-  final offsetY = ((original.height - cropH) / 2).round();
+  final offsetX = (original.width - cropWidth) ~/ 2;
+  final offsetY = (original.height - cropHeight) ~/ 2;
 
   final cropped = img.copyCrop(
     original,
     x: offsetX,
     y: offsetY,
-    width: cropW,
-    height: cropH,
+    width: cropWidth,
+    height: cropHeight,
   );
 
   final croppedBytes = img.encodeJpg(cropped, quality: 80);
