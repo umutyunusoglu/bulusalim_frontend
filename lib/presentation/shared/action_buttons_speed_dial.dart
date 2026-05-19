@@ -35,9 +35,9 @@ class ActionButtonsSpeedDial extends HookConsumerWidget {
     final showQrButton = isUserInEvent || forceShowAllButtons;
     final isDialOpenValue = useValueListenable(isDialOpen);
     final showGlow = isUserInEvent && !isDialOpenValue;
-    final layerLink = useMemoized(() => LayerLink());
+    final layerLink = useMemoized(LayerLink.new);
     final overlayEntry = useRef<OverlayEntry?>(null);
-    final buttonKey = useMemoized(() => GlobalKey());
+    final buttonKey = useMemoized(GlobalKey.new);
 
     void removeOverlay() {
       overlayEntry.value?.remove();
@@ -53,7 +53,13 @@ class ActionButtonsSpeedDial extends HookConsumerWidget {
       final buttonCenter =
           buttonPosition.dy + (renderBox.size.height / 2) - (closedSize / 2);
 
-      final buttonCount = showQrButton ? 3 : 2;
+      // Three fixed children (idea, location, camera) plus the QR
+      // button when applicable. The old formula assumed 2 fixed
+      // children, so adding the idea button left totalHeight 64+8
+      // short — the overlay landed lower than expected and clipped
+      // the main FAB beneath it, making it look like the FAB
+      // disappeared on tap. Fixed by counting all four slots.
+      final buttonCount = (showQrButton ? 1 : 0) + 3;
       final totalHeight = (buttonCount * 64) + ((buttonCount - 1) * 8);
 
       final top = buttonCenter - childSpacing - totalHeight;
@@ -84,7 +90,13 @@ class ActionButtonsSpeedDial extends HookConsumerWidget {
                 icon: Icons.note_add_outlined,
                 iconColor: AppColors.darkSlate,
                 backgroundColor: AppColors.backgroundColor,
-                onTap: onIdeaTap,
+                onTap: () {
+                  // Was missing — every other child closed the dial
+                  // on tap, this one didn't, leaving the overlay
+                  // open after navigating to CreateIdeaPage.
+                  isDialOpen.value = false;
+                  onIdeaTap();
+                },
               ),
               const SizedBox(height: 8),
               _CustomDialChild(
@@ -137,7 +149,6 @@ class ActionButtonsSpeedDial extends HookConsumerWidget {
             alignment: Alignment.center,
             clipBehavior: Clip.none,
             children: [
-              // Glow — her zaman mount'ta kalır, sadece opacity değişir
               // Glow — her zaman mount'ta kalır, sadece opacity değişir
               AnimatedOpacity(
                 opacity: showGlow ? 1.0 : 0.0,

@@ -744,7 +744,7 @@ class _PostCardState extends State<PostCard> {
           borderRadius: BorderRadius.circular(16.r),
           child: SizedBox(
             width: 361.w,
-            height: 361.w,
+            height: 361.w * 4 / 3, // 4:3 oranı
             child: PageView.builder(
               controller: _pageController,
               itemCount: mediaUrls.length,

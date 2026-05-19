@@ -388,10 +388,17 @@ class IdeaRepositoryImpl implements IdeaRepository {
   }) async {
     if (docs.isEmpty) return const [];
 
+    // Soft-deleted comments stay in Firestore (so their replies keep
+    // their parent reference) but mustn't render. Filter at the
+    // model layer rather than the query layer — adding a second
+    // whereEqualTo on `status` would force a composite index and
+    // collide with the existing parentCommentId equality filter.
     final models = [
       for (final doc in docs)
         IdeaCommentModel.fromFirestore(data: doc.data(), ideaId: ideaId),
-    ];
+    ].where((m) => !m.isDeleted).toList();
+
+    if (models.isEmpty) return const [];
 
     final votes = await _fetchCurrentUserCommentVotes(
       ideaId: ideaId,
